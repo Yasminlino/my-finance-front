@@ -30,6 +30,7 @@
               "src/assets"
             ],
             "styles": [
+              "node_modules/@tabler/core/dist/css/tabler.min.css",
               "src/styles.scss"
             ],
             "scripts": []
@@ -100,5 +101,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": "533f1207-78a9-4687-8f11-cab1a191b271"
   }
 }

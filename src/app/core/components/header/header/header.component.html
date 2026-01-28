@@ -1,0 +1,126 @@
+<header class="navbar navbar-expand-md navbar-light d-print-none sticky-top bg-white border-bottom" style="z-index: 2000;">
+  <div class="container-xl">
+    <!-- Marca -->
+    <a class="navbar-brand d-flex align-items-center gap-2"
+       routerLink="/home"
+       (click)="onAnyNavClick()">
+      <span class="fw-bold">{{ brand }}</span>
+    </a>
+
+    <!-- Toggle mobile -->
+    <button class="navbar-toggler"
+            type="button"
+            (click)="toggleMenu()"
+            [attr.aria-expanded]="isMenuOpen"
+            aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Menu -->
+    <div class="collapse navbar-collapse" [class.show]="isMenuOpen">
+      <!-- Menu principal -->
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link"
+             routerLink="/home"
+             routerLinkActive="active"
+             [routerLinkActiveOptions]="{ exact: true }"
+             (click)="onAnyNavClick()">
+            <span class="me-2">🏠</span>
+            <span>Página Inicial</span>
+          </a>
+        </li>
+
+        <!-- Cadastros -->
+        <li class="nav-item dropdown js-dropdown" [class.show]="openDropdownKey === 'cadastros'">
+          <button type="button"
+                  class="nav-link d-flex align-items-center bg-transparent border-0 dropdown-toggle"
+                  (click)="toggleDropdown('cadastros')"
+                  [attr.aria-expanded]="openDropdownKey === 'cadastros'">
+            <span class="me-2">🗂️</span>
+            <span class="text-nowrap">Cadastros</span>
+          </button>
+
+          <div class="dropdown-menu" [class.show]="openDropdownKey === 'cadastros'" role="menu">
+            <a *ngFor="let item of cadastrosItems"
+               class="dropdown-item d-flex align-items-center"
+               [routerLink]="item.path"
+               (click)="onAnyNavClick()">
+              <span class="me-2">{{ item.icon }}</span>
+              <span>{{ item.label }}</span>
+            </a>
+          </div>
+        </li>
+
+        <!-- Movimentações -->
+        <li class="nav-item dropdown js-dropdown" [class.show]="openDropdownKey === 'movimentacoes'">
+          <button type="button"
+                  class="nav-link d-flex align-items-center bg-transparent border-0 dropdown-toggle"
+                  (click)="toggleDropdown('movimentacoes')"
+                  [attr.aria-expanded]="openDropdownKey === 'movimentacoes'">
+            <span class="me-2">🐷</span>
+            <span class="text-nowrap">Movimentações</span>
+          </button>
+
+          <div class="dropdown-menu" [class.show]="openDropdownKey === 'movimentacoes'" role="menu">
+            <a *ngFor="let item of movimentacoesItems"
+               class="dropdown-item d-flex align-items-center"
+               [routerLink]="item.path"
+               (click)="onAnyNavClick()">
+              <span class="me-2">{{ item.icon }}</span>
+              <span>{{ item.label }}</span>
+            </a>
+          </div>
+        </li>
+
+        <!-- Listas -->
+        <li class="nav-item dropdown js-dropdown" [class.show]="openDropdownKey === 'listas'">
+          <button type="button"
+                  class="nav-link d-flex align-items-center bg-transparent border-0 dropdown-toggle"
+                  (click)="toggleDropdown('listas')"
+                  [attr.aria-expanded]="openDropdownKey === 'listas'">
+            <span class="me-2">🛒</span>
+            <span class="text-nowrap">Listas</span>
+          </button>
+
+          <div class="dropdown-menu" [class.show]="openDropdownKey === 'listas'" role="menu">
+            <a *ngFor="let item of listasItems"
+               class="dropdown-item d-flex align-items-center"
+               [routerLink]="item.path"
+               (click)="onAnyNavClick()">
+              <span class="me-2">{{ item.icon }}</span>
+              <span>{{ item.label }}</span>
+            </a>
+          </div>
+        </li>
+      </ul>
+
+      <!-- Usuário / Login-Logout -->
+      <ul class="navbar-nav ms-auto">
+        <!-- Se não logado -->
+        <li class="nav-item" *ngIf="!auth.token">
+          <a class="nav-link" routerLink="/login" (click)="onAnyNavClick()">Login</a>
+        </li>
+
+        <!-- Se logado -->
+        <li class="nav-item dropdown js-user-dropdown" *ngIf="auth.token" [class.show]="isUserOpen">
+          <button type="button"
+                  class="nav-link d-flex align-items-center bg-transparent border-0"
+                  (click)="toggleUser()"
+                  [attr.aria-expanded]="isUserOpen">
+            <span class="me-2">👤</span>
+
+            <div class="d-none d-md-block text-start">
+              <div>Usuário</div>
+              <div class="small text-secondary">Administrador</div>
+            </div>
+          </button>
+
+          <div class="dropdown-menu dropdown-menu-end" [class.show]="isUserOpen" role="menu">
+            <button type="button" class="dropdown-item" (click)="logout()">Logout</button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</header>

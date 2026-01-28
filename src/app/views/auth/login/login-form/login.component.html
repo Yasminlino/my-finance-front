@@ -1,0 +1,94 @@
+<div class="page page-center">
+  <div class="container container-tight py-4">
+    <div class="text-center mb-4">
+      <a href="." class="navbar-brand navbar-brand-autodark">
+        <!-- opcional: seu logo -->
+        MyFinance
+      </a>
+    </div>
+
+    <div class="card card-md">
+      <div class="card-body">
+        <h2 class="h2 text-center mb-4">Entrar</h2>
+
+        <form (ngSubmit)="submit()" [formGroup]="form" autocomplete="on" novalidate>
+          <div class="mb-3">
+            <label class="form-label" for="username">E-mail ou usuário</label>
+            <input
+              id="username"
+              type="text"
+              class="form-control"
+              [class.is-invalid]="!!errors.username"
+              placeholder="voce@email.com"
+              formControlName="username"
+              autofocus
+            />
+            <div class="invalid-feedback" *ngIf="errors.username">
+              {{ errors.username }}
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label" for="password">Senha</label>
+            <div class="input-group input-group-flat">
+              <input
+                id="password"
+                [type]="showPwd ? 'text' : 'password'"
+                class="form-control"
+                [class.is-invalid]="!!errors.password"
+                placeholder="Sua senha"
+                formControlName="password"
+                autocomplete="current-password"
+              />
+              <span class="input-group-text">
+                <a
+                  href="#"
+                  class="link-secondary"
+                  (click)="$event.preventDefault(); togglePwd()"
+                  [attr.aria-label]="showPwd ? 'Ocultar senha' : 'Mostrar senha'"
+                  title="Mostrar/ocultar senha"
+                >
+                  <span *ngIf="!showPwd">👁️</span>
+                  <span *ngIf="showPwd">🙈</span>
+                </a>
+              </span>
+            </div>
+            <div class="invalid-feedback d-block" *ngIf="errors.password">
+              {{ errors.password }}
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-check">
+              <input class="form-check-input" type="checkbox" formControlName="remember" />
+              <span class="form-check-label">Lembrar de mim</span>
+            </label>
+          </div>
+
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary w-100" [disabled]="loading">
+              <ng-container *ngIf="loading; else btnText">
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                Carregando...
+              </ng-container>
+              <ng-template #btnText>Entrar</ng-template>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="hr-text">ou</div>
+
+      <div class="card-body">
+        <button type="button" class="btn btn-outline-primary w-100" (click)="openRegister()">
+          Registrar-se
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <app-registro-usuario
+    *ngIf="showModalCreate"
+    (closeModal)="closeRegister()"
+  ></app-registro-usuario>
+</div>

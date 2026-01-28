@@ -1,0 +1,36 @@
+/* Tabler já resolve quase tudo. Aqui só ajusta clique em button nav-link */
+:host {
+  display: block;
+}
+
+button.nav-link {
+  cursor: pointer;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+/* Normaliza o alinhamento do dropdown (ícone + texto) */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.dropdown-item-icon {
+  width: 24px;          /* força todos os ícones terem a mesma largura */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  line-height: 1;
+}
+
+.dropdown-item-label {
+  flex: 1;
+}
+
+.dropdown-menu.show{
+  position: absolute;
+  top: 100%;
+}

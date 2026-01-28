@@ -1,0 +1,161 @@
+<div class="container-xl py-3">
+
+  <!-- ALERT -->
+  <div *ngIf="alert.message"
+       class="alert"
+       [class.alert-success]="alert.type==='success'"
+       [class.alert-danger]="alert.type==='error'">
+    {{ alert.message }}
+  </div>
+
+  <!-- HEADER TABLER -->
+  <div class="page-header d-print-none mb-3">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Cadastros</div>
+        <h2 class="page-title">Bancos</h2>
+      </div>
+
+      <div class="col-auto ms-auto d-print-none">
+        <div class="btn-list">
+          <button class="btn btn-outline-secondary" type="button" (click)="load()">
+            Atualizar
+          </button>
+          <button class="btn btn-primary" type="button" (click)="openCreate()">
+            + Novo banco
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESUMO SALDOS -->
+  <div class="row row-cards mb-4">
+    <div class="col-12 col-md-4">
+      <div class="card card-sm bg-azure-lt">
+        <div class="card-body">
+          <div class="font-weight-medium">Saldo Total (Todos)</div>
+          <div class="text-secondary">{{ formatMoney(totalGeral) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card card-sm bg-success-lt">
+        <div class="card-body">
+          <div class="font-weight-medium">Saldo de Bancos Ativos</div>
+          <div class="text-success">{{ formatMoney(totalAtivo) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card card-sm bg-secondary-lt">
+        <div class="card-body">
+          <div class="font-weight-medium">Saldo de Bancos Inativos</div>
+          <div class="text-secondary">{{ formatMoney(totalInativo) }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-6">
+          <label class="form-label">Buscar</label>
+          <input class="form-control"
+                 placeholder="Nome ou ID"
+                 [value]="q"
+                 (input)="onSearchChange(($any($event.target)).value)" />
+        </div>
+
+        <div class="col-12 col-md-3">
+          <label class="form-label">Status</label>
+          <select class="form-select"
+                  [value]="statusFilter"
+                  (change)="onStatusChange(($any($event.target)).value)">
+            <option value="ALL">Todos</option>
+            <option value="Ativo">Ativo</option>
+            <option value="Inativo">Inativo</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md-3 d-flex justify-content-md-end">
+          <div class="text-muted small mt-3 mt-md-0">
+            {{ filtered.length }} {{ filtered.length === 1 ? 'banco' : 'bancos' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table card-table table-vcenter table-hover">
+        <thead class="bg-body-tertiary">
+          <tr>
+            <th class="w-1">ID</th>
+            <th class="text-nowrap">Nome Banco</th>
+            <th class="text-nowrap">Saldo Inicial</th>
+            <th class="text-nowrap">Status</th>
+            <th class="w-1 text-center">Ações</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let b of filtered">
+            <td class="text-muted">{{ b.id }}</td>
+            <td class="fw-medium">{{ b.nomeBanco }}</td>
+            <td class="fw-medium">{{ formatMoney(b.saldoInicial) }}</td>
+            <td>
+              <span [class]="badgeClass(b.ativo)">{{ b.ativo ? 'Ativo' : 'Inativo' }}</span>
+            </td>
+
+            <td class="text-center">
+              <div class="btn-list d-inline-flex">
+                <button type="button"
+                        class="btn btn-icon btn-soft-secondary"
+                        title="Editar"
+                        (click)="openEdit(b)">
+                  ✏️
+                </button>
+                <button type="button"
+                        class="btn btn-icon btn-soft-danger"
+                        title="Excluir"
+                        (click)="onDelete(b)">
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading && filtered.length === 0">
+            <td colspan="5" class="text-center text-secondary py-4">
+              Nenhum banco encontrado.
+            </td>
+          </tr>
+
+          <tr *ngIf="loading">
+            <td colspan="5" class="text-center text-secondary py-4">Carregando...</td>
+          </tr>
+
+          <tr *ngIf="errorMsg">
+            <td colspan="5" class="text-center text-danger py-4">{{ errorMsg }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL CREATE/EDIT -->
+  <app-banco-form
+    *ngIf="showModal"
+    [banco]="editing"
+    [tiposCartao]="tiposCartao"
+    (closed)="closeModal($event)">
+  </app-banco-form>
+
+</div>

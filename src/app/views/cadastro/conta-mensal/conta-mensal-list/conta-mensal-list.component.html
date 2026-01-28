@@ -1,0 +1,143 @@
+<div class="container-xl py-3">
+
+  <!-- Alert -->
+  <div *ngIf="alert.message"
+       class="alert"
+       [class.alert-success]="alert.type==='success'"
+       [class.alert-danger]="alert.type==='error'">
+    {{ alert.message }}
+  </div>
+
+  <!-- Header Tabler -->
+  <div class="page-header d-print-none mb-3">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Cadastros</div>
+        <h2 class="page-title">Contas</h2>
+      </div>
+
+      <div class="col-auto ms-auto d-print-none">
+        <div class="btn-list">
+          <button class="btn btn-outline-secondary" type="button" (click)="load()">
+            Atualizar
+          </button>
+          <button class="btn btn-primary" type="button" (click)="openCreate()">
+            + Nova conta
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-5">
+          <label class="form-label">Buscar</label>
+          <input class="form-control"
+                 placeholder="Nome, ID ou Categoria"
+                 [value]="q"
+                 (input)="onSearchChange(($any($event.target)).value)" />
+        </div>
+
+        <div class="col-12 col-md-4">
+          <label class="form-label">Categoria</label>
+          <select class="form-select"
+                  [value]="catFilter"
+                  (change)="onCatChange(($any($event.target)).value)">
+            <option value="ALL">Todas</option>
+            <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md-3 d-flex justify-content-md-end">
+          <div class="text-muted small mt-3 mt-md-0">
+            {{ filtered.length }} {{ filtered.length === 1 ? 'conta' : 'contas' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="card">
+    <div class="table-responsive table-responsive-sticky">
+      <table class="table card-table table-vcenter table-hover align-middle table-sticky">
+        <thead class="bg-body-tertiary">
+          <tr>
+            <th class="w-1">ID</th>
+            <th class="w-6 text-center">Nome</th>
+            <th class="w-4 text-center text-nowrap">Valor</th>
+            <th class="w-2 text-center text-nowrap">Dia Vencimento</th>
+            <th class="w-4 text-center text-nowrap">Categoria</th>
+            <th class="w-2 text-center">Ações</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let acc of filtered">
+            <td class="text-muted text-center">{{ acc.id }}</td>
+            <td class="fw-medium text-center">{{ acc.name }}</td>
+            <td class="text-center">{{ formatCurrency(acc.value) }}</td>
+            <td class="text-center">{{ acc.dataOperacao }}</td>
+            <td class="text-center">{{ categoryNameOf(acc.categoryid) }}</td>
+
+            <td class="text-center">
+              <div class="d-flex justify-content-center">
+                <button type="button"
+                        class="btn btn-icon btn-soft-secondary"
+                        title="Editar"
+                        (click)="openEdit(acc)">
+                  ✏️
+                </button>
+                <button type="button"
+                        class="btn btn-icon btn-soft-danger"
+                        title="Excluir"
+                        (click)="onDelete(acc)">
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading && filtered.length === 0">
+            <td colspan="6" class="p-5">
+              <div class="text-center text-secondary">
+                <div class="fs-1 mb-2">🧾</div>
+                <div class="mb-1">Nenhuma conta encontrada</div>
+                <div class="text-muted mb-3">Tente ajustar os filtros ou cadastre uma nova conta.</div>
+                <button class="btn btn-primary" (click)="openCreate()">+ Nova conta</button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="loading">
+            <td colspan="6" class="text-center text-secondary py-4">Carregando...</td>
+          </tr>
+
+          <tr *ngIf="errorMsg">
+            <td colspan="6" class="text-center text-danger py-4">{{ errorMsg }}</td>
+          </tr>
+        </tbody>
+
+        <tfoot *ngIf="filtered.length > 0">
+          <tr>
+            <td colspan="2" class="text-end fw-bold">Total:</td>
+            <td class="text-end fw-bold">{{ formatCurrency(total) }}</td>
+            <td colspan="3"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal do Form -->
+  <app-conta-mensal-form
+    *ngIf="showModalForm"
+    [account]="editing"
+    [categories]="categories"
+    (closed)="closeForm($event)">
+  </app-conta-mensal-form>
+
+</div>

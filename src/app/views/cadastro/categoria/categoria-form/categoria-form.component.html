@@ -1,0 +1,48 @@
+<!-- Backdrop -->
+<div class="modal-backdrop-custom" (click)="close(false)"></div>
+
+<!-- Modal -->
+<div class="modal-custom" role="dialog" aria-modal="true">
+  <div class="modal-card card">
+    <div class="card-header">
+      <h3 class="card-title m-0">{{ category ? 'Editar Categoria' : 'Nova Categoria' }}</h3>
+      <button type="button" class="btn-close" (click)="close(false)" aria-label="Fechar"></button>
+    </div>
+
+    <div class="card-body" [formGroup]="form">
+      <div class="mb-3">
+        <label class="form-label">Nome</label>
+        <input class="form-control" type="text" formControlName="name"
+          [class.is-invalid]="form.controls.name.touched && form.controls.name.invalid" />
+        <div class="invalid-feedback" *ngIf="form.controls.name.touched && form.controls.name.invalid">
+          Informe um nome válido.
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Sub Categoria</label>
+        <select class="form-select" formControlName="subCategory">
+          <option value="Receita">Receita</option>
+          <option value="Despesa">Despesa</option>
+        </select>
+      </div>
+
+      <!-- <div class="mb-3">
+        <label class="form-label">Status</label>
+        <select class="form-select" formControlName="status">
+          <option value="Ativo">Ativo</option>
+          <option value="Inativo">Inativo</option>
+        </select>
+      </div> -->
+    </div>
+
+    <div class="card-footer d-flex justify-content-end gap-2">
+      <button type="button" class="btn btn-outline-secondary" (click)="close(false)">
+        Cancelar
+      </button>
+      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Salvando...' : 'Salvar' }}
+      </button>
+    </div>
+  </div>
+</div>
