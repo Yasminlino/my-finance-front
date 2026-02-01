@@ -40,6 +40,16 @@ const routes: Routes = [
         loadChildren: () =>
           import('./views/cadastro/tipo-cartao/tipo-cartao.module').then(m => m.TipoCartaoModule),
       },
+      {
+        path: 'tipo-movimentacao',
+        loadChildren: () =>
+          import('./views/cadastro/tipo-movimentacao/tipo-movimentacao.module').then(m => m.TipoMovimentacaoModule),
+      },
+      {
+        path: 'conta-mensal',
+        loadChildren: () =>
+          import('./views/movimentacao/conta-mensal/conta-mensal.module').then(m => m.ContaMensalModule),
+      },
       { path: '', redirectTo: 'home', pathMatch: 'full' },
     ]
   },

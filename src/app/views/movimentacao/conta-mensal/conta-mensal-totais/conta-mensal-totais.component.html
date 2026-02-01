@@ -1,0 +1,28 @@
+<div class="card mb-3">
+  <div class="card-body d-flex flex-wrap gap-4 align-items-center">
+    <div>
+      <div class="text-muted small">Receita (Selecionados)</div>
+      <div class="fw-bold fs-4 text-success">{{ money(receita) }}</div>
+    </div>
+
+    <div class="vr"></div>
+
+    <div>
+      <div class="text-muted small">Despesa (Selecionados)</div>
+      <div class="fw-bold fs-4 text-danger">{{ money(despesa) }}</div>
+    </div>
+
+    <div class="vr"></div>
+
+    <div>
+      <div class="text-muted small">Saldo (Selecionados)</div>
+      <div class="fw-bold fs-4" [class.text-danger]="saldo < 0" [class.text-success]="saldo >= 0">
+        {{ money(saldo) }}
+      </div>
+    </div>
+
+    <div class="ms-auto text-muted small">
+      {{ count }} {{ count === 1 ? 'item' : 'itens' }} selecionado(s)
+    </div>
+  </div>
+</div>

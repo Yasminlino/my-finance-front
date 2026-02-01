@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private baseUrl = 'http://localhost:5034'; // ajuste aqui
+  private baseUrl = 'http://localhost:5034'; 
 
   constructor(private http: HttpClient) {}
 

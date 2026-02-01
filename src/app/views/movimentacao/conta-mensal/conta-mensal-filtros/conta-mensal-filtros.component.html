@@ -1,0 +1,35 @@
+<div class="card p-3 mt-3">
+  <div class="row g-2 align-items-end mt-1">
+    <div class="col-12 col-lg-3">
+      <label class="form-label small mb-1">Status (geral)</label>
+      <select class="form-select form-select-sm"
+              [value]="status"
+              (change)="emitChange({status: ($any($event.target)).value})">
+        <option value="">Todos</option>
+        <option *ngFor="let s of statusOptions" [value]="s" [hidden]="!s">{{ s }}</option>
+      </select>
+    </div>
+
+    <div class="col-6 col-lg-3">
+      <label class="form-label small mb-1">Vencimento de</label>
+      <input class="form-control form-control-sm"
+             type="date"
+             [value]="from"
+             (change)="emitChange({from: ($any($event.target)).value})" />
+    </div>
+
+    <div class="col-6 col-lg-3">
+      <label class="form-label small mb-1">Vencimento até</label>
+      <input class="form-control form-control-sm"
+             type="date"
+             [value]="to"
+             (change)="emitChange({to: ($any($event.target)).value})" />
+    </div>
+
+    <div class="col-12 col-lg-3">
+      <button class="btn btn-outline-danger btn-sm w-100" type="button" (click)="clearAll.emit()">
+        Limpar filtros
+      </button>
+    </div>
+  </div>
+</div>

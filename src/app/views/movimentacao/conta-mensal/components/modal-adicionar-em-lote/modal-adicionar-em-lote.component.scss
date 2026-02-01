@@ -1,0 +1,11 @@
+.my-backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* garante que o modal fique “clicável” e centralizado */
+.modal.show {
+  z-index: 1055;
+}
+.modal-backdrop.show {
+  z-index: 1050;
+}
