@@ -8,8 +8,8 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
-  get<T>(url: string): Promise<T> {
-    return firstValueFrom(this.http.get<T>(this.baseUrl + url));
+  get<T>(url: string, id?: number): Promise<T> {
+    return firstValueFrom(this.http.get<T>(this.baseUrl + url + (id ? '/' + id : '')));
   }
 
   post<T>(url: string, body: any): Promise<T> {

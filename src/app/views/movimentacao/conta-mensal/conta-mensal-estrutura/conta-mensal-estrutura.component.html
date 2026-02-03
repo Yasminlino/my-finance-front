@@ -1,69 +1,43 @@
 <div class="page-body">
 
   <div class="container-xl pt-3" *ngIf="alert.message">
-    <div class="alert"
-         [class.alert-success]="alert.type==='success'"
-         [class.alert-danger]="alert.type==='error'">
+    <div class="alert" [class.alert-success]="alert.type==='success'" [class.alert-danger]="alert.type==='error'">
       {{ alert.message }}
     </div>
   </div>
 
   <div class="container-xl">
-    <app-conta-mensal-header
-      [month]="selectedMonth"
-      [showToolbar]="showToolbar"
-      (monthChange)="onMonthChange($event)"
-      (toggleToolbar)="onToggleToolbar()"
-      (openAddBatch)="onOpenAddBatch()"
-      (openCreate)="onOpenCreate()"
+    <app-conta-mensal-header [month]="selectedMonth" [showToolbar]="showToolbar" (monthChange)="onMonthChange($event)"
+      (toggleToolbar)="onToggleToolbar()" (openAddBatch)="onOpenAddBatch()" (openCreate)="onOpenCreate()"
       (refresh)="onRefresh()">
     </app-conta-mensal-header>
 
-    <app-conta-mensal-filtros
-      [statusOptions]="STATUS"
-      [status]="filterStatus"
-      [from]="filterDateFrom"
-      [to]="filterDateTo"
-      (filtersChange)="onGeneralFiltersChange($event)"
-      (clearAll)="onClearAllFilters()">
+    <app-conta-mensal-filtros [statusOptions]="STATUS" [status]="filterStatus" [from]="filterDateFrom"
+      [to]="filterDateTo" (filtersChange)="onGeneralFiltersChange($event)" (clearAll)="onClearAllFilters()">
     </app-conta-mensal-filtros>
   </div>
 
   <div class="container-xl mt-3">
-    <app-conta-mensal-totais
-      [receita]="selectedTotals.receita"
-      [despesa]="selectedTotals.despesa"
-      [saldo]="selectedTotals.saldo"
-      [count]="selectedTotals.count">
+    <app-conta-mensal-totais [receita]="selectedTotals.receita" [despesa]="selectedTotals.despesa"
+      [saldo]="selectedTotals.saldo" [count]="selectedTotals.count">
     </app-conta-mensal-totais>
 
-    <app-conta-mensal-list
-      [rows]="sortedRows"
-      [loading]="loading"
-      [lockedById]="lockedById"
-      [selectedIds]="selectedIds"
-      [allVisibleSelected]="allVisibleSelected"
-      [columnFilters]="columnFilters"
-      [statusOptions]="STATUS"
-      (toggleSelectAllVisible)="onToggleSelectAllVisible()"
-      (toggleRow)="onToggleRow($event)"
-      (columnFiltersChange)="onColumnFiltersChange($event)"
-      (changeField)="onChangeRowField($event)"
-      (unlock)="unlock($event)"
-      (saveRow)="onSaveRow($event)"
-      (deleteRow)="onDeleteRow($event)">
+    <app-conta-mensal-list [rows]="sortedRows" [loading]="loading" [lockedById]="lockedById" [selectedIds]="selectedIds"
+      [allVisibleSelected]="allVisibleSelected" [columnFilters]="columnFilters" [statusOptions]="STATUS"
+      (toggleSelectAllVisible)="onToggleSelectAllVisible()" (toggleRow)="onToggleRow($event)"
+      (columnFiltersChange)="onColumnFiltersChange($event)" (changeField)="onChangeRowField($event)"
+      (unlock)="unlock($event)" (saveRow)="onSaveRow($event)" (deleteRow)="onDeleteRow($event)">
     </app-conta-mensal-list>
 
     <!-- Modais (seus componentes) -->
-    <app-modal-adicionar-em-lote
-      *ngIf="showModalAdd"
-      [month]="selectedMonth"
+    <app-modal-adicionar-em-lote *ngIf="showModalAdd" [month]="selectedMonth"
       (closed)="showModalAdd=false; $event && onRefresh()">
     </app-modal-adicionar-em-lote>
 
-    <!-- <app-create-conta-mensal
-      *ngIf="showModalCreate"
+    <app-modal-nova-conta-mensal 
+      *ngIf="showModalCreate" 
+      [dataOperacao] = "selectedMonth"
       (closed)="showModalCreate=false; $event && onRefresh()">
-    </app-create-conta-mensal> -->
+    </app-modal-nova-conta-mensal>
   </div>
 </div>

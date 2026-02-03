@@ -50,6 +50,11 @@ const routes: Routes = [
         loadChildren: () =>
           import('./views/movimentacao/conta-mensal/conta-mensal.module').then(m => m.ContaMensalModule),
       },
+      {
+        path: 'extrato-bancario',
+        loadChildren: () =>
+          import('./views/movimentacao/extrato-bancario/extrato-bancario.module').then(m => m.ExtratoBancarioModule),
+      },
       { path: '', redirectTo: 'home', pathMatch: 'full' },
     ]
   },

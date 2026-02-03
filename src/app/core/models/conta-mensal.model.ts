@@ -31,6 +31,31 @@ export type AgrupamentoContaMensal = {
   }>;
 };
 
+export type GrupoContaMensal = {
+    id: number;
+    name: string;
+    value: number;
+    idAccount: number;
+    categoryId: number;
+    date: string;   // ISO string vindo da API
+    status: string;
+    transactions: Array<{
+      id: number;
+      name: string;
+      value: number;
+      date: string;   // ISO string vindo da API
+      status: string;
+      idAccount?: number | null;
+      categoryId?: number | null;
+    }>;
+    account: {
+      id: number;
+      name: string;
+      value: number;
+      categoryId: number;
+    }
+};
+
 export type ContaMensal = {
   date: Date;
   name: string;

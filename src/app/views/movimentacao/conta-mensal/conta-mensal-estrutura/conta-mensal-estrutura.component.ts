@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
-import { AgrupamentoContaMensal, LinhaContaMensal } from 'src/app/core/models/conta-mensal.model';
+import { AgrupamentoContaMensal, GrupoContaMensal, LinhaContaMensal } from 'src/app/core/models/conta-mensal.model';
 import { formatCurrencyBR, formatDateInput, formatYearMonth, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
+import {Category, CategoryService} from 'src/app/core/services/category.service';
+
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
 
@@ -41,12 +43,15 @@ export class ContaMensalEstruturaComponent implements OnInit {
     status: '',
   };
 
+  categorias: any[] = [];
+
   // seleção
   selectedIds = new Set<number>();
 
-  constructor(private service: ContaMensalService) { }
+  constructor(private service: ContaMensalService, private categoryService: CategoryService) { }
 
   async ngOnInit() {
+    this.categorias = await this.categoryService.list();
     await this.loadMonth(this.defaultMonth);
   }
 
@@ -56,7 +61,7 @@ export class ContaMensalEstruturaComponent implements OnInit {
       this.selectedMonth = monthYYYYMM;
 
       const grouped = await this.service.getGroupingByMonth(formatYearMonth(monthYYYYMM));
-      this.rows = this.flatten(grouped ?? []);
+      this.rows = await this.flatten(grouped ?? []);
       this.selectedIds = new Set();
     } catch {
       this.alert = { type: 'error', message: 'Erro ao carregar transações.' };
@@ -66,28 +71,38 @@ export class ContaMensalEstruturaComponent implements OnInit {
     }
   }
 
-  private flatten(grouped: AgrupamentoContaMensal[]): LinhaContaMensal[] {
+  private async flatten(items: GrupoContaMensal[]): Promise<LinhaContaMensal[]> {
     const flat: LinhaContaMensal[] = [];
-    grouped.forEach((cat) => {
-      (cat.accounts ?? []).forEach((acc) => {
-        (acc.transactions ?? []).forEach((t) => {
-          flat.push({
-            id: t.id,
-            idAccount: acc.id,
-            name: t.name,
-            value: t.value,
-            date: t.date,
-            categoryId: cat.categoryId,
-            categoryName: cat.categoryName,
-            subCategory: cat.subCategory ?? '',
-            status: t.status,
-            statusSalvo: t.status,
-            desbloqueiaCampos: false,
-          });
-        });
+
+    for (const t of items ?? []) {
+      flat.push({
+        id: t.id,
+        idAccount: t.idAccount ?? 0,
+        name: t.name,
+        value: t.value,
+        date: new Date(t.date), // aqui é string ISO -> Date OK
+        categoryId: t.categoryId ?? t.account.categoryId,
+        categoryName: await this.buscarCategoria(t.categoryId ?? t.account.categoryId),
+        subCategory:  await this.buscarSubCategoria(t.categoryId ?? t.account.categoryId),      // você não tem isso nesse JSON
+        status: t.status,
+        statusSalvo: t.status,
+        desbloqueiaCampos: false,
       });
-    });
+    }
+
     return flat;
+  }
+
+  async buscarCategoria(id: any){    
+    var categoria = this.categorias.find(c => c.id === id);
+    if (!categoria) return '';
+    return categoria.name;
+  }
+
+  async buscarSubCategoria(id: any){    
+    var categoria = this.categorias.find(c => c.id === id);
+    if (!categoria) return '';
+    return categoria.subCategory;
   }
 
   // ===== computed =====

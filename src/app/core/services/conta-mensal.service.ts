@@ -6,9 +6,9 @@ import { AgrupamentoContaMensal, ContaMensal, LinhaContaMensal } from '../models
 export class ContaMensalService {
   constructor(private api: ApiService) {}
 
-  getGroupingByMonth(yyyymm: string): Promise<AgrupamentoContaMensal[]> {
+  getGroupingByMonth(yyyymm: string): Promise<any[]> {
     // ajuste endpoint/params conforme seu backend
-    return this.api.get<AgrupamentoContaMensal[]>('/GetTransactionGroupingByDate/' + yyyymm);
+    return this.api.get<any[]>('/GetTransactionGroupingByDate/' + yyyymm);
   }
   
   GetTransactionByDate(yyyymm: string): Promise<ContaMensal[]> {

@@ -2,18 +2,20 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { ExtratoBancarioRoutingModule } from './extrato-bancario-routing.module';
-import { ExtratoBancarioListComponent } from './extrato-bancario-list/extrato-bancario-list.component';
-import { ExtratoBancarioFormComponent } from './extrato-bancario-form/extrato-bancario-form.component';
-
+import { ExtratoBancarioDetalhesComponent } from './extrato-bancario-detalhes/extrato-bancario-detalhes.component';
+import { ExtratoBancarioResumoComponent } from './extrato-bancario-resumo/extrato-bancario-resumo.component';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [
-    ExtratoBancarioListComponent,
-    ExtratoBancarioFormComponent
+    ExtratoBancarioDetalhesComponent,
+    ExtratoBancarioResumoComponent
   ],
   imports: [
     CommonModule,
-    ExtratoBancarioRoutingModule
+    ExtratoBancarioRoutingModule,
+    ReactiveFormsModule,
+    FormsModule
   ]
 })
 export class ExtratoBancarioModule { }

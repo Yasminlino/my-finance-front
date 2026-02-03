@@ -9,6 +9,7 @@ import { ContaMensalTotaisComponent } from './conta-mensal-totais/conta-mensal-t
 import { ContaMensalEstruturaComponent } from './conta-mensal-estrutura/conta-mensal-estrutura.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {  ModalAdicionarEmLoteComponent } from './components/modal-adicionar-em-lote/modal-adicionar-em-lote.component';
+import { ModalNovaContaMensalComponent } from './components/modal-nova-conta-mensal/modal-nova-conta-mensal.component';
 
 
 @NgModule({
@@ -18,7 +19,8 @@ import {  ModalAdicionarEmLoteComponent } from './components/modal-adicionar-em-
     ContaMensalFiltrosComponent,
     ContaMensalTotaisComponent,
     ContaMensalEstruturaComponent,
-    ModalAdicionarEmLoteComponent
+    ModalAdicionarEmLoteComponent,
+    ModalNovaContaMensalComponent
   ],
   imports: [
     CommonModule,

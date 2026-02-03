@@ -16,6 +16,10 @@ export class CategoryService {
      return this.api.get<Category[]>('/GetCategories');
   }
 
+  GetCategoryById(id: number): Promise<Category> {
+    return this.api.get<Category>('/GetCategoryById', id);
+  }
+
   create(payload: { name: string; subCategory: string }): Promise<any> {
     return this.api.post('/CreateCategory', payload);
   }

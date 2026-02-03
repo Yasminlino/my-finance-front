@@ -1,0 +1,276 @@
+<div class="page-wrapper">
+  <div class="page-body">
+    <div class="container-xl">
+      <!-- ALERT -->
+      <div *ngIf="alert.message" class="alert" [class.alert-success]="alert.type==='success'"
+        [class.alert-danger]="alert.type==='error'" [class.alert-warning]="alert.type==='warning'">
+        {{ alert.message }}
+      </div>
+
+      <!-- HEADER -->
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+          <div class="text-muted small">Financeiro</div>
+          <h3 class="m-0">
+            Detalhes — {{ headerBancoNome }} / {{ headerTipoContaNome }}
+            <span *ngIf="isCreditCard" class="text-muted">(Cartão de crédito)</span>
+          </h3>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary" (click)="back()">Voltar</button>
+          <button class="btn btn-primary" (click)="openAddModal()">Adicionar lançamento</button>
+        </div>
+      </div>
+
+      <!-- FILTROS + RESUMO -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+              <label class="form-label text-muted mb-1">Data (de)</label>
+              <input type="date" class="form-control" (ngModel)="dateFrom" />
+            </div>
+
+            <div class="col-12 col-md-3">
+              <label class="form-label text-muted mb-1">Data (até)</label>
+              <input type="date" class="form-control" (ngModel)="dateTo" />
+            </div>
+
+            <div class="col-12 col-md-2">
+              <label class="form-label text-muted mb-1">Tipo lançamento</label>
+              <select class="form-select" (ngModel)="tipoLancamentoFilter">
+                <option value="">Todos</option>
+                <option *ngFor="let t of tipoLancamentoOptions" [value]="t">{{ t }}</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label text-muted mb-1">Categoria</label>
+              <select class="form-select" (ngModel)="categoriaFilter">
+                <option value="">Todas</option>
+                <option *ngFor="let c of categorias" [value]="c.id">
+                  {{c.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label text-muted mb-1">Descrição / Observação</label>
+              <input type="text" class="form-control" placeholder="Busca também na observação manual"
+                (ngModel)="descricaoFilter" />
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label text-muted mb-1">Pessoa transação</label>
+              <input type="text" class="form-control" placeholder="Ex.: João" (ngModel)="pessoaFilter" />
+            </div>
+
+            <div class="col-12 col-md-2">
+              <label class="form-label text-muted mb-1">Valor mínimo</label>
+              <input type="number" step="0.01" class="form-control text-end" (ngModel)="minValue" />
+            </div>
+
+            <div class="col-12 col-md-2">
+              <label class="form-label text-muted mb-1">Valor máximo</label>
+              <input type="number" step="0.01" class="form-control text-end" (ngModel)="maxValue" />
+            </div>
+
+            <div class="col-12 col-md-2 d-flex gap-2">
+              <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">Limpar</button>
+              <button class="btn btn-outline-primary w-100" (click)="refresh()">Atualizar</button>
+            </div>
+          </div>
+
+          <hr />
+
+          <div class="d-flex flex-wrap gap-3 justify-content-end">
+            <div class="text-muted">Itens: <strong>{{ totalItens }}</strong></div>
+            <div class="text-success">Entrada: <strong>{{ money(totalEntrada) }}</strong></div>
+            <div class="text-danger">Saída: <strong>{{ money(totalSaida) }}</strong></div>
+            <div class="text-primary">Total: <strong>{{ money(totalValor) }}</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABELA -->
+      <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="bg-body-tertiary">
+              <tr class="border-bottom">
+                <th>Data</th>
+                <th>Tipo</th>
+
+                <ng-container *ngIf="isCreditCard">
+                  <th>Parcela</th>
+                  <th>Fatura</th>
+                </ng-container>
+
+                <th>Categoria</th>
+                <th>Descrição</th>
+                <th>Obs. manual</th>
+                <th>Pessoa</th>
+                <th class="text-end">Valor</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngIf="loading">
+                <td [attr.colspan]="isCreditCard ? 10 : 8" class="text-center text-primary py-4 fw-medium">
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Carregando detalhes...
+                </td>
+              </tr>
+
+              <tr *ngIf="!loading && filteredExtratos.length === 0">
+                <td [attr.colspan]="isCreditCard ? 10 : 8" class="text-center text-secondary py-4">
+                  Nenhum lançamento encontrado com os filtros aplicados.
+                </td>
+              </tr>
+
+              <tr *ngFor="let e of filteredExtratos">
+                <td>{{ e.dataMovimentacao }}</td>
+                <td>{{ e.tipoLancamento || '—' }}</td>
+
+                <ng-container *ngIf="isCreditCard">
+                  <td>
+                    <ng-container *ngIf="e.numeroParcela && e.totalParcelas; else semParcela">
+                      {{ e.numeroParcela }}/{{ e.totalParcelas }}
+                    </ng-container>
+                    <ng-template #semParcela>—</ng-template>
+                  </td>
+                  <td>{{ e.numeroFatura || '—' }}</td>
+                </ng-container>
+
+                <td>{{ e.categoriaNome || '—' }}</td>
+                <td>{{ (e.descricao || '—') }}</td>
+                <td>{{ e.observacao || e.descricaoManual || '—' }}</td>
+                <td>{{ e.nomePessoaTransacao || '—' }}</td>
+
+                <td class="text-end fw-bold" [class.text-danger]="e.valor ?? 0 < 0"
+                  [class.text-success]="e.valor ?? 0 >= 0">
+                  {{ money(e.valor) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MODAL ADICIONAR -->
+      <ng-container *ngIf="showAddModal">
+        <div class="modal show d-block" tabindex="-1" role="dialog">
+          <div class="modal-dialog modal-lg" style="margin-top:100px" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">
+                  Adicionar lançamento manual <span *ngIf="isCreditCard">(Cartão de crédito)</span>
+                </h5>
+                <button type="button" class="btn-close" (click)="closeAddModal()" [disabled]="saving"></button>
+              </div>
+
+              <div class="modal-body">
+                <div class="row g-3">
+                  <div class="col-12 col-md-4">
+                    <label class="form-label">Data</label>
+                    <input type="date" class="form-control" (ngModel)="manualData" [disabled]="saving" />
+                  </div>
+
+                  <div class="col-12 col-md-4">
+                    <label class="form-label">Tipo lançamento</label>
+                    <select class="form-select" (ngModel)="manualTipoLancamento" [disabled]="saving">
+                      <option value="CREDITO">CREDITO</option>
+                      <option value="DEBITO">DEBITO</option>
+                    </select>
+                    <div class="form-text">
+                      Se for <strong>DEBITO</strong> e você digitar positivo, eu salvo negativo.
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-md-4">
+                    <label class="form-label">Valor</label>
+                    <input type="number" step="0.01" class="form-control text-end" (ngModel)="manualValor"
+                      [disabled]="saving" />
+                  </div>
+
+                  <ng-container *ngIf="isCreditCard">
+                    <div class="col-12 col-md-4">
+                      <label class="form-label">Número da fatura (opcional)</label>
+                      <input type="text" class="form-control" placeholder="Ex.: 2026-01" (ngModel)="manualNumeroFatura"
+                        [disabled]="saving" />
+                    </div>
+
+                    <div class="col-12 col-md-4 d-flex align-items-end">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" (ngModel)="manualParcelado" [disabled]="saving"
+                          id="parceladoCheck" />
+                        <label class="form-check-label" for="parceladoCheck">Compra parcelada</label>
+                      </div>
+                    </div>
+
+                    <ng-container *ngIf="manualParcelado">
+                      <div class="col-12 col-md-4">
+                        <label class="form-label">Total de parcelas</label>
+                        <input type="number" min="2" class="form-control" (ngModel)="manualTotalParcelas"
+                          [disabled]="saving" />
+                      </div>
+
+                      <div class="col-12 col-md-6 d-flex align-items-end">
+                        <div class="form-check">
+                          <input class="form-check-input" type="checkbox" (ngModel)="manualGerarTodasParcelas"
+                            [disabled]="saving" id="gerarParcelasCheck" />
+                          <label class="form-check-label" for="gerarParcelasCheck">
+                            Gerar todas as parcelas automaticamente
+                          </label>
+                        </div>
+                      </div>
+                    </ng-container>
+                  </ng-container>
+
+                  <div class="col-12 col-md-6">
+                    <label class="form-label">Categoria</label>
+                    <select class="form-select" (ngModel)="manualCategoriaId" [disabled]="saving">
+                      <option value="">Selecione...</option>
+                      <option *ngFor="let c of categorias" [value]="c.id">
+                        {{ c.name }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="col-12 col-md-6">
+                    <label class="form-label">Pessoa transação</label>
+                    <input type="text" class="form-control" (ngModel)="manualPessoa" [disabled]="saving" />
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label">Descrição</label>
+                    <input type="text" class="form-control" (ngModel)="manualDescricao" [disabled]="saving" />
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label">Observação (manual)</label>
+                    <textarea class="form-control" rows="3" (ngModel)="manualObservacao" [disabled]="saving"></textarea>
+                  </div>
+
+                  <div class="col-12 col-md-6">
+                    <label class="form-label">Identificador</label>
+                    <input type="text" class="form-control" (ngModel)="manualIdentificador" [disabled]="saving" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="modal-footer">
+                <button class="btn btn-secondary" (click)="closeAddModal()" [disabled]="saving">Cancelar</button>
+                <button class="btn btn-primary" (click)="handleSaveManual()" [disabled]="saving">
+                  {{ saving ? 'Salvando...' : 'Salvar' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+      </ng-container>
+    </div>
+  </div>
+</div>
