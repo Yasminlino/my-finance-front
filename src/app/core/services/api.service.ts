@@ -4,12 +4,12 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private baseUrl = 'http://localhost:5034'; // ajuste aqui
+  private baseUrl = 'http://localhost:5034'; 
 
   constructor(private http: HttpClient) {}
 
-  get<T>(url: string): Promise<T> {
-    return firstValueFrom(this.http.get<T>(this.baseUrl + url));
+  get<T>(url: string, id?: number): Promise<T> {
+    return firstValueFrom(this.http.get<T>(this.baseUrl + url + (id ? '/' + id : '')));
   }
 
   post<T>(url: string, body: any): Promise<T> {

@@ -1,0 +1,58 @@
+<!-- Backdrop -->
+<div class="modal-backdrop-custom" (click)="close(false)"></div>
+
+<!-- Modal -->
+<div class="modal-custom" role="dialog" aria-modal="true">
+    <div class="modal-card card">
+        <div class="card-header">
+            <h3 class="card-title m-0">Adicionar nova conta</h3>
+            <button type="button" class="btn-close" (click)="close(false)" aria-label="Fechar"></button>
+        </div>
+
+        <div class="card-body" [formGroup]="form">
+            <div class="mb-3">
+                <label class="form-label">Nome conta</label>
+                <input class="form-control" formControlName="nomeConta"
+                    [class.is-invalid]="form.controls.nomeConta.touched && form.controls.nomeConta.invalid" />
+                <div class="invalid-feedback"
+                    *ngIf="form.controls.nomeConta.touched && form.controls.nomeConta.invalid">
+                    Informe um nome válido.
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Valor</label>
+                <input class="form-control" type="number" formControlName="valor"
+                    [class.is-invalid]="form.controls.valor.touched && form.controls.valor.invalid" />
+                <div class="invalid-feedback" *ngIf="form.controls.valor.touched && form.controls.valor.invalid">
+                    Informe um valor.
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Dia Vencimento</label>
+                <input class="form-control" formControlName="dataOperacao" maxlength="2" placeholder="Ex: 10" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Categoria</label>
+                <select class="form-select" formControlName="categoryid"
+                    [class.is-invalid]="form.controls.categoryid.touched && form.controls.categoryid.invalid">
+                    <option [ngValue]="null">Selecione...</option>
+                    <option *ngFor="let c of categorias" [ngValue]="c.id">{{ c.name }}</option>
+                </select>
+                <div class="invalid-feedback"
+                    *ngIf="form.controls.categoryid.touched && form.controls.categoryid.invalid">
+                    Selecione uma categoria.
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary" (click)="close(false)">Cancelar</button>
+            <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving">
+                {{ saving ? 'Salvando...' : 'Salvar' }}
+            </button>
+        </div>
+    </div>
+</div>

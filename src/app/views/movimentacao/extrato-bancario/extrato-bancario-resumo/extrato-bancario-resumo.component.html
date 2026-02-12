@@ -1,0 +1,285 @@
+<div class="page-wrapper">
+  <div class="page-body">
+    <div class="container-xl">
+      <!-- ALERT -->
+      <div *ngIf="alert.message" class="alert" [class.alert-success]="alert.type==='success'"
+        [class.alert-danger]="alert.type==='error'" [class.alert-warning]="alert.type==='warning'">
+        {{ alert.message }}
+      </div>
+
+      <!-- HEADER -->
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+          <div class="text-muted small">Financeiro</div>
+          <h3 class="m-0">Extrato Bancário (Resumo)</h3>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary" (click)="openImportModal()">Importar Extrato</button>
+          <button class="btn btn-outline-primary" (click)="openManualModal()">Adicionar item</button>
+        </div>
+      </div>
+
+      <!-- FILTROS -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-4 col-lg-3">
+              <label class="form-label text-muted mb-1">Mês</label>
+              <input type="month" class="form-control" [(ngModel)]="monthFilter" (ngModelChange)="refresh()" />
+            </div>
+
+            <div class="col-12 col-md-4 col-lg-3">
+              <label class="form-label text-muted mb-1">Banco</label>
+              <select class="form-select" [(ngModel)]="bancoFilter" (change)="refresh()">
+                <option value="">Todos</option>
+                <option *ngFor="let b of bancos" [value]="b.id">{{ b.nomeBanco }}</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-4 col-lg-3">
+              <label class="form-label text-muted mb-1">Tipo Conta</label>
+              <select class="form-select" [(ngModel)]="tipoContaFilter">
+                <option value="">Todos</option>
+                <option *ngFor="let t of tiposConta" [value]="t.id">
+                  {{ t.nomeTipoCartao || ('Tipo #' + t.id) }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABELA -->
+      <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+          <table class="table table-vcenter table-hover mb-0">
+            <thead class="bg-body-tertiary bg-body sticky-top">
+              <tr class="border-bottom">
+                <th>Banco</th>
+                <th>Tipo Conta</th>
+                <th class="text-end">Total Entradas</th>
+                <th class="text-end">Total Saídas</th>
+                <th class="text-center">Ações</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngIf="loading">
+                <td colspan="7" class="text-center text-secondary py-4">Carregando...</td>
+              </tr>
+
+              <tr *ngIf="!loading && resumo.length === 0">
+                <td colspan="7" class="text-center text-secondary py-4">
+                  Nenhuma transação encontrada com os filtros aplicados.
+                </td>
+              </tr>
+
+              <ng-container *ngFor="let row of resumo; trackBy: trackById">
+                <tr>
+                  <td>{{ row.bancoNome }}</td>
+                  <td>{{ row.tipoContaNome }}</td>
+                  <td class="text-end text-success fw-bold">{{ money(row.totalEntrada) }}</td>
+                  <td class="text-end text-danger fw-bold">{{ money(row.totalSaida) }}</td>
+
+                  <!-- AÇÕES: travadas quando locked (exceto desbloquear, que fica no status) -->
+                  <td class="text-center">
+                    <div class="btn-list d-inline-flex">
+                      <button class="btn btn-icon btn-soft-success" type="button" title="Salvar"
+                        (click)="goToDetalhe(row)">
+                        ✏️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </ng-container>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MODAL IMPORTAÇÃO -->
+      <ng-container *ngIf="showImportModal">
+        <div class="modal show d-block" tabindex="-1" role="dialog">
+          <div class="modal-dialog modal-md" style="margin-top:100px" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Importar extrato</h5>
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="closeImportModal()"
+                  [disabled]="importLoading">
+                  ✕
+                </button>
+              </div>
+
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label">Banco</label>
+                  <select class="form-select" [value]="selectedBancoId"
+                    (change)="onBancoModalChange(($any($event.target)).value)" [disabled]="importLoading">
+                    <option value="">Selecione...</option>
+                    <option *ngFor="let b of bancos" [value]="b.id">{{ b.nomeBanco }}</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Tipo Conta (automático)</label>
+                  <select class="form-select" [value]="selectedTipoContaId" disabled>
+                    <option value="">{{ selectedTipoContaId ? 'Carregado' : '—' }}</option>
+                    <option *ngFor="let t of tiposConta" [value]="t.id">{{ t.nomeTipoCartao || ('Tipo #' + t.id) }}
+                    </option>
+                  </select>
+                  <small class="text-muted">O tipo de conta é definido pelo banco selecionado.</small>
+                </div>
+
+                <div class="mb-2">
+                  <label class="form-label">Arquivo</label>
+                  <input type="file" class="form-control" accept=".ofx,.csv,.xls,.xlsx,.txt,.pdf"
+                    (change)="onFileSelected($event)" [disabled]="importLoading" />
+                </div>
+              </div>
+
+              <div class="modal-footer">
+                <button class="btn btn-secondary" (click)="closeImportModal()"
+                  [disabled]="importLoading">Cancelar</button>
+
+                <button class="btn btn-secondary" (click)="onSave($event)" [disabled]="importLoading">Salvar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+      </ng-container>
+
+      <!-- MODAL ITEM MANUAL -->
+      <ng-container *ngIf="showManualModal">
+        <div class="modal show d-block" tabindex="-1" role="dialog">
+          <div class="modal-dialog modal-lg" style="margin-top:100px" role="document">
+            <div class="modal-content">
+              <div class="modal-header justify-content-between p-3">
+                <h5 class="modal-title">Adicionar item manual</h5>
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="closeManualModal()"
+                  [disabled]="savingManual">✕</button>
+              </div>
+
+              <div class="modal-body">
+                <div class="row g-3">
+                  <div class="col-12 col-md-4">
+                    <label class="form-label">Data</label>
+                    <input type="date" class="form-control" [value]="manualForm.dataMovimentacao"
+                      (input)="setManual('dataMovimentacao', ($any($event.target)).value)" />
+                  </div>
+
+                  <div class="col-12 col-md-4">
+                    <label class="form-label">Tipo</label>
+                    <select class="form-select" [value]="manualForm.tipo"
+                      (change)="setManual('tipo', ($any($event.target)).value)">
+                      <option value="Entrada">Entrada</option>
+                      <option value="Saída">Saída</option>
+                    </select>
+                  </div>
+
+                  <div class="col-12 col-md-4">
+                    <label class="form-label">Valor</label>
+                    <input type="text" inputmode="decimal" class="form-control" [value]="manualForm.valor"
+                      appMoneyMaskBR (input)="setManual('valor', ($any($event.target)).value)" />
+                  </div>
+
+
+                  <div class="col-12 col-md-6">
+                    <label class="form-label">Banco</label>
+                    <select class="form-select" [value]="manualForm.bancoId"
+                      (change)="setManual('bancoId', ($any($event.target)).value)">
+                      <option value="">Selecione...</option>
+                      <option *ngFor="let b of bancos" [value]="b.id">{{ b.nomeBanco }}</option>
+                    </select>
+                  </div>
+
+                  <div class="col-12 col-md-6">
+                    <label class="form-label">Tipo Conta / Cartão</label>
+                    <select class="form-select" [ngModel]="manualForm.tipoCartaoId" disabled>
+                      <option [ngValue]="manualForm.tipoCartaoId">
+                        {{ manualForm.tipoCartaoNome || '—' }}
+                      </option>
+                    </select>
+
+                    <small class="text-muted">O tipo conta/cartão é definido pelo banco selecionado.</small>
+                  </div>
+                
+
+                  <div class="col-12 col-md-6">
+                    <label class="form-label">Categoria (opcional)</label>
+                    <select class="form-select" [value]="manualForm.categoriaId"
+                      (change)="setManual('categoriaId', ($any($event.target)).value)">
+                      <option value="">Selecione...</option>
+                      <option *ngFor="let c of categorias" [value]="c.id">
+                        {{ c.name }}
+                      </option>
+                    </select>
+                  </div>
+
+                   <div class="col-12 col-md-6">
+                    <label class="form-label text-muted mb-1">Pessoa/ Estabelecimento</label>
+                    <input type="text" class="form-control" [value]="manualForm.pessoaTransacao"
+                      (input)="setManual('pessoaTransacao', ($any($event.target)).value)" />
+                  </div>
+
+                  <div class="col-12 col-md-6">
+                    <label class="form-label">Descrição (opcional)</label>
+                    <input type="text" class="form-control" [value]="manualForm.descricao"
+                      (input)="setManual('descricao', ($any($event.target)).value)" />
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label">Observação (opcional)</label>
+                    <textarea class="form-control" rows="3" [value]="manualForm.observacao"
+                      (input)="setManual('observacao', ($any($event.target)).value)"></textarea>
+                  </div>
+
+                  <!-- PARCELAMENTO (só se crédito) -->
+                  <ng-container *ngIf="isCreditoSelecionado">
+                    <div class="col-12">
+                      <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" [checked]="manualForm.parcelado"
+                          (change)="setManual('parcelado', ($any($event.target)).checked)" />
+                        <label class="form-check-label">Compra parcelada</label>
+                      </div>
+                    </div>
+
+                    <ng-container *ngIf="manualForm.parcelado">
+                      <div class="col-12 col-md-4">
+                        <label class="form-label">Total de parcelas</label>
+                        <input type="number" min="2" class="form-control" [value]="manualForm.totalParcelas"
+                          (input)="setManual('totalParcelas', ($any($event.target)).value)" />
+                      </div>
+
+                      <div class="col-12 col-md-4">
+                        <label class="form-label">Parcela atual</label>
+                        <input type="number" min="1" class="form-control" [value]="manualForm.numeroParcela"
+                          (input)="setManual('numeroParcela', ($any($event.target)).value)" />
+                      </div>
+
+                      <div class="col-12 col-md-4">
+                        <label class="form-label">Grupo parcelamento (opcional)</label>
+                        <input type="text" class="form-control" [value]="manualForm.grupoParcelamentoId"
+                          (input)="setManual('grupoParcelamentoId', ($any($event.target)).value)" />
+                      </div>
+                    </ng-container>
+                  </ng-container>
+                </div>
+              </div>
+
+              <div class="modal-footer">
+                <button class="btn btn-secondary" (click)="closeManualModal()"
+                  [disabled]="savingManual">Cancelar</button>
+                <button class="btn btn-primary" (click)="saveManualItem()" [disabled]="savingManual">
+                  {{ savingManual ? 'Salvando...' : 'Salvar' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+      </ng-container>
+    </div>
+  </div>
+</div>

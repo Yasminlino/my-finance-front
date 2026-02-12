@@ -1,0 +1,98 @@
+<!-- Backdrop -->
+<div class="modal-backdrop show my-backdrop" (click)="close(false)"></div>
+
+<!-- Modal wrapper -->
+<div class="modal show" tabindex="-1" role="dialog" [ngStyle]="{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '1rem',
+    overflowY: 'auto'
+  }">
+    <!-- Alert -->
+    <div class="position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 1100; width: min(720px, 92vw);">
+        <div *ngIf="alert.message" class="alert" [class.alert-danger]="alert.type==='error'"
+            [class.alert-success]="alert.type==='success'">
+            {{ alert.message }}
+        </div>
+    </div>
+
+    <!-- Dialog -->
+    <div class="modal-dialog" role="document" [ngStyle]="{ width: '100%', maxWidth: '720px', margin: 0 }">
+        <div class="modal-content" [ngStyle]="{ maxHeight: '80vh', overflow: 'hidden' }">
+            <div class="modal-header">
+                <h4 class="modal-title m-0">Contas cadastradas</h4>
+
+                <button type="button" class="btn btn-close" aria-label="Close" (click)="close(false)"></button>
+            </div>
+
+            <!-- Body com scroll -->
+            <div class="modal-body" style="overflow-y: auto;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="form-check">
+                        <input id="check-all" class="form-check-input" type="checkbox" (change)="toggleAll()"
+                            [checked]="allSelected && selectableAccounts.length > 0"
+                            [disabled]="selectableAccounts.length === 0 || saving" />
+                        <label class="form-check-label" for="check-all">
+                            Selecionar todos ({{ selectableAccounts.length }})
+                        </label>
+                    </div>
+
+                    <small class="text-muted">
+                        Selecionados: <strong>{{ selectedCount }}</strong>
+                    </small>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr class="info colorwhite">
+                                <th style="width: 48px;"></th>
+                                <th>Nome</th>
+                                <th class="text-nowrap">Valor</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <ng-container *ngIf="(contas?.length ?? 0) > 0; else emptyState">
+                                <tr *ngFor="let acc of contas">
+                                    <td>
+                                        <input type="checkbox" class="form-check-input"
+                                            [disabled]="disabledIds.has(acc.id) || saving"
+                                            [checked]="selectedIds.has(acc.id)" (change)="toggleOne(acc.id)"
+                                            [attr.aria-label]="'Selecionar conta ' + acc.name" />
+                                    </td>
+
+                                    <td [class.text-muted]="disabledIds.has(acc.id)">{{ acc.name }}</td>
+
+                                    <td [class.text-muted]="disabledIds.has(acc.id)">
+                                        {{ money(acc.value) }}
+                                    </td>
+                                </tr>
+                            </ng-container>
+
+                            <ng-template #emptyState>
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-4">
+                                        Nenhuma conta encontrada.
+                                    </td>
+                                </tr>
+                            </ng-template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="close(false)" [disabled]="saving">
+                    Fechar
+                </button>
+
+                <button type="button" class="btn btn-primary" (click)="handleSave()"
+                    [disabled]="saving || selectedIds.size === 0">
+                    {{ saving ? 'Adicionando...' : 'ADICIONAR ITENS' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,31 @@
+<div class="row g-2 align-items-center">
+  <div class="col-12 col-lg-4">
+    <div class="page-pretitle">Financeiro</div>
+    <h2 class="page-title">Contas a Pagar</h2>
+  </div>
+
+  <div class="col-12 col-lg-8 d-print-none">
+    <div class="d-flex justify-content-end gap-2 flex-wrap">
+      <div class="input-icon">
+        <input class="form-control"
+               type="month"
+               [value]="month"
+               (change)="monthChange.emit(($any($event.target)).value)" />
+      </div>
+
+      <button class="btn btn-outline-secondary" type="button" (click)="toggleToolbar.emit()">
+        ⌄
+      </button>
+    </div>
+
+    <div class="collapse" [class.show]="showToolbar">
+      <div class="d-flex justify-content-end mt-2">
+        <div class="btn-list">
+          <button class="btn btn-primary btn-lg-icon" type="button" (click)="openAddBatch.emit()">➕ Adicionar em lote</button>
+          <button class="btn btn-primary btn-lg-icon" type="button" (click)="openCreate.emit()">➕ Nova transação</button>
+          <button class="btn btn-outline-secondary btn-lg-icon" type="button" (click)="refresh.emit()">⟳ Atualizar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
