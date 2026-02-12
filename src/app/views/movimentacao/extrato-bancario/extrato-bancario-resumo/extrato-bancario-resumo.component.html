@@ -86,8 +86,8 @@
                   <td class="text-center">
                     <div class="btn-list d-inline-flex">
                       <button class="btn btn-icon btn-soft-success" type="button" title="Salvar"
-                        (click)="goToDetalhe(row.id)">
-                        💾
+                        (click)="goToDetalhe(row)">
+                        ✏️
                       </button>
                     </div>
                   </td>
@@ -141,6 +141,8 @@
               <div class="modal-footer">
                 <button class="btn btn-secondary" (click)="closeImportModal()"
                   [disabled]="importLoading">Cancelar</button>
+
+                <button class="btn btn-secondary" (click)="onSave($event)" [disabled]="importLoading">Salvar</button>
               </div>
             </div>
           </div>
@@ -153,7 +155,7 @@
         <div class="modal show d-block" tabindex="-1" role="dialog">
           <div class="modal-dialog modal-lg" style="margin-top:100px" role="document">
             <div class="modal-content">
-              <div class="modal-header">
+              <div class="modal-header justify-content-between p-3">
                 <h5 class="modal-title">Adicionar item manual</h5>
                 <button type="button" class="btn btn-sm btn-outline-secondary" (click)="closeManualModal()"
                   [disabled]="savingManual">✕</button>
@@ -171,16 +173,17 @@
                     <label class="form-label">Tipo</label>
                     <select class="form-select" [value]="manualForm.tipo"
                       (change)="setManual('tipo', ($any($event.target)).value)">
-                      <option value="ENTRADA">Entrada</option>
-                      <option value="SAIDA">Saída</option>
+                      <option value="Entrada">Entrada</option>
+                      <option value="Saída">Saída</option>
                     </select>
                   </div>
 
                   <div class="col-12 col-md-4">
                     <label class="form-label">Valor</label>
-                    <input type="number" step="0.01" class="form-control" [value]="manualForm.valor"
-                      (input)="setManual('valor', ($any($event.target)).value)" />
+                    <input type="text" inputmode="decimal" class="form-control" [value]="manualForm.valor"
+                      appMoneyMaskBR (input)="setManual('valor', ($any($event.target)).value)" />
                   </div>
+
 
                   <div class="col-12 col-md-6">
                     <label class="form-label">Banco</label>
@@ -193,11 +196,15 @@
 
                   <div class="col-12 col-md-6">
                     <label class="form-label">Tipo Conta / Cartão</label>
-                    <select class="form-select" [value]="manualForm.tipoCartaoId" disabled>
-                      <option value="">{{ manualForm.tipoCartaoId ? 'Carregado' : '—' }}</option>
+                    <select class="form-select" [ngModel]="manualForm.tipoCartaoId" disabled>
+                      <option [ngValue]="manualForm.tipoCartaoId">
+                        {{ manualForm.tipoCartaoNome || '—' }}
+                      </option>
                     </select>
+
                     <small class="text-muted">O tipo conta/cartão é definido pelo banco selecionado.</small>
                   </div>
+                
 
                   <div class="col-12 col-md-6">
                     <label class="form-label">Categoria (opcional)</label>
@@ -208,6 +215,12 @@
                         {{ c.name }}
                       </option>
                     </select>
+                  </div>
+
+                   <div class="col-12 col-md-6">
+                    <label class="form-label text-muted mb-1">Pessoa/ Estabelecimento</label>
+                    <input type="text" class="form-control" [value]="manualForm.pessoaTransacao"
+                      (input)="setManual('pessoaTransacao', ($any($event.target)).value)" />
                   </div>
 
                   <div class="col-12 col-md-6">

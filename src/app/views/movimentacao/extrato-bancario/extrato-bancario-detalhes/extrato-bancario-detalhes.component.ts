@@ -6,6 +6,7 @@ import { Category, CategoryService } from 'src/app/core/services/category.servic
 import { TipoCartaoService, TipoCartaoDto } from 'src/app/core/services/tipo-cartao.service';
 import { ContaService } from 'src/app/core/services/contas.service';
 import { ExtratoBancarioService, ExtratoItemDto } from 'src/app/core/services/extrato-bancario.service';
+import { isoDateMinusHours, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
 
 type AlertState = { type: '' | 'success' | 'error' | 'warning'; message: string };
 
@@ -54,10 +55,10 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
   // filtros locais
   dateFrom = '';
   dateTo = '';
-  tipoLancamentoFilter = '';
+  tipoLancamentoFilter: string | '' = '';
   descricaoFilter = '';
   pessoaFilter = '';
-  categoriaFilter = '';
+  categoriaFilter: number | '' = '';
   minValue = '';
   maxValue = '';
 
@@ -65,9 +66,9 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
   showAddModal = false;
   saving = false;
 
-  manualData = '';
+  manualData = isoDateMinusHours();
   manualValor = '';
-  manualTipoLancamento = 'DEBITO';
+  manualTipoLancamento = 'Entrada';
   manualDescricao = '';
   manualPessoa = '';
   manualIdentificador = '';
@@ -76,7 +77,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
 
   // cartão
   manualParcelado = false;
-  manualTotalParcelas = 2;
+  manualQuantidadeParcelas = 2;
   manualGerarTodasParcelas = true;
   manualNumeroFatura = '';
 
@@ -88,7 +89,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
     private tipoCartaoService: TipoCartaoService,
     private contaService: ContaService,
     private extratoService: ExtratoBancarioService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.sub.add(
@@ -97,8 +98,21 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
         this.bancoId = qp.get('bancoId') ? Number(qp.get('bancoId')) : null;
         this.tipoContaId = qp.get('tipoContaId') ? Number(qp.get('tipoContaId')) : null;
 
+        console.log('Query params changed:', { month: this.month, bancoId: this.bancoId, tipoContaId: this.tipoContaId });
+
+        const firstDay = new Date(this.month + '-01T00:00:00');
+        this.dateFrom = firstDay.toISOString().substring(0, 10);
+
+        // último dia do mês
+        const lastDay = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0);
+        this.dateTo = lastDay.toISOString().substring(0, 10);
+
         await this.loadCatalogos();
+        if (!this.tipoLancamentoFilter) this.tipoLancamentoFilter = '';
+        if (!this.categoriaFilter) this.categoriaFilter = '';
+
         await this.refresh();
+
       })
     );
   }
@@ -158,6 +172,10 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
     return /cr[eé]dito/i.test(nome);
   }
 
+  get tipoLancamentoNome(): string {
+    return this.manualTipoLancamento ? 'Saída' : 'Entrada';
+  }
+
   get categoriaNomePorId(): Map<string, string> {
     const map = new Map<string, string>();
     for (const c of this.categorias) {
@@ -169,7 +187,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
   }
 
   get tipoLancamentoOptions(): string[] {
-    const set = new Set(['CREDITO', 'DEBITO']);
+    const set = new Set(['Saída', 'Entrada']);
     for (const e of this.items) {
       const tl = (e as any).tipoLancamento;
       if (tl) set.add(tl);
@@ -254,19 +272,22 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
   }
 
   get headerTipoContaNome() {
-    const t: any = this.tipoContaSelecionada;
-    if (!t) return this.tipoContaId ? `Tipo #${this.tipoContaId}` : 'Tipo Conta';
-    return t.nomeTipoCartao ?? t.nome ?? t.Nome ?? t.descricao ?? t.Descricao ?? (this.tipoContaId ? `Tipo #${this.tipoContaId}` : 'Tipo Conta');
+    const first: any = this.items[0];
+    if (!first) return this.tipoContaId ? `Tipo #${this.tipoContaId}` : 'Tipo Conta';
+    return first.nomeTipoCartao ?? first.banco?.tipoCartao?.nomeTipoCartao ?? (this.tipoContaId ? `Tipo #${this.tipoContaId}` : 'Tipo Conta');
   }
 
   // -----------------------
   // UI actions
   // -----------------------
-  back() { this.router.navigateByUrl('/ExtratoBancarioResumo'); }
+  back() { this.router.navigateByUrl('/extrato-bancario'); }
 
   clearFilters() {
-    this.dateFrom = '';
-    this.dateTo = '';
+    const firstDay = new Date(this.month + '-01T00:00:00');
+    this.dateFrom = firstDay.toISOString().substring(0, 10);
+
+    const lastDay = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0);
+    this.dateTo = lastDay.toISOString().substring(0, 10);
     this.tipoLancamentoFilter = '';
     this.categoriaFilter = '';
     this.descricaoFilter = '';
@@ -276,9 +297,9 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
   }
 
   openAddModal() {
-    this.manualData = '';
+    this.manualData = isoDateMinusHours();
     this.manualValor = '';
-    this.manualTipoLancamento = 'DEBITO';
+    this.manualTipoLancamento = 'Entrada';
     this.manualDescricao = '';
     this.manualPessoa = '';
     this.manualIdentificador = '';
@@ -286,7 +307,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
     this.manualObservacao = '';
 
     this.manualParcelado = false;
-    this.manualTotalParcelas = 2;
+    this.manualQuantidadeParcelas = 2;
     this.manualGerarTodasParcelas = true;
     this.manualNumeroFatura = '';
 
@@ -305,20 +326,16 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
       this.setAlert('error', 'Informe a data da movimentação.');
       return;
     }
-    if (this.manualValor === '' || isNaN(Number(this.manualValor))) {
+    if (this.manualValor === '') {
       this.setAlert('error', 'Informe um valor válido.');
       return;
     }
 
     this.saving = true;
     try {
-      const valorNum = Number(this.manualValor);
-      const isDebito = String(this.manualTipoLancamento).toUpperCase() === 'DEBITO';
-      const valorFinal = isDebito && valorNum > 0 ? -Math.abs(valorNum) : valorNum;
-
       const basePayload: any = {
         DataMovimentacao: this.manualData,
-        Valor: valorFinal,
+        Valor: parseMoneyBRToNumber(this.manualValor),
         TipoLancamento: this.manualTipoLancamento,
         Descricao: this.manualDescricao || null,
         NomePessoaTransacao: this.manualPessoa || null,
@@ -328,6 +345,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
         CategoriaId: this.manualCategoriaId ? Number(this.manualCategoriaId) : null,
         Observacao: this.manualObservacao || null,
         NumeroFatura: this.manualNumeroFatura || null,
+        EhParcelado: this.manualParcelado ?? false,
       };
 
       // não cartão ou não parcelado -> 1 item
@@ -338,7 +356,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
           (saved && typeof saved === 'object') ? saved : {
             id: `manual-${Date.now()}`,
             dataMovimentacao: this.manualData,
-            valor: valorFinal,
+            valor: parseMoneyBRToNumber(this.manualValor),
             tipoLancamento: this.manualTipoLancamento,
             descricao: this.manualDescricao,
             nomePessoaTransacao: this.manualPessoa,
@@ -361,21 +379,21 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
       }
 
       // cartão parcelado + gerar todas
-      const totalParcelas = Math.max(2, Number(this.manualTotalParcelas) || 2);
+      const quantidadeParcelas = Math.max(2, Number(this.manualQuantidadeParcelas) || 2);
 
       if (this.manualGerarTodasParcelas) {
         const groupKey = `PARC-${Date.now()}`;
         const created: any[] = [];
 
-        for (let p = 1; p <= totalParcelas; p++) {
+        for (let p = 1; p <= quantidadeParcelas; p++) {
           const dataParcela = addMonthsISO(this.manualData, p - 1);
 
           const payloadParcela = {
             ...basePayload,
             DataMovimentacao: dataParcela,
-            Parcelado: true,
-            NumeroParcela: p,
-            TotalParcelas: totalParcelas,
+            EhParcelado: true,
+            ParcelaAtual: p,
+            QuantidadeParcelas: quantidadeParcelas,
             GrupoParcelamento: groupKey,
           };
 
@@ -383,7 +401,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
           created.push(saved && typeof saved === 'object' ? saved : {
             id: `manual-${groupKey}-${p}`,
             dataMovimentacao: dataParcela,
-            valor: valorFinal,
+            valor: parseMoneyBRToNumber(this.manualValor),
             tipoLancamento: this.manualTipoLancamento,
             descricao: this.manualDescricao,
             nomePessoaTransacao: this.manualPessoa,
@@ -393,8 +411,8 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
             categoriaId: this.manualCategoriaId ? Number(this.manualCategoriaId) : null,
             categoriaNome: this.manualCategoriaId ? (this.categoriaNomePorId.get(String(this.manualCategoriaId)) ?? '—') : '—',
             observacao: this.manualObservacao,
-            numeroParcela: p,
-            totalParcelas,
+            parcelaAtual: p,
+            quantidadeParcelas: quantidadeParcelas,
             grupoParcelamento: groupKey,
             numeroFatura: this.manualNumeroFatura || null,
             bancoNome: this.headerBancoNome,
@@ -406,7 +424,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
         // coloca na lista (ordem coerente)
         this.localItems = [...created.reverse(), ...this.localItems];
 
-        this.setAlert('success', `Parcelamento criado: ${totalParcelas} parcelas.`);
+        this.setAlert('success', `Parcelamento criado: ${quantidadeParcelas} parcelas.`);
         this.showAddModal = false;
         return;
       }
@@ -415,8 +433,8 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
       const payloadSingle = {
         ...basePayload,
         Parcelado: true,
-        NumeroParcela: 1,
-        TotalParcelas: totalParcelas,
+        ParcelaAtual: 1,
+        QuantidadeParcelas: quantidadeParcelas,
       };
 
       const saved: any = await this.extratoService.createExtratoManualItem(payloadSingle);
@@ -425,7 +443,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
         saved && typeof saved === 'object' ? saved : {
           id: `manual-${Date.now()}`,
           dataMovimentacao: this.manualData,
-          valor: valorFinal,
+          valor: parseMoneyBRToNumber(this.manualValor),
           tipoLancamento: this.manualTipoLancamento,
           descricao: this.manualDescricao,
           nomePessoaTransacao: this.manualPessoa,
@@ -435,9 +453,9 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
           categoriaId: this.manualCategoriaId ? Number(this.manualCategoriaId) : null,
           categoriaNome: this.manualCategoriaId ? (this.categoriaNomePorId.get(String(this.manualCategoriaId)) ?? '—') : '—',
           observacao: this.manualObservacao,
-          parcelado: true,
-          numeroParcela: 1,
-          totalParcelas,
+          ehParcelado: true,
+          parcelaAtual: 1,
+          quantidadeParcelas: quantidadeParcelas,
           numeroFatura: this.manualNumeroFatura || null,
           bancoNome: this.headerBancoNome,
           tipoCartaoNome: this.headerTipoContaNome,
@@ -446,7 +464,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
         ...this.localItems,
       ];
 
-      this.setAlert('success', `Compra parcelada registrada (1/${totalParcelas}).`);
+      this.setAlert('success', `Compra parcelada registrada (1/${quantidadeParcelas}).`);
       this.showAddModal = false;
 
     } catch (e: any) {

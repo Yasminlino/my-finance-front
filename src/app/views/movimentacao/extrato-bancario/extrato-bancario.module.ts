@@ -5,11 +5,13 @@ import { ExtratoBancarioRoutingModule } from './extrato-bancario-routing.module'
 import { ExtratoBancarioDetalhesComponent } from './extrato-bancario-detalhes/extrato-bancario-detalhes.component';
 import { ExtratoBancarioResumoComponent } from './extrato-bancario-resumo/extrato-bancario-resumo.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-
+import { MoneyMaskBrDirective } from 'src/app/shared/directives/money-mask.directive';
+  
 @NgModule({
   declarations: [
     ExtratoBancarioDetalhesComponent,
-    ExtratoBancarioResumoComponent
+    ExtratoBancarioResumoComponent,
+    MoneyMaskBrDirective
   ],
   imports: [
     CommonModule,

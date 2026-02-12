@@ -68,14 +68,14 @@
                   <span class="input-group-text">R$</span>
                   <input class="form-control" type="text" formControlName="value" (focus)="$any($event.target).select()"
                     (input)="maskValueTyping(row.id, $event)" (blur)="commitValue(row.id)"
-                    [disabled]="isLocked(row.id)" />
+                    [disabled]="isLocked(row.id)" [readonly]="isLocked(row.id)"/>
                 </div>
               </td>
 
               <!-- DATE travado quando locked -->
               <td>
                 <input class="form-control form-control-sm" type="date" formControlName="date"
-                  (blur)="commitDate(row.id)" [disabled]="isLocked(row.id)" />
+                  (blur)="commitDate(row.id)" [disabled]="isLocked(row.id)" [readonly]="isLocked(row.id)"/>
               </td>
 
               <!-- STATUS: travado e com desbloquear -->

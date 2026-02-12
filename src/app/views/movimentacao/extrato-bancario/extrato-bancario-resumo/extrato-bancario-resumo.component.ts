@@ -9,6 +9,7 @@ import { ContaService } from 'src/app/core/services/contas.service';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { BancoService } from 'src/app/core/services/banco.service';
+import { isoDateMinusHours, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
 
 type AlertState = { type: '' | 'success' | 'error' | 'warning'; message: string };
 
@@ -52,13 +53,16 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
   showManualModal = false;
   savingManual = false;
+  file: any;
 
   manualForm = {
-    dataMovimentacao: new Date().toISOString().slice(0, 10),
+    dataMovimentacao: isoDateMinusHours(),
     tipo: 'SAIDA', // ENTRADA | SAIDA
     valor: '',
     bancoId: '',
     tipoCartaoId: '',
+    tipoCartaoNome: '',
+    pessoaTransacao: '',
     categoriaId: '',
     descricao: '',
     observacao: '',
@@ -131,6 +135,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
       const tipoCartaoId = (e as any).tipoCartaoId ?? (e as any).tipoCartao?.id ?? null;
       const tipoContaNome = (e as any).tipoCartaoNome ?? (e as any).tipoCartao?.nomeTipoCartao ?? '—';
+      const tipoLancamento = (e as any).tipoLancamento ?? (e as any).tipoLancamento ?? '';
 
       if (this.bancoFilter && String(bancoId) !== String(this.bancoFilter)) continue;
       if (this.tipoContaFilter && String(tipoCartaoId) !== String(this.tipoContaFilter)) continue;
@@ -150,8 +155,8 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
       const row = map.get(key);
       const v = Number((e as any).valor ?? (e as any).Valor ?? 0);
-      if (v >= 0) row.totalEntrada += v;
-      else row.totalSaida += Math.abs(v);
+      if (tipoLancamento == 'Entrada') row.totalEntrada += v;
+      else row.totalSaida += v;
     }
 
     return Array.from(map.values()).sort((a, b) => {
@@ -188,6 +193,16 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     const file = input.files?.[0];
     if (!file) return;
 
+    this.file = file;
+
+  }
+
+  async onSave(ev: Event) {
+    if(!this.file)
+      this.setAlert('error', 'Nenhum arquivo selecionado.');
+
+    const input = ev.target as HTMLInputElement;
+
     if (!this.selectedBancoId) {
       this.setAlert('error', 'Informe o banco antes de continuar.');
       input.value = '';
@@ -196,7 +211,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
     try {
       this.importLoading = true;
-      await this.extratoService.importExtrato(file, {
+      await this.extratoService.importExtrato(this.file, {
         id: Number(this.selectedBancoId),
         nomeBanco: this.selectedBancoNome,
         tipoCartaoId: this.selectedTipoContaId ? Number(this.selectedTipoContaId) : null,
@@ -218,11 +233,13 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   // -----------------------
   openManualModal() {
     this.manualForm = {
-      dataMovimentacao: new Date().toISOString().slice(0, 10),
+      dataMovimentacao: isoDateMinusHours(),
       tipo: 'SAIDA',
       valor: '',
       bancoId: '',
       tipoCartaoId: '',
+      tipoCartaoNome: '',
+      pessoaTransacao: '',
       categoriaId: '',
       descricao: '',
       observacao: '',
@@ -238,14 +255,26 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     if (!this.savingManual) this.showManualModal = false;
   }
 
+  maskValueTyping(value: any){
+    this.maskValueTyping(value);
+
+  }
+
   setManual(key: keyof typeof this.manualForm, value: any) {
     (this.manualForm as any)[key] = value;
 
     // quando escolhe banco -> preenche tipoCartaoId automaticamente
     if (key === 'bancoId') {
       const banco = this.bancos.find(b => String(b.id) === String(value));
-      const tipoCartaoId = banco?.tipoCartaoId ?? '';
-      this.manualForm.tipoCartaoId = tipoCartaoId ? String(tipoCartaoId) : '';
+      const tipoCartao = banco?.tipoCartao ?? '';
+      if (tipoCartao && typeof tipoCartao !== 'string') {
+        this.manualForm.tipoCartaoId = String(tipoCartao.id);
+        this.manualForm.tipoCartaoNome = tipoCartao.nomeTipoCartao;
+      } else {
+        this.manualForm.tipoCartaoId = '';
+        this.manualForm.tipoCartaoNome = '';
+      }
+
     }
   }
 
@@ -276,8 +305,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
       return;
     }
 
-    const valorNum = Number(this.manualForm.valor);
-    if (!valorNum || isNaN(valorNum)) {
+    if (!this.manualForm.valor) {
       this.setAlert('error', 'Informe um valor válido.');
       return;
     }
@@ -298,25 +326,23 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
     try {
       this.savingManual = true;
-
-      const valorFinal = this.manualForm.tipo === 'SAIDA'
-        ? -Math.abs(valorNum)
-        : Math.abs(valorNum);
+      console.log('this.manualForm', this.manualForm);
 
       const payload = {
         extratoBancarioId: null,
         dataMovimentacao: this.manualForm.dataMovimentacao,
-        valor: valorFinal,
-        tipoLancamento: this.manualForm.tipo === 'SAIDA' ? 'DEBITO' : 'CREDITO',
+        valor: parseMoneyBRToNumber(this.manualForm.valor),
+        tipoLancamento: this.manualForm.tipo, 
         bancoId: Number(this.manualForm.bancoId),
         tipoCartaoId: Number(this.manualForm.tipoCartaoId),
+        nomePessoaTransacao: (this.manualForm.pessoaTransacao || '').trim() || null,
         categoriaId: this.manualForm.categoriaId ? Number(this.manualForm.categoriaId) : null,
         descricao: (this.manualForm.descricao || '').trim() || null,
         observacao: (this.manualForm.observacao || '').trim() || null,
 
         ehParcelado: this.isCreditoSelecionado ? !!this.manualForm.parcelado : false,
-        totalParcelas: this.isCreditoSelecionado && this.manualForm.parcelado ? Number(this.manualForm.totalParcelas) : null,
-        numeroParcela: this.isCreditoSelecionado && this.manualForm.parcelado ? Number(this.manualForm.numeroParcela) : null,
+        quantidadeParcelas: this.isCreditoSelecionado && this.manualForm.parcelado ? Number(this.manualForm.totalParcelas) : null,
+        parcelaAtual: this.isCreditoSelecionado && this.manualForm.parcelado ? Number(this.manualForm.numeroParcela) : null,
         grupoParcelamentoId: this.isCreditoSelecionado && this.manualForm.parcelado && this.manualForm.grupoParcelamentoId?.trim()
           ? this.manualForm.grupoParcelamentoId.trim()
           : null,
@@ -341,9 +367,9 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     console.log('row', row);
     const params: any = {
       month: this.monthFilter,
+      bancoId: row.bancoId,
+      tipoContaId: row.tipoCartaoId,
     };
-    if (row?.bancoId != null) params.bancoId = row.bancoId;
-    if (row?.tipoCartaoId != null) params.tipoContaId = row.tipoCartaoId;
 
     this.router.navigate(['extrato-bancario/ExtratoBancarioDetalhe'], { queryParams: params });
   }

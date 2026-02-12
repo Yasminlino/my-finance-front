@@ -7,6 +7,10 @@ export type BancoDto = {
   saldoInicial: number;
   ativo: boolean;
   tipoCartaoId?: number | null; 
+  tipoCartao?: {
+    id: number,
+    nomeTipoCartao: string,
+  } | null;
 };
 
 export type BancoCreateUpdateDto = {
