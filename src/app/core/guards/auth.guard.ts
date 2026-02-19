@@ -7,6 +7,8 @@ export class AuthGuard implements CanActivate {
   constructor(private auth: AuthService, private router: Router) {}
 
   canActivate(): boolean | UrlTree {
-    return this.auth.token ? true : this.router.parseUrl('/login');
+    var dataExpiracao = localStorage.getItem('expiraToken');
+    var tokenValido = this.auth.token && dataExpiracao && new Date(dataExpiracao) > new Date();
+    return tokenValido ? true : this.router.parseUrl('/login');
   }
 }

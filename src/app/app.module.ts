@@ -13,7 +13,7 @@ import { AuthInterceptor } from './core/interceptors/auth.interceptor';
   declarations: [AppComponent ],
   imports: [
     BrowserModule,
-    HttpClientModule, // ✅ aqui
+    HttpClientModule,
     AppRoutingModule,
     CoreModule,
     LayoutModule,

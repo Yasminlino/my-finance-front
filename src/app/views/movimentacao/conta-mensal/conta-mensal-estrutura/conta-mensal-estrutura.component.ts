@@ -2,10 +2,19 @@ import { Component, OnInit } from '@angular/core';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { AgrupamentoContaMensal, GrupoContaMensal, LinhaContaMensal } from 'src/app/core/models/conta-mensal.model';
 import { formatCurrencyBR, formatDateInput, formatYearMonth, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
-import {Category, CategoryService} from 'src/app/core/services/category.service';
+import { Category, CategoryService } from 'src/app/core/services/category.service';
 
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
+
+type ColumnFilters = {
+  name: string[];         // ✅ agora é array
+  categoryName: string[]; // ✅ agora é array
+  subCategory: string;    // continua texto
+  value: string;          // continua texto
+  date: string;           // continua texto yyyy-mm-dd
+  status: string[];       // ✅ agora é array
+};
 
 @Component({
   selector: 'app-conta-mensal-estrutura',
@@ -34,13 +43,13 @@ export class ContaMensalEstruturaComponent implements OnInit {
   filterDateTo = '';
 
   // filtros por coluna
-  columnFilters = {
-    name: '',
-    categoryName: '',
+  columnFilters: ColumnFilters = {
+    name: [],
+    categoryName: [],
     subCategory: '',
     value: '',
     date: '',
-    status: '',
+    status: [],
   };
 
   categorias: any[] = [];
@@ -83,7 +92,7 @@ export class ContaMensalEstruturaComponent implements OnInit {
         date: new Date(t.date), // aqui é string ISO -> Date OK
         categoryId: t.categoryId ?? t.account.categoryId,
         categoryName: await this.buscarCategoria(t.categoryId ?? t.account.categoryId),
-        subCategory:  await this.buscarSubCategoria(t.categoryId ?? t.account.categoryId),      // você não tem isso nesse JSON
+        subCategory: await this.buscarSubCategoria(t.categoryId ?? t.account.categoryId),      // você não tem isso nesse JSON
         status: t.status,
         statusSalvo: t.status,
         desbloqueiaCampos: false,
@@ -93,13 +102,13 @@ export class ContaMensalEstruturaComponent implements OnInit {
     return flat;
   }
 
-  async buscarCategoria(id: any){    
+  async buscarCategoria(id: any) {
     var categoria = this.categorias.find(c => c.id === id);
     if (!categoria) return '';
     return categoria.name;
   }
 
-  async buscarSubCategoria(id: any){    
+  async buscarSubCategoria(id: any) {
     var categoria = this.categorias.find(c => c.id === id);
     if (!categoria) return '';
     return categoria.subCategory;
@@ -116,6 +125,12 @@ export class ContaMensalEstruturaComponent implements OnInit {
     const includesCI = (value: any, filter: string) => {
       if (!filter) return true;
       return String(value ?? '').toLowerCase().includes(String(filter).toLowerCase());
+    };
+
+    const inSelected = (value: any, selected: string[]) => {
+      if (!selected || selected.length === 0) return true;
+      const v = String(value ?? '').toLowerCase();
+      return selected.some(s => String(s).toLowerCase() === v);
     };
 
     return (this.rows ?? []).filter((item) => {
@@ -137,10 +152,9 @@ export class ContaMensalEstruturaComponent implements OnInit {
         }
       }
 
-      if (!includesCI(item.name, this.columnFilters.name)) return false;
-      if (!includesCI(item.categoryName, this.columnFilters.categoryName)) return false;
-      if (!includesCI(item.subCategory, this.columnFilters.subCategory)) return false;
-      if (!includesCI(item.status, this.columnFilters.status)) return false;
+      if (!inSelected(item.name, this.columnFilters.name)) return false;
+      if (!inSelected(item.categoryName, this.columnFilters.categoryName)) return false;
+      if (!inSelected(item.status, this.columnFilters.status)) return false;
 
       if (this.columnFilters.date) {
         const m = String(item.date ?? '');
@@ -238,7 +252,14 @@ export class ContaMensalEstruturaComponent implements OnInit {
     this.filterStatus = '';
     this.filterDateFrom = '';
     this.filterDateTo = '';
-    this.columnFilters = { name: '', categoryName: '', subCategory: '', value: '', date: '', status: '' };
+    this.columnFilters = {
+      name: [],
+      categoryName: [],
+      subCategory: '',
+      value: '',
+      date: '',
+      status: [],
+    };
   }
 
   // ===== table events =====

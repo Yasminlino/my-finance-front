@@ -1,1 +1,51 @@
+.modal-backdrop-custom {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .4);
+    z-index: 1040;
+}
+
+.modal-custom {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    z-index: 1050;
+}
+
+
+/* backdrop já ok */
+
+/* container da modal */
+.modal-custom{
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1050;
+}
+
+/* card com altura máxima e layout em coluna */
+.modal-card{
+  width: min(1100px, 100%);
+  max-height: calc(80vh - 32px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* importante p/ o body scroll não “vazar” */
+}
+
+/* header e footer ficam fixos */
+.modal-card .card-header,
+.modal-card .card-footer{
+  flex: 0 0 auto;
+}
+
+/* body é o que rola */
+.modal-body-scroll{
+  flex: 1 1 auto;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
 /* You can add global styles to this file, and also import other style files */

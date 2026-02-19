@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { inject, NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { LayoutComponent } from './layout/layout/layout.component';
@@ -13,7 +13,7 @@ const routes: Routes = [
   {
     path: '',
     component: LayoutComponent,
-    canActivate: [AuthGuard],
+    canActivate: [() => inject(AuthGuard).canActivate()],
     children: [
       {
         path: 'home',
@@ -28,7 +28,7 @@ const routes: Routes = [
       {
         path: 'account',
         loadChildren: () =>
-          import('./views/cadastro/conta-mensal/conta-mensal.module').then(m => m.ContaMensalModule),
+          import('./views/cadastro/conta-mensal/conta-mensal.module').then(m => m.CadastroContaMensalModule),
       },
       {
         path: 'bancos',
@@ -54,6 +54,11 @@ const routes: Routes = [
         path: 'extrato-bancario',
         loadChildren: () =>
           import('./views/movimentacao/extrato-bancario/extrato-bancario.module').then(m => m.ExtratoBancarioModule),
+      },
+      {
+        path: 'catalogos-listas',
+        loadChildren: () =>
+          import('./views/lista/lista.module').then(m => m.ListaModule),
       },
       { path: '', redirectTo: 'home', pathMatch: 'full' },
     ]
