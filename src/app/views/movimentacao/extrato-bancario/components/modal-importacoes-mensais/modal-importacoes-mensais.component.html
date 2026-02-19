@@ -1,0 +1,68 @@
+<div class="modal-backdrop-custom" (click)="close(false)"></div>
+
+<div class="modal-custom" role="dialog" aria-modal="true">
+    <div class="modal-card card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <h3 class="card-title m-0">Importações realizadas</h3>
+        </div>
+
+        <div class="card-body modal-body-scroll">
+            <div *ngIf="loading" class="text-primary">
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Carregando...
+            </div>
+
+            <div *ngIf="errorMsg" class="alert alert-danger py-2">
+                {{ errorMsg }}
+            </div>
+
+            <div class="table-responsive" *ngIf="!loading">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-body-tertiary">
+                        <tr>
+                            <th style="min-width:220px">Data importação</th>
+                            <th style="min-width:220px">Banco importação</th>
+                            <th style="min-width:220px">Nome arquivo</th>
+                            <th style="min-width:220px">Quantidade de lançamentos</th>
+                            <th class="text-end" style="width:160px">Ações</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr *ngIf="importacaoesMensais.length === 0">
+                            <td colspan="5" class="text-center text-muted py-4">Nenhuma importação realizada.</td>
+                        </tr>
+
+                        <tr *ngFor="let r of importacaoesMensais; trackBy: trackById">
+                            <td>{{ r.dataImportacao }}</td>
+                            <td>{{ r.bancoNome }}</td>
+                            <td>{{ r.nomeArquivoOrigem }}</td>
+                            <td>{{ r.quantidadeLancamentos }}</td>
+
+                            <!-- Ações -->
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-2">
+                                  
+                                    <button class="btn btn-sm btn-outline-danger" [disabled]="savingIds.has(r.id)"
+                                        (click)="removeRow(r)">
+                                        Excluir
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="form-text mt-2">
+                Dica: preencha <strong>Nome</strong> e opcionalmente vincule <strong>Categoria</strong> e
+                <strong>Tipo</strong>.
+            </div>
+        </div>
+
+        <div class="card-footer d-flex justify-content-end gap-2">
+            <button class="btn btn-outline-secondary" (click)="close(false)">Fechar</button>
+            <button class="btn btn-primary" (click)="close(true)">Concluir</button>
+        </div>
+    </div>
+</div>

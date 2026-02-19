@@ -34,7 +34,7 @@ export class HeaderComponent {
   ];
 
   listasItems: NavItem[] = [
-    { path: '/lista-de-compras', label: 'Listas', icon: '🛒' },
+    { path: '/catalogos-listas', label: 'Listas', icon: '🛒' },
     { path: '/item-lista', label: 'Item Lista', icon: '🧾' },
   ];
 

@@ -16,9 +16,13 @@
             <span *ngIf="isCreditCard" class="text-muted">(Cartão de crédito)</span>
           </h3>
         </div>
-
         <div class="d-flex gap-2">
           <button class="btn btn-outline-secondary" (click)="back()">Voltar</button>
+
+          <button class="btn btn-outline-primary" (click)="abrirConfigPessoas()">
+            Configurar pessoas
+          </button>
+
           <button class="btn btn-primary" (click)="openAddModal()">Adicionar lançamento</button>
         </div>
       </div>
@@ -40,7 +44,7 @@
             <div class="col-12 col-md-2">
               <label class="form-label text-muted mb-1">Tipo lançamento</label>
               <select class="form-select" [(ngModel)]="tipoLancamentoFilter">
-                <option [ngValue]="''" >Todos</option>
+                <option [ngValue]="''">Todos</option>
                 <option *ngFor="let t of tipoLancamentoOptions" [ngValue]="t">{{ t }}</option>
               </select>
             </div>
@@ -94,6 +98,7 @@
       </div>
 
       <!-- TABELA -->
+      <!-- TABELA -->
       <div class="card shadow-sm border-0">
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0">
@@ -109,49 +114,184 @@
 
                 <th>Categoria</th>
                 <th>Descrição</th>
-                <th>Obs. manual</th>
+                <th>Tipo Mov.</th>
                 <th>Pessoa</th>
                 <th class="text-end">Valor</th>
+                <th style="width:140px" class="text-center">Ações</th>
+              </tr>
+
+              <!-- ✅ linha de filtros por coluna -->
+              <tr>
+                <th>
+                  <input class="form-control form-control-sm" type="date" [(ngModel)]="tableFilters.data" />
+                </th>
+                <th>
+                  <input class="form-control form-control-sm" placeholder="Tipo..." [(ngModel)]="tableFilters.tipo" />
+                </th>
+
+                <ng-container *ngIf="isCreditCard">
+                  <th></th>
+                  <th>
+                    <input class="form-control form-control-sm" placeholder="Fatura..."
+                      [(ngModel)]="tableFilters.fatura" />
+                  </th>
+                </ng-container>
+
+                <th>
+                  <select class="form-select form-select-sm" [(ngModel)]="tableFilters.categoriaId">
+                    <option value="">Todas</option>
+                    <option *ngFor="let c of categorias" [value]="c.id">{{ c.name }}</option>
+                  </select>
+                </th>
+
+                <th>
+                  <input class="form-control form-control-sm" placeholder="Descrição..."
+                    [(ngModel)]="tableFilters.descricao" />
+                </th>
+                <th>
+                  <select class="form-select form-select-sm" [(ngModel)]="tableFilters.tipoMovimentacaoId">
+                    <option value="">Todos</option>
+                    <option *ngFor="let tm of tiposMovimentacao" [value]="tm.id">
+                      {{ tm.descricao }}
+                    </option>
+                  </select>
+                </th>
+                <th>
+                  <input class="form-control form-control-sm" placeholder="Pessoa..."
+                    [(ngModel)]="tableFilters.pessoa" />
+                </th>
+
+                <th>
+                  <div class="d-flex gap-2">
+                    <input class="form-control form-control-sm text-end" placeholder="Min"
+                      [(ngModel)]="tableFilters.minValor" />
+                    <input class="form-control form-control-sm text-end" placeholder="Max"
+                      [(ngModel)]="tableFilters.maxValor" />
+                  </div>
+                </th>
+
+                <th class="text-center">
+                  <button class="btn btn-sm btn-outline-secondary" (click)="clearFilters()">Limpar</button>
+                </th>
               </tr>
             </thead>
 
             <tbody>
               <tr *ngIf="loading">
-                <td [attr.colspan]="isCreditCard ? 10 : 8" class="text-center text-primary py-4 fw-medium">
+                <td [attr.colspan]="isCreditCard ? 11 : 9" class="text-center text-primary py-4 fw-medium">
                   <span class="spinner-border spinner-border-sm me-2"></span>
                   Carregando detalhes...
                 </td>
               </tr>
 
               <tr *ngIf="!loading && filteredExtratos.length === 0">
-                <td [attr.colspan]="isCreditCard ? 10 : 8" class="text-center text-secondary py-4">
+                <td [attr.colspan]="isCreditCard ? 11 : 9" class="text-center text-secondary py-4">
                   Nenhum lançamento encontrado com os filtros aplicados.
                 </td>
               </tr>
 
-              <tr *ngFor="let e of filteredExtratos">
-                <td>{{ e.dataMovimentacao }}</td>
-                <td>{{ e.tipoLancamento || '—' }}</td>
+              <tr *ngFor="let e of filteredExtratos; trackBy: trackByRow">
 
-                <ng-container *ngIf="isCreditCard">
-                  <td>
-                    <ng-container *ngIf="e.parcelaAtual && e.quantidadeParcelas; else semParcela">
-                      {{ e.parcelaAtual }}/{{ e.quantidadeParcelas }}
-                    </ng-container>
-                    <ng-template #semParcela>—</ng-template>
+                <!-- VIEW MODE -->
+                <ng-container *ngIf="!isEditing(e); else editRow">
+                  <td>{{ e.dataMovimentacao | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ e.tipoLancamento || '—' }}</td>
+
+                  <ng-container *ngIf="isCreditCard">
+                    <td>
+                      <ng-container *ngIf="e.parcelaAtual && e.quantidadeParcelas; else semParcela">
+                        {{ e.parcelaAtual }}/{{ e.quantidadeParcelas }}
+                      </ng-container>
+                      <ng-template #semParcela>—</ng-template>
+                    </td>
+                    <td>{{ e.numeroFatura || '—' }}</td>
+                  </ng-container>
+
+                  <td>{{ e.categoria?.name || '—' }}</td>
+                  <td>{{ (e.descricao || '—') }}</td>
+                  <td>{{ e.tipoMovimentacao?.nomeTipoMovimentacao || '—' }}</td>
+                  <td>{{ e.nomePessoaTransacao || '—' }}</td>
+
+                  <td class="text-end fw-bold" [class.text-danger]="e.tipoLancamento == 'Saída'"
+                    [class.text-success]="e.tipoLancamento == 'Entrada'">
+                    {{ money(e.valor) }}
                   </td>
-                  <td>{{ e.numeroFatura || '—' }}</td>
+
+                  <td class="text-center">
+                    <div class="d-inline-flex gap-2">
+                      <button class="btn btn-sm btn-outline-primary" (click)="startEdit(e)">Editar</button>
+                    </div>
+                  </td>
                 </ng-container>
 
-                <td>{{ e.categoriaNome || '—' }}</td>
-                <td>{{ (e.descricao || '—') }}</td>
-                <td>{{ e.observacao || e.descricaoManual || '—' }}</td>
-                <td>{{ e.nomePessoaTransacao || '—' }}</td>
+                <!-- EDIT MODE -->
+                <ng-template #editRow>
+                  <ng-container *ngIf="rowForms.get(rowKey(e)) as fg" [formGroup]="fg">
 
-                <td class="text-end fw-bold" [class.text-danger]="e.tipoLancamento == 'Saída'"
-                  [class.text-success]="e.tipoLancamento == 'Entrada'">
-                  {{ money(e.valor) }}
-                </td>
+                    <td>
+                      <input class="form-control form-control-sm" type="date" formControlName="dataMovimentacao" />
+                    </td>
+
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="tipoLancamento">
+                        <option *ngFor="let t of tipoLancamentoOptions" [value]="t">{{ t }}</option>
+                      </select>
+                    </td>
+
+                    <ng-container *ngIf="isCreditCard">
+                      <td>
+                        <div class="d-flex gap-1">
+                          <input class="form-control form-control-sm" style="width:70px"
+                            formControlName="parcelaAtual" />
+                          <span class="text-muted">/</span>
+                          <input class="form-control form-control-sm" style="width:70px"
+                            formControlName="quantidadeParcelas" />
+                        </div>
+                      </td>
+                      <td>
+                        <input class="form-control form-control-sm" formControlName="numeroFatura" />
+                      </td>
+                    </ng-container>
+
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="categoriaId">
+                        <option value="">—</option>
+                        <option *ngFor="let c of categorias" [value]="c.id">{{ c.name }}</option>
+                      </select>
+                    </td>
+
+                    <td>
+                      <input class="form-control form-control-sm" formControlName="descricao" />
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="tipoMovimentacaoId">
+                        <option value="">—</option>
+                        <option *ngFor="let tm of tiposMovimentacao" [value]="tm.id">
+                          {{ tm.nomeTipoMovimentacao }}
+                        </option>
+                      </select>
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" formControlName="nomePessoaTransacao" />
+                    </td>
+
+                    <td class="text-end">
+                      <input class="form-control form-control-sm text-end" formControlName="valor" />
+                    </td>
+
+                    <td class="text-center">
+                      <div class="d-inline-flex gap-2">
+                        <button class="btn btn-sm btn-primary" [disabled]="isSavingRow(e)" (click)="saveEdit(e)">
+                          {{ isSavingRow(e) ? 'Salvando...' : 'Salvar' }}
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" [disabled]="isSavingRow(e)"
+                          (click)="cancelEdit(e)">
+                          Cancelar
+                        </button>
+                      </div>
+                    </td>
+                  </ng-container>
+                </ng-template>
               </tr>
             </tbody>
           </table>
@@ -190,7 +330,7 @@
 
                   <div class="col-12 col-md-4">
                     <label class="form-label">Valor</label>
-                     <input type="text" inputmode="decimal" class="form-control" [(ngModel)]="manualValor"
+                    <input type="text" inputmode="decimal" class="form-control" [(ngModel)]="manualValor"
                       appMoneyMaskBR />
                   </div>
 
@@ -203,8 +343,8 @@
 
                     <div class="col-12 col-md-4 d-flex align-items-end">
                       <div class="form-check">
-                        <input class="form-check-input" type="checkbox" [(ngModel)]="manualParcelado" [disabled]="saving"
-                          id="parceladoCheck" />
+                        <input class="form-check-input" type="checkbox" [(ngModel)]="manualParcelado"
+                          [disabled]="saving" id="parceladoCheck" />
                         <label class="form-check-label" for="parceladoCheck">Compra parcelada</label>
                       </div>
                     </div>
@@ -250,7 +390,8 @@
 
                   <div class="col-12">
                     <label class="form-label">Observação (manual)</label>
-                    <textarea class="form-control" rows="3" [(ngModel)]="manualObservacao" [disabled]="saving"></textarea>
+                    <textarea class="form-control" rows="3" [(ngModel)]="manualObservacao"
+                      [disabled]="saving"></textarea>
                   </div>
 
                   <div class="col-12 col-md-6">
@@ -273,4 +414,9 @@
       </ng-container>
     </div>
   </div>
+
+  <app-modal-configuracao-vinculo-pessoa *ngIf="showModalConfigPessoas" 
+    (closed)="fecharConfigPessoas($event)">
+  </app-modal-configuracao-vinculo-pessoa>
+
 </div>

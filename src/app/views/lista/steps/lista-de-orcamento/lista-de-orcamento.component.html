@@ -1,0 +1,190 @@
+<div class="container-xl py-3">
+
+    <!-- Alert -->
+    <div *ngIf="alert.message" class="alert" [class.alert-success]="alert.type==='success'"
+        [class.alert-danger]="alert.type==='error'">
+        {{ alert.message }}
+    </div>
+
+    <!-- Header Tabler -->
+    <div class="page-header d-print-none mb-3">
+        <div class="row align-items-center">
+            <div class="col">
+                <div class="page-pretitle">Listas/Orçamentos</div>
+                <h2 class="page-title">{{ titulo }}</h2>
+            </div>
+
+            <div class="col-auto ms-auto d-print-none">
+                <div class="btn-list">
+                    <button class="btn btn-outline-secondary" type="button" (click)="load()">
+                        Atualizar
+                    </button>
+                    <button class="btn btn-primary" type="button" (click)="abrirCriarItem()">
+                        Novo Item Lista
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Buscar</label>
+                    <input class="form-control" placeholder="Nome ou ID" [value]="q"
+                        (input)="onSearchChange(($any($event.target)).value)" />
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" [value]="statusFilter"
+                        (change)="pesquisarStatus(($any($event.target)).value)">
+                        <option value="ALL">Todos</option>
+                        <option value="true">Ativo</option>
+                        <option value="false">Inativo</option>
+                    </select>
+                </div>
+                <div style="height: 2.5rem!important;" class="col-12 col-md-1 d-flex">
+                    <button class="btn btn-sm btn-outline align-items-center" (click)="abrirConfigCores()">
+                        ⚙️
+                    </button>
+                </div>
+
+                <div class="col-12 col-md-2 d-flex justify-content-md-end">
+                    <div class="text-muted small mt-3 mt-md-0">
+                        {{ filtered.length }} {{ filtered.length === 1 ? 'lista' : 'itens na lista' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter table-hover">
+                <thead class="bg-body-tertiary">
+                    <tr>
+                        <th class="w-1" role="button" (click)="sortBy('id')">
+                            ID <span class="ms-1">{{ sortIcon('id') }}</span>
+                        </th>
+
+                        <th class="text-nowrap" role="button" (click)="sortBy('descricao')">
+                            Descrição <span class="ms-1">{{ sortIcon('descricao') }}</span>
+                        </th>
+
+                        <th class="text-nowrap" role="button" (click)="sortBy('valor')">
+                            Valor <span class="ms-1">{{ sortIcon('valor') }}</span>
+                        </th>
+
+                        <th class="text-nowrap" role="button" (click)="sortBy('status')">
+                            Situação <span class="ms-1">{{ sortIcon('status') }}</span>
+                        </th>
+
+                        <th class="w-1 text-center">Ações</th>
+                    </tr>
+
+                    <!-- linha de filtros -->
+                    <tr>
+                        <th>
+
+                        </th>
+
+                        <th>
+                            <input class="form-control form-control-sm" placeholder="Descrição"
+                                [value]="colFilters.descricao"
+                                (input)="onColFilterChange('descricao', ($any($event.target)).value)" />
+                        </th>
+                        <th>
+                            <div class="d-flex gap-2">
+                                <input class="form-control form-control-sm" placeholder="Valor min"
+                                    [value]="colFilters.valorMin"
+                                    (input)="onColFilterChange('valorMin', ($any($event.target)).value)" />
+
+                                <input class="form-control form-control-sm" placeholder="Valor max"
+                                    [value]="colFilters.valorMax"
+                                    (input)="onColFilterChange('valorMax', ($any($event.target)).value)" />
+                            </div>
+                        </th>
+
+
+                        <th>
+                            <!-- MULTI SELECT: Ctrl/⌘ para selecionar vários -->
+                            <select multiple class="form-select form-select-sm"
+                                style="max-height: 2rem; overflow-y: auto;" [value]="colFilters.status"
+                                (change)="onStatusMultiChange($event)">
+                                <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+                            </select>
+
+                        </th>
+
+                        <th class="text-center">
+                            <button class="btn btn-sm btn-outline-secondary" type="button"
+                                (click)="clearColumnFilters()">
+                                Limpar
+                            </button>
+                        </th>
+                    </tr>
+                </thead>
+
+
+                <tbody>
+                    <tr *ngFor="let item of filtered" [ngStyle]="{ 'color': statusColors[item.status ?? ''] || '' }">
+                        <td class="text-muted">{{ item.id }}</td>
+                        <td class="fw-medium">{{ item.descricao }}</td>
+                        <td class="fw-medium">{{ formatCurrency(item.valor) }}</td>
+                        <td class="fw-medium">{{ item.status }}</td>
+
+                        <td class="text-center">
+                            <div class="d-flex">
+                                <button type="button" class="btn btn-icon btn-soft-secondary" title="Editar"
+                                    (click)="abrirEditarItem(item)">✏️</button>
+
+                                <button type="button" class="btn btn-icon btn-soft-danger" title="Excluir"
+                                    (click)="onDelete(item)">🗑️</button>
+                            </div>
+                        </td>
+
+                    </tr>
+
+                    <tr *ngIf="!loading && filtered.length === 0">
+                        <td colspan="5" class="text-center text-secondary py-4">
+                            Nenhum lista encontrado.
+                        </td>
+                    </tr>
+
+                    <tr *ngIf="loading">
+                        <td colspan="5" class="text-center text-secondary py-4">Carregando...</td>
+                    </tr>
+
+                    <tr *ngIf="errorMsg">
+                        <td colspan="5" class="text-center text-danger py-4">{{ errorMsg }}</td>
+                    </tr>
+                </tbody>
+                <tfoot *ngIf="filtered.length > 0" class="bg-body-tertiary">
+                    <tr *ngFor="let item of totalPorSituacao">
+                        <td colspan="2" class="text-end fw-bold">Total de {{ item.situacao }}:</td>
+                        <td class="fw-bold">{{ formatCurrency(item.valorTotal) }}</td>
+                        <td colspan="2"></td>
+                    </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Criar Item -->
+    <app-modal-novo-item-lista *ngIf="showModalCreateItem" [listaId]="listaId" [tipoLista]="tipoLista" [item]="null"
+        (closed)="fecharModalCriarItem($event)">
+    </app-modal-novo-item-lista>
+
+    <!-- Editar Item -->
+    <app-modal-novo-item-lista *ngIf="showModalUpdateItem" [listaId]="listaId" [tipoLista]="tipoLista"
+        [item]="editingItem" (closed)="fecharModalAtualizarItem($event)">
+    </app-modal-novo-item-lista>
+
+    <app-config-status-colors *ngIf="showModalConfigCores" [statusOptions]="statusOptions" [colors]="statusColors"
+        (closed)="onConfigCoresClosed($event)">
+    </app-config-status-colors>
+
+</div>

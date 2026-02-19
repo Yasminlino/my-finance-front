@@ -17,6 +17,21 @@
         <div class="d-flex gap-2">
           <button class="btn btn-primary" (click)="openImportModal()">Importar Extrato</button>
           <button class="btn btn-outline-primary" (click)="openManualModal()">Adicionar item</button>
+          <button class="btn btn-outline-secondary" type="button" (click)="onToggleToolbar()">
+            ⌄
+          </button>
+        </div>
+      </div>
+      <div class="collapse" [class.show]="showToolbar">
+        <div class="d-flex justify-content-end mt-2">
+          <div class="btn-list">            
+            <button class="btn btn-outline-secondary btn-lg-icon" type="button" (click)="refresh()">⟳
+              Atualizar</button>
+            <button class="btn btn-outline-secondary btn-lg-icon" type="button" (click)="refresh()">⟳
+              Relatório Mensal</button>
+            <button class="btn btn-outline-secondary btn-lg-icon" type="button" (click)="showModalImportacoesMensais = true">⟳
+              Importações mensais</button>
+          </div>
         </div>
       </div>
 
@@ -76,7 +91,7 @@
               </tr>
 
               <ng-container *ngFor="let row of resumo; trackBy: trackById">
-                <tr>
+                <tr *ngIf="!loading && resumo.length > 0">
                   <td>{{ row.bancoNome }}</td>
                   <td>{{ row.tipoContaNome }}</td>
                   <td class="text-end text-success fw-bold">{{ money(row.totalEntrada) }}</td>
@@ -204,7 +219,7 @@
 
                     <small class="text-muted">O tipo conta/cartão é definido pelo banco selecionado.</small>
                   </div>
-                
+
 
                   <div class="col-12 col-md-6">
                     <label class="form-label">Categoria (opcional)</label>
@@ -217,7 +232,7 @@
                     </select>
                   </div>
 
-                   <div class="col-12 col-md-6">
+                  <div class="col-12 col-md-6">
                     <label class="form-label text-muted mb-1">Pessoa/ Estabelecimento</label>
                     <input type="text" class="form-control" [value]="manualForm.pessoaTransacao"
                       (input)="setManual('pessoaTransacao', ($any($event.target)).value)" />
@@ -282,4 +297,10 @@
       </ng-container>
     </div>
   </div>
+  
+  <app-modal-importacoes-mensais *ngIf="showModalImportacoesMensais" [mesExtrato]="monthFilter"
+    (closed)="fecharImportacoesMensais($event)">
+  </app-modal-importacoes-mensais>
+
+
 </div>

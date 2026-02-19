@@ -15,28 +15,145 @@
             <th class="text-center" style="width:140px">Ações</th>
           </tr>
 
+          <!-- filtros por coluna -->
           <tr>
             <th></th>
+
+            <!-- CONTA (multi) -->
             <th>
-              <input class="form-control form-control-sm" placeholder="Filtrar..." [value]="columnFilters.name"
-                (input)="setColumnFilter('name', ($any($event.target)).value)" />
+              <div class="dropdown" [class.show]="ddContaOpen">
+                <button
+                  type="button"
+                  class="form-select form-select-sm text-start"
+                  (click)="toggleDropdown('conta', $event)">
+                  {{ multiLabel('name', 'Conta') }}
+                </button>
+
+                <div
+                  class="dropdown-menu p-2 w-100"
+                  [class.show]="ddContaOpen"
+                  (click)="$event.stopPropagation()"
+                  style="max-height: 240px; overflow:auto;">
+                  <div class="form-check" *ngFor="let opt of contaOptions">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      [id]="'conta_' + opt"
+                      [checked]="isSelected('name', opt)"
+                      (change)="toggleMulti('name', opt, ($any($event.target)).checked)"
+                    />
+                    <label class="form-check-label" [for]="'conta_' + opt">{{ opt }}</label>
+                  </div>
+
+                  <div class="d-flex gap-2 mt-2">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="clearMulti('name')">
+                      Limpar
+                    </button>
+                    <button class="btn btn-sm btn-primary ms-auto" type="button" (click)="ddContaOpen=false">
+                      OK
+                    </button>
+                  </div>
+                </div>
+              </div>
             </th>
+
+            <!-- CATEGORIA (multi) -->
             <th>
-              <input class="form-control form-control-sm" placeholder="Filtrar..." [value]="columnFilters.categoryName"
-                (input)="setColumnFilter('categoryName', ($any($event.target)).value)" />
+              <div class="dropdown" [class.show]="ddCategoriaOpen">
+                <button
+                  type="button"
+                  class="form-select form-select-sm text-start"
+                  (click)="toggleDropdown('categoria', $event)">
+                  {{ multiLabel('categoryName', 'Categoria') }}
+                </button>
+
+                <div
+                  class="dropdown-menu p-2 w-100"
+                  [class.show]="ddCategoriaOpen"
+                  (click)="$event.stopPropagation()"
+                  style="max-height: 240px; overflow:auto;">
+                  <div class="form-check" *ngFor="let opt of categoriaOptions">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      [id]="'cat_' + opt"
+                      [checked]="isSelected('categoryName', opt)"
+                      (change)="toggleMulti('categoryName', opt, ($any($event.target)).checked)"
+                    />
+                    <label class="form-check-label" [for]="'cat_' + opt">{{ opt }}</label>
+                  </div>
+
+                  <div class="d-flex gap-2 mt-2">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="clearMulti('categoryName')">
+                      Limpar
+                    </button>
+                    <button class="btn btn-sm btn-primary ms-auto" type="button" (click)="ddCategoriaOpen=false">
+                      OK
+                    </button>
+                  </div>
+                </div>
+              </div>
             </th>
+
+            <!-- VALOR (igual você tinha) -->
             <th>
-              <input class="form-control form-control-sm" style="width:120px" placeholder=">= 100 (ou texto)"
-                [value]="columnFilters.value" (input)="setColumnFilter('value', ($any($event.target)).value)" />
+              <input
+                class="form-control form-control-sm"
+                style="width:120px"
+                placeholder=">= 100 (ou texto)"
+                [value]="columnFilters.value"
+                (input)="setColumnFilter('value', ($any($event.target)).value)"
+              />
             </th>
+
+            <!-- DATA (igual você tinha) -->
             <th>
-              <input class="form-control form-control-sm" type="date" [value]="columnFilters.date"
-                (input)="setColumnFilter('date', ($any($event.target)).value)" />
+              <input
+                class="form-control form-control-sm"
+                type="date"
+                [value]="columnFilters.date"
+                (input)="setColumnFilter('date', ($any($event.target)).value)"
+              />
             </th>
+
+            <!-- STATUS (multi) -->
             <th>
-              <input class="form-control form-control-sm" placeholder="Filtrar..." [value]="columnFilters.status"
-                (input)="setColumnFilter('status', ($any($event.target)).value)" />
+              <div class="dropdown" [class.show]="ddStatusOpen">
+                <button
+                  type="button"
+                  class="form-select form-select-sm text-start"
+                  (click)="toggleDropdown('status', $event)">
+                  {{ multiLabel('status', 'Status') }}
+                </button>
+
+                <div
+                  class="dropdown-menu p-2 w-100"
+                  [class.show]="ddStatusOpen"
+                  (click)="$event.stopPropagation()"
+                  style="max-height: 240px; overflow:auto;">
+                  <div class="form-check" *ngFor="let s of statusOptions">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      [id]="'st_' + s"
+                      [checked]="isSelected('status', s)"
+                      (change)="toggleMulti('status', s, ($any($event.target)).checked)"
+                    />
+                    <label class="form-check-label" [for]="'st_' + s">{{ s }}</label>
+                  </div>
+
+                  <div class="d-flex gap-2 mt-2">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="clearMulti('status')">
+                      Limpar
+                    </button>
+                    <button class="btn btn-sm btn-primary ms-auto" type="button" (click)="ddStatusOpen=false">
+                      OK
+                    </button>
+                  </div>
+                </div>
+              </div>
             </th>
+
             <th></th>
           </tr>
         </thead>
@@ -54,7 +171,6 @@
 
           <ng-container *ngFor="let row of rows; trackBy: trackById">
             <tr *ngIf="rowForms.get(row.id) as fg" [formGroup]="fg" [class.opacity-75]="isLocked(row.id)">
-              <!-- Checkbox travado também -->
               <td class="text-center">
                 <input type="checkbox" [checked]="selectedIds.has(row.id)" (change)="toggleRow.emit(row.id)" />
               </td>
@@ -62,33 +178,48 @@
               <td class="text-uppercase fw-medium">{{ row.name }}</td>
               <td>{{ row.categoryName }}</td>
 
-              <!-- VALUE com máscara ao vivo -->
               <td>
                 <div class="input-group input-group-sm">
                   <span class="input-group-text">R$</span>
-                  <input class="form-control" type="text" formControlName="value" (focus)="$any($event.target).select()"
-                    (input)="maskValueTyping(row.id, $event)" (blur)="commitValue(row.id)"
-                    [disabled]="isLocked(row.id)" [readonly]="isLocked(row.id)"/>
+                  <input
+                    class="form-control"
+                    type="text"
+                    formControlName="value"
+                    (focus)="$any($event.target).select()"
+                    (input)="maskValueTyping(row.id, $event)"
+                    (blur)="commitValue(row.id)"
+                    [disabled]="isLocked(row.id)"
+                    [readonly]="isLocked(row.id)"
+                  />
                 </div>
               </td>
 
-              <!-- DATE travado quando locked -->
               <td>
-                <input class="form-control form-control-sm" type="date" formControlName="date"
-                  (blur)="commitDate(row.id)" [disabled]="isLocked(row.id)" [readonly]="isLocked(row.id)"/>
+                <input
+                  class="form-control form-control-sm"
+                  type="date"
+                  formControlName="date"
+                  (blur)="commitDate(row.id)"
+                  [disabled]="isLocked(row.id)"
+                  [readonly]="isLocked(row.id)"
+                />
               </td>
 
-              <!-- STATUS: travado e com desbloquear -->
               <td>
                 <ng-container *ngIf="isLocked(row.id); else editableStatus">
                   <div class="d-flex align-items-center gap-2">
-                    <span [ngClass]="row.status === 'PAGO NO PRAZO'
+                    <span
+                      [ngClass]="row.status === 'PAGO NO PRAZO'
                         ? 'badge bg-green-lt text-green-lt-fg'
-                        : row.status === 'AGUARDANDO' 
+                        : row.status === 'AGUARDANDO'
                         ? 'badge bg-yellow-lt text-red-lt-fg'
                         : 'badge bg-red-lt text-red-lt-fg'">
-                      🔒 {{ row.status }}</span>
-                    <button class="btn btn-icon btn-soft-muted" type="button" (click)="unlock.emit(row.id)"
+                      🔒 {{ row.status }}
+                    </span>
+                    <button
+                      class="btn btn-icon btn-soft-muted"
+                      type="button"
+                      (click)="unlock.emit(row.id)"
                       title="Desbloquear para edição">
                       🔓
                     </button>
@@ -96,22 +227,31 @@
                 </ng-container>
 
                 <ng-template #editableStatus>
-                  <select class="form-select form-select-sm" formControlName="status" (change)="commitStatus(row.id)"
+                  <select
+                    class="form-select form-select-sm"
+                    formControlName="status"
+                    (change)="commitStatus(row.id)"
                     [disabled]="isLocked(row.id)">
                     <option *ngFor="let s of statusOptions" [ngValue]="s">{{ s }}</option>
                   </select>
                 </ng-template>
               </td>
 
-              <!-- AÇÕES: travadas quando locked (exceto desbloquear, que fica no status) -->
               <td class="text-center">
                 <div class="btn-list d-inline-flex">
-                  <button class="btn btn-icon btn-soft-success" type="button" title="Salvar"
-                    (click)="saveRow.emit(row.id)" [disabled]="isLocked(row.id)">
+                  <button
+                    class="btn btn-icon btn-soft-success"
+                    type="button"
+                    title="Salvar"
+                    (click)="saveRow.emit(row.id)"
+                    [disabled]="isLocked(row.id)">
                     💾
                   </button>
 
-                  <button class="btn btn-icon btn-soft-danger" type="button" title="Excluir"
+                  <button
+                    class="btn btn-icon btn-soft-danger"
+                    type="button"
+                    title="Excluir"
                     (click)="deleteRow.emit(row.id)">
                     🗑️
                   </button>
