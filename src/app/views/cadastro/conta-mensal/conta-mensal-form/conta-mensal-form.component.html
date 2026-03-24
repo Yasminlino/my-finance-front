@@ -21,7 +21,7 @@
 
       <div class="mb-3">
         <label class="form-label">Valor</label>
-        <input class="form-control" type="text" formControlName="value" currencyInput
+        <input class="form-control" type="text" inputmode="decimal" formControlName="value" appMoneyMaskBR
           [class.is-invalid]="form.controls.value.touched && form.controls.value.invalid" />
 
         <div class="invalid-feedback" *ngIf="form.controls.value.touched && form.controls.value.invalid">

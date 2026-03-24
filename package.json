@@ -20,8 +20,11 @@
     "@angular/platform-browser": "^16.2.0",
     "@angular/platform-browser-dynamic": "^16.2.0",
     "@angular/router": "^16.2.0",
+    "@ng-bootstrap/ng-bootstrap": "^15.1.2",
     "@tabler/core": "^1.4.0",
     "@tabler/icons": "^3.36.1",
+    "apexcharts": "^3.54.1",
+    "ng-apexcharts": "^1.8.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.13.0"

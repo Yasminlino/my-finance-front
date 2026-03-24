@@ -4,6 +4,10 @@ import { Category, CategoryService } from 'src/app/core/services/category.servic
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
 
+function formatMoneyBR(v: any) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
+}
+
 @Component({
   selector: 'app-conta-mensal-list',
   templateUrl: './conta-mensal-list.component.html',
@@ -49,6 +53,7 @@ export class ContaMensalListComponent implements OnInit {
         this.categoryService.list()
       ]);
 
+      
       this.accounts = accounts ?? [];
       this.categories = categories ?? [];
 
@@ -58,6 +63,10 @@ export class ContaMensalListComponent implements OnInit {
     } finally {
       this.loading = false;
     }
+  }
+
+  money(v: any) {
+    return formatMoneyBR(v);
   }
 
   categoryNameOf(categoryId: number) {

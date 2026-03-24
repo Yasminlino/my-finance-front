@@ -79,7 +79,7 @@
           <tr *ngFor="let acc of filtered">
             <td class="text-muted text-center">{{ acc.id }}</td>
             <td class="fw-medium text-center">{{ acc.name }}</td>
-            <td class="text-center">{{ formatCurrency(acc.value) }}</td>
+            <td class="text-center">{{ money(acc.value) }}</td>
             <td class="text-center">{{ acc.dataOperacao }}</td>
             <td class="text-center">{{ categoryNameOf(acc.categoryid) }}</td>
 

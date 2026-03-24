@@ -1,0 +1,8 @@
+:host {
+  display: block;
+}
+
+/* só pra garantir que o chart não “encoste” estranho em alguns cards */
+.card-body {
+  padding: 1rem;
+}

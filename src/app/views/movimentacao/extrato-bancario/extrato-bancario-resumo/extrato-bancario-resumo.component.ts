@@ -110,6 +110,15 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     }
   }
 
+  abrirRelatorioMensal() {
+    const params: any = {
+      month: this.monthFilter,
+    };
+
+    this.router.navigate(['extrato-bancario/RelatorioGastosMensais'], { queryParams: params });
+  }
+
+
   async refresh() {
     this.loading = true;
     try {

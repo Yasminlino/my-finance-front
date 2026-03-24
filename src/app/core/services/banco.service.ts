@@ -6,7 +6,7 @@ export type BancoDto = {
   nomeBanco: string;
   saldoInicial: number;
   ativo: boolean;
-  tipoCartaoId?: number | null; 
+  tipoCartaoId?: number | null;
   tipoCartao?: {
     id: number,
     nomeTipoCartao: string,
@@ -17,19 +17,24 @@ export type BancoCreateUpdateDto = {
   id: number;
   nomeBanco: string;
   saldoInicial: number;
-  tipoCartaoId?: number | null; 
+  tipoCartaoId?: number | null;
   ativo: boolean;
 };
 
 
 @Injectable({ providedIn: 'root' })
 export class BancoService {
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService) { }
 
   list(): Promise<BancoDto[]> {
     // ajuste a rota conforme seu backend
     return this.api.get<BancoDto[]>('/GetBancos');
   }
+
+  getById(id: number): Promise<BancoDto> {
+    return this.api.get<BancoDto>('/GetBancoById', id);
+  }
+
 
   delete(id: number): Promise<any> {
     // ajuste a rota conforme seu backend

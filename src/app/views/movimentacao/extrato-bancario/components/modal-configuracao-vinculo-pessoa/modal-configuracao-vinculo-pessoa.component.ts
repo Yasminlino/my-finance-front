@@ -1,10 +1,14 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Category, CategoryService } from 'src/app/core/services/category.service';
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
 import {
   PessoaMovimentacaoDto,
   PessoaMovimentacaoService
 } from 'src/app/core/services/pessoa-movimentacao.service';
+import { ExtratoBancarioDetalhesComponent } from '../../extrato-bancario-detalhes/extrato-bancario-detalhes.component';
+import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
+
+type AlertState = { type: '' | 'success' | 'error' | 'warning'; message: string };
 
 type Row = PessoaMovimentacaoDto;
 
@@ -15,6 +19,11 @@ type Row = PessoaMovimentacaoDto;
 })
 export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   @Output() closed = new EventEmitter<{ reload: boolean }>();
+  @Input() mesAtualizacao: string = '';
+  @Input() bancoId: number | null = null;
+
+  
+  alert: AlertState = { type: '', message: '' };
 
   loading = false;
   errorMsg = '';
@@ -28,7 +37,8 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   constructor(
     private pessoaService: PessoaMovimentacaoService,
     private categoriaService: CategoryService,
-    private tipoMovService: TipoMovimentacaoService
+    private tipoMovService: TipoMovimentacaoService,
+    private extratoBancarioService: ExtratoBancarioItemService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -38,16 +48,34 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   private async loadAll() {
     this.loading = true;
     this.errorMsg = '';
+    
     try {
-      const [cats, tipos, pessoas] = await Promise.all([
+      const [cats, tipos, pessoas, movimentacoes] = await Promise.all([
         this.categoriaService.list(),
         this.tipoMovService.list(),
         this.pessoaService.list(),
+        this.extratoBancarioService.listExtratos(this.mesAtualizacao, this.bancoId)
       ]);
 
       this.categorias = cats ?? [];
       this.tiposMovimentacao = tipos ?? [];
-      this.rows = (pessoas ?? []).map(p => ({ ...p }));
+
+      const pessoasSemVinculo = (pessoas ?? []).filter(p =>
+        p.categoriaId == null || p.tipoMovimentacaoId == null
+      );
+
+      // ids que JÁ estão vinculados nas movimentações do mês
+      const idsVinculadosNoMes = new Set(
+        (movimentacoes ?? [])
+          .map(m => String(m.pessoaMovimentacaoId))
+          .filter(id => id && id !== '0')
+      );
+
+      const filtroMes = (pessoasSemVinculo ?? []).filter(p =>
+        idsVinculadosNoMes.has(String(p.id))
+      );
+      
+      this.rows = filtroMes.map(p => ({ ...p }));
     } catch (e: any) {
       this.errorMsg = e?.error?.message || e?.message || 'Erro ao carregar dados.';
     } finally {
@@ -102,7 +130,17 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
           nomePessoa: r.nomePessoa.trim(),
           categoriaId: r.categoriaId ?? null,
           tipoMovimentacaoId: r.tipoMovimentacaoId ?? null,
-        });
+          mesAtualizacao: this.mesAtualizacao ?? null,
+        }).then(
+          (res) => {
+            this.alert = { type: 'success', message: `Vinculo atualizado com sucesso!` };
+            this.loadAll()
+          }
+        ).catch(
+          (e) => {
+            this.alert = { type: 'error', message: 'Falha ao editar vinculo.' + e.message };
+          }
+        )
       }
     } catch (e: any) {
       this.errorMsg = e?.error?.message || e?.message || 'Erro ao salvar.';

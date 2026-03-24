@@ -5,11 +5,13 @@ import { RouterModule } from '@angular/router';
 
 import { CurrencyMaskDirective } from './directives/currency-mask.directives';
 import { CurrencyInputDirective } from './directives/currency-input.directive';
+import { MoneyMaskBrDirective } from './directives/money-mask.directive';
 
 @NgModule({
   declarations: [
     CurrencyMaskDirective,
-    CurrencyInputDirective
+    CurrencyInputDirective,
+    MoneyMaskBrDirective
   ],
   imports: [
     CommonModule,
@@ -23,7 +25,8 @@ import { CurrencyInputDirective } from './directives/currency-input.directive';
     ReactiveFormsModule,
     RouterModule,
     CurrencyMaskDirective,
-    CurrencyInputDirective
+    CurrencyInputDirective,
+    MoneyMaskBrDirective
   ]
 })
 export class SharedModule {}

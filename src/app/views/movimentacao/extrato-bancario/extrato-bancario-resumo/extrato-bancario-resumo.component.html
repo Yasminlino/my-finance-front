@@ -23,13 +23,13 @@
         </div>
       </div>
       <div class="collapse" [class.show]="showToolbar">
-        <div class="d-flex justify-content-end mt-2">
+        <div class="d-flex justify-content-end mt-2 mb-3">
           <div class="btn-list">            
             <button class="btn btn-outline-secondary btn-lg-icon" type="button" (click)="refresh()">⟳
               Atualizar</button>
             <button class="btn btn-outline-secondary btn-lg-icon" type="button" (click)="refresh()">⟳
               Relatório Mensal</button>
-            <button class="btn btn-outline-secondary btn-lg-icon" type="button" (click)="showModalImportacoesMensais = true">⟳
+            <button class="btn btn-outline-secondary btn-lg-icon" type="button" (click)="showModalImportacoesMensais = true">📥
               Importações mensais</button>
           </div>
         </div>
@@ -60,6 +60,10 @@
                   {{ t.nomeTipoCartao || ('Tipo #' + t.id) }}
                 </option>
               </select>
+            </div>
+            <div class="col-12 col-md-4 col-lg-3">
+              <button class="btn btn-outline-secondary" (click)="abrirRelatorioMensal()">
+                Relatório Mensal</button>
             </div>
           </div>
         </div>

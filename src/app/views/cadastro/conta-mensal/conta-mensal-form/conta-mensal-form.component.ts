@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { AccountDto, ContaService } from 'src/app/core/services/contas.service';
 import { Category } from 'src/app/core/services/category.service';
+import { formatMoneyBRFromAny, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
 
 @Component({
   selector: 'app-conta-mensal-form',
@@ -17,7 +18,7 @@ export class ContaMensalFormComponent implements OnInit {
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
-    value: [null as number | null, [Validators.required]],
+    value: [null as any, [Validators.required]],
     dataOperacao: [null as any, [Validators.required]],
     categoryid: [null as any, [Validators.required, Validators.min(1), Validators.max(31)]],
   });
@@ -26,16 +27,25 @@ export class ContaMensalFormComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.account) {
+      console.log(this.account);
       this.form.patchValue({
         name: this.account.name,
-        value: this.account.value,
+        value: this.formataDecimal(this.account.value),
         dataOperacao: this.account.dataOperacao,
         categoryid: this.account.categoryid,
       });
     }
   }
 
-  
+  formataDecimal(value: number) {
+    var valor = value
+    var valorFixed = valor.toFixed(2)
+    var valorconvertido = valorFixed.toString().replace('.', ',')
+    
+    console.log('contem .', valorconvertido)
+    
+    return valorconvertido
+  }
 
   close(reload = false) {
     this.closed.emit(reload);
@@ -53,7 +63,7 @@ export class ContaMensalFormComponent implements OnInit {
       const payload = {
         id: this.account?.id,
         name: this.form.value.name!,
-        value: Number(this.form.value.value) * 100 || 0,
+        value: parseMoneyBRToNumber(this.form.value.value),
         categoryid: Number(this.form.value.categoryid),
         dataOperacao: Number(this.form.value.dataOperacao!),
       };

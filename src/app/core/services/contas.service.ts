@@ -4,7 +4,7 @@ import { ApiService } from './api.service';
 export type AccountDto = {
   id: number;
   name: string;
-  value: number;
+  value: any;
   dataOperacao: number; // ou number/dia
   categoryid: number;
 };
