@@ -50,7 +50,7 @@ export class ContaMensalListComponent implements OnInit {
 
       const [accounts, categories] = await Promise.all([
         this.contaService.list(),
-        this.categoryService.list()
+        this.categoryService.buscarCategoriasAtivas()
       ]);
 
       

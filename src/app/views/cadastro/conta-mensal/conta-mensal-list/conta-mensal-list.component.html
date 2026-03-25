@@ -71,6 +71,7 @@
             <th class="w-4 text-center text-nowrap">Valor</th>
             <th class="w-2 text-center text-nowrap">Dia Vencimento</th>
             <th class="w-4 text-center text-nowrap">Categoria</th>
+            <th class="w-4 text-center text-nowrap">Status</th>
             <th class="w-2 text-center">Ações</th>
           </tr>
         </thead>
@@ -82,6 +83,11 @@
             <td class="text-center">{{ money(acc.value) }}</td>
             <td class="text-center">{{ acc.dataOperacao }}</td>
             <td class="text-center">{{ categoryNameOf(acc.categoryid) }}</td>
+            <td>
+              <span [ngClass]="acc.status === 1 ? 'text-success' : 'text-danger'">
+                {{ acc.status === 1 ? 'Ativo' : 'Inativo' }}
+              </span>
+            </td>
 
             <td class="text-center">
               <div class="d-flex justify-content-center">

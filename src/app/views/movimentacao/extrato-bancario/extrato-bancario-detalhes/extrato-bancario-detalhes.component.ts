@@ -178,7 +178,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
   async loadCatalogos() {
     try {
       const [cats, tiposCartao, tiposMov, pessoas] = await Promise.all([
-        this.categoriaService.list(),
+        this.categoriaService.buscarCategoriasAtivas(),
         this.tipoCartaoService.list(),
         this.tipoMovimentacaoService.list(),
         this.pessoaMovService.list(),

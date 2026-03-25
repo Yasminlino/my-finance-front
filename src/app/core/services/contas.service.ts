@@ -7,6 +7,7 @@ export type AccountDto = {
   value: any;
   dataOperacao: number; // ou number/dia
   categoryid: number;
+  status: number;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -15,6 +16,10 @@ export class ContaService {
 
   list(): Promise<AccountDto[]> {
     return this.api.get<AccountDto[]>('/GetAccounts'); // ajuste endpoint
+  }
+  
+  buscarContasAtivas(): Promise<AccountDto[]> {
+    return this.api.get<AccountDto[]>('/GetContasAtivas'); // ajuste endpoint
   }
 
   create(payload: Partial<AccountDto>): Promise<any> {

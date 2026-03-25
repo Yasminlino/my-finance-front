@@ -60,7 +60,7 @@ export class ContaMensalEstruturaComponent implements OnInit {
   constructor(private service: ContaMensalService, private categoryService: CategoryService) { }
 
   async ngOnInit() {
-    this.categorias = await this.categoryService.list();
+    this.categorias = await this.categoryService.buscarCategoriasAtivas();
     await this.loadMonth(this.defaultMonth);
   }
 

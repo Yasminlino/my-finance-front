@@ -51,7 +51,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
     
     try {
       const [cats, tipos, pessoas, movimentacoes] = await Promise.all([
-        this.categoriaService.list(),
+        this.categoriaService.buscarCategoriasAtivas(),
         this.tipoMovService.list(),
         this.pessoaService.list(),
         this.extratoBancarioService.listExtratos(this.mesAtualizacao, this.bancoId)

@@ -28,7 +28,7 @@ export class ModalNovaContaMensalComponent implements OnInit {
   constructor(private fb: FormBuilder, private contaMensalService: ContaMensalService, private categoryService: CategoryService) {}
 
   async ngOnInit() {
-    this.categorias = await this.categoryService.list();
+    this.categorias = await this.categoryService.buscarCategoriasAtivas();
   }
 
   

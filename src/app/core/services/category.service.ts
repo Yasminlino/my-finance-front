@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
+import { Status } from 'src/app/shared/enums/status.enum';
 
 export type Category = {
   id: number;
   name: string;
   subCategory: string;
-  // status: 'Ativo' | 'Inativo' | string;
+  naturezaOperacao: number;
+  status: number;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -14,6 +16,10 @@ export class CategoryService {
 
   list(): Promise<Category[]> {
      return this.api.get<Category[]>('/GetCategories');
+  }
+  
+  buscarCategoriasAtivas(): Promise<Category[]> {
+     return this.api.get<Category[]>('/GetCategoriasAtivas');
   }
 
   GetCategoryById(id: number): Promise<Category> {

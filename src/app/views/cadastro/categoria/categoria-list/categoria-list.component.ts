@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Category, CategoryService } from 'src/app/core/services/category.service';
+import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
 
-type AlertState = { type: 'success' | 'error' | '' ; message: string };
+type AlertState = { type: 'success' | 'error' | ''; message: string };
 
 @Component({
   selector: 'app-categoria-list',
@@ -14,6 +15,7 @@ export class CategoriaListComponent implements OnInit {
 
   loading = false;
   errorMsg = '';
+  descricaoNaturezaOperacao = NaturezaOperacaoLabel;
 
   q = '';
   statusFilter: 'ALL' | 'Ativo' | 'Inativo' = 'ALL';
@@ -24,7 +26,7 @@ export class CategoriaListComponent implements OnInit {
 
   alert: AlertState = { type: '', message: '' };
 
-  constructor(private categoryService: CategoryService) {}
+  constructor(private categoryService: CategoryService) { }
 
   async ngOnInit() {
     await this.load();

@@ -110,7 +110,7 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
       // Ajuste: se seus services retornam Observable, use firstValueFrom.
       // Se retornam signal/hook, adapte.
       const [contas, contasMensais] = await Promise.all([
-        this.contaService.list(),
+        this.contaService.buscarContasAtivas(),
         this.contaMensalService.GetTransactionByDate(String(this.month)),
       ]);
 

@@ -15,22 +15,24 @@ export class CategoriaFormComponent implements OnInit {
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
-    subCategory: ['', [Validators.required, Validators.required]],
-    // status: ['Ativo', [Validators.required]],
+    subCategory: ['', [Validators.required]],
+    naturezaOperacao: [1, [Validators.required]], 
+    status: [1, [Validators.required]],
   });
 
-  constructor(private fb: FormBuilder, private categoryService: CategoryService) {}
+  constructor(private fb: FormBuilder, private categoryService: CategoryService) { }
 
   ngOnInit(): void {
     if (this.category) {
       this.form.patchValue({
         name: this.category.name,
         subCategory: this.category.subCategory,
-        // status: this.category.status as any || 'Ativo',
+        naturezaOperacao: this.category.naturezaOperacao,
+        status: this.category.status,
       });
     }
   }
-
+  
   close(reload = false) {
     this.closed.emit(reload);
   }
@@ -47,6 +49,8 @@ export class CategoriaFormComponent implements OnInit {
       const payload = {
         name: this.form.value.name!,
         subCategory: this.form.value.subCategory!,
+        naturezaOperacao: this.form.value.subCategory == 'Receita' ? 0 : this.form.value.naturezaOperacao,
+        status: this.form.value.status
       };
 
       if (this.category) {

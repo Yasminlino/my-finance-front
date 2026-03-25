@@ -21,6 +21,7 @@ export class ContaMensalFormComponent implements OnInit {
     value: [null as any, [Validators.required]],
     dataOperacao: [null as any, [Validators.required]],
     categoryid: [null as any, [Validators.required, Validators.min(1), Validators.max(31)]],
+    status: [1, Validators.required]
   });
 
   constructor(private fb: FormBuilder, private contaService: ContaService) {}
@@ -33,6 +34,7 @@ export class ContaMensalFormComponent implements OnInit {
         value: this.formataDecimal(this.account.value),
         dataOperacao: this.account.dataOperacao,
         categoryid: this.account.categoryid,
+        status: this.account.status
       });
     }
   }
@@ -65,6 +67,7 @@ export class ContaMensalFormComponent implements OnInit {
         name: this.form.value.name!,
         value: parseMoneyBRToNumber(this.form.value.value),
         categoryid: Number(this.form.value.categoryid),
+        status: Number(this.form.value.status),
         dataOperacao: Number(this.form.value.dataOperacao!),
       };
 

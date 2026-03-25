@@ -99,7 +99,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
       const [bancos, tipos, cats] = await Promise.all([
         this.bancoService.list(),
         this.tipoCartaoService.list(),
-        this.categoryService.list(),
+        this.categoryService.buscarCategoriasAtivas(),
       ]);
 
       this.bancos = bancos ?? [];

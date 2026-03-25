@@ -106,6 +106,7 @@
             <thead class="bg-body-tertiary">
               <tr class="border-bottom">
                 <th>Data</th>
+                <th class="w-30">Pessoa</th>
                 <th>Tipo</th>
 
                 <ng-container *ngIf="isCreditCard">
@@ -116,7 +117,6 @@
                 <th>Categoria</th>
                 <th>Descrição</th>
                 <th>Tipo Mov.</th>
-                <th>Pessoa</th>
                 <th class="text-end">Valor</th>
                 <th style="width:140px" class="text-center">Ações</th>
               </tr>
@@ -126,6 +126,12 @@
                 <th>
                   <input class="form-control form-control-sm" type="date" [(ngModel)]="tableFilters.data" />
                 </th>
+
+                <th>
+                  <input class="form-control form-control-sm" placeholder="Pessoa..."
+                    [(ngModel)]="tableFilters.pessoa" />
+                </th>
+
                 <th>
                   <input class="form-control form-control-sm" placeholder="Tipo..." [(ngModel)]="tableFilters.tipo" />
                 </th>
@@ -157,10 +163,7 @@
                     </option>
                   </select>
                 </th>
-                <th>
-                  <input class="form-control form-control-sm" placeholder="Pessoa..."
-                    [(ngModel)]="tableFilters.pessoa" />
-                </th>
+                
 
                 <th>
                   <div class="d-flex gap-2">
@@ -196,8 +199,11 @@
                 <!-- VIEW MODE -->
                 <ng-container *ngIf="!isEditing(e); else editRow">
                   <td>{{ e.dataMovimentacao | date:'dd/MM/yyyy' }}</td>
-                  <td>{{ e.tipoLancamento || '—' }}</td>
+                  <td>{{ e.nomePessoaTransacao || '—' }}</td>
 
+
+                  <td>{{ e.tipoLancamento || '—' }}</td>
+                  
                   <ng-container *ngIf="isCreditCard">
                     <td>
                       <ng-container *ngIf="e.parcelaAtual && e.quantidadeParcelas; else semParcela">
@@ -211,7 +217,6 @@
                   <td>{{ e.categoria?.name || '—' }}</td>
                   <td>{{ (e.descricao || '—') }}</td>
                   <td>{{ e.tipoMovimentacao?.nomeTipoMovimentacao || '—' }}</td>
-                  <td>{{ e.nomePessoaTransacao || '—' }}</td>
 
                   <td class="text-end fw-bold" [class.text-danger]="e.tipoLancamento == 'Saída'"
                     [class.text-success]="e.tipoLancamento == 'Entrada'">
