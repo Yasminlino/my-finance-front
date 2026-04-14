@@ -22,7 +22,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   @Input() mesAtualizacao: string = '';
   @Input() bancoId: number | null = null;
 
-  
+
   alert: AlertState = { type: '', message: '' };
 
   loading = false;
@@ -39,7 +39,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
     private categoriaService: CategoryService,
     private tipoMovService: TipoMovimentacaoService,
     private extratoBancarioService: ExtratoBancarioItemService
-  ) {}
+  ) { }
 
   async ngOnInit(): Promise<void> {
     await this.loadAll();
@@ -48,34 +48,44 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   private async loadAll() {
     this.loading = true;
     this.errorMsg = '';
-    
+
     try {
-      const [cats, tipos, pessoas, movimentacoes] = await Promise.all([
-        this.categoriaService.buscarCategoriasAtivas(),
-        this.tipoMovService.list(),
-        this.pessoaService.list(),
-        this.extratoBancarioService.listExtratos(this.mesAtualizacao, this.bancoId)
-      ]);
+      if (!this.mesAtualizacao && !this.bancoId) {
+        this.categorias = await this.categoriaService.buscarCategoriasAtivas() ?? [];
+        this.tiposMovimentacao = await this.tipoMovService.list() ?? [];
 
-      this.categorias = cats ?? [];
-      this.tiposMovimentacao = tipos ?? [];
+        const pessoas = await this.pessoaService.list();
+        this.rows = (pessoas ?? []).filter(p =>
+          p.categoriaId == null || p.tipoMovimentacaoId == null
+        );
+      } else {
+        const [cats, tipos, pessoas, movimentacoes] = await Promise.all([
+          this.categoriaService.buscarCategoriasAtivas(),
+          this.tipoMovService.list(),
+          this.pessoaService.list(),
+          this.extratoBancarioService.listExtratos(this.mesAtualizacao, this.bancoId)
+        ]);
 
-      const pessoasSemVinculo = (pessoas ?? []).filter(p =>
-        p.categoriaId == null || p.tipoMovimentacaoId == null
-      );
+        this.categorias = cats ?? [];
+        this.tiposMovimentacao = tipos ?? [];
 
-      // ids que JÁ estão vinculados nas movimentações do mês
-      const idsVinculadosNoMes = new Set(
-        (movimentacoes ?? [])
-          .map(m => String(m.pessoaMovimentacaoId))
-          .filter(id => id && id !== '0')
-      );
+        const pessoasSemVinculo = (pessoas ?? []).filter(p =>
+          p.categoriaId == null || p.tipoMovimentacaoId == null
+        );
 
-      const filtroMes = (pessoasSemVinculo ?? []).filter(p =>
-        idsVinculadosNoMes.has(String(p.id))
-      );
-      
-      this.rows = filtroMes.map(p => ({ ...p }));
+        // ids que JÁ estão vinculados nas movimentações do mês
+        const idsVinculadosNoMes = new Set(
+          (movimentacoes ?? [])
+            .map(m => String(m.pessoaMovimentacaoId))
+            .filter(id => id && id !== '0')
+        );
+
+        const filtroMes = (pessoasSemVinculo ?? []).filter(p =>
+          idsVinculadosNoMes.has(String(p.id))
+        );
+
+        this.rows = filtroMes.map(p => ({ ...p }));
+      }
     } catch (e: any) {
       this.errorMsg = e?.error?.message || e?.message || 'Erro ao carregar dados.';
     } finally {

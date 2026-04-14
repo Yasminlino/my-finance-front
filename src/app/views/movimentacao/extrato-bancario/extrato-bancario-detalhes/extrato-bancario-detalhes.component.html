@@ -31,13 +31,8 @@
         <div class="card-body">
           <div class="row g-3 align-items-end">
             <div class="col-12 col-md-3">
-              <label class="form-label text-muted mb-1">Data (de)</label>
-              <input type="date" class="form-control" [(ngModel)]="dateFrom" />
-            </div>
-
-            <div class="col-12 col-md-3">
-              <label class="form-label text-muted mb-1">Data (até)</label>
-              <input type="date" class="form-control" [(ngModel)]="dateTo" />
+              <label class="form-label text-muted mb-1">Mês</label>
+              <input type="month" class="form-control" [(ngModel)]="month" />
             </div>
 
             <div class="col-12 col-md-2">
@@ -140,7 +135,7 @@
                   <th></th>
                   <th>
                     <input class="form-control form-control-sm" placeholder="Fatura..."
-                      [(ngModel)]="tableFilters.fatura" />
+                       [disabled]="true" [(ngModel)]="tableFilters.fatura" />
                   </th>
                 </ng-container>
 
@@ -200,8 +195,6 @@
                 <ng-container *ngIf="!isEditing(e); else editRow">
                   <td>{{ e.dataMovimentacao | date:'dd/MM/yyyy' }}</td>
                   <td>{{ e.nomePessoaTransacao || '—' }}</td>
-
-
                   <td>{{ e.tipoLancamento || '—' }}</td>
                   
                   <ng-container *ngIf="isCreditCard">
@@ -211,7 +204,7 @@
                       </ng-container>
                       <ng-template #semParcela>—</ng-template>
                     </td>
-                    <td>{{ e.numeroFatura || '—' }}</td>
+                    <td class="disabled">{{ e.numeroFatura || '—' }}</td>
                   </ng-container>
 
                   <td>{{ e.categoria?.name || '—' }}</td>
@@ -238,6 +231,13 @@
                     <td>
                       <input class="form-control form-control-sm" type="date" formControlName="dataMovimentacao" />
                     </td>
+                    <td>
+                      <input class="form-control form-control-sm" [ngbTypeahead]="searchPessoa"
+                        [resultFormatter]="formatterPessoa" [inputFormatter]="formatterPessoa"
+                        [value]="fg.controls.nomePessoaTransacao.value"
+                        (input)="fg.controls.nomePessoaTransacao.setValue(($any($event.target)).value)"
+                        (selectItem)="fg.controls.nomePessoaTransacao.setValue($event.item.nomePessoa)" />
+                    </td>
 
                     <td>
                       <select class="form-select form-select-sm" formControlName="tipoLancamento">
@@ -256,7 +256,7 @@
                         </div>
                       </td>
                       <td>
-                        <input class="form-control form-control-sm" formControlName="numeroFatura" />
+                        <input class="form-control-plaintext"  formControlName="numeroFatura" readonly />
                       </td>
                     </ng-container>
 
@@ -278,13 +278,7 @@
                         </option>
                       </select>
                     </td>
-                    <td>
-                      <input class="form-control form-control-sm" [ngbTypeahead]="searchPessoa"
-                        [resultFormatter]="formatterPessoa" [inputFormatter]="formatterPessoa"
-                        [value]="fg.controls.nomePessoaTransacao.value"
-                        (input)="fg.controls.nomePessoaTransacao.setValue(($any($event.target)).value)"
-                        (selectItem)="fg.controls.nomePessoaTransacao.setValue($event.item.nomePessoa)" />
-                    </td>
+                    
 
                     <td class="text-end">
                       <input class="form-control form-control-sm text-end" formControlName="valor" />
@@ -347,9 +341,9 @@
 
                   <ng-container *ngIf="isCreditCard">
                     <div class="col-12 col-md-4">
-                      <label class="form-label">Número da fatura (opcional)</label>
+                      <label class="form-label">Número da fatura</label>
                       <input type="text" class="form-control" placeholder="Ex.: 2026-01"
-                        [(ngModel)]="manualNumeroFatura" [disabled]="saving" />
+                        [(ngModel)]="manualNumeroFatura" [disabled]="true" />
                     </div>
 
                     <div class="col-12 col-md-4 d-flex align-items-end">
@@ -364,6 +358,11 @@
                       <div class="col-12 col-md-4">
                         <label class="form-label">Total de parcelas</label>
                         <input type="number" min="2" class="form-control" [(ngModel)]="manualQuantidadeParcelas"
+                          [disabled]="saving" />
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <label class="form-label">Parcela atual</label>
+                        <input type="number" min="2" class="form-control" [(ngModel)]="manualParcelaAtual"
                           [disabled]="saving" />
                       </div>
 
@@ -391,7 +390,7 @@
 
                   <div class="col-12 col-md-6">
                     <label class="form-label">Pessoa transação</label>
-                    <input type="text" class="form-control" [(ngModel)]="manualPessoaNome"
+                    <input type="text" class="form-control text-uppercase" [(ngModel)]="manualPessoaNome"
                       (ngModelChange)="manualPessoaId = null" [ngbTypeahead]="searchPessoa"
                       [inputFormatter]="formatterPessoa" [resultFormatter]="formatterPessoa"
                       (selectItem)="manualPessoaNome = $event.item.nomePessoa; manualPessoaId = $event.item.id" />

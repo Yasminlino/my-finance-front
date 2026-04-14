@@ -148,6 +148,9 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
         idAccount: acc.id,
         value: removeFormatCurrencyBR(acc.value),
         status: 'PENDENTE',
+        ehParcelado: acc.ehParcelado,
+        parcelaAtual: acc.parcelaAtual,
+        quantidadeParcelas: acc.quantidadeParcelas,
       }));
 
     let successCount = 0;

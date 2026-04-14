@@ -14,6 +14,10 @@ import { isoDateMinusHours, parseMoneyBRToNumber } from 'src/app/core/utils/mask
 type AlertState = { type: '' | 'success' | 'error' | 'warning'; message: string };
 
 function getCurrentMonthISO() {
+  var mes = localStorage.getItem('monthResumoFilter') 
+  if(mes)
+    return mes
+
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   return `${now.getFullYear()}-${month}`;
@@ -34,6 +38,8 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   tipoContaFilter = '';
 
   alert: AlertState = { type: '', message: '' };
+
+  showModalConfigPessoas = false;
 
   loading = false;
 
@@ -88,7 +94,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   ngOnInit() {
     const now = new Date();
     const mm = String(now.getMonth() + 1).padStart(2, '0');
-    this.monthFilter = `${now.getFullYear()}-${mm}`; // ex: 2026-02
+    this.monthFilter = localStorage.getItem('monthResumoFilter') ?? `${now.getFullYear()}-${mm}`; // ex: 2026-02
 
     this.refresh();
     this.carregaFiltros();
@@ -123,7 +129,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     this.loading = true;
     try {
       const bancoId = this.bancoFilter ? Number(this.bancoFilter) : null;
-
+      localStorage.setItem('monthResumoFilter', this.monthFilter)
       // a API já recebe monthFilter e opcional bancoId
       const rows = await this.extratoItemService.listExtratos(this.monthFilter, bancoId);
       this.extratos = Array.isArray(rows) ? rows : [];
@@ -333,6 +339,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   }
 
   async saveManualItem() {
+    console.log('this.manualForm', this.manualForm.pessoaTransacao);
     if (!this.manualForm.bancoId) {
       this.setAlert('error', 'Selecione um banco.');
       return;
@@ -363,8 +370,6 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
     try {
       this.savingManual = true;
-      console.log('this.manualForm', this.manualForm);
-
       const payload = {
         extratoBancarioId: null,
         dataMovimentacao: this.manualForm.dataMovimentacao,
@@ -395,6 +400,15 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     } finally {
       this.savingManual = false;
     }
+  }
+
+  abrirConfigPessoas() {
+    this.showModalConfigPessoas = true;
+  }
+
+  fecharConfigPessoas(evt: { reload: boolean }) {
+    this.showModalConfigPessoas = false;
+    if (evt?.reload) this.refresh();
   }
 
   // -----------------------

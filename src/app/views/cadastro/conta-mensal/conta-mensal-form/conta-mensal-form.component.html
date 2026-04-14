@@ -45,7 +45,23 @@
             Selecione uma categoria.
           </div>
         </div>
+        <div class="mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" formControlName="ehParcelado" id="parceladoCheck" />
+            <label class="form-check-label" for="parceladoCheck">Conta parcelada</label>
+          </div>
+        </div>
 
+        <div class="row" *ngIf="form.get('ehParcelado')?.value">
+          <div class="mb-3 col-6">
+            <label class="form-label">Total de parcelas</label>
+            <input type="number" min="2" class="form-control" formControlName="quantidadeParcelas" />
+          </div>
+          <div class="mb-3 col-6">
+            <label class="form-label">Parcela atual</label>
+            <input type="number" min="1" class="form-control" formControlName="parcelaAtual" />
+          </div>
+        </div>
         <div class="mb-3">
           <label class="form-label">Status</label>
           <select class="form-select" formControlName="status"

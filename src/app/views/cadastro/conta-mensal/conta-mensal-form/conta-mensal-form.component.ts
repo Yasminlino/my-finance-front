@@ -13,6 +13,10 @@ export class ContaMensalFormComponent implements OnInit {
   @Input() account: AccountDto | null = null;
   @Input() categories: Category[] = [];
   @Output() closed = new EventEmitter<boolean>(); // true => recarregar lista
+  contaParcelada = false;
+  parcelaAtual = 2;
+  quantidadeParcelas = 2;
+
 
   saving = false;
 
@@ -21,7 +25,10 @@ export class ContaMensalFormComponent implements OnInit {
     value: [null as any, [Validators.required]],
     dataOperacao: [null as any, [Validators.required]],
     categoryid: [null as any, [Validators.required, Validators.min(1), Validators.max(31)]],
-    status: [1, Validators.required]
+    status: [1, Validators.required],
+    ehParcelado: [false],
+    parcelaAtual: [1],
+    quantidadeParcelas: [1]
   });
 
   constructor(private fb: FormBuilder, private contaService: ContaService) {}
@@ -34,7 +41,10 @@ export class ContaMensalFormComponent implements OnInit {
         value: this.formataDecimal(this.account.value),
         dataOperacao: this.account.dataOperacao,
         categoryid: this.account.categoryid,
-        status: this.account.status
+        status: this.account.status,
+        ehParcelado: this.account.ehParcelado,
+        parcelaAtual: this.account.parcelaAtual,
+        quantidadeParcelas: this.account.quantidadeParcelas
       });
     }
   }
@@ -68,6 +78,9 @@ export class ContaMensalFormComponent implements OnInit {
         value: parseMoneyBRToNumber(this.form.value.value),
         categoryid: Number(this.form.value.categoryid),
         status: Number(this.form.value.status),
+        ehParcelado: Boolean(this.form.value.ehParcelado),
+        parcelaAtual: Number(this.form.value.parcelaAtual),
+        quantidadeParcelas: Number(this.form.value.quantidadeParcelas),
         dataOperacao: Number(this.form.value.dataOperacao!),
       };
 

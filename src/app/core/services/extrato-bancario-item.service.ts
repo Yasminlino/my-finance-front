@@ -40,8 +40,8 @@ export interface ExtratoItemDto {
 export class ExtratoBancarioItemService {
   constructor(private api: ApiService) { }
 
-  listExtratos(monthFilter: string, bancoId?: number | null): Promise<ExtratoItemDto[]> {
-    return this.api.get<ExtratoItemDto[]>(`/GetExtratoBancarioItensByMonth?month=${monthFilter}&bancoId=${bancoId ?? ''}`);
+  listExtratos(monthFilter: string, bancoId?: number | null, ehCredito: boolean = false): Promise<ExtratoItemDto[]> {
+    return this.api.get<ExtratoItemDto[]>(`/GetExtratoBancarioItensByMonth?month=${monthFilter}&bancoId=${bancoId ?? ''}&ehCredito=${ehCredito}`);
   }
 
   createExtratoManualItem(payload: any) {

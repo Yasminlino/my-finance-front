@@ -9,6 +9,8 @@
             </th>
             <th class="text-nowrap">Conta</th>
             <th class="text-nowrap">Categoria</th>
+            <th class="text-nowrap">Parcela</th>
+            <th class="text-nowrap">Observação</th>
             <th class="text-nowrap" style="width:160px">Valor</th>
             <th class="text-nowrap" style="width:170px">Vencimento</th>
             <th class="text-nowrap" style="width:190px">Status</th>
@@ -22,26 +24,17 @@
             <!-- CONTA (multi) -->
             <th>
               <div class="dropdown" [class.show]="ddContaOpen">
-                <button
-                  type="button"
-                  class="form-select form-select-sm text-start"
+                <button type="button" class="form-select form-select-sm text-start"
                   (click)="toggleDropdown('conta', $event)">
                   {{ multiLabel('name', 'Conta') }}
                 </button>
 
-                <div
-                  class="dropdown-menu p-2 w-100"
-                  [class.show]="ddContaOpen"
-                  (click)="$event.stopPropagation()"
+                <div class="dropdown-menu p-2 w-100" [class.show]="ddContaOpen" (click)="$event.stopPropagation()"
                   style="max-height: 240px; overflow:auto;">
                   <div class="form-check" *ngFor="let opt of contaOptions">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      [id]="'conta_' + opt"
+                    <input class="form-check-input" type="checkbox" [id]="'conta_' + opt"
                       [checked]="isSelected('name', opt)"
-                      (change)="toggleMulti('name', opt, ($any($event.target)).checked)"
-                    />
+                      (change)="toggleMulti('name', opt, ($any($event.target)).checked)" />
                     <label class="form-check-label" [for]="'conta_' + opt">{{ opt }}</label>
                   </div>
 
@@ -60,26 +53,17 @@
             <!-- CATEGORIA (multi) -->
             <th>
               <div class="dropdown" [class.show]="ddCategoriaOpen">
-                <button
-                  type="button"
-                  class="form-select form-select-sm text-start"
+                <button type="button" class="form-select form-select-sm text-start"
                   (click)="toggleDropdown('categoria', $event)">
                   {{ multiLabel('categoryName', 'Categoria') }}
                 </button>
 
-                <div
-                  class="dropdown-menu p-2 w-100"
-                  [class.show]="ddCategoriaOpen"
-                  (click)="$event.stopPropagation()"
+                <div class="dropdown-menu p-2 w-100" [class.show]="ddCategoriaOpen" (click)="$event.stopPropagation()"
                   style="max-height: 240px; overflow:auto;">
                   <div class="form-check" *ngFor="let opt of categoriaOptions">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      [id]="'cat_' + opt"
+                    <input class="form-check-input" type="checkbox" [id]="'cat_' + opt"
                       [checked]="isSelected('categoryName', opt)"
-                      (change)="toggleMulti('categoryName', opt, ($any($event.target)).checked)"
-                    />
+                      (change)="toggleMulti('categoryName', opt, ($any($event.target)).checked)" />
                     <label class="form-check-label" [for]="'cat_' + opt">{{ opt }}</label>
                   </div>
 
@@ -97,48 +81,37 @@
 
             <!-- VALOR (igual você tinha) -->
             <th>
-              <input
-                class="form-control form-control-sm"
-                style="width:120px"
-                placeholder=">= 100 (ou texto)"
-                [value]="columnFilters.value"
-                (input)="setColumnFilter('value', ($any($event.target)).value)"
-              />
+              <input class="form-control form-control-sm" style="width:120px" placeholder=">= 100 (ou texto)"
+                [value]="columnFilters.value" (input)="setColumnFilter('parcela', ($any($event.target)).value)" />
+            </th>
+            <th>
+              <input class="form-control form-control-sm" style="width:120px" placeholder=">= 100 (ou texto)"
+                [value]="columnFilters.value" (input)="setColumnFilter('observacao', ($any($event.target)).value)" />
+            </th>
+            <th>
+              <input class="form-control form-control-sm" style="width:120px" placeholder=">= 100 (ou texto)"
+                [value]="columnFilters.value" (input)="setColumnFilter('value', ($any($event.target)).value)" />
             </th>
 
             <!-- DATA (igual você tinha) -->
             <th>
-              <input
-                class="form-control form-control-sm"
-                type="date"
-                [value]="columnFilters.date"
-                (input)="setColumnFilter('date', ($any($event.target)).value)"
-              />
+              <input class="form-control form-control-sm" type="date" [value]="columnFilters.date"
+                (input)="setColumnFilter('date', ($any($event.target)).value)" />
             </th>
 
             <!-- STATUS (multi) -->
             <th>
               <div class="dropdown" [class.show]="ddStatusOpen">
-                <button
-                  type="button"
-                  class="form-select form-select-sm text-start"
+                <button type="button" class="form-select form-select-sm text-start"
                   (click)="toggleDropdown('status', $event)">
                   {{ multiLabel('status', 'Status') }}
                 </button>
 
-                <div
-                  class="dropdown-menu p-2 w-100"
-                  [class.show]="ddStatusOpen"
-                  (click)="$event.stopPropagation()"
+                <div class="dropdown-menu p-2 w-100" [class.show]="ddStatusOpen" (click)="$event.stopPropagation()"
                   style="max-height: 240px; overflow:auto;">
                   <div class="form-check" *ngFor="let s of statusOptions">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      [id]="'st_' + s"
-                      [checked]="isSelected('status', s)"
-                      (change)="toggleMulti('status', s, ($any($event.target)).checked)"
-                    />
+                    <input class="form-check-input" type="checkbox" [id]="'st_' + s" [checked]="isSelected('status', s)"
+                      (change)="toggleMulti('status', s, ($any($event.target)).checked)" />
                     <label class="form-check-label" [for]="'st_' + s">{{ s }}</label>
                   </div>
 
@@ -160,11 +133,11 @@
 
         <tbody>
           <tr *ngIf="loading">
-            <td colspan="7" class="text-center text-secondary py-4">Carregando...</td>
+            <td colspan="9" class="text-center text-secondary py-4">Carregando...</td>
           </tr>
 
           <tr *ngIf="!loading && rows.length === 0">
-            <td colspan="7" class="text-center text-secondary py-4">
+            <td colspan="9" class="text-center text-secondary py-4">
               Nenhuma transação encontrada com os filtros aplicados.
             </td>
           </tr>
@@ -176,50 +149,53 @@
               </td>
 
               <td class="text-uppercase fw-medium">{{ row.name }}</td>
-              <td>{{ row.categoryName }}</td>
+              <td class="align-items-center text-center">{{ row.categoryName }}</td>
+              <td class="align-items-center text-center">{{ row.quantidadeParcelas ? row.parcelaAtual + '/' +
+                row.quantidadeParcelas : '-' }}</td>
+              <td>
+                <ng-container *ngIf="isLocked(row.id); else editObservacao">
+
+                  <!-- MODO BLOQUEADO -->
+                  <span class="text-truncate d-inline-block"
+                    style="max-width: 120px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer;"
+                    (click)="openObservacao(row.observacao || '')" [title]="row.observacao">
+                    {{ row.observacao || '-' }}
+                  </span>
+
+                </ng-container>
+
+                <!-- MODO EDITÁVEL -->
+                <ng-template #editObservacao>
+                  <textarea class="form-control form-control-sm" rows="1" formControlName="observacao"
+                    (blur)="commitObservacao(row.id)" [disabled]="isLocked(row.id)"></textarea>
+                </ng-template>
+              </td>
 
               <td>
                 <div class="input-group input-group-sm">
                   <span class="input-group-text">R$</span>
-                  <input
-                    class="form-control"
-                    type="text"
-                    formControlName="value"
-                    (focus)="$any($event.target).select()"
-                    (input)="maskValueTyping(row.id, $event)"
-                    (blur)="commitValue(row.id)"
-                    [disabled]="isLocked(row.id)"
-                    [readonly]="isLocked(row.id)"
-                  />
+                  <input class="form-control" type="text" formControlName="value" (focus)="$any($event.target).select()"
+                    (input)="maskValueTyping(row.id, $event)" (blur)="commitValue(row.id)" [disabled]="isLocked(row.id)"
+                    [readonly]="isLocked(row.id)" />
                 </div>
               </td>
 
               <td>
-                <input
-                  class="form-control form-control-sm"
-                  type="date"
-                  formControlName="date"
-                  (blur)="commitDate(row.id)"
-                  [disabled]="isLocked(row.id)"
-                  [readonly]="isLocked(row.id)"
-                />
+                <input class="form-control form-control-sm" type="date" formControlName="date"
+                  (blur)="commitDate(row.id)" [disabled]="isLocked(row.id)" [readonly]="isLocked(row.id)" />
               </td>
 
               <td>
                 <ng-container *ngIf="isLocked(row.id); else editableStatus">
                   <div class="d-flex align-items-center gap-2">
-                    <span
-                      [ngClass]="row.status === 'PAGO NO PRAZO'
+                    <span [ngClass]="row.status === 'PAGO NO PRAZO'
                         ? 'badge bg-green-lt text-green-lt-fg'
                         : row.status === 'AGUARDANDO'
                         ? 'badge bg-yellow-lt text-red-lt-fg'
                         : 'badge bg-red-lt text-red-lt-fg'">
                       🔒 {{ row.status }}
                     </span>
-                    <button
-                      class="btn btn-icon btn-soft-muted"
-                      type="button"
-                      (click)="unlock.emit(row.id)"
+                    <button class="btn btn-icon btn-soft-muted" type="button" (click)="unlock.emit(row.id)"
                       title="Desbloquear para edição">
                       🔓
                     </button>
@@ -227,10 +203,7 @@
                 </ng-container>
 
                 <ng-template #editableStatus>
-                  <select
-                    class="form-select form-select-sm"
-                    formControlName="status"
-                    (change)="commitStatus(row.id)"
+                  <select class="form-select form-select-sm" formControlName="status" (change)="commitStatus(row.id)"
                     [disabled]="isLocked(row.id)">
                     <option *ngFor="let s of statusOptions" [ngValue]="s">{{ s }}</option>
                   </select>
@@ -239,19 +212,12 @@
 
               <td class="text-center">
                 <div class="btn-list d-inline-flex">
-                  <button
-                    class="btn btn-icon btn-soft-success"
-                    type="button"
-                    title="Salvar"
-                    (click)="saveRow.emit(row.id)"
-                    [disabled]="isLocked(row.id)">
+                  <button class="btn btn-icon btn-soft-success" type="button" title="Salvar"
+                    (click)="saveRow.emit(row.id)" [disabled]="isLocked(row.id)">
                     💾
                   </button>
 
-                  <button
-                    class="btn btn-icon btn-soft-danger"
-                    type="button"
-                    title="Excluir"
+                  <button class="btn btn-icon btn-soft-danger" type="button" title="Excluir"
                     (click)="deleteRow.emit(row.id)">
                     🗑️
                   </button>
@@ -265,6 +231,26 @@
 
     <div class="p-3 text-muted small">
       {{ rows.length }} {{ rows.length === 1 ? 'registro' : 'registros' }} na tela
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade show d-block" *ngIf="showObservacaoModal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-modal">
+      <div class="modal-header">
+        <h5 class="modal-title">Observação</h5>
+        <button type="button" class="btn-close" (click)="closeObservacao()"></button>
+      </div>
+
+      <div class="modal-body">
+        <p style="white-space: pre-wrap;">{{ observacaoSelecionada }}</p>
+      </div>
+
+      <div class="modal-footer p-0">
+        <button class="btn btn-secondary" (click)="closeObservacao()">Fechar</button>
+      </div>
     </div>
   </div>
 </div>

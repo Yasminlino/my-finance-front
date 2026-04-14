@@ -7,6 +7,8 @@ type RowForm = FormGroup<{
   value: FormControl<string>;
   date: FormControl<string>;
   status: FormControl<string>;
+  parcela: FormControl<string>;
+  observacao: FormControl<string>;
 }>;
 
 type ColumnFilters = {
@@ -15,11 +17,14 @@ type ColumnFilters = {
   status: string[];       // multi
   value: string;          // texto
   date: string;           // yyyy-mm-dd
+  parcela: string;        // texto
+  observacao: string;     // texto
 };
 
 @Component({
   selector: 'app-conta-mensal-list',
   templateUrl: './conta-mensal-list.component.html',
+  styleUrls: ['./conta-mensal-list.component.scss']
 })
 export class ContaMensalListComponent implements OnChanges {
   @Input() rows: LinhaContaMensal[] = [];
@@ -36,7 +41,7 @@ export class ContaMensalListComponent implements OnChanges {
   @Output() toggleRow = new EventEmitter<number>();
   @Output() columnFiltersChange = new EventEmitter<any>();
 
-  @Output() changeField = new EventEmitter<{ id: number; field: 'value' | 'date' | 'status'; value: string }>();
+  @Output() changeField = new EventEmitter<{ id: number; field: 'value' | 'date' | 'status' | 'observacao'; value: string }>();
   @Output() unlock = new EventEmitter<number>();
   @Output() saveRow = new EventEmitter<number>();
   @Output() deleteRow = new EventEmitter<number>();
@@ -88,8 +93,10 @@ export class ContaMensalListComponent implements OnChanges {
         if (!form) {
           form = this.fb.group({
             value: this.fb.control(this.money(r.value), { nonNullable: true }),
-            date: this.fb.control(this.dateInput(r.date), { nonNullable: true }),
+            date: this.fb.control(formatDateInput(r.date), { nonNullable: true }),
             status: this.fb.control(String(r.status ?? ''), { nonNullable: true }),
+            parcela: this.fb.control(String(r.parcelaAtual ?? ''), { nonNullable: true }),
+            observacao: this.fb.control(String(r.observacao ?? ''), { nonNullable: true }),
           });
           this.rowForms.set(r.id, form);
         } else {
@@ -207,12 +214,33 @@ export class ContaMensalListComponent implements OnChanges {
     f.controls.value.markAsPristine();
   }
 
+  commitObservacao(id: number) {
+    const f = this.rowForms.get(id);
+    if (!f) return;
+
+    
+    this.changeField.emit({ id, field: 'observacao', value: f.controls.observacao.value });
+
+    f.controls.observacao.markAsPristine();
+  }
+
+  observacaoSelecionada = '';
+  showObservacaoModal = false;
+
+  openObservacao(text?: string) {
+    this.observacaoSelecionada = text ?? '';
+    this.showObservacaoModal = true;
+  }
+
+  closeObservacao() {
+    this.showObservacaoModal = false;
+  }
+
   commitDate(id: number) {
     const f = this.rowForms.get(id);
     if (!f) return;
 
     this.changeField.emit({ id, field: 'date', value: f.controls.date.value });
-    f.controls.date.markAsPristine();
   }
 
   commitStatus(id: number) {

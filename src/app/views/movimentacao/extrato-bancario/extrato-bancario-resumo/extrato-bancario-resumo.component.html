@@ -28,7 +28,7 @@
             <button class="btn btn-outline-secondary btn-lg-icon" type="button" (click)="refresh()">⟳
               Atualizar</button>
             <button class="btn btn-outline-secondary btn-lg-icon" type="button" (click)="refresh()">⟳
-              Relatório Mensal</button>
+              Relatório Mensal</button>            
             <button class="btn btn-outline-secondary btn-lg-icon" type="button" (click)="showModalImportacoesMensais = true">📥
               Importações mensais</button>
           </div>
@@ -39,12 +39,12 @@
       <div class="card shadow-sm mb-3">
         <div class="card-body">
           <div class="row g-3 align-items-end">
-            <div class="col-12 col-md-4 col-lg-3">
+            <div class="col-12 col-md-4 col-lg-2">
               <label class="form-label text-muted mb-1">Mês</label>
               <input type="month" class="form-control" [(ngModel)]="monthFilter" (ngModelChange)="refresh()" />
             </div>
 
-            <div class="col-12 col-md-4 col-lg-3">
+            <div class="col-12 col-md-4 col-lg-2">
               <label class="form-label text-muted mb-1">Banco</label>
               <select class="form-select" [(ngModel)]="bancoFilter" (change)="refresh()">
                 <option value="">Todos</option>
@@ -52,7 +52,7 @@
               </select>
             </div>
 
-            <div class="col-12 col-md-4 col-lg-3">
+            <div class="col-12 col-md-4 col-lg-2">
               <label class="form-label text-muted mb-1">Tipo Conta</label>
               <select class="form-select" [(ngModel)]="tipoContaFilter">
                 <option value="">Todos</option>
@@ -64,6 +64,11 @@
             <div class="col-12 col-md-4 col-lg-3">
               <button class="btn btn-outline-secondary" (click)="abrirRelatorioMensal()">
                 Relatório Mensal</button>
+            </div>
+            <div class="col-12 col-md-4 col-lg-3 align-self-end text-end">
+              <button class="btn btn-outline-primary" (click)="abrirConfigPessoas()">
+                Configurar vinculos
+              </button>
             </div>
           </div>
         </div>
@@ -238,8 +243,8 @@
 
                   <div class="col-12 col-md-6">
                     <label class="form-label text-muted mb-1">Pessoa/ Estabelecimento</label>
-                    <input type="text" class="form-control" [value]="manualForm.pessoaTransacao"
-                      (input)="setManual('pessoaTransacao', ($any($event.target)).value)" />
+                    <input type="text" class="form-control text-uppercase" [value]="manualForm.pessoaTransacao"
+                      (input)="setManual('pessoaTransacao', ($any($event.target)).value.toUpperCase())"  />
                   </div>
 
                   <div class="col-12 col-md-6">
@@ -306,5 +311,9 @@
     (closed)="fecharImportacoesMensais($event)">
   </app-modal-importacoes-mensais>
 
+  
+  <app-modal-configuracao-vinculo-pessoa *ngIf="showModalConfigPessoas" 
+    (closed)="fecharConfigPessoas($event)">
+  </app-modal-configuracao-vinculo-pessoa>
 
 </div>

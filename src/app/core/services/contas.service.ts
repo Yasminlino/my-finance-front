@@ -8,6 +8,9 @@ export type AccountDto = {
   dataOperacao: number; // ou number/dia
   categoryid: number;
   status: number;
+  ehParcelado: boolean;
+  parcelaAtual: number;
+  quantidadeParcelas: number;
 };
 
 @Injectable({ providedIn: 'root' })

@@ -90,7 +90,6 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
 
   // filtros gerais
   dateFrom = '';
-  dateTo = '';
   tipoLancamentoFilter: string | '' = '';
   descricaoFilter = '';
   pessoaFilter = '';
@@ -127,6 +126,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
 
   manualParcelado = false;
   manualQuantidadeParcelas = 2;
+  manualParcelaAtual = 1;
   manualGerarTodasParcelas = true;
   manualNumeroFatura = '';
 
@@ -157,9 +157,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
         const firstDay = new Date(this.month + '-01T00:00:00');
         this.dateFrom = firstDay.toISOString().substring(0, 10);
 
-        const lastDay = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0);
-        this.dateTo = lastDay.toISOString().substring(0, 10);
-
+        const lastDay = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0);     
         await this.loadCatalogos();
 
         if (!this.tipoLancamentoFilter) this.tipoLancamentoFilter = '';
@@ -268,8 +266,9 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
   async refresh() {
     this.loading = true;
     try {
-      const rows = await this.extratoItemService.listExtratos(this.month, this.bancoId);
+      const rows = await this.extratoItemService.listExtratos(this.month, this.bancoId, this.isCreditCard);
       this.extratos = Array.isArray(rows) ? rows : [];
+      console.log('extratos:', this.extratos)
       this.rebuildForms();
     } catch {
       this.setAlert('error', 'Erro ao carregar detalhes.');
@@ -452,21 +451,6 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
       const itemTipoContaId = e?.tipoCartaoId ?? e?.tipoCartao?.id ?? e?.tipoContaId ?? null;
       if (this.tipoContaId && String(itemTipoContaId) !== String(this.tipoContaId)) return false;
 
-      // gerais: data
-      if (this.dateFrom || this.dateTo) {
-        const data = e?.dataMovimentacao;
-        const d = data ? new Date(data) : null;
-        if (d && !isNaN(d.getTime())) {
-          if (this.dateFrom) {
-            const from = new Date(this.dateFrom); from.setHours(0, 0, 0, 0);
-            if (d < from) return false;
-          }
-          if (this.dateTo) {
-            const to = new Date(this.dateTo); to.setHours(23, 59, 59, 999);
-            if (d > to) return false;
-          }
-        }
-      }
 
       // gerais: tipo lançamento
       const lanc = String(e?.tipoLancamento ?? '');
@@ -567,7 +551,10 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
           descricao: this.fb.control(String(e?.descricao ?? ''), { nonNullable: true }),
           nomePessoaTransacao: this.fb.control(String(e?.nomePessoaTransacao ?? ''), { nonNullable: true }),
           valor: this.fb.control(formatMoneyBR(this.getValorNumber(e) ?? 0), { nonNullable: true }),
-          numeroFatura: this.fb.control(String(e?.numeroFatura ?? ''), { nonNullable: true }),
+          numeroFatura: this.fb.control(
+            { value: String(e?.numeroFatura ?? ''), disabled: true },
+            { nonNullable: true }
+          ),
           parcelaAtual: this.fb.control(String(e?.parcelaAtual ?? ''), { nonNullable: true }),
           quantidadeParcelas: this.fb.control(String(e?.quantidadeParcelas ?? ''), { nonNullable: true }),
         });
@@ -609,7 +596,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
       descricao: String(e?.descricao ?? ''),
       nomePessoaTransacao: String(e?.nomePessoaTransacao ?? ''),
       valor: formatMoneyBR(this.getValorNumber(e) ?? 0),
-      numeroFatura: String(e?.numeroFatura ?? ''),
+      numeroFatura: String(e?.numeroFatura ?? this.month),
       parcelaAtual: String(e?.parcelaAtual ?? ''),
       quantidadeParcelas: String(e?.quantidadeParcelas ?? ''),
     });
@@ -618,16 +605,15 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
   async onDelete(e: any) {
     const ok = window.confirm(`Excluir a movimentação "${e.nomePessoaTransacao}"?`);
     if (!ok) return;
-    await this.extratoItemService.delete(e.id).then(
-      (res) => {
-        this.alert = { type: 'success', message: `${e.nomePessoaTransacao} deletado com sucesso!` };
-      }
-    ).catch(
-      (e) => {
-        this.alert = { type: 'error', message: 'Falha ao deletar.' + e.message };
-      }
-    )
+    try {
+      await this.extratoItemService.delete(e.id);
+      this.alert = { type: 'success', message: `${e.nomePessoaTransacao} deletado com sucesso!` };
+      setTimeout(() => (this.alert = { type: '', message: '' }), 3000);
     await this.refresh();
+    } catch {
+      this.alert = { type: 'error', message: 'Falha ao deletar.' + e.message };
+      setTimeout(() => (this.alert = { type: '', message: '' }), 12000);
+    }
   }
 
   cancelEdit(e: any) {
@@ -677,13 +663,16 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
         TipoCartaoId: e?.tipoCartaoId ?? e?.TipoCartaoId ?? this.tipoContaId ?? null,
         UserId: e?.userId ?? e?.UserId ?? 0,
         ChaveDescricao: e?.chaveDescricao ?? e?.ChaveDescricao ?? null,
-
+        NumeroFatura: e?.numeroFatura ?? this.month,
         PessoaMovimentacaoId: e?.pessoaMovimentacaoId ?? e?.PessoaMovimentacaoId ?? null,
         AlteraVinculoPessoa: true
       };
 
       await this.extratoItemService.updateExtratoItem(dto).then(
-        () => this.setAlert('success', 'Linha atualizada com sucesso!')
+        () => {
+          this.refresh()
+          this.setAlert('success', 'Linha atualizada com sucesso!')
+        }
       ).catch(() => this.setAlert('error', 'Erro ao atualizar linha.'));
 
 
@@ -703,6 +692,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
     } catch (err: any) {
       this.setAlert('error', err?.error?.message || err?.message || 'Falha ao salvar edição.');
     } finally {
+      this.refresh()
       this.savingRowIds.delete(idKey);
     }
   }
@@ -723,7 +713,6 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
     this.dateFrom = firstDay.toISOString().substring(0, 10);
 
     const lastDay = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0);
-    this.dateTo = lastDay.toISOString().substring(0, 10);
 
     this.tipoLancamentoFilter = '';
     this.categoriaFilter = '';
@@ -764,6 +753,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
 
     this.manualParcelado = false;
     this.manualQuantidadeParcelas = 2;
+    this.manualParcelaAtual = 1;
     this.manualGerarTodasParcelas = true;
 
     this.showAddModal = true;
@@ -813,7 +803,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
         TipoCartaoId: this.tipoContaId,
         CategoriaId: this.manualCategoriaId ? Number(this.manualCategoriaId) : null,
 
-        NumeroFatura: this.manualNumeroFatura || null,
+        NumeroFatura: this.month || null,
 
         EhParcelado: this.manualParcelado ?? false,
       };
@@ -830,28 +820,36 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
       }
 
       // 2) ✅ É cartão e é parcelado
-      const quantidadeParcelas = Math.max(2, Number(this.manualQuantidadeParcelas) || 2);
+      const quantidadeParcelas = Math.max(2, Number(this.manualQuantidadeParcelas) || 2); //exemplo 10
 
+      var totalCriado = 0
       // 2.1) Parcelado e "gerar todas"
       if (this.manualGerarTodasParcelas) {
-        const groupKey = `PARC-${Date.now()}`;
+        
+        for (let p = this.manualParcelaAtual; p <= quantidadeParcelas; p++) {
+          const groupKey = `PARC-${p}/${quantidadeParcelas}`;
+          const [y, m] = this.month.split('-').map(Number)
 
-        for (let p = 1; p <= quantidadeParcelas; p++) {
-          const dataParcela = addMonthsISO(this.manualData, p - 1);
+          if(p > this.manualParcelaAtual){
+            var diferenca = p - this.manualParcelaAtual
+            basePayload.NumeroFatura = y + '-' + (m+diferenca).toString().padStart(2, '0')
+          }
 
           const payloadParcela: any = {
             ...basePayload,
-            DataMovimentacao: dataParcela,
+            DataMovimentacao: this.manualData,
             EhParcelado: true,
             ParcelaAtual: p,
             QuantidadeParcelas: quantidadeParcelas,
             GrupoParcelamento: groupKey,
           };
 
+          totalCriado += 1
+
           await this.extratoItemService.createExtratoManualItem(payloadParcela);
         }
 
-        this.alert = { type: 'success', message: `Parcelamento criado: ${quantidadeParcelas} parcelas.` };
+        this.alert = { type: 'success', message: `Parcelamento criado: ${totalCriado} parcelas.` };
         this.showAddModal = false;
 
         await this.refresh();

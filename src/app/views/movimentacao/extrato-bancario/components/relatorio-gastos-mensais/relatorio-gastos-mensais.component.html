@@ -14,6 +14,11 @@
       </div>
       <div class="row mb-3">
         <div class="col-12 col-lg-6">
+          <app-apex-chart titleText="Método contábil" [options]="relatorioBanco" cardClass="shadow-sm"></app-apex-chart>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-12 col-lg-6">
           <app-apex-chart titleText="Bancos ({{ calculaTotal() }})" [options]="relatorioBanco" cardClass="shadow-sm"></app-apex-chart>
         </div>
       </div>

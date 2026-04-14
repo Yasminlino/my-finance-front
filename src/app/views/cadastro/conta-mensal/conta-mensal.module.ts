@@ -6,6 +6,8 @@ import { ContaMensalFormComponent } from './conta-mensal-form/conta-mensal-form.
 import { ContaMensalListComponent } from './conta-mensal-list/conta-mensal-list.component';
 
 import { SharedModule } from 'src/app/shared/shared.module';
+import { ChartsModule } from 'src/app/core/components/charts/charts.module';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [
@@ -15,7 +17,10 @@ import { SharedModule } from 'src/app/shared/shared.module';
   imports: [
     SharedModule,
     ReactiveFormsModule,
-    ContaMensalRoutingModule
+    ContaMensalRoutingModule,
+    ChartsModule,
+    NgbModule
   ]
 })
 export class CadastroContaMensalModule { }
+  
