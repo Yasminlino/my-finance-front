@@ -110,7 +110,7 @@
           </tr>
 
           <tr *ngIf="!loading && filtered.length === 0">
-            <td colspan="6" class="p-5">
+            <td colspan="8" class="p-5">
               <div class="text-center text-secondary">
                 <div class="fs-1 mb-2">🧾</div>
                 <div class="mb-1">Nenhuma conta encontrada</div>
@@ -121,7 +121,7 @@
           </tr>
 
           <tr *ngIf="loading">
-            <td colspan="6" class="text-center text-secondary py-4">Carregando...</td>
+            <td colspan="8" class="text-center text-secondary py-4">Carregando...</td>
           </tr>
 
           <tr *ngIf="errorMsg">
@@ -132,7 +132,7 @@
         <tfoot *ngIf="filtered.length > 0">
           <tr>
             <td colspan="2" class="text-end fw-bold">Total:</td>
-            <td class="text-end fw-bold">{{ formatCurrency(total) }}</td>
+            <td class="text-end fw-bold">{{ money(total) }}</td>
             <td colspan="3"></td>
           </tr>
         </tfoot>

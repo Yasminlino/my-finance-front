@@ -24,7 +24,7 @@ export class ContaMensalFormComponent implements OnInit {
     name: ['', [Validators.required, Validators.minLength(2)]],
     value: [null as any, [Validators.required]],
     dataOperacao: [null as any, [Validators.required]],
-    categoryid: [null as any, [Validators.required, Validators.min(1), Validators.max(31)]],
+    categoryid: [null as any, [Validators.required, Validators.min(1)]],
     status: [1, Validators.required],
     ehParcelado: [false],
     parcelaAtual: [1],
@@ -49,6 +49,9 @@ export class ContaMensalFormComponent implements OnInit {
     }
   }
 
+  onDiasChange(event: any){
+
+  }
   formataDecimal(value: number) {
     var valor = value
     var valorFixed = valor.toFixed(2)

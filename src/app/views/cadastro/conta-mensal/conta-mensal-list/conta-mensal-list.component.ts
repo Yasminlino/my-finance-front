@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { AccountDto, ContaService } from 'src/app/core/services/contas.service';
 import { Category, CategoryService } from 'src/app/core/services/category.service';
+import { formatCurrencyBR } from 'src/app/core/utils/mask';
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
 
@@ -53,7 +54,7 @@ export class ContaMensalListComponent implements OnInit {
         this.categoryService.buscarCategoriasAtivas()
       ]);
 
-      
+
       this.accounts = accounts ?? [];
       this.categories = categories ?? [];
 
@@ -66,7 +67,7 @@ export class ContaMensalListComponent implements OnInit {
   }
 
   money(v: any) {
-    return formatMoneyBR(v);
+    return formatCurrencyBR(v);
   }
 
   categoryNameOf(categoryId: number) {

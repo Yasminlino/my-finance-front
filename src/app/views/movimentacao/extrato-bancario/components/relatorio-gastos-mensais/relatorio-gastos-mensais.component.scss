@@ -1,0 +1,24 @@
+.div-entrada {
+    display: flex;
+    flex-direction: column;
+    border: solid 1px #0fbe00ed;
+    border-radius: 4px;
+    padding: 3px;
+    width: fit-content;
+    height: fit-content;
+    color: #0fbe00ed;
+}
+
+.cards-metodo{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cards-metodo .card{
+    display: flex;
+    justify-content: space-between;
+    padding: 5px;
+    border: solid 1px gray;
+    max-width: 120px;
+}

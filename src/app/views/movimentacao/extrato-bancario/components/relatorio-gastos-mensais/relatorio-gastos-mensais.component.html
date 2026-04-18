@@ -13,21 +13,83 @@
         </div>
       </div>
       <div class="row mb-3">
-        <div class="col-12 col-lg-6">
-          <app-apex-chart titleText="Método contábil" [options]="relatorioBanco" cardClass="shadow-sm"></app-apex-chart>
+        <div class="col-md-4">
+          <label class="form-label">Mês</label>
+          <input type="month" class="form-control" [(ngModel)]="filtroMes" (change)="onFiltroChange()" />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Tipo</label>
+          <select class="form-select" [(ngModel)]="filtroTipo" (change)="onFiltroChange()">
+            <option value="Todos">Todos</option>
+            <option value="Entrada">Entrada</option>
+            <option value="Saída">Saída</option>
+          </select>
         </div>
       </div>
       <div class="row mb-3">
-        <div class="col-12 col-lg-6">
-          <app-apex-chart titleText="Bancos ({{ calculaTotal() }})" [options]="relatorioBanco" cardClass="shadow-sm"></app-apex-chart>
+        <div class="col-12 col-lg-5">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title m-0">Método contábil (objetivo)</h3>
+            </div>
+            <div class="card-body d-flex">
+              <div class="div-entrada">
+                <span>Total entrada:</span>
+                <strong>{{ totalEntrada | currency:'BRL':'symbol' }}</strong>
+              </div>
+
+              <app-pie-chart [useCard]="false" [options]="metodoContabil">
+              </app-pie-chart>
+            </div>
+          </div>
         </div>
+        <div class="col-12 col-lg-1">
+          <div class="cards-metodo">
+            <div class="card card-saida">
+              <span>Total saída:</span>
+              <strong>{{ this.totalSaida | currency:'BRL':'symbol' }}</strong>
+              <app-icon-progressing [porcentagem]="calculaGatosPorMetodoContabil('totalSaida').porcentagem"
+                [valorPositivo]="calculaGatosPorMetodoContabil('totalSaida').valorPositivo"></app-icon-progressing>
+            </div>
+            <div class="card">
+              <span>Essencial:</span>
+              <strong>{{ calculaGatosPorMetodoContabil('totalEssencial').totalSaidaPorTipo | currency:'BRL':'symbol'
+                }}</strong>
+              <app-icon-progressing [porcentagem]="calculaGatosPorMetodoContabil('totalEssencial').porcentagem"
+                [valorPositivo]="calculaGatosPorMetodoContabil('totalEssencial').valorPositivo"></app-icon-progressing>
+            </div>
+            <div class="card">
+              <span>Lazer:</span>
+              <strong>{{ calculaGatosPorMetodoContabil('totalLazer').totalSaidaPorTipo | currency:'BRL':'symbol'
+                }}</strong>
+              <app-icon-progressing [porcentagem]="calculaGatosPorMetodoContabil('totalLazer').porcentagem"
+                [valorPositivo]="calculaGatosPorMetodoContabil('totalLazer').valorPositivo"></app-icon-progressing>
+            </div>
+            <div class="card">
+              <span>Investim..:</span>
+              <strong>{{ calculaGatosPorMetodoContabil('totalInvestimentos').totalSaidaPorTipo | currency:'BRL':'symbol'
+                }}</strong>
+              <app-icon-progressing [porcentagem]="calculaGatosPorMetodoContabil('totalInvestimentos').porcentagem"
+                [valorPositivo]="calculaGatosPorMetodoContabil('totalInvestimentos').valorPositivo"></app-icon-progressing>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-6">
+          <app-apex-chart titleText="Bancos ({{ calculaTotal() }})" [options]="relatorioBanco"
+            cardClass="shadow-sm"></app-apex-chart>
+        </div>
+      </div>
+      <div class="row mb-3">
       </div>
       <div class="row">
         <div class="col-12 col-lg-6">
-          <app-apex-chart titleText="Gastos por categoria do mês {{ getMonthName() }}" [options]="gastosPorCategoria" cardClass="shadow-sm"></app-apex-chart>
+          <app-apex-chart titleText="Gastos por categoria do mês {{ getMonthName() }}" [options]="gastosPorCategoria"
+            cardClass="shadow-sm"></app-apex-chart>
         </div>
         <div class="col-12 col-lg-6">
-          <app-apex-chart titleText="Gastos por Tipo movimentação" [options]="gastosPorTipoMovimentacao" cardClass="shadow-sm"></app-apex-chart>
+          <app-apex-chart titleText="Gastos por Tipo movimentação" [options]="gastosPorTipoMovimentacao"
+            cardClass="shadow-sm"></app-apex-chart>
         </div>
       </div>
     </div>

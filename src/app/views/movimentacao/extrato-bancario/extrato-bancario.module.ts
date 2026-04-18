@@ -9,6 +9,7 @@ import { ModalImportacoesMensaisComponent } from './components/modal-importacoes
 import { RelatorioGastosMensaisComponent } from './components/relatorio-gastos-mensais/relatorio-gastos-mensais.component';
 import { ChartsModule } from 'src/app/core/components/charts/charts.module';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { CommonModule } from '@angular/common';
 
 @NgModule({
   declarations: [

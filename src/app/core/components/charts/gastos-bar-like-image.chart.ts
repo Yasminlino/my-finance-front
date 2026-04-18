@@ -1,65 +1,39 @@
 import { ApexChartOptions } from './apex-chart/apex-chart.component';
 
 export type GastosBarChartParams = {
-  /** Texto do nome da série (aparece no tooltip e legenda se habilitar) */
   seriesName?: string;
 
-  /** Valores das barras */
-  data: number[];
+  /** modo simples */
+  data?: number[];
 
-  /** Labels no eixo Y (como é horizontal, aparecem à esquerda) */
+  /** modo múltiplas séries (entrada vs saída) */
+  series?: { name: string; data: number[] }[];
+
   categories: string[];
 
-  /** Altura do gráfico (px) */
   height?: number;
-
-  /** Mostrar legenda? (no seu layout geralmente é false) */
   showLegend?: boolean;
-
-  /** Tema do tooltip */
   tooltipTheme?: 'light' | 'dark';
 
-  /** Cores (quando distributed=true, uma cor por barra) */
   colors?: string[];
 
-  /** Espessura da barra (horizontal) */
-  barHeight?: string; // ex: '50%'
-
-  /** Bordas arredondadas da barra */
+  barHeight?: string;
   borderRadius?: number;
 
-  /** Quantidade de marcações no eixo X */
   tickAmount?: number;
-
-  /** Valor mínimo do eixo X */
   minX?: number;
 
-  /**
-   * Formata os rótulos do eixo X (os números embaixo)
-   * Ex.: (v) => `R$ ${v.toLocaleString('pt-BR')}`
-   */
   xLabelFormatter?: (val: number) => string;
 
-  /**
-   * ✅ Formata o valor no TOOLTIP.
-   * Recebe o valor da barra e o índice da barra (dataPointIndex).
-   * Ex.: (v) => formatMoneyBR(v)
-   * Ex.: (v,i) => `${formatMoneyBR(v)} (${percentuais[i].toFixed(1)}%)`
-   */
   tooltipValueFormatter?: (value: number, index: number) => string;
 
   onCategoryClick?: (category: string, value: number, index: number) => void;
 };
 
-/**
- * Factory para criar um gráfico estilo "print":
- * - barras horizontais
- * - 1 série
- * - sem empilhamento
- * - cores por barra (distributed)
- * - grid tracejado
- */
-export function createGastosBarLikeImageChart(params: GastosBarChartParams): ApexChartOptions {
+export function createGastosBarLikeImageChart(
+  params: GastosBarChartParams
+): ApexChartOptions {
+
   const {
     seriesName = 'Gastos',
     data,
@@ -88,16 +62,21 @@ export function createGastosBarLikeImageChart(params: GastosBarChartParams): Ape
     xLabelFormatter = (val) => `${Math.round(val)}`,
 
     tooltipValueFormatter,
-    onCategoryClick, 
+    onCategoryClick,
   } = params;
 
+  const hasMultipleSeries = !!params.series;
+
   return {
-    series: [
-      {
-        name: seriesName,
-        data,
-      },
-    ],
+    /** ✅ suporta 1 ou várias séries */
+    series: hasMultipleSeries
+      ? params.series!
+      : [
+          {
+            name: seriesName,
+            data: data ?? [],
+          },
+        ],
 
     chart: {
       type: 'bar',
@@ -106,24 +85,33 @@ export function createGastosBarLikeImageChart(params: GastosBarChartParams): Ape
       toolbar: { show: false },
       animations: { enabled: false },
       fontFamily: 'inherit',
+
       events: {
         dataPointSelection: (_event: any, _chartContext: any, config: any) => {
           const index = config?.dataPointIndex ?? -1;
           if (index < 0) return;
 
           const category = categories[index] ?? '';
-          const value = data[index] ?? 0;
+          const seriesIndex = config?.seriesIndex ?? 0;
+
+          const value = hasMultipleSeries
+            ? params.series?.[seriesIndex]?.data[index] ?? 0
+            : data?.[index] ?? 0;
 
           onCategoryClick?.(category, value, index);
         },
       },
     },
+
     plotOptions: {
       bar: {
         horizontal: true,
         barHeight,
-        distributed: true,
         borderRadius,
+        columnWidth: '60%',
+
+        /** ✅ só distribui cor quando for 1 série */
+        distributed: !hasMultipleSeries,
       },
     },
 
@@ -152,20 +140,36 @@ export function createGastosBarLikeImageChart(params: GastosBarChartParams): Ape
       },
     },
 
-    // ✅ Aqui está a parte que resolve seu problema:
-    // Agora o tooltip pode formatar como moeda (e até mostrar %).
+    /** ✅ tooltip melhorado com nome da série */
     tooltip: {
       theme: tooltipTheme,
       y: {
         formatter: (val: number, opts: any) => {
           const i = opts?.dataPointIndex ?? 0;
-          return tooltipValueFormatter ? tooltipValueFormatter(val, i) : String(val);
+          const seriesIndex = opts?.seriesIndex ?? 0;
+
+          const nomeSerie = hasMultipleSeries
+            ? params.series?.[seriesIndex]?.name
+            : seriesName;
+
+          const formatted = tooltipValueFormatter
+            ? tooltipValueFormatter(val, i)
+            : String(val);
+
+          return `${nomeSerie}: ${formatted}`;
         },
       },
     },
 
     legend: { show: showLegend },
 
-    colors,
+    /** ✅ cores automáticas inteligentes */
+    colors: hasMultipleSeries
+      ? params.series!.map(s =>
+          s.name.toLowerCase().includes('entrada')
+            ? '#22c55e' // verde
+            : '#ef4444' // vermelho
+        )
+      : colors,
   };
 }

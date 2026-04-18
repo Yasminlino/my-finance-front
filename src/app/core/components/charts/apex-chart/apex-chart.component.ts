@@ -83,7 +83,7 @@ export class ApexChartComponent implements OnChanges {
     };
 
     return {
-      series: opt.series,
+      series: opt.series ?? [],
       chart,
 
       plotOptions: opt.plotOptions ?? {},
