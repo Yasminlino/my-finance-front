@@ -30,8 +30,8 @@
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Dia Vencimento</label>
-          <input class="form-control" formControlName="dataOperacao" maxlength="2" placeholder="Ex: 10" />
+          <label class="form-label">Dias Vencimentos</label>
+          <input type="text" class="form-control" formControlName="dataOperacao" placeholder="Ex: 5, 20" (input)="onInputChange(($any($event.target)).value)"  (blur)="onDiasChange(($any($event.target)).value)" />
         </div>
 
         <div class="mb-3">

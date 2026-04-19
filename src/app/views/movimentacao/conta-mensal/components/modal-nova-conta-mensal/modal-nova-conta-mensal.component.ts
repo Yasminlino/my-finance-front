@@ -22,7 +22,7 @@ export class ModalNovaContaMensalComponent implements OnInit {
     nomeConta: ['', [Validators.required, Validators.minLength(2)]],
     valor: [null as any, [Validators.required]],
     dataOperacao: [null as any, [Validators.required]],
-    categoryid: [null as any, [Validators.required, Validators.min(1), Validators.max(31)]],
+    categoryid: [null as any, [Validators.required]],
   });
 
   constructor(private fb: FormBuilder, private contaMensalService: ContaMensalService, private categoryService: CategoryService) {}

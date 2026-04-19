@@ -62,7 +62,7 @@
             <table class="table card-table table-vcenter table-hover">
                 <thead class="bg-body-tertiary">
                     <tr>
-                        <th class="w-1">ID</th>
+                        <!-- <th class="w-1">ID</th> -->
                         <th class="text-nowrap">Nome Lista</th>
                         <th class="text-nowrap">Tipo Lista</th>
                         <th class="w-1 text-center">Ações</th>
@@ -71,12 +71,12 @@
 
                 <tbody>
                     <tr *ngFor="let item of filtered">
-                        <td class="text-muted">{{ item.id }}</td>
+                        <!-- <td class="text-muted">{{ item.id }}</td> -->
                         <td class="fw-medium">{{ item.nome }}</td>
                         <td class="fw-medium">{{ item.tipoMovimentacao === 1 ? 'Checagem' : item.tipoMovimentacao === 2 ? 'Cronograma' : 'Orçamento' }}</td>
 
                         <td class="text-center">
-                            <div class="d-flex">
+                            <div class="d-flex gap-2">
                                 <button type="button" class="btn btn-icon btn-soft-secondary ml-4" title="Detalhes"
                                     (click)="abrirItemLista(item)">
                                     📃

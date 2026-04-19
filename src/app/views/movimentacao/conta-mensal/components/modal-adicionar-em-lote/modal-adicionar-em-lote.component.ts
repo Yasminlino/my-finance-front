@@ -11,7 +11,7 @@ import { formatDateVencimento } from 'src/app/core/utils/mask';
 import { AgrupamentoContaMensal, ContaMensal } from 'src/app/core/models/conta-mensal.model';
 
 
-type AlertState = { type: 'success' | 'error' | '' ; message: string };
+type AlertState = { type: 'success' | 'error' | ''; message: string };
 
 @Component({
   selector: 'app-modal-adicionar-em-lote',
@@ -40,7 +40,7 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
   constructor(
     private readonly contaService: ContaService,
     private readonly contaMensalService: ContaMensalService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.load();
@@ -107,8 +107,6 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
   // =========================
   private async load() {
     try {
-      // Ajuste: se seus services retornam Observable, use firstValueFrom.
-      // Se retornam signal/hook, adapte.
       const [contas, contasMensais] = await Promise.all([
         this.contaService.buscarContasAtivas(),
         this.contaMensalService.GetTransactionByDate(String(this.month)),
@@ -117,17 +115,38 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
       this.contas = contas ?? [];
       this.contasMensais = contasMensais ?? [];
 
-      const idsDoMes = new Set<number>(
-        this.contasMensais.flatMap(m => m.idAccount)
-      )
+      // 🔹 Mapa: AccountId -> quantidade de lançamentos no mês
+      const mapaLancamentos = new Map<number, number>();
 
-      this.disabledIds = idsDoMes;
+      for (const t of this.contasMensais) {
+        if (!t.idAccount) continue;
 
-      console.log(this.disabledIds);
-      
-      // limpa seleção de ids que viraram inválidos
-      this.selectedIds = new Set([...this.selectedIds].filter(id => !this.disabledIds.has(id)));
+        const atual = mapaLancamentos.get(t.idAccount) ?? 0;
+        mapaLancamentos.set(t.idAccount, atual + 1);
+      }
+
+      // 🔹 Set de contas que devem ser desabilitadas
+      const desabilitados = new Set<number>();
+
+      for (const conta of this.contas) {
+        const totalVencimentos = conta.contaVencimentos?.length ?? 0;
+        const totalLancados = mapaLancamentos.get(conta.id) ?? 0;
+
+        // ⚠️ Só desabilita se tiver vencimentos configurados
+        if (totalVencimentos > 0 && totalLancados >= totalVencimentos) {
+          desabilitados.add(conta.id);
+        }
+      }
+
+      this.disabledIds = desabilitados;
+
+      // 🔹 Remove da seleção contas que agora estão desabilitadas
+      this.selectedIds = new Set(
+        [...this.selectedIds].filter(id => !this.disabledIds.has(id))
+      );
+
     } catch (e) {
+      console.error(e);
       this.showError('Erro ao carregar contas/transações.');
     }
   }
@@ -140,10 +159,11 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
 
     this.saving = true;
 
+
     const payloads = this.contas
       .filter(acc => this.selectedIds.has(acc.id))
       .map(acc => ({
-        date: formatDateVencimento(this.month, acc.dataOperacao),
+        date: formatDateVencimento(this.month, "01"),
         name: acc.name,
         idAccount: acc.id,
         value: removeFormatCurrencyBR(acc.value),

@@ -29,13 +29,13 @@ export class HeaderComponent {
 
   movimentacoesItems: NavItem[] = [
     { path: '/conta-mensal', label: 'Contas a Pagar', icon: '🐷' },
-    { path: '/movimentacao-diaria', label: 'Movimentação Diária', icon: '📋' },
+    // { path: '/movimentacao-diaria', label: 'Movimentação Diária', icon: '📋' },
     { path: '/extrato-bancario', label: 'Extrato Bancário', icon: '📈' },
   ];
 
   listasItems: NavItem[] = [
     { path: '/catalogos-listas', label: 'Listas', icon: '🛒' },
-    { path: '/item-lista', label: 'Item Lista', icon: '🧾' },
+    // { path: '/item-lista', label: 'Item Lista', icon: '🧾' },
   ];
 
   constructor(private router: Router, public auth: AuthService) {}

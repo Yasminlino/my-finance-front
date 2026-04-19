@@ -67,7 +67,7 @@
       <table class="table card-table table-vcenter table-hover">
         <thead class="bg-body-tertiary">
           <tr>
-            <th class="w-1">ID</th>
+            <!-- <th class="w-1">ID</th> -->
             <th class="text-nowrap">Nome tipo cartão</th>
             <th class="w-1 text-center">Ações</th>
           </tr>
@@ -75,11 +75,11 @@
 
         <tbody>
           <tr *ngFor="let c of filtered">
-            <td class="text-muted">{{ c.id }}</td>
+            <!-- <td class="text-muted">{{ c.id }}</td> -->
             <td class="fw-medium">{{ c.nomeTipoCartao }}</td>
 
             <td class="text-center">
-              <div class="btn-list d-inline-flex">
+              <div class="d-inline-flex gap-2">
                 <button type="button"
                         class="btn btn-icon btn-soft-secondary"
                         title="Editar"

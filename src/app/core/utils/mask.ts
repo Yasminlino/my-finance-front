@@ -56,13 +56,27 @@ export function formatYearMonth(value: string): string {
   return value || '';
 }
 
-export function formatDateVencimento(baseMonth: string | Date, dataOperacao?: any): Date {
-  const [ano, mes] = baseMonth.toString().split('-');
-  const yyyy = ano;
-  const mm = mes;
-  const dd = dataOperacao ?? '01';
-  var data = `${yyyy}-${mm}-${dd}`;
-  return new Date(data);
+export function formatDateVencimento(baseMonth: string | Date, dataOperacao: any): Date {
+
+  let ano: number;
+  let mes: number;
+
+  if (typeof baseMonth === 'string') {
+    const [y, m] = baseMonth.split('-');
+    ano = Number(y);
+    mes = Number(m) - 1; // 👈 JS começa em 0
+  } else {
+    ano = baseMonth.getFullYear();
+    mes = baseMonth.getMonth();
+  }
+
+  const diaInformado = Number(dataOperacao ?? 1);
+
+  const ultimoDiaMes = new Date(ano, mes + 1, 0).getDate();
+
+  const dia = Math.min(diaInformado, ultimoDiaMes);
+
+  return new Date(ano, mes, dia);
 }
 
 export function formatMoneyBRFromAny(inputValue: string): string {

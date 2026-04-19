@@ -95,6 +95,15 @@ export class ContaMensalListComponent implements OnInit {
     this.total = this.filtered.reduce((sum, a) => sum + (Number(a.value) || 0), 0);
   }
 
+  getDiasVencimento(acc: AccountDto): string {
+    if (!acc.contaVencimentos?.length) return '-';
+
+    return acc.contaVencimentos
+      .map(v => v.dia)
+      .sort((a, b) => a - b)
+      .join(', ');
+  }
+
   onSearchChange(v: string) {
     this.q = v;
     this.applyFilters();

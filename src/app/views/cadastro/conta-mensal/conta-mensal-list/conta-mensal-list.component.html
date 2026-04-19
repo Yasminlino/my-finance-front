@@ -66,7 +66,7 @@
       <table class="table card-table table-vcenter table-hover align-middle table-sticky">
         <thead class="bg-body-tertiary">
           <tr>
-            <th class="w-1">ID</th>
+            <!-- <th class="w-1">ID</th> -->
             <th class="w-6 text-center">Nome</th>
             <th class="w-4 text-center text-nowrap">Valor</th>
             <th class="w-2 text-center text-nowrap">Dia Vencimento</th>
@@ -79,20 +79,20 @@
 
         <tbody>
           <tr *ngFor="let acc of filtered">
-            <td class="text-muted text-center">{{ acc.id }}</td>
+            <!-- <td class="text-muted text-center">{{ acc.id }}</td> -->
             <td class="fw-medium text-center">{{ acc.name }}</td>
             <td class="text-center">{{ money(acc.value) }}</td>
-            <td class="text-center">{{ acc.dataOperacao }}</td>
+            <td class="text-center">{{ getDiasVencimento(acc) }}</td>
             <td class="text-center">{{acc.ehParcelado ? (acc.parcelaAtual + '/' + acc.quantidadeParcelas) : '-'}}</td>
             <td class="text-center">{{ categoryNameOf(acc.categoryid) }}</td>
-            <td>
+            <td class="text-center">
               <span [ngClass]="acc.status === 1 ? 'text-success' : 'text-danger'">
                 {{ acc.status === 1 ? 'Ativo' : 'Inativo' }}
               </span>
             </td>
 
             <td class="text-center">
-              <div class="d-flex justify-content-center">
+              <div class="d-flex gap-2 justify-content-center">
                 <button type="button"
                         class="btn btn-icon btn-soft-secondary"
                         title="Editar"

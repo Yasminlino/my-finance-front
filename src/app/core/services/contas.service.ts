@@ -4,13 +4,21 @@ import { ApiService } from './api.service';
 export type AccountDto = {
   id: number;
   name: string;
-  value: any;
-  dataOperacao: number; // ou number/dia
+  value: number;
+  dataOperacao?: number[]; // usado no envio
   categoryid: number;
   status: number;
   ehParcelado: boolean;
   parcelaAtual: number;
   quantidadeParcelas: number;
+
+  contaVencimentos?: ContaVencimentoDto[]; // 👈 correto
+};
+
+export type ContaVencimentoDto = {
+  id: number;
+  contaId: number;
+  dia: number;
 };
 
 @Injectable({ providedIn: 'root' })

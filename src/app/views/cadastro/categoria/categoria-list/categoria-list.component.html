@@ -61,7 +61,7 @@
       <table class="table card-table table-vcenter table-hover">
         <thead class="bg-body-tertiary">
           <tr>
-            <th class="w-1">ID</th>
+            <!-- <th class="w-1">ID</th> -->
             <th>Nome</th>
             <th class="text-nowrap">Tipo Categoria</th>
             <th class="text-nowrap">Natureza do gasto</th>
@@ -72,7 +72,7 @@
 
         <tbody>
           <tr *ngFor="let item of categoria">
-            <td class="text-muted">{{ item.id }}</td>
+            <!-- <td class="text-muted">{{ item.id }}</td> -->
             <td class="fw-medium">{{ item.name }}</td>
             <td>
               <span
@@ -89,7 +89,7 @@
               </span>
             </td>
             <td class="text-center">
-              <div class="d-flex">
+              <div class="d-flex gap-2">
                 <button type="button" class="btn btn-icon btn-soft-secondary" title="Editar" (click)="onEdit(item)">
                   ✏️
                 </button>
