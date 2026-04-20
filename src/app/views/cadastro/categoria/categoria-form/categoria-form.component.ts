@@ -20,9 +20,12 @@ export class CategoriaFormComponent implements OnInit {
     status: [1, [Validators.required]],
   });
 
+  perfilEmpresa = false;
+
   constructor(private fb: FormBuilder, private categoryService: CategoryService) { }
 
   ngOnInit(): void {
+    this.validaPerfilUsuario()
     if (this.category) {
       this.form.patchValue({
         name: this.category.name,
@@ -31,6 +34,10 @@ export class CategoriaFormComponent implements OnInit {
         status: this.category.status,
       });
     }
+  }
+
+  validaPerfilUsuario(){
+    this.perfilEmpresa = localStorage.getItem('usuarioRole') == "Empresa"
   }
   
   close(reload = false) {
@@ -49,7 +56,7 @@ export class CategoriaFormComponent implements OnInit {
       const payload = {
         name: this.form.value.name!,
         subCategory: this.form.value.subCategory!,
-        naturezaOperacao: this.form.value.subCategory == 'Receita' ? 0 : this.form.value.naturezaOperacao,
+        naturezaOperacao: this.perfilEmpresa ?  this.form.value.naturezaOperacao :this.form.value.subCategory == 'Receita' ? 0 : this.form.value.naturezaOperacao,
         status: this.form.value.status
       };
 

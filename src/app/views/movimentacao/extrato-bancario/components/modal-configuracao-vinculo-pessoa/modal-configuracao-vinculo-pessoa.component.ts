@@ -55,9 +55,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
         this.tiposMovimentacao = await this.tipoMovService.list() ?? [];
 
         const pessoas = await this.pessoaService.list();
-        this.rows = (pessoas ?? []).filter(p =>
-          p.categoriaId == null || p.tipoMovimentacaoId == null
-        );
+        this.rows = (pessoas ?? [])
       } else {
         const [cats, tipos, pessoas, movimentacoes] = await Promise.all([
           this.categoriaService.buscarCategoriasAtivas(),

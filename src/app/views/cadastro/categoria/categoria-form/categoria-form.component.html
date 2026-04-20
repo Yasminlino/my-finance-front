@@ -28,12 +28,14 @@
         </select>
       </div>
 
-      <div class="mb-3" *ngIf="form.get('subCategory')?.value != 'Receita'">
+      <div class="mb-3" *ngIf="perfilEmpresa ?? form.get('subCategory')?.value != 'Receita'">
         <label class="form-label">Natureza do gasto</label>
         <select class="form-select" formControlName="naturezaOperacao">
-          <option [ngValue]="1">Essencial</option><!-- 50% -->
-          <option [ngValue]="2">Estilo de Vida/ Lazer</option><!-- 50% -->
-          <option [ngValue]="3">Reserva/ Investimento</option><!-- 50% -->
+          <option *ngIf="!perfilEmpresa" [ngValue]="1">Essencial</option><!-- 50% -->
+          <option *ngIf="!perfilEmpresa" [ngValue]="2">Estilo de Vida/ Lazer</option><!-- 50% -->
+          <option *ngIf="!perfilEmpresa" [ngValue]="3">Reserva/ Investimento</option><!-- 50% -->
+          <option *ngIf="perfilEmpresa" [ngValue]="4">Pessoal</option><!-- 50% -->
+          <option *ngIf="perfilEmpresa" [ngValue]="5">Empresa</option><!-- 50% -->
         </select>
       </div>
 

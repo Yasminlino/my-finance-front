@@ -3,6 +3,7 @@ import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { AgrupamentoContaMensal, GrupoContaMensal, LinhaContaMensal } from 'src/app/core/models/conta-mensal.model';
 import { formatCurrencyBR, formatDateInput, formatYearMonth, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
 import { Category, CategoryService } from 'src/app/core/services/category.service';
+import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
 
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
@@ -14,6 +15,7 @@ type ColumnFilters = {
   value: string;          // continua texto
   date: string;           // continua texto yyyy-mm-dd
   status: string[];       // ✅ agora é array
+  tipoConta: string[];       // ✅ agora é array
 };
 
 @Component({
@@ -47,6 +49,7 @@ export class ContaMensalEstruturaComponent implements OnInit {
     name: [],
     categoryName: [],
     subCategory: '',
+    tipoConta: [],
     value: '',
     date: '',
     status: [],
@@ -84,7 +87,7 @@ export class ContaMensalEstruturaComponent implements OnInit {
     const flat: LinhaContaMensal[] = [];
 
     for (const t of items ?? []) {
-      
+
       flat.push({
         id: t.id,
         idAccount: t.idAccount ?? 0,
@@ -93,6 +96,7 @@ export class ContaMensalEstruturaComponent implements OnInit {
         date: new Date(t.date.replace('Z', '')),
         categoryId: t.categoryId ?? t.account.categoryId,
         categoryName: await this.buscarCategoria(t.categoryId ?? t.account.categoryId),
+        tipoContaId: await this.buscarTipoConta(t.categoryId ?? t.account.categoryId),
         subCategory: await this.buscarSubCategoria(t.categoryId ?? t.account.categoryId),      // você não tem isso nesse JSON
         status: t.status,
         statusSalvo: t.status,
@@ -111,6 +115,12 @@ export class ContaMensalEstruturaComponent implements OnInit {
     var categoria = this.categorias.find(c => c.id === id);
     if (!categoria) return '';
     return categoria.name;
+  }
+
+  async buscarTipoConta(id: any) {
+    var categoria = this.categorias.find(c => c.id === id);
+    if (!categoria) return '';
+    return NaturezaOperacaoLabel[categoria.naturezaOperacao];
   }
 
   async buscarSubCategoria(id: any) {
@@ -160,6 +170,7 @@ export class ContaMensalEstruturaComponent implements OnInit {
       if (!inSelected(item.name, this.columnFilters.name)) return false;
       if (!inSelected(item.categoryName, this.columnFilters.categoryName)) return false;
       if (!inSelected(item.status, this.columnFilters.status)) return false;
+      if (!inSelected(item.tipoContaId, this.columnFilters.tipoConta)) return false;
 
       if (this.columnFilters.date) {
         const itemDate = new Date(item.date).toISOString().slice(0, 10);
@@ -264,6 +275,7 @@ export class ContaMensalEstruturaComponent implements OnInit {
       value: '',
       date: '',
       status: [],
+      tipoConta: []
     };
   }
 
@@ -327,7 +339,23 @@ export class ContaMensalEstruturaComponent implements OnInit {
     }
 
     try {
-      const payload = { ...data, value: removeFormatCurrencyBR(data.value), };
+      var payloadConta = {
+        id: data.id,
+        idAccount: data.idAccount,
+        name: data.name,
+        value: removeFormatCurrencyBR(data.value),
+        date: data.date,
+        ehParcelado: data.ehParcelado,
+        parcelaAtual: data.parcelaAtual,
+        quantidadeParcelas: data.quantidadeParcelas,
+        observacao: data.observacao,
+        categoryId: data.categoryId,
+        categoryName: data.categoryName,
+        subCategory: data.subCategory,
+        status: data.status,
+        statusSalvo: data.statusSalvo,
+      }
+      const payload = payloadConta;
       const resp = await this.service.updateTransaction(payload);
       const newStatus = resp?.status ?? data.status;
 

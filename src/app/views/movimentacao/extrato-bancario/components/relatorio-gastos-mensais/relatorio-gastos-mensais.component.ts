@@ -45,10 +45,19 @@ export class RelatorioGastosMensaisComponent implements OnInit {
   filtroMes: string = '';
   filtroTipo: 'Todos' | 'Entrada' | 'Saída' = 'Todos';
 
+  
+  perfilEmpresa = false
+
   metodoContabil = {
     series: [0, 0, 0],
     labels: ['Essencial', 'Lazer', 'Investimentos'],
     colors: ['#0282b4', '#FF4560', '#00b919'],
+  };
+
+  totalContabil = {
+    series: [0, 0, 0],
+    labels: ['Pessoal', 'Empresa'],
+    colors: ['#0282b4', '#00b919'],
   };
 
 
@@ -56,6 +65,8 @@ export class RelatorioGastosMensaisComponent implements OnInit {
 
   async ngOnInit() {
     this.filtroMes = this.getMonthFilter() ?? '';
+    
+    this.perfilEmpresa = localStorage.getItem('usuarioRole') == "Empresa"
 
     if (!this.filtroMes) {
       console.error('Month filter is required in the URL query parameters');
@@ -78,9 +89,17 @@ export class RelatorioGastosMensaisComponent implements OnInit {
     const metaTotalLazer = this.extratoItemsEntrada.map((item) => toNumber(item.valor)).reduce((acc, v) => acc + v, 0) * 0.3;
     const metaTotalInvestimentos = this.extratoItemsEntrada.map((item) => toNumber(item.valor)).reduce((acc, v) => acc + v, 0) * 0.2;
 
+    const valorTotalPessoal = this.somarEntradaPorNatureza(NaturezaOperacao.Pessoal)
+    const valorTotalEmpresa = this.somarEntradaPorNatureza(NaturezaOperacao.Empresa)
+
     this.metodoContabil = {
       ...this.metodoContabil,
       series: [metaTotalEssencial, metaTotalLazer, metaTotalInvestimentos]
+    };
+
+    this.totalContabil = {
+      ...this.totalContabil,
+      series: [valorTotalPessoal, valorTotalEmpresa]
     };
 
   }
@@ -102,19 +121,31 @@ export class RelatorioGastosMensaisComponent implements OnInit {
       totalSaidaMaiorQueMeta = this.totalSaida > this.totalEntrada ? false : true;
     } else if (tipoCard === 'totalEssencial') {
       const metaTotalEssencial = this.totalEntrada * 0.5;
-      totalSaidaPorTipo = this.somarPorNatureza(NaturezaOperacao.Essencial);
+      totalSaidaPorTipo = this.somarGastosPorNatureza(NaturezaOperacao.Essencial);
       porcentagemTotal = this.calcularPorcentagem(totalSaidaPorTipo, metaTotalEssencial);
       totalSaidaMaiorQueMeta = totalSaidaPorTipo > metaTotalEssencial ? false : true;
     } else if (tipoCard === 'totalLazer') {
       const metaTotalLazer = this.totalEntrada * 0.3;
-      totalSaidaPorTipo = this.somarPorNatureza(NaturezaOperacao.EstilodeVidaLazer);
+      totalSaidaPorTipo = this.somarGastosPorNatureza(NaturezaOperacao.EstilodeVidaLazer);
       porcentagemTotal = this.calcularPorcentagem(totalSaidaPorTipo, metaTotalLazer);
       totalSaidaMaiorQueMeta = totalSaidaPorTipo > metaTotalLazer ? false : true;
     } else if (tipoCard === 'totalInvestimentos') {
       const metaTotalInvestimentos = this.totalEntrada * 0.2;
-      totalSaidaPorTipo = this.somarPorNatureza(NaturezaOperacao.ReservaInvestimento);
+      totalSaidaPorTipo = this.somarGastosPorNatureza(NaturezaOperacao.ReservaInvestimento);
       porcentagemTotal = this.calcularPorcentagem(totalSaidaPorTipo, metaTotalInvestimentos, true);
-      totalSaidaMaiorQueMeta = metaTotalInvestimentos > totalSaidaPorTipo ? false : true;
+      totalSaidaMaiorQueMeta = metaTotalInvestimentos > totalSaidaPorTipo ? false : true;    
+    } 
+    
+    else if (tipoCard === 'totalPessoal') {
+      const totalEntradaPorTipo = this.somarEntradaPorNatureza(NaturezaOperacao.Pessoal);
+      totalSaidaPorTipo = this.somarGastosPorNatureza(NaturezaOperacao.Pessoal);
+      porcentagemTotal = this.calcularPorcentagem(totalSaidaPorTipo, totalEntradaPorTipo, true);
+      totalSaidaMaiorQueMeta = totalEntradaPorTipo > totalSaidaPorTipo ? false : true;    
+    } else if (tipoCard === 'totalEmpresa') {
+      var totalEntradaPorTipo = this.somarEntradaPorNatureza(NaturezaOperacao.Empresa);
+      totalSaidaPorTipo = this.somarGastosPorNatureza(NaturezaOperacao.Empresa);
+      porcentagemTotal = this.calcularPorcentagem(totalSaidaPorTipo, totalEntradaPorTipo, true);
+      totalSaidaMaiorQueMeta = totalEntradaPorTipo > totalSaidaPorTipo ? false : true;
     }
 
     const iconProgressing = {
@@ -125,8 +156,13 @@ export class RelatorioGastosMensaisComponent implements OnInit {
     return iconProgressing
   }
 
-  private somarPorNatureza(natureza: any): number {
+  private somarGastosPorNatureza(natureza: any): number {
     return this.extratoItemsSaida
+      .filter(i => i.categoria?.naturezaOperacao === natureza)
+      .reduce((acc, i) => acc + toNumber(i.valor), 0);
+  }
+  private somarEntradaPorNatureza(natureza: any): number {
+    return this.extratoItemsEntrada
       .filter(i => i.categoria?.naturezaOperacao === natureza)
       .reduce((acc, i) => acc + toNumber(i.valor), 0);
   }

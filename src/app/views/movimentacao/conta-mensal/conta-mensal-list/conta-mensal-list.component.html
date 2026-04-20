@@ -1,28 +1,56 @@
 <div class="card">
   <div class="card-body p-0">
     <div class="table-responsive">
-      <table class="table table-vcenter table-hover mb-0">
+      <table class="table table-vcenter table-hover mb-0" style="table-layout: fixed;">
         <thead class="bg-body-tertiary bg-body sticky-top">
           <tr>
             <th style="width:44px" class="text-center">
               <input type="checkbox" [checked]="allVisibleSelected" (change)="toggleSelectAllVisible.emit()" />
             </th>
-            <th class="text-nowrap">Conta</th>
-            <th class="text-nowrap">Categoria</th>
-            <th class="text-nowrap">Parcela</th>
-            <th class="text-nowrap">Observação</th>
-            <th class="text-nowrap" style="width:160px">Valor</th>
-            <th class="text-nowrap" style="width:170px">Vencimento</th>
-            <th class="text-nowrap" style="width:190px">Status</th>
-            <th class="text-center" style="width:140px">Ações</th>
+            <th *ngIf="perfilEmpresa" class="text-nowrap" style="width: 120px;">Tipo conta</th>
+            <th class="text-nowrap" style="width: 120px;">Conta</th>
+            <th class="text-nowrap" style="width: 140px;">Categoria</th>
+            <th class="text-nowrap" style="width: 40px;">Parc.</th>
+            <th class="text-nowrap" style="width: 150px;">Observação</th>
+            <th class="text-nowrap" style="width: 120px;">Valor</th>
+            <th class="text-nowrap" style="width: 130px;">Vencimento</th>
+            <th class="text-nowrap" style="width: 165px;">Status</th>
+            <th class="text-nowrap" style="width: 100px;" class="text-center">Ações</th>
           </tr>
 
           <!-- filtros por coluna -->
           <tr>
             <th></th>
+            <th *ngIf="perfilEmpresa" style="width: 120px;">
+              <div class="dropdown" [class.show]="ddTipoContaOpen">
+                <button type="button" class="form-select form-select-sm text-start"
+                  (click)="toggleDropdown('tipoConta', $event)">
+                  {{ multiLabel('tipoConta', 'Tipo') }}
+                </button>
 
+                <div class="dropdown-menu p-2 w-100" [class.show]="ddTipoContaOpen" (click)="$event.stopPropagation()"
+                  style="max-height: 240px; overflow:auto;">
+
+                  <div class="form-check" *ngFor="let opt of tipoContaOptions">
+                    <input class="form-check-input" type="checkbox" [checked]="isSelected('tipoConta', opt)"
+                      (change)="toggleMulti('tipoConta', opt, ($any($event.target)).checked)" />
+
+                    <label class="form-check-label">{{ opt }}</label>
+                  </div>
+
+                  <div class="d-flex gap-2 mt-2">
+                    <button class="btn btn-sm btn-outline-secondary" (click)="clearMulti('tipoConta')">
+                      Limpar
+                    </button>
+                    <button class="btn btn-sm btn-primary ms-auto" (click)="ddTipoContaOpen=false">
+                      OK
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </th>
             <!-- CONTA (multi) -->
-            <th>
+            <th style="width: 120px;">
               <div class="dropdown" [class.show]="ddContaOpen">
                 <button type="button" class="form-select form-select-sm text-start"
                   (click)="toggleDropdown('conta', $event)">
@@ -51,7 +79,7 @@
             </th>
 
             <!-- CATEGORIA (multi) -->
-            <th>
+            <th style="width: 140px;">
               <div class="dropdown" [class.show]="ddCategoriaOpen">
                 <button type="button" class="form-select form-select-sm text-start"
                   (click)="toggleDropdown('categoria', $event)">
@@ -80,27 +108,26 @@
             </th>
 
             <!-- VALOR (igual você tinha) -->
-            <th>
-              <input class="form-control form-control-sm" style="width:120px" placeholder=">= 100 (ou texto)"
-                [value]="columnFilters.value" (input)="setColumnFilter('parcela', ($any($event.target)).value)" />
+            <th style="width: 40px;">
             </th>
-            <th>
+
+            <th style="width: 150px;">
               <input class="form-control form-control-sm" style="width:120px" placeholder=">= 100 (ou texto)"
                 [value]="columnFilters.value" (input)="setColumnFilter('observacao', ($any($event.target)).value)" />
             </th>
-            <th>
+            <th style="width: 120px;">
               <input class="form-control form-control-sm" style="width:120px" placeholder=">= 100 (ou texto)"
                 [value]="columnFilters.value" (input)="setColumnFilter('value', ($any($event.target)).value)" />
             </th>
 
             <!-- DATA (igual você tinha) -->
-            <th>
+            <th style="width: 130px;">
               <input class="form-control form-control-sm" type="date" [value]="columnFilters.date"
                 (input)="setColumnFilter('date', ($any($event.target)).value)" />
             </th>
 
             <!-- STATUS (multi) -->
-            <th>
+            <th style="width: 140px;">
               <div class="dropdown" [class.show]="ddStatusOpen">
                 <button type="button" class="form-select form-select-sm text-start"
                   (click)="toggleDropdown('status', $event)">
@@ -127,17 +154,21 @@
               </div>
             </th>
 
-            <th></th>
+            <th style="width: 100px;"></th>
           </tr>
         </thead>
 
         <tbody>
           <tr *ngIf="loading">
-            <td colspan="9" class="text-center text-secondary py-4">Carregando...</td>
+            <td *ngIf="!perfilEmpresa" colspan="9" class="text-center text-secondary py-4">Carregando...</td>
+            <td *ngIf="perfilEmpresa" colspan="10" class="text-center text-secondary py-4">Carregando...</td>
           </tr>
 
           <tr *ngIf="!loading && rows.length === 0">
-            <td colspan="9" class="text-center text-secondary py-4">
+            <td *ngIf="!perfilEmpresa" colspan="9" class="text-center text-secondary py-4">
+              Nenhuma transação encontrada com os filtros aplicados.
+            </td>
+            <td *ngIf="perfilEmpresa" colspan="10" class="text-center text-secondary py-4">
               Nenhuma transação encontrada com os filtros aplicados.
             </td>
           </tr>
@@ -148,6 +179,7 @@
                 <input type="checkbox" [checked]="selectedIds.has(row.id)" (change)="toggleRow.emit(row.id)" />
               </td>
 
+              <td *ngIf="perfilEmpresa" class="text-uppercase fw-medium">{{ row.tipoContaId }}</td>
               <td class="text-uppercase fw-medium">{{ row.name }}</td>
               <td class="align-items-center text-center">{{ row.categoryName }}</td>
               <td class="align-items-center text-center">{{ row.quantidadeParcelas ? row.parcelaAtual + '/' +

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, HostListener, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, Output, OnChanges, SimpleChanges, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { LinhaContaMensal } from 'src/app/core/models/conta-mensal.model';
 import { formatCurrencyBR, formatDateInput } from 'src/app/core/utils/mask';
@@ -14,6 +14,7 @@ type RowForm = FormGroup<{
 type ColumnFilters = {
   name: string[];         // multi
   categoryName: string[]; // multi
+  tipoConta: string[]; // multi
   status: string[];       // multi
   value: string;          // texto
   date: string;           // yyyy-mm-dd
@@ -26,7 +27,7 @@ type ColumnFilters = {
   templateUrl: './conta-mensal-list.component.html',
   styleUrls: ['./conta-mensal-list.component.scss']
 })
-export class ContaMensalListComponent implements OnChanges {
+export class ContaMensalListComponent implements OnInit, OnChanges {
   @Input() rows: LinhaContaMensal[] = [];
   @Input() loading = false;
 
@@ -56,6 +57,10 @@ export class ContaMensalListComponent implements OnChanges {
   // opções (derivadas das linhas)
   contaOptions: string[] = [];
   categoriaOptions: string[] = [];
+  tipoContaOptions: string[] = [];
+  ddTipoContaOpen = false;
+
+  perfilEmpresa = false
 
   money(v: any) { return formatCurrencyBR(v); }
   dateInput(v: any) { return formatDateInput(v); }
@@ -66,11 +71,20 @@ export class ContaMensalListComponent implements OnChanges {
 
   constructor(private fb: FormBuilder) { }
 
+  ngOnInit() {
+    this.perfilEmpresa = localStorage.getItem('usuarioRole') == "Empresa"
+    const role = localStorage.getItem('usuarioRole');
+    console.log('ROLE:', role);
+    console.log('ROLEtrue:', localStorage.getItem('usuarioRole') == "Empresa");
+    console.log('perfilEmpresa:', this.perfilEmpresa);
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     // garante defaults para evitar undefined em template
     this.columnFilters = {
       name: Array.isArray(this.columnFilters?.name) ? this.columnFilters!.name! : [],
       categoryName: Array.isArray(this.columnFilters?.categoryName) ? this.columnFilters!.categoryName! : [],
+      tipoConta: Array.isArray(this.columnFilters?.tipoConta) ? this.columnFilters!.tipoConta! : [],
       status: Array.isArray(this.columnFilters?.status) ? this.columnFilters!.status! : [],
       value: this.columnFilters?.value ?? '',
       date: this.columnFilters?.date ?? '',
@@ -84,6 +98,10 @@ export class ContaMensalListComponent implements OnChanges {
 
       this.categoriaOptions = Array.from(
         new Set((this.rows ?? []).map(r => (r.categoryName ?? '').trim()).filter(Boolean))
+      ).sort((a, b) => a.localeCompare(b));
+
+      this.tipoContaOptions = Array.from(
+        new Set((this.rows ?? []).map(r => (r.tipoContaId ?? '').trim()).filter(Boolean))
       ).sort((a, b) => a.localeCompare(b));
 
       // forms das linhas
@@ -126,13 +144,15 @@ export class ContaMensalListComponent implements OnChanges {
     this.ddContaOpen = false;
     this.ddCategoriaOpen = false;
     this.ddStatusOpen = false;
+    this.ddTipoContaOpen  = false;
   }
 
-  toggleDropdown(which: 'conta' | 'categoria' | 'status', ev: MouseEvent) {
+  toggleDropdown(which: 'conta' | 'categoria' | 'status' | 'tipoConta', ev: MouseEvent) {
     ev.stopPropagation();
     this.ddContaOpen = which === 'conta' ? !this.ddContaOpen : false;
     this.ddCategoriaOpen = which === 'categoria' ? !this.ddCategoriaOpen : false;
     this.ddStatusOpen = which === 'status' ? !this.ddStatusOpen : false;
+    this.ddTipoContaOpen = which === 'tipoConta' ? !this.ddTipoContaOpen : false;
   }
 
   // ========= filtros =========
@@ -142,12 +162,12 @@ export class ContaMensalListComponent implements OnChanges {
     this.columnFiltersChange.emit({ [field]: value });
   }
 
-  isSelected(field: 'name' | 'categoryName' | 'status', value: string): boolean {
+  isSelected(field: 'name' | 'categoryName' | 'status' | 'tipoConta', value: string): boolean {
     const arr = (this.columnFilters as any)[field] as string[] | undefined;
     return Array.isArray(arr) ? arr.includes(value) : false;
   }
 
-  toggleMulti(field: 'name' | 'categoryName' | 'status', value: string, checked: boolean) {
+  toggleMulti(field: 'name' | 'categoryName' | 'status' | 'tipoConta', value: string, checked: boolean) {
     const current = Array.isArray((this.columnFilters as any)[field]) ? ([...(this.columnFilters as any)[field]] as string[]) : [];
     const next = checked
       ? Array.from(new Set([...current, value]))
@@ -156,11 +176,11 @@ export class ContaMensalListComponent implements OnChanges {
     this.setColumnFilter(field, next);
   }
 
-  clearMulti(field: 'name' | 'categoryName' | 'status') {
+  clearMulti(field: 'name' | 'categoryName' | 'status' | 'tipoConta') {
     this.setColumnFilter(field, []);
   }
 
-  multiLabel(field: 'name' | 'categoryName' | 'status', label: string) {
+  multiLabel(field: 'name' | 'categoryName' | 'status' | 'tipoConta', label: string) {
     const arr = (this.columnFilters as any)[field] as string[] | undefined;
     const n = Array.isArray(arr) ? arr.length : 0;
     if (!n) return `${label}: Todos`;
@@ -218,7 +238,7 @@ export class ContaMensalListComponent implements OnChanges {
     const f = this.rowForms.get(id);
     if (!f) return;
 
-    
+
     this.changeField.emit({ id, field: 'observacao', value: f.controls.observacao.value });
 
     f.controls.observacao.markAsPristine();

@@ -12,6 +12,7 @@ export type LinhaContaMensal = {
 
   categoryId: number;
   categoryName: string;
+  tipoContaId: string;
   subCategory?: string;          // "Receita" | "Despesa"
 
   status: string;
