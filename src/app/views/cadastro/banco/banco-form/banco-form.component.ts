@@ -3,6 +3,8 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { BancoDto, BancoService } from 'src/app/core/services/banco.service';
 import { TipoCartao } from 'src/app/core/services/tipo-cartao.service';
 
+type AlertState = { type: 'success' | 'error' | ''; message: string };
+
 @Component({
   selector: 'app-banco-form',
   templateUrl: './banco-form.component.html',
@@ -12,6 +14,8 @@ export class BancoFormComponent implements OnInit {
   @Input() banco: BancoDto | null = null;
   @Input() tiposCartao: TipoCartao[] = []; // ✅ novo
   @Output() closed = new EventEmitter<boolean>();
+
+  alert: AlertState = { type: '', message: '' };
 
   saving = false;
 
@@ -56,8 +60,22 @@ export class BancoFormComponent implements OnInit {
         ativo: !!this.form.value.ativo,
       };
 
-      if (this.banco) await this.bancoService.update(payload);
-      else await this.bancoService.create(payload);
+      if (this.banco){
+        await this.bancoService.update(payload).then(() => {
+          this.alert = { type: 'success', message: 'Item atualizado com sucesso!' };
+        }).catch(() => {
+          this.alert = { type: 'error', message: 'Erro ao atualizar item.' };
+        });
+      } 
+      else{
+
+        await  this.bancoService.create(payload).then(() => {
+          this.alert = { type: 'success', message: 'Item atualizado com sucesso!' };
+        }).catch(() => {
+          this.alert = { type: 'error', message: 'Erro ao atualizar item.' };
+        });
+
+      } 
 
       this.close(true);
     } catch {

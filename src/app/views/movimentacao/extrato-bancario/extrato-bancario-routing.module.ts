@@ -2,10 +2,12 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { ExtratoBancarioResumoComponent } from './extrato-bancario-resumo/extrato-bancario-resumo.component';
 import { ExtratoBancarioDetalhesComponent } from './extrato-bancario-detalhes/extrato-bancario-detalhes.component';
+import { RelatorioGastosMensaisComponent } from './components/relatorio-gastos-mensais/relatorio-gastos-mensais.component';
 
 const routes: Routes = [
   { path: '', component: ExtratoBancarioResumoComponent },
   { path: 'ExtratoBancarioDetalhe', component: ExtratoBancarioDetalhesComponent },
+  { path: 'RelatorioGastosMensais', component: RelatorioGastosMensaisComponent },
 ];
 
 @NgModule({

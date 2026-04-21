@@ -56,13 +56,27 @@ export function formatYearMonth(value: string): string {
   return value || '';
 }
 
-export function formatDateVencimento(baseMonth: string | Date, dataOperacao?: any): Date {
-  const [ano, mes] = baseMonth.toString().split('-');
-  const yyyy = ano;
-  const mm = mes;
-  const dd = dataOperacao ?? '01';
-  var data = `${yyyy}-${mm}-${dd}`;
-  return new Date(data);
+export function formatDateVencimento(baseMonth: string | Date, dataOperacao: any): Date {
+
+  let ano: number;
+  let mes: number;
+
+  if (typeof baseMonth === 'string') {
+    const [y, m] = baseMonth.split('-');
+    ano = Number(y);
+    mes = Number(m) - 1; // 👈 JS começa em 0
+  } else {
+    ano = baseMonth.getFullYear();
+    mes = baseMonth.getMonth();
+  }
+
+  const diaInformado = Number(dataOperacao ?? 1);
+
+  const ultimoDiaMes = new Date(ano, mes + 1, 0).getDate();
+
+  const dia = Math.min(diaInformado, ultimoDiaMes);
+
+  return new Date(ano, mes, dia);
 }
 
 export function formatMoneyBRFromAny(inputValue: string): string {
@@ -98,6 +112,7 @@ export function parseMoneyBRToNumber(masked: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+//retorna o dia de hoje formatado, soma com a quantidade de dias que quiser
 export function isoDateMinusHours(): string {
   const d = new Date();
   d.setHours(d.getHours() - 4);   // -4 horas
@@ -105,4 +120,17 @@ export function isoDateMinusHours(): string {
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;       // formato do input date
+}
+
+
+//retorna o dia de hoje formatado para busca no back, soma com a quantidade de dias que quiser
+export function isoDate(dias: number = 0): string {
+  const date = new Date();
+  date.setDate(date.getDate() + dias);
+  return date.toISOString().split('T')[0];
+}
+
+export function formatMoney(value: any) {
+  const n = Number(value) || 0;
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
 }

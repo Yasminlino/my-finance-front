@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { ListaDto, ListaService } from 'src/app/core/services/lista.service';
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
@@ -25,7 +26,7 @@ export class ListaRootComponent implements OnInit {
   showModalUpdate = false;
   editing: ListaDto | null = null;
 
-  constructor(private service: ListaService) { }
+  constructor(private service: ListaService, private router: Router) { }
 
   async ngOnInit() {
     await this.load();
@@ -85,11 +86,11 @@ export class ListaRootComponent implements OnInit {
   abrirItemLista(item: ListaDto) {
     if(!item.tipoMovimentacao) return;
     if(item.tipoMovimentacao === 1) {
-      window.open(`/catalogos-listas/${item.id}/checagem`, '_blank');
+      this.router.navigate([`/catalogos-listas/${item.id}/checagem`]);
     } else if(item.tipoMovimentacao === 2) {
-      window.open(`/catalogos-listas/${item.id}/cronograma`, '_blank');
+      window.open(`/#/catalogos-listas/${item.id}/cronograma`, '_blank');
     } else if(item.tipoMovimentacao === 3) {
-      window.open(`/catalogos-listas/${item.id}/orcamento`, '_blank');
+      this.router.navigate([`/catalogos-listas/${item.id}/orcamento`]);
     } else {
       window.open(`/catalogos-listas/${item.id}`, '_blank');
     }

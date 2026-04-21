@@ -1,0 +1,43 @@
+<ng-container *ngIf="useCard; else bare">
+  <div class="card" [class]="cardClass">
+    <div class="card-header" *ngIf="titleText">
+      <h3 class="card-title m-0">{{ titleText }}</h3>
+    </div>
+
+    <div class="card-body chart-scroll">
+      <apx-chart
+        [series]="merged.series"
+        [chart]="merged.chart"
+        [plotOptions]="merged.plotOptions"
+        [dataLabels]="merged.dataLabels"
+        [grid]="merged.grid"
+        [xaxis]="merged.xaxis"
+        [yaxis]="merged.yaxis"
+        [tooltip]="merged.tooltip"
+        [legend]="merged.legend"
+        [colors]="merged.colors"
+        [fill]="merged.fill"
+        [stroke]="merged.stroke"
+        [title]="merged.title"
+      ></apx-chart>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #bare>
+  <apx-chart
+    [series]="merged.series"
+    [chart]="merged.chart"
+    [plotOptions]="merged.plotOptions"
+    [dataLabels]="merged.dataLabels"
+    [grid]="merged.grid"
+    [xaxis]="merged.xaxis"
+    [yaxis]="merged.yaxis"
+    [tooltip]="merged.tooltip"
+    [legend]="merged.legend"
+    [colors]="merged.colors"
+    [fill]="merged.fill"
+    [stroke]="merged.stroke"
+    [title]="merged.title"
+  ></apx-chart>
+</ng-template>

@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
 import { isoDateMinusHours } from '../utils/mask'
 
-type AuthResponse = { token?: string, dataExpiracao?: Date };
+type AuthResponse = { token: any, usuario: any };
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -14,9 +14,11 @@ export class AuthService {
 
     const response = await this.api.post<AuthResponse>('/Autenticar', payload);    
 
-    if (response?.token) {
-      localStorage.setItem('authToken', response.token);
-      localStorage.setItem('expiraToken',response.dataExpiracao?.toString() ?? '');
+    if (response?.token?.token) {
+      localStorage.setItem('authToken', response.token?.token);
+      localStorage.setItem('authToken', response.token?.token);
+      localStorage.setItem('expiraToken',response.token.dataExpiracao?.toString() ?? '');
+      localStorage.setItem('usuarioRole', response?.usuario.role ?? '');
 
       if (remember) {
         localStorage.setItem('remember', '1');

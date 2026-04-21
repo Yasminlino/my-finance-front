@@ -13,14 +13,13 @@
           <div class="text-muted small">Financeiro</div>
           <h3 class="m-0">
             Detalhes — {{ headerBancoNome }} / {{ headerTipoContaNome }}
-            <span *ngIf="isCreditCard" class="text-muted">(Cartão de crédito)</span>
           </h3>
         </div>
         <div class="d-flex gap-2">
           <button class="btn btn-outline-secondary" (click)="back()">Voltar</button>
 
           <button class="btn btn-outline-primary" (click)="abrirConfigPessoas()">
-            Configurar pessoas
+            Configurar vinculos
           </button>
 
           <button class="btn btn-primary" (click)="openAddModal()">Adicionar lançamento</button>
@@ -32,13 +31,8 @@
         <div class="card-body">
           <div class="row g-3 align-items-end">
             <div class="col-12 col-md-3">
-              <label class="form-label text-muted mb-1">Data (de)</label>
-              <input type="date" class="form-control" [(ngModel)]="dateFrom" />
-            </div>
-
-            <div class="col-12 col-md-3">
-              <label class="form-label text-muted mb-1">Data (até)</label>
-              <input type="date" class="form-control" [(ngModel)]="dateTo" />
+              <label class="form-label text-muted mb-1">Mês</label>
+              <input type="month" class="form-control" [(ngModel)]="month" />
             </div>
 
             <div class="col-12 col-md-2">
@@ -62,22 +56,24 @@
             <div class="col-12 col-md-4">
               <label class="form-label text-muted mb-1">Descrição / Observação</label>
               <input type="text" class="form-control" placeholder="Busca também na observação manual"
-                (ngModel)="descricaoFilter" />
+                [(ngModel)]="descricaoFilter" />
             </div>
 
             <div class="col-12 col-md-4">
               <label class="form-label text-muted mb-1">Pessoa transação</label>
-              <input type="text" class="form-control" placeholder="Ex.: João" (ngModel)="pessoaFilter" />
+              <input type="text" class="form-control" placeholder="Ex.: João" [(ngModel)]="pessoaFilter"
+                [ngbTypeahead]="searchPessoa" [inputFormatter]="formatterPessoa" [resultFormatter]="formatterPessoa"
+                (selectItem)="pessoaFilter = $event.item.nomePessoa" />
             </div>
 
             <div class="col-12 col-md-2">
               <label class="form-label text-muted mb-1">Valor mínimo</label>
-              <input type="number" step="0.01" class="form-control text-end" (ngModel)="minValue" />
+              <input type="number" step="0.01" class="form-control text-end" [(ngModel)]="minValue" />
             </div>
 
             <div class="col-12 col-md-2">
               <label class="form-label text-muted mb-1">Valor máximo</label>
-              <input type="number" step="0.01" class="form-control text-end" (ngModel)="maxValue" />
+              <input type="number" step="0.01" class="form-control text-end" [(ngModel)]="maxValue" />
             </div>
 
             <div class="col-12 col-md-2 d-flex gap-2">
@@ -105,6 +101,7 @@
             <thead class="bg-body-tertiary">
               <tr class="border-bottom">
                 <th>Data</th>
+                <th class="w-30">Pessoa</th>
                 <th>Tipo</th>
 
                 <ng-container *ngIf="isCreditCard">
@@ -115,7 +112,6 @@
                 <th>Categoria</th>
                 <th>Descrição</th>
                 <th>Tipo Mov.</th>
-                <th>Pessoa</th>
                 <th class="text-end">Valor</th>
                 <th style="width:140px" class="text-center">Ações</th>
               </tr>
@@ -125,6 +121,12 @@
                 <th>
                   <input class="form-control form-control-sm" type="date" [(ngModel)]="tableFilters.data" />
                 </th>
+
+                <th>
+                  <input class="form-control form-control-sm" placeholder="Pessoa..."
+                    [(ngModel)]="tableFilters.pessoa" />
+                </th>
+
                 <th>
                   <input class="form-control form-control-sm" placeholder="Tipo..." [(ngModel)]="tableFilters.tipo" />
                 </th>
@@ -133,7 +135,7 @@
                   <th></th>
                   <th>
                     <input class="form-control form-control-sm" placeholder="Fatura..."
-                      [(ngModel)]="tableFilters.fatura" />
+                       [disabled]="true" [(ngModel)]="tableFilters.fatura" />
                   </th>
                 </ng-container>
 
@@ -146,20 +148,17 @@
 
                 <th>
                   <input class="form-control form-control-sm" placeholder="Descrição..."
-                    [(ngModel)]="tableFilters.descricao" />
+                    [(ngModel)]="tableFilters.nomeTipoMovimentacao" />
                 </th>
                 <th>
                   <select class="form-select form-select-sm" [(ngModel)]="tableFilters.tipoMovimentacaoId">
                     <option value="">Todos</option>
                     <option *ngFor="let tm of tiposMovimentacao" [value]="tm.id">
-                      {{ tm.descricao }}
+                      {{ tm.nomeTipoMovimentacao }}
                     </option>
                   </select>
                 </th>
-                <th>
-                  <input class="form-control form-control-sm" placeholder="Pessoa..."
-                    [(ngModel)]="tableFilters.pessoa" />
-                </th>
+                
 
                 <th>
                   <div class="d-flex gap-2">
@@ -195,8 +194,9 @@
                 <!-- VIEW MODE -->
                 <ng-container *ngIf="!isEditing(e); else editRow">
                   <td>{{ e.dataMovimentacao | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ e.nomePessoaTransacao || '—' }}</td>
                   <td>{{ e.tipoLancamento || '—' }}</td>
-
+                  
                   <ng-container *ngIf="isCreditCard">
                     <td>
                       <ng-container *ngIf="e.parcelaAtual && e.quantidadeParcelas; else semParcela">
@@ -204,13 +204,12 @@
                       </ng-container>
                       <ng-template #semParcela>—</ng-template>
                     </td>
-                    <td>{{ e.numeroFatura || '—' }}</td>
+                    <td class="disabled">{{ e.numeroFatura || '—' }}</td>
                   </ng-container>
 
                   <td>{{ e.categoria?.name || '—' }}</td>
                   <td>{{ (e.descricao || '—') }}</td>
                   <td>{{ e.tipoMovimentacao?.nomeTipoMovimentacao || '—' }}</td>
-                  <td>{{ e.nomePessoaTransacao || '—' }}</td>
 
                   <td class="text-end fw-bold" [class.text-danger]="e.tipoLancamento == 'Saída'"
                     [class.text-success]="e.tipoLancamento == 'Entrada'">
@@ -220,6 +219,7 @@
                   <td class="text-center">
                     <div class="d-inline-flex gap-2">
                       <button class="btn btn-sm btn-outline-primary" (click)="startEdit(e)">Editar</button>
+                      <button class="btn btn-sm btn-outline-ranger" (click)="onDelete(e)">Excluir</button>
                     </div>
                   </td>
                 </ng-container>
@@ -230,6 +230,13 @@
 
                     <td>
                       <input class="form-control form-control-sm" type="date" formControlName="dataMovimentacao" />
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" [ngbTypeahead]="searchPessoa"
+                        [resultFormatter]="formatterPessoa" [inputFormatter]="formatterPessoa"
+                        [value]="fg.controls.nomePessoaTransacao.value"
+                        (input)="fg.controls.nomePessoaTransacao.setValue(($any($event.target)).value)"
+                        (selectItem)="fg.controls.nomePessoaTransacao.setValue($event.item.nomePessoa)" />
                     </td>
 
                     <td>
@@ -249,7 +256,7 @@
                         </div>
                       </td>
                       <td>
-                        <input class="form-control form-control-sm" formControlName="numeroFatura" />
+                        <input class="form-control-plaintext"  formControlName="numeroFatura" readonly />
                       </td>
                     </ng-container>
 
@@ -271,9 +278,7 @@
                         </option>
                       </select>
                     </td>
-                    <td>
-                      <input class="form-control form-control-sm" formControlName="nomePessoaTransacao" />
-                    </td>
+                    
 
                     <td class="text-end">
                       <input class="form-control form-control-sm text-end" formControlName="valor" />
@@ -336,9 +341,9 @@
 
                   <ng-container *ngIf="isCreditCard">
                     <div class="col-12 col-md-4">
-                      <label class="form-label">Número da fatura (opcional)</label>
-                      <input type="text" class="form-control" placeholder="Ex.: 2026-01" (ngModel)="manualNumeroFatura"
-                        [disabled]="saving" />
+                      <label class="form-label">Número da fatura</label>
+                      <input type="text" class="form-control" placeholder="Ex.: 2026-01"
+                        [(ngModel)]="manualNumeroFatura" [disabled]="true" />
                     </div>
 
                     <div class="col-12 col-md-4 d-flex align-items-end">
@@ -355,10 +360,15 @@
                         <input type="number" min="2" class="form-control" [(ngModel)]="manualQuantidadeParcelas"
                           [disabled]="saving" />
                       </div>
+                      <div class="col-12 col-md-4">
+                        <label class="form-label">Parcela atual</label>
+                        <input type="number" min="2" class="form-control" [(ngModel)]="manualParcelaAtual"
+                          [disabled]="saving" />
+                      </div>
 
                       <div class="col-12 col-md-6 d-flex align-items-end">
                         <div class="form-check">
-                          <input class="form-check-input" type="checkbox" (ngModel)="manualGerarTodasParcelas"
+                          <input class="form-check-input" type="checkbox" [(ngModel)]="manualGerarTodasParcelas"
                             [disabled]="saving" id="gerarParcelasCheck" />
                           <label class="form-check-label" for="gerarParcelasCheck">
                             Gerar todas as parcelas automaticamente
@@ -368,7 +378,7 @@
                     </ng-container>
                   </ng-container>
 
-                  <div class="col-12 col-md-6">
+                  <!-- <div class="col-12 col-md-6">
                     <label class="form-label">Categoria</label>
                     <select class="form-select" [(ngModel)]="manualCategoriaId" [disabled]="saving">
                       <option value="">Selecione...</option>
@@ -376,28 +386,31 @@
                         {{ c.name }}
                       </option>
                     </select>
-                  </div>
+                  </div> -->
 
                   <div class="col-12 col-md-6">
                     <label class="form-label">Pessoa transação</label>
-                    <input type="text" class="form-control" [(ngModel)]="manualPessoa" [disabled]="saving" />
+                    <input type="text" class="form-control text-uppercase" [(ngModel)]="manualPessoaNome"
+                      (ngModelChange)="manualPessoaId = null" [ngbTypeahead]="searchPessoa"
+                      [inputFormatter]="formatterPessoa" [resultFormatter]="formatterPessoa"
+                      (selectItem)="manualPessoaNome = $event.item.nomePessoa; manualPessoaId = $event.item.id" />
                   </div>
 
-                  <div class="col-12">
+                  <div class="col-12 col-md-6">
                     <label class="form-label">Descrição</label>
                     <input type="text" class="form-control" [(ngModel)]="manualDescricao" [disabled]="saving" />
                   </div>
 
                   <div class="col-12">
-                    <label class="form-label">Observação (manual)</label>
+                    <label class="form-label">Detalhes</label>
                     <textarea class="form-control" rows="3" [(ngModel)]="manualObservacao"
                       [disabled]="saving"></textarea>
                   </div>
 
-                  <div class="col-12 col-md-6">
+                  <!-- <div class="col-12 col-md-6">
                     <label class="form-label">Identificador</label>
-                    <input type="text" class="form-control" (ngModel)="manualIdentificador" [disabled]="saving" />
-                  </div>
+                    <input type="text" class="form-control" [(ngModel)]="manualIdentificador" [disabled]="saving" />
+                  </div> -->
                 </div>
               </div>
 
@@ -415,7 +428,7 @@
     </div>
   </div>
 
-  <app-modal-configuracao-vinculo-pessoa *ngIf="showModalConfigPessoas" 
+  <app-modal-configuracao-vinculo-pessoa *ngIf="showModalConfigPessoas" [mesAtualizacao]="month" [bancoId]="bancoId"
     (closed)="fecharConfigPessoas($event)">
   </app-modal-configuracao-vinculo-pessoa>
 

@@ -30,6 +30,8 @@ export interface ExtratoItemDto {
   quantidadeParcelas?: number;
   numeroFatura?: string;
 
+  pessoaMovimentacaoId?: number;
+
   categoria?: { id: number; name: string };
   tipoMovimentacao?: { id: number; nomeTipoMovimentacao: string };
 }
@@ -38,8 +40,8 @@ export interface ExtratoItemDto {
 export class ExtratoBancarioItemService {
   constructor(private api: ApiService) { }
 
-  listExtratos(monthFilter: string, bancoId?: number | null): Promise<ExtratoItemDto[]> {
-    return this.api.get<ExtratoItemDto[]>('/GetExtratoBancarioItensByMonth?month=' + monthFilter);
+  listExtratos(monthFilter: string, bancoId?: number | null, ehCredito: boolean = false): Promise<ExtratoItemDto[]> {
+    return this.api.get<ExtratoItemDto[]>(`/GetExtratoBancarioItensByMonth?month=${monthFilter}&bancoId=${bancoId ?? ''}&ehCredito=${ehCredito}`);
   }
 
   createExtratoManualItem(payload: any) {
@@ -65,5 +67,10 @@ export class ExtratoBancarioItemService {
     }
 
     return this.api.post('/ImportExtratoBancario', form);
+  }
+
+  
+  delete(id: number): Promise<any> {
+    return this.api.delete('/DeleteExtratoBancarioItem', id);
   }
 }

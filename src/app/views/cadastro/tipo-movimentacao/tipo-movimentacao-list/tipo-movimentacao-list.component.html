@@ -67,7 +67,7 @@
       <table class="table card-table table-vcenter table-hover">
         <thead class="bg-body-tertiary">
           <tr>
-            <th class="w-1 text-muted">ID</th>
+            <!-- <th class="w-1 text-muted">ID</th> -->
             <th class="text-nowrap">Tipo Movimentação</th>
             <th class="text-nowrap">Descrição</th>
             <th class="text-nowrap text-end">Valor Meta</th>
@@ -77,13 +77,13 @@
 
         <tbody>
           <tr *ngFor="let c of filtered">
-            <td class="text-muted">{{ c.id }}</td>
+            <!-- <td class="text-muted">{{ c.id }}</td> -->
             <td class="fw-bold">{{ c.nomeTipoMovimentacao }}</td>
             <td class="text-muted">{{ c.descricao }}</td>
             <td class="fw-medium text-end">{{ formatMoney(c.valorMeta) }}</td>
 
             <td class="text-center">
-              <div class="d-flex">
+              <div class="d-flex gap-2">
                 <button type="button"
                         class="btn btn-icon btn-soft-secondary"
                         title="Editar"

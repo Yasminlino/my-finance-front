@@ -1,0 +1,13 @@
+:host {
+  display: block;
+}
+
+/* só pra garantir que o chart não “encoste” estranho em alguns cards */
+.card-body {
+  padding: 1rem;
+}
+
+.chart-scroll {
+  max-height: 400px; // altura máxima desejada
+  overflow-y: auto;
+}

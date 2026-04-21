@@ -1,0 +1,31 @@
+<ng-container *ngIf="useCard; else bare">
+    
+
+    <div class="card-body">
+      <apx-chart
+        [series]="merged.series"
+        [chart]="merged.chart"
+        [labels]="merged.labels"
+        [dataLabels]="merged.dataLabels"
+        [legend]="merged.legend"
+        [tooltip]="merged.tooltip"
+        [colors]="merged.colors"
+        [responsive]="merged.responsive"
+        [fill]="merged.fill"
+      ></apx-chart>
+    </div>
+</ng-container>
+
+<ng-template #bare>
+  <apx-chart
+    [series]="merged.series"
+    [chart]="merged.chart"
+    [labels]="merged.labels"
+    [dataLabels]="merged.dataLabels"
+    [legend]="merged.legend"
+    [tooltip]="merged.tooltip"
+    [colors]="merged.colors"
+    [responsive]="merged.responsive"
+    [fill]="merged.fill"
+  ></apx-chart>
+</ng-template>

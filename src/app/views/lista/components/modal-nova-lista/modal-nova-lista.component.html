@@ -19,14 +19,14 @@
                 </div>
             </div>
             <div class="mb-3">
-                <label class="form-label">Tipo Movimentação</label>
+                <label class="form-label">Tipo Lista</label>
 
                 <select class="form-select" formControlName="tipoMovimentacao"
                     [class.is-invalid]="form.controls.tipoMovimentacao.touched && form.controls.tipoMovimentacao.invalid">
 
                     <option [ngValue]="null">Selecione...</option>
                     <option [ngValue]="1">Checklist</option>
-                    <option [ngValue]="2">Cronograma</option>
+                    <!-- <option [ngValue]="2">Cronograma</option> -->
                     <option [ngValue]="3">Orçamento</option>
                 </select>
 

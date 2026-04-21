@@ -6,6 +6,7 @@ export type PessoaMovimentacaoDto = {
     nomePessoa: string;
     categoriaId: number | null;
     tipoMovimentacaoId: number | null;
+    mesAtualizacao?: string | null;
 };
 
 export type PessoaMovimentacaoCreateDto = Omit<PessoaMovimentacaoDto, 'id'>;

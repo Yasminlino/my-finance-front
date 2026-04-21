@@ -1,1 +1,118 @@
-<p>relatorio-gastos-mensais works!</p>
+<div class="page-wrapper">
+  <div class="page-body">
+    <div class="container-xl">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+          <div class="text-muted small">Financeiro</div>
+          <h3 class="m-0">
+            Relatório de gastos mensais
+          </h3>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary" (click)="back()">Voltar</button>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Mês</label>
+          <input type="month" class="form-control" [(ngModel)]="filtroMes" (change)="onFiltroChange()" />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Tipo</label>
+          <select class="form-select" [(ngModel)]="filtroTipo" (change)="onFiltroChange()">
+            <option value="Todos">Todos</option>
+            <option value="Entrada">Entrada</option>
+            <option value="Saída">Saída</option>
+          </select>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-12 col-lg-5">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title m-0">Método contábil (objetivo)</h3>
+            </div>
+            <div *ngIf="!perfilEmpresa" class="card-body d-flex">
+              <div class="div-entrada">
+                <span>Total entrada:</span>
+                <strong>{{ totalEntrada | currency:'BRL':'symbol' }}</strong>
+              </div>
+              <app-pie-chart [useCard]="false" [options]="metodoContabil">
+              </app-pie-chart>
+            </div>
+            <div *ngIf="perfilEmpresa" class="card-body d-flex">
+              <div class="div-entrada">
+                <span>Total entrada:</span>
+                <strong>{{ totalEntrada | currency:'BRL':'symbol' }}</strong>                
+              </div>
+              <app-pie-chart [useCard]="false" [options]="totalContabil">
+              </app-pie-chart>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-1">
+          <div class="cards-metodo">
+            <div class="card card-saida">
+              <span>Total saída:</span>
+              <strong>{{ this.totalSaida | currency:'BRL':'symbol' }}</strong>
+              <app-icon-progressing [porcentagem]="calculaGatosPorMetodoContabil('totalSaida').porcentagem"
+                [valorPositivo]="calculaGatosPorMetodoContabil('totalSaida').valorPositivo"></app-icon-progressing>
+            </div>
+            <div *ngIf="!perfilEmpresa" class="card">
+              <span>Essencial:</span>
+              <strong>{{ calculaGatosPorMetodoContabil('totalEssencial').totalSaidaPorTipo | currency:'BRL':'symbol'
+                }}</strong>
+              <app-icon-progressing [porcentagem]="calculaGatosPorMetodoContabil('totalEssencial').porcentagem"
+                [valorPositivo]="calculaGatosPorMetodoContabil('totalEssencial').valorPositivo"></app-icon-progressing>
+            </div>
+            <div *ngIf="!perfilEmpresa" class="card">
+              <span>Lazer:</span>
+              <strong>{{ calculaGatosPorMetodoContabil('totalLazer').totalSaidaPorTipo | currency:'BRL':'symbol'
+                }}</strong>
+              <app-icon-progressing [porcentagem]="calculaGatosPorMetodoContabil('totalLazer').porcentagem"
+                [valorPositivo]="calculaGatosPorMetodoContabil('totalLazer').valorPositivo"></app-icon-progressing>
+            </div>
+            <div *ngIf="!perfilEmpresa" class="card">
+              <span>Investim..:</span>
+              <strong>{{ calculaGatosPorMetodoContabil('totalInvestimentos').totalSaidaPorTipo | currency:'BRL':'symbol'
+                }}</strong>
+              <app-icon-progressing [porcentagem]="calculaGatosPorMetodoContabil('totalInvestimentos').porcentagem"
+                [valorPositivo]="calculaGatosPorMetodoContabil('totalInvestimentos').valorPositivo"></app-icon-progressing>
+            </div>
+            <div *ngIf="perfilEmpresa" class="card">
+              <span>Pessoal:</span>
+              <strong>{{ calculaGatosPorMetodoContabil('totalPessoal').totalSaidaPorTipo | currency:'BRL':'symbol'
+                }}</strong>
+              <app-icon-progressing [porcentagem]="calculaGatosPorMetodoContabil('totalPessoal').porcentagem"
+                [valorPositivo]="calculaGatosPorMetodoContabil('totalPessoal').valorPositivo"></app-icon-progressing>
+            </div>
+            <div *ngIf="perfilEmpresa" class="card">
+              <span>Empresa:</span>
+              <strong>{{ calculaGatosPorMetodoContabil('totalEmpresa').totalSaidaPorTipo | currency:'BRL':'symbol'
+                }}</strong>
+              <app-icon-progressing [porcentagem]="calculaGatosPorMetodoContabil('totalEmpresa').porcentagem"
+                [valorPositivo]="calculaGatosPorMetodoContabil('totalEmpresa').valorPositivo"></app-icon-progressing>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-6">
+          <app-apex-chart titleText="Bancos ({{ calculaTotal() }})" [options]="relatorioBanco"
+            cardClass="shadow-sm"></app-apex-chart>
+        </div>
+      </div>
+      <div class="row mb-3">
+      </div>
+      <div class="row">
+        <div class="col-12 col-lg-6">
+          <app-apex-chart titleText="Gastos por categoria do mês {{ getMonthName() }}" [options]="gastosPorCategoria"
+            cardClass="shadow-sm"></app-apex-chart>
+        </div>
+        <div class="col-12 col-lg-6">
+          <app-apex-chart titleText="Gastos por Tipo movimentação" [options]="gastosPorTipoMovimentacao"
+            cardClass="shadow-sm"></app-apex-chart>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

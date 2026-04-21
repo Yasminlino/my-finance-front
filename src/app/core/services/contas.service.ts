@@ -5,8 +5,20 @@ export type AccountDto = {
   id: number;
   name: string;
   value: number;
-  dataOperacao: number; // ou number/dia
+  dataOperacao?: number[]; // usado no envio
   categoryid: number;
+  status: number;
+  ehParcelado: boolean;
+  parcelaAtual: number;
+  quantidadeParcelas: number;
+
+  contaVencimentos?: ContaVencimentoDto[]; // 👈 correto
+};
+
+export type ContaVencimentoDto = {
+  id: number;
+  contaId: number;
+  dia: number;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -15,6 +27,10 @@ export class ContaService {
 
   list(): Promise<AccountDto[]> {
     return this.api.get<AccountDto[]>('/GetAccounts'); // ajuste endpoint
+  }
+  
+  buscarContasAtivas(): Promise<AccountDto[]> {
+    return this.api.get<AccountDto[]>('/GetContasAtivas'); // ajuste endpoint
   }
 
   create(payload: Partial<AccountDto>): Promise<any> {

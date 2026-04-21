@@ -66,25 +66,33 @@
       <table class="table card-table table-vcenter table-hover align-middle table-sticky">
         <thead class="bg-body-tertiary">
           <tr>
-            <th class="w-1">ID</th>
+            <!-- <th class="w-1">ID</th> -->
             <th class="w-6 text-center">Nome</th>
             <th class="w-4 text-center text-nowrap">Valor</th>
             <th class="w-2 text-center text-nowrap">Dia Vencimento</th>
+            <th class="w-2 text-center text-nowrap">Parcelas</th>
             <th class="w-4 text-center text-nowrap">Categoria</th>
+            <th class="w-4 text-center text-nowrap">Status</th>
             <th class="w-2 text-center">Ações</th>
           </tr>
         </thead>
 
         <tbody>
           <tr *ngFor="let acc of filtered">
-            <td class="text-muted text-center">{{ acc.id }}</td>
+            <!-- <td class="text-muted text-center">{{ acc.id }}</td> -->
             <td class="fw-medium text-center">{{ acc.name }}</td>
-            <td class="text-center">{{ formatCurrency(acc.value) }}</td>
-            <td class="text-center">{{ acc.dataOperacao }}</td>
+            <td class="text-center">{{ money(acc.value) }}</td>
+            <td class="text-center">{{ getDiasVencimento(acc) }}</td>
+            <td class="text-center">{{acc.ehParcelado ? (acc.parcelaAtual + '/' + acc.quantidadeParcelas) : '-'}}</td>
             <td class="text-center">{{ categoryNameOf(acc.categoryid) }}</td>
+            <td class="text-center">
+              <span [ngClass]="acc.status === 1 ? 'text-success' : 'text-danger'">
+                {{ acc.status === 1 ? 'Ativo' : 'Inativo' }}
+              </span>
+            </td>
 
             <td class="text-center">
-              <div class="d-flex justify-content-center">
+              <div class="d-flex gap-2 justify-content-center">
                 <button type="button"
                         class="btn btn-icon btn-soft-secondary"
                         title="Editar"
@@ -102,7 +110,7 @@
           </tr>
 
           <tr *ngIf="!loading && filtered.length === 0">
-            <td colspan="6" class="p-5">
+            <td colspan="8" class="p-5">
               <div class="text-center text-secondary">
                 <div class="fs-1 mb-2">🧾</div>
                 <div class="mb-1">Nenhuma conta encontrada</div>
@@ -113,7 +121,7 @@
           </tr>
 
           <tr *ngIf="loading">
-            <td colspan="6" class="text-center text-secondary py-4">Carregando...</td>
+            <td colspan="8" class="text-center text-secondary py-4">Carregando...</td>
           </tr>
 
           <tr *ngIf="errorMsg">
@@ -124,7 +132,7 @@
         <tfoot *ngIf="filtered.length > 0">
           <tr>
             <td colspan="2" class="text-end fw-bold">Total:</td>
-            <td class="text-end fw-bold">{{ formatCurrency(total) }}</td>
+            <td class="text-end fw-bold">{{ money(total) }}</td>
             <td colspan="3"></td>
           </tr>
         </tfoot>

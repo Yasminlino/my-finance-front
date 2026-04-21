@@ -1,8 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { AccountDto, ContaService } from 'src/app/core/services/contas.service';
 import { Category, CategoryService } from 'src/app/core/services/category.service';
+import { formatCurrencyBR } from 'src/app/core/utils/mask';
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
+
+function formatMoneyBR(v: any) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
+}
 
 @Component({
   selector: 'app-conta-mensal-list',
@@ -46,8 +51,9 @@ export class ContaMensalListComponent implements OnInit {
 
       const [accounts, categories] = await Promise.all([
         this.contaService.list(),
-        this.categoryService.list()
+        this.categoryService.buscarCategoriasAtivas()
       ]);
+
 
       this.accounts = accounts ?? [];
       this.categories = categories ?? [];
@@ -58,6 +64,10 @@ export class ContaMensalListComponent implements OnInit {
     } finally {
       this.loading = false;
     }
+  }
+
+  money(v: any) {
+    return formatCurrencyBR(v);
   }
 
   categoryNameOf(categoryId: number) {
@@ -83,6 +93,15 @@ export class ContaMensalListComponent implements OnInit {
       .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
 
     this.total = this.filtered.reduce((sum, a) => sum + (Number(a.value) || 0), 0);
+  }
+
+  getDiasVencimento(acc: AccountDto): string {
+    if (!acc.contaVencimentos?.length) return '-';
+
+    return acc.contaVencimentos
+      .map(v => v.dia)
+      .sort((a, b) => a - b)
+      .join(', ');
   }
 
   onSearchChange(v: string) {

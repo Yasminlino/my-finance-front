@@ -1,1 +1,97 @@
-<p>lista-de-checagem works!</p>
+<div class="container-xl py-3">
+
+  <!-- Header -->
+  <div class="page-header mb-3">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Listas</div>
+        <h2 class="page-title">{{ titulo }}</h2>
+      </div>
+
+      <div class="col-auto ms-auto">
+        <button class="btn btn-primary" (click)="abrirCriarItem()">
+          Novo Item
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card mb-3">
+    <div class="card-body row g-2">
+
+      <div class="col-md-6">
+        <input class="form-control" placeholder="Buscar..." [value]="q"
+          (input)="onSearchChange(($any($event.target)).value)">
+      </div>
+
+      <div class="col-md-3">
+        <select class="form-select" [value]="statusFilter" (change)="pesquisarStatus(($any($event.target)).value)">
+          <option value="ALL">Todos</option>
+          <option value="true">Concluído</option>
+          <option value="false">Pendente</option>
+        </select>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- LISTA -->
+  <div class="card">
+    <div class="list-group list-group-flush">
+
+      <div *ngFor="let item of filtered" class="list-group-item d-flex align-items-center justify-content-between">
+
+        <div class="d-flex align-items-center gap-2" (click)="toggleConcluido(item)" style="cursor: pointer;">
+
+          <input type="checkbox" [checked]="item.status === 'CONCLUIDO'" (click)="$event.stopPropagation()"
+            (change)="toggleConcluido(item)">
+
+          <span [class.text-decoration-line-through]="item.status === 'CONCLUIDO'"
+            [class.text-muted]="item.status === 'CONCLUIDO'">
+            {{ item.descricao }}
+          </span>
+
+          <span class="badge bg-outline-primary ms-2">
+            {{ item.quantidade || 0 }}
+          </span>
+
+        </div>
+
+        <div>
+          <button class="btn btn-sm btn-outline-secondary" (click)="abrirEditarItem(item)">
+            ✏️
+          </button>
+
+          <button class="btn btn-sm btn-outline-danger" (click)="onDelete(item)">
+            🗑️
+          </button>
+        </div>
+
+      </div>
+
+      <div *ngIf="!loading && filtered.length === 0" class="text-center py-4 text-muted">
+        Nenhum item encontrado
+      </div>
+
+      <div *ngIf="loading" class="text-center py-4">
+        Carregando...
+      </div>
+
+      <div *ngIf="errorMsg" class="text-center py-4 text-danger">
+        {{ errorMsg }}
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAIS -->
+  <app-modal-item-checagem *ngIf="showModalCreateItem" [listaId]="listaId" [item]="null"
+    (closed)="fecharModalCriarItem($event)">
+  </app-modal-item-checagem>
+
+  <app-modal-item-checagem *ngIf="showModalUpdateItem" [listaId]="listaId" [item]="editingItem"
+    (closed)="fecharModalAtualizarItem($event)">
+  </app-modal-item-checagem>
+
+</div>

@@ -3,6 +3,8 @@ import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { AgrupamentoContaMensal, GrupoContaMensal, LinhaContaMensal } from 'src/app/core/models/conta-mensal.model';
 import { formatCurrencyBR, formatDateInput, formatYearMonth, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
 import { Category, CategoryService } from 'src/app/core/services/category.service';
+import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
+import { ActivatedRoute } from '@angular/router';
 
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
@@ -14,6 +16,7 @@ type ColumnFilters = {
   value: string;          // continua texto
   date: string;           // continua texto yyyy-mm-dd
   status: string[];       // ✅ agora é array
+  tipoConta: string[];       // ✅ agora é array
 };
 
 @Component({
@@ -47,6 +50,7 @@ export class ContaMensalEstruturaComponent implements OnInit {
     name: [],
     categoryName: [],
     subCategory: '',
+    tipoConta: [],
     value: '',
     date: '',
     status: [],
@@ -57,11 +61,27 @@ export class ContaMensalEstruturaComponent implements OnInit {
   // seleção
   selectedIds = new Set<number>();
 
-  constructor(private service: ContaMensalService, private categoryService: CategoryService) { }
+  constructor(private service: ContaMensalService, private categoryService: CategoryService, private route: ActivatedRoute) { }
 
   async ngOnInit() {
-    this.categorias = await this.categoryService.list();
-    await this.loadMonth(this.defaultMonth);
+    this.categorias = await this.categoryService.buscarCategoriasAtivas();
+
+    this.route.queryParams.subscribe(async params => {
+      const date = params['date'];
+
+      if (date) {
+        // seta filtro de dia
+        this.columnFilters.date = date;
+
+        // também atualiza mês baseado na data
+        const [year, month] = date.split('-');
+        const yearMonth = `${year}-${month}`;
+
+        await this.loadMonth(yearMonth);
+      } else {
+        await this.loadMonth(this.defaultMonth);
+      }
+    });
   }
 
   async loadMonth(monthYYYYMM: string) {
@@ -84,18 +104,24 @@ export class ContaMensalEstruturaComponent implements OnInit {
     const flat: LinhaContaMensal[] = [];
 
     for (const t of items ?? []) {
+
       flat.push({
         id: t.id,
         idAccount: t.idAccount ?? 0,
         name: t.name,
         value: t.value,
-        date: new Date(t.date), // aqui é string ISO -> Date OK
+        date: new Date(t.date.replace('Z', '')),
         categoryId: t.categoryId ?? t.account.categoryId,
         categoryName: await this.buscarCategoria(t.categoryId ?? t.account.categoryId),
+        tipoContaId: await this.buscarTipoConta(t.categoryId ?? t.account.categoryId),
         subCategory: await this.buscarSubCategoria(t.categoryId ?? t.account.categoryId),      // você não tem isso nesse JSON
         status: t.status,
         statusSalvo: t.status,
         desbloqueiaCampos: false,
+        ehParcelado: t.ehParcelado ?? false,
+        parcelaAtual: t.parcelaAtual,
+        quantidadeParcelas: t.quantidadeParcelas,
+        observacao: t.observacao
       });
     }
 
@@ -106,6 +132,12 @@ export class ContaMensalEstruturaComponent implements OnInit {
     var categoria = this.categorias.find(c => c.id === id);
     if (!categoria) return '';
     return categoria.name;
+  }
+
+  async buscarTipoConta(id: any) {
+    var categoria = this.categorias.find(c => c.id === id);
+    if (!categoria) return '';
+    return NaturezaOperacaoLabel[categoria.naturezaOperacao];
   }
 
   async buscarSubCategoria(id: any) {
@@ -155,10 +187,17 @@ export class ContaMensalEstruturaComponent implements OnInit {
       if (!inSelected(item.name, this.columnFilters.name)) return false;
       if (!inSelected(item.categoryName, this.columnFilters.categoryName)) return false;
       if (!inSelected(item.status, this.columnFilters.status)) return false;
+      if (!inSelected(item.tipoContaId, this.columnFilters.tipoConta)) return false;
 
       if (this.columnFilters.date) {
-        const m = String(item.date ?? '');
-        if (!m.includes(this.columnFilters.date)) return false;
+        const d = new Date(item.date);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+
+        const itemDate = `${yyyy}-${mm}-${dd}`;
+
+        if (itemDate !== this.columnFilters.date) return false;
       }
 
       if (this.columnFilters.value) {
@@ -259,6 +298,7 @@ export class ContaMensalEstruturaComponent implements OnInit {
       value: '',
       date: '',
       status: [],
+      tipoConta: []
     };
   }
 
@@ -281,11 +321,23 @@ export class ContaMensalEstruturaComponent implements OnInit {
     this.columnFilters = { ...this.columnFilters, ...next };
   }
 
-  onChangeRowField(e: { id: number; field: 'value' | 'date' | 'status'; value: string }) {
+  onChangeRowField(e: { id: number; field: 'value' | 'date' | 'status' | 'observacao'; value: string }) {
     this.rows = this.rows.map((item) => {
       if (item.id !== e.id) return item;
-      if (e.field === 'value') return { ...item, value: formatCurrencyBR(e.value) };
-      if (e.field === 'date') return { ...item, month: e.value };
+
+      if (e.field === 'value') {
+        return { ...item, value: formatCurrencyBR(e.value) };
+      }
+
+      if (e.field === 'date') {
+        const [y, m, d] = e.value.split('-').map(Number);
+        return { ...item, date: new Date(y, m - 1, d) };
+      }
+
+      if (e.field === 'observacao') {
+        return { ...item, observacao: e.value };
+      }
+
       return { ...item, status: e.value };
     });
   }
@@ -310,7 +362,23 @@ export class ContaMensalEstruturaComponent implements OnInit {
     }
 
     try {
-      const payload = { ...data, value: removeFormatCurrencyBR(data.value) };
+      var payloadConta = {
+        id: data.id,
+        idAccount: data.idAccount,
+        name: data.name,
+        value: removeFormatCurrencyBR(data.value),
+        date: data.date,
+        ehParcelado: data.ehParcelado,
+        parcelaAtual: data.parcelaAtual,
+        quantidadeParcelas: data.quantidadeParcelas,
+        observacao: data.observacao,
+        categoryId: data.categoryId,
+        categoryName: data.categoryName,
+        subCategory: data.subCategory,
+        status: data.status,
+        statusSalvo: data.statusSalvo,
+      }
+      const payload = payloadConta;
       const resp = await this.service.updateTransaction(payload);
       const newStatus = resp?.status ?? data.status;
 

@@ -19,7 +19,7 @@ import { SharedModule } from 'src/app/shared/shared.module';
     ContaMensalTotaisComponent,
     ContaMensalEstruturaComponent,
     ModalAdicionarEmLoteComponent,
-    ModalNovaContaMensalComponent
+    ModalNovaContaMensalComponent,    
   ],
   imports: [
     SharedModule,

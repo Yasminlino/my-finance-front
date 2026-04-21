@@ -97,7 +97,7 @@
       <table class="table card-table table-vcenter table-hover">
         <thead class="bg-body-tertiary">
           <tr>
-            <th class="w-1">ID</th>
+            <!-- <th class="w-1">ID</th> -->
             <th class="text-nowrap">Nome Banco</th>
             <th class="text-nowrap">Saldo Inicial</th>
             <th class="text-nowrap">Status</th>
@@ -107,7 +107,7 @@
 
         <tbody>
           <tr *ngFor="let b of filtered">
-            <td class="text-muted">{{ b.id }}</td>
+            <!-- <td class="text-muted">{{ b.id }}</td> -->
             <td class="fw-medium">{{ b.nomeBanco }}</td>
             <td class="fw-medium">{{ formatMoney(b.saldoInicial) }}</td>
             <td>
@@ -115,7 +115,7 @@
             </td>
 
             <td class="text-center">
-              <div class="btn-list d-inline-flex">
+              <div class="d-flex gap-2">
                 <button type="button"
                         class="btn btn-icon btn-soft-secondary"
                         title="Editar"
