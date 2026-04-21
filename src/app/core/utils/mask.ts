@@ -112,6 +112,7 @@ export function parseMoneyBRToNumber(masked: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+//retorna o dia de hoje formatado, soma com a quantidade de dias que quiser
 export function isoDateMinusHours(): string {
   const d = new Date();
   d.setHours(d.getHours() - 4);   // -4 horas
@@ -119,4 +120,17 @@ export function isoDateMinusHours(): string {
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;       // formato do input date
+}
+
+
+//retorna o dia de hoje formatado para busca no back, soma com a quantidade de dias que quiser
+export function isoDate(dias: number = 0): string {
+  const date = new Date();
+  date.setDate(date.getDate() + dias);
+  return date.toISOString().split('T')[0];
+}
+
+export function formatMoney(value: any) {
+  const n = Number(value) || 0;
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
 }

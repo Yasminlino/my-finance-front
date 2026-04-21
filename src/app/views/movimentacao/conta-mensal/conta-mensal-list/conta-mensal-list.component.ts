@@ -81,14 +81,12 @@ export class ContaMensalListComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     // garante defaults para evitar undefined em template
-    this.columnFilters = {
-      name: Array.isArray(this.columnFilters?.name) ? this.columnFilters!.name! : [],
-      categoryName: Array.isArray(this.columnFilters?.categoryName) ? this.columnFilters!.categoryName! : [],
-      tipoConta: Array.isArray(this.columnFilters?.tipoConta) ? this.columnFilters!.tipoConta! : [],
-      status: Array.isArray(this.columnFilters?.status) ? this.columnFilters!.status! : [],
-      value: this.columnFilters?.value ?? '',
-      date: this.columnFilters?.date ?? '',
-    };
+    this.columnFilters.name = Array.isArray(this.columnFilters.name) ? this.columnFilters.name : [];
+    this.columnFilters.categoryName = Array.isArray(this.columnFilters.categoryName) ? this.columnFilters.categoryName : [];
+    this.columnFilters.tipoConta = Array.isArray(this.columnFilters.tipoConta) ? this.columnFilters.tipoConta : [];
+    this.columnFilters.status = Array.isArray(this.columnFilters.status) ? this.columnFilters.status : [];
+    this.columnFilters.value = this.columnFilters.value ?? '';
+    this.columnFilters.date = this.columnFilters.date ?? '';
 
     if (changes['rows']) {
       // monta options (únicos)
@@ -144,7 +142,7 @@ export class ContaMensalListComponent implements OnInit, OnChanges {
     this.ddContaOpen = false;
     this.ddCategoriaOpen = false;
     this.ddStatusOpen = false;
-    this.ddTipoContaOpen  = false;
+    this.ddTipoContaOpen = false;
   }
 
   toggleDropdown(which: 'conta' | 'categoria' | 'status' | 'tipoConta', ev: MouseEvent) {

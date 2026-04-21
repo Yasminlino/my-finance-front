@@ -28,7 +28,7 @@ export class HeaderComponent {
   ];
 
   movimentacoesItems: NavItem[] = [
-    { path: '/conta-mensal', label: 'Contas a Pagar', icon: '🐷' },
+    { path: '/conta-mensal', label: 'Contas a Pagar', icon: '💸' },
     // { path: '/movimentacao-diaria', label: 'Movimentação Diária', icon: '📋' },
     { path: '/extrato-bancario', label: 'Extrato Bancário', icon: '📈' },
   ];

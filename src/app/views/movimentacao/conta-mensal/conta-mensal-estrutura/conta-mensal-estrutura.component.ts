@@ -4,6 +4,7 @@ import { AgrupamentoContaMensal, GrupoContaMensal, LinhaContaMensal } from 'src/
 import { formatCurrencyBR, formatDateInput, formatYearMonth, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
 import { Category, CategoryService } from 'src/app/core/services/category.service';
 import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
+import { ActivatedRoute } from '@angular/router';
 
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
@@ -60,11 +61,27 @@ export class ContaMensalEstruturaComponent implements OnInit {
   // seleção
   selectedIds = new Set<number>();
 
-  constructor(private service: ContaMensalService, private categoryService: CategoryService) { }
+  constructor(private service: ContaMensalService, private categoryService: CategoryService, private route: ActivatedRoute) { }
 
   async ngOnInit() {
     this.categorias = await this.categoryService.buscarCategoriasAtivas();
-    await this.loadMonth(this.defaultMonth);
+
+    this.route.queryParams.subscribe(async params => {
+      const date = params['date'];
+
+      if (date) {
+        // seta filtro de dia
+        this.columnFilters.date = date;
+
+        // também atualiza mês baseado na data
+        const [year, month] = date.split('-');
+        const yearMonth = `${year}-${month}`;
+
+        await this.loadMonth(yearMonth);
+      } else {
+        await this.loadMonth(this.defaultMonth);
+      }
+    });
   }
 
   async loadMonth(monthYYYYMM: string) {
@@ -173,7 +190,13 @@ export class ContaMensalEstruturaComponent implements OnInit {
       if (!inSelected(item.tipoContaId, this.columnFilters.tipoConta)) return false;
 
       if (this.columnFilters.date) {
-        const itemDate = new Date(item.date).toISOString().slice(0, 10);
+        const d = new Date(item.date);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+
+        const itemDate = `${yyyy}-${mm}-${dd}`;
+
         if (itemDate !== this.columnFilters.date) return false;
       }
 

@@ -6,14 +6,24 @@ import { AgrupamentoContaMensal, ContaMensal, LinhaContaMensal } from '../models
 export class ContaMensalService {
   constructor(private api: ApiService) {}
 
-  getGroupingByMonth(yyyymm: string): Promise<any[]> {
+  getGroupingByMonth(yyyymm: string, pesquisaDataCompleta: boolean = false): Promise<any[]> {
     // ajuste endpoint/params conforme seu backend
-    return this.api.get<any[]>('/GetTransactionGroupingByDate/' + yyyymm);
+    return this.api.get<any[]>(`/GetTransactionGroupingByDate/${yyyymm}/${pesquisaDataCompleta}`);
   }
   
-  GetTransactionByDate(yyyymm: string): Promise<ContaMensal[]> {
+  GetTransactionByDate(yyyymm: string, pesquisaDataCompleta: boolean = false): Promise<ContaMensal[]> {
     // ajuste endpoint/params conforme seu backend
-    return this.api.get<ContaMensal[]>('/GetTransactionByDate/' + yyyymm);
+    return this.api.get<ContaMensal[]>(`/GetTransactionByDate/${yyyymm}/${pesquisaDataCompleta}`);
+  }
+  
+  BuscaContasVencidas(yyyymm: string): Promise<ContaMensal[]> {
+    // ajuste endpoint/params conforme seu backend
+    return this.api.get<ContaMensal[]>(`/GetContaVencida/${yyyymm}`);
+  }
+  
+  GetTransactionByDate2(date: Date): Promise<ContaMensal[]> {
+    // ajuste endpoint/params conforme seu backend
+    return this.api.get<ContaMensal[]>('/GetTransactionByDate/' + date);
   }
 
   async createContaMensal(payload: any): Promise<any> {
