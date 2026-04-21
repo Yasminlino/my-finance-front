@@ -80,14 +80,14 @@
 
             <td class="text-center">
               <div class="d-inline-flex gap-2">
-                <button type="button"
+                <button type="button" [disabled]="c.id == 13"
                         class="btn btn-icon btn-soft-secondary"
                         title="Editar"
                         (click)="openUpdate(c)">
                   ✏️
                 </button>
 
-                <button type="button"
+                <button type="button" [disabled]="c.id == 13"
                         class="btn btn-icon btn-soft-danger"
                         title="Excluir"
                         (click)="onDelete(c)">
