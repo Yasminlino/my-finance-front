@@ -39,8 +39,7 @@ export class HomeComponent implements OnInit {
     const resultado = [];
 
     for (const conta of contas) {
-      var diaVencimento = new Date(conta.date).getDay
-      if ((conta.status === "PENDENTE" || conta.status === "AGUARDANDO") && diaVencimento == new Date().getDay) {
+      if (Number(conta?.categoryId) != 0 || Number(conta?.categoryId)!= null ) {
 
         const categoria = await this.categoryService.GetCategoryById(Number(conta.categoryId));
 
@@ -70,7 +69,7 @@ export class HomeComponent implements OnInit {
 
     for (const conta of contas) {
       var diaVencimento = new Date(conta.date).getDay
-      if ((conta.status === "PENDENTE" || conta.status === "AGUARDANDO") && diaVencimento == new Date().getDay) {
+      if ((conta.status === "PENDENTE" || conta.status === "AGUARDANDO") && diaVencimento == new Date().getDay && conta.categoryId != null && conta.categoryId != 0 ) {
 
         const categoria = await this.categoryService.GetCategoryById(Number(conta.categoryId));
 
@@ -103,7 +102,7 @@ export class HomeComponent implements OnInit {
     const resultado = [];
 
     for (const conta of this.contasProximas) {
-      if ((conta.status === "PENDENTE" || conta.status === "AGUARDANDO")) {
+      if ((conta.status === "PENDENTE" || conta.status === "AGUARDANDO" && conta.categoryId != null && conta.categoryId != 0)) {
 
         const categoria = await this.categoryService.GetCategoryById(Number(conta.categoryId));
 

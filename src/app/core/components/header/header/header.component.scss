@@ -10,6 +10,7 @@ button.nav-link {
 .dropdown-menu.show {
   display: block;
 }
+
 /* Normaliza o alinhamento do dropdown (ícone + texto) */
 .dropdown-item {
   display: flex;
@@ -18,7 +19,8 @@ button.nav-link {
 }
 
 .dropdown-item-icon {
-  width: 24px;          /* força todos os ícones terem a mesma largura */
+  width: 24px;
+  /* força todos os ícones terem a mesma largura */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -30,7 +32,13 @@ button.nav-link {
   flex: 1;
 }
 
-.dropdown-menu.show{
+.dropdown-menu.show {
   position: absolute;
   top: 100%;
+}
+
+@media (max-width: 765px) {
+  .dropdown-menu.show {
+    display: contents;
+  }
 }

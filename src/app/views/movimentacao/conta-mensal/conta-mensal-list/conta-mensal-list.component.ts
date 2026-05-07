@@ -181,7 +181,7 @@ export class ContaMensalListComponent implements OnInit, OnChanges {
   multiLabel(field: 'name' | 'categoryName' | 'status' | 'tipoConta', label: string) {
     const arr = (this.columnFilters as any)[field] as string[] | undefined;
     const n = Array.isArray(arr) ? arr.length : 0;
-    if (!n) return `${label}: Todos`;
+    if (!n) return `Todos`;
     if (n === 1) return `${label}: ${arr![0]}`;
     return `${label}: ${n} selecionados`;
   }

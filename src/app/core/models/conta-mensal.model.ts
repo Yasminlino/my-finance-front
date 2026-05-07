@@ -71,7 +71,7 @@ export type ContaMensal = {
   value: number;
   idAccount: number;
   status: string;
-  categoryId?: string;
+  categoryId?: any;
 }
 
 export type ContaVencendo = {

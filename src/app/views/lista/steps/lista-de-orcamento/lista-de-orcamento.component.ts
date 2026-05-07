@@ -143,17 +143,17 @@ export class ListaDeOrcamentoComponent implements OnInit {
     this.listaId = Number(this.activatedRoute.snapshot.paramMap.get('id'));
 
     var lista = await this.ListaService.GetListaById(this.listaId);
-
+    
     switch (lista.tipoMovimentacao) {
       case 1:
         this.tipoLista = 1;
-        this.titulo = 'Lista de Checagem'; break;
+        this.titulo = lista.nome ?? 'Lista de Checagem'; break;
       case 2:
         this.tipoLista = 2;
-        this.titulo = 'Cronograma'; break;
+        this.titulo = lista.nome ?? 'Cronograma'; break;
       case 3:
         this.tipoLista = 3;
-        this.titulo = 'Orçamento';
+        this.titulo = lista.nome ?? 'Orçamento';
         break;
     }
   }

@@ -15,6 +15,7 @@ export class HeaderComponent {
   // estados UI
   isMenuOpen = false;
   isUserOpen = false;
+  usuario = localStorage.getItem('usuarioNome') ?? 'Admin'
 
   openDropdownKey: 'cadastros' | 'movimentacoes' | 'listas' | null = null;
 

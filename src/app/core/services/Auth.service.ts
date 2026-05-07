@@ -19,6 +19,7 @@ export class AuthService {
       localStorage.setItem('authToken', response.token?.token);
       localStorage.setItem('expiraToken',response.token.dataExpiracao?.toString() ?? '');
       localStorage.setItem('usuarioRole', response?.usuario.role ?? '');
+      localStorage.setItem('usuarioNome', response?.usuario.nomeUsuario ?? '');
 
       if (remember) {
         localStorage.setItem('remember', '1');

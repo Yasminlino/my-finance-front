@@ -31,7 +31,7 @@
               <div class="text-muted">Total a pagar próximos 2 dias</div>
               <div class="display-6 text-info fw-bold">
                  {{ money(totalProximas) }}
-              </div>
+              </div>              
             </div>
           </div>
         </div>
@@ -65,7 +65,7 @@
               </div>
 
               <div *ngIf="contasVencidas.length == 0" class="text-muted text-center">
-                Nenhuma conta hoje 🎉
+                Nenhuma conta vencida 🎉
               </div>
 
             </div>
@@ -131,6 +131,10 @@
                    {{ money(conta.valor) }}
                 </div>
               </div>
+              
+            <div *ngIf="proximasContas.length == 0" class="text-muted text-center">
+              Nenhuma conta para os próximos 2 dias 🎉
+            </div>
 
             </div>
           </div>

@@ -4,6 +4,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 
 // Ajuste esses imports para o seu projeto
 import { ItemListaDto, ItemListaService } from 'src/app/core/services/item-lista.service';
+import { formatCurrencyMoney, formatMoneyBRFromAny, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
 
@@ -27,7 +28,7 @@ export class ModalNovoItemListaComponent implements OnInit {
   form = this.fb.group({
     descricao: ['', [Validators.required, Validators.minLength(2)]],
     quantidade: [1, [Validators.required, Validators.min(1)]],
-    valor: [null as number | null], // opcional
+    valor: [null as any | null], // opcional
     status: ['Comprado', [Validators.required]], // 'Pendente' | 'Comprado'
     dataTarefa: [null as Date | null], // yyyy-mm-dd
     horarioTarefa: [null as Time | null], // HH:mm
@@ -44,7 +45,7 @@ export class ModalNovoItemListaComponent implements OnInit {
       this.form.patchValue({
         descricao: this.item.descricao,
         quantidade: this.item.quantidade,
-        valor: this.item.valor ?? null,
+        valor: formatCurrencyMoney(String(this.item.valor)) ?? null,
         status: this.item.status ?? 'Pendente',
         dataTarefa: this.item.dataTarefa ?? null,
         horarioTarefa: this.item.horarioTarefa ?? null,
@@ -64,6 +65,7 @@ export class ModalNovoItemListaComponent implements OnInit {
 
     this.saving = true;
     this.alert = { type: '', message: '' };
+    var valorFormatoDecimal = parseMoneyBRToNumber(String(this.form.value.valor))
 
     const payload = {
       id: this.item?.id ?? 0,
@@ -71,7 +73,7 @@ export class ModalNovoItemListaComponent implements OnInit {
       descricao: this.form.value.descricao!,
       quantidade: Number(this.form.value.quantidade),
       status: this.form.value.status!,
-      valor: this.form.value.valor ?? undefined,
+      valor: valorFormatoDecimal ?? undefined,
       dataTarefa: this.form.value.dataTarefa ?? undefined,
       horarioTarefa: this.form.value.horarioTarefa ?? undefined,
     };

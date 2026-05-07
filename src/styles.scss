@@ -41,6 +41,8 @@
 .modal-card .card-header,
 .modal-card .card-footer {
   flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
 }
 
 /* body é o que rola */

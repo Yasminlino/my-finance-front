@@ -11,19 +11,16 @@
 
     <div class="card-body" [formGroup]="form">
       <!-- ALERTA -->
-      <div *ngIf="alert.type" class="alert" [class.alert-success]="alert.type==='success'" [class.alert-danger]="alert.type==='error'">
+      <div *ngIf="alert.type" class="alert" [class.alert-success]="alert.type==='success'"
+        [class.alert-danger]="alert.type==='error'">
         {{ alert.message }}
       </div>
 
       <!-- DESCRICAO -->
       <div class="mb-3">
         <label class="form-label">Descrição</label>
-        <input
-          class="form-control"
-          formControlName="descricao"
-          cdkFocusInitial
-          [class.is-invalid]="form.controls.descricao.touched && form.controls.descricao.invalid"
-        />
+        <input class="form-control" formControlName="descricao" cdkFocusInitial
+          [class.is-invalid]="form.controls.descricao.touched && form.controls.descricao.invalid" />
         <div class="invalid-feedback" *ngIf="form.controls.descricao.touched && form.controls.descricao.invalid">
           Informe uma descrição válida.
         </div>
@@ -33,29 +30,28 @@
       <div class="row g-2 mb-3">
         <div class="col-6" *ngIf="tipoLista === 1 || tipoLista === 2">
           <label class="form-label">Quantidade</label>
-          <input
-            type="number"
-            class="form-control"
-            formControlName="quantidade"
-            min="1"
-            [class.is-invalid]="form.controls.quantidade.touched && form.controls.quantidade.invalid"
-          />
+          <input type="number" class="form-control" formControlName="quantidade" min="1"
+            [class.is-invalid]="form.controls.quantidade.touched && form.controls.quantidade.invalid" />
           <div class="invalid-feedback" *ngIf="form.controls.quantidade.touched && form.controls.quantidade.invalid">
             Quantidade deve ser no mínimo 1.
           </div>
         </div>
+      </div>
 
-        <div class="col-6" *ngIf="tipoLista === 3">
-          <label class="form-label">Valor</label>
-           <input class="form-control" type="text" formControlName="valor" currencyInput
+      <div class="mb-3">
+        <label class="form-label">Valor</label>
+        <input class="form-control" type="text" inputmode="decimal" formControlName="valor" appMoneyMaskBR
           [class.is-invalid]="form.controls.valor.touched && form.controls.valor.invalid" />
+        <div class="invalid-feedback" *ngIf="form.controls.valor.touched && form.controls.valor.invalid">
+          Informe um valor.
         </div>
       </div>
+
 
       <!-- STATUS -->
       <div class="mb-3" *ngIf="tipoLista === 3">
         <label class="form-label">Status</label>
-        <input type="text" class="form-control" formControlName="status"/>
+        <input type="text" class="form-control" formControlName="status" />
       </div>
 
       <div class="mb-3" *ngIf="tipoLista === 1 || tipoLista === 2">
