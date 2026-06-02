@@ -16,7 +16,7 @@ import { ModalItemChecagemComponent } from './components/modal-item-checagem/mod
     ListaRootComponent,
     ModalNovaListaComponent,
     ListaDeChecagemComponent,
-    // ListaDeCronogramaComponent,
+    ListaDeCronogramaComponent,
     ListaDeOrcamentoComponent,
     ModalNovoItemListaComponent,
     ConfigStatusColorsComponent, ModalItemChecagemComponent,

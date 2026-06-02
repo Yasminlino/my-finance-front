@@ -6,12 +6,14 @@ import { RouterModule } from '@angular/router';
 import { CurrencyMaskDirective } from './directives/currency-mask.directives';
 import { CurrencyInputDirective } from './directives/currency-input.directive';
 import { MoneyMaskBrDirective } from './directives/money-mask.directive';
+import { CalendarComponent } from '../core/components/calendar/calendar.component';
 
 @NgModule({
   declarations: [
     CurrencyMaskDirective,
     CurrencyInputDirective,
-    MoneyMaskBrDirective
+    MoneyMaskBrDirective,
+    CalendarComponent
   ],
   imports: [
     CommonModule,
@@ -26,7 +28,8 @@ import { MoneyMaskBrDirective } from './directives/money-mask.directive';
     RouterModule,
     CurrencyMaskDirective,
     CurrencyInputDirective,
-    MoneyMaskBrDirective
+    MoneyMaskBrDirective,
+    CalendarComponent
   ]
 })
 export class SharedModule {}
