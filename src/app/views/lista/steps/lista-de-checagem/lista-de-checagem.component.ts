@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ItemListaService, ItemListaDto } from 'src/app/core/services/item-lista.service';
+import { ListaDto, ListaService } from 'src/app/core/services/lista.service';
 
 @Component({
   selector: 'app-lista-de-checagem',
@@ -10,6 +11,7 @@ import { ItemListaService, ItemListaDto } from 'src/app/core/services/item-lista
 export class ListaDeChecagemComponent implements OnInit {
 
   listaId!: number;
+  lista: ListaDto | null = null;
 
   itens: ItemListaDto[] = [];
   filtered: ItemListaDto[] = [];
@@ -28,11 +30,14 @@ export class ListaDeChecagemComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private service: ItemListaService
+    private service: ItemListaService,
+    private listaService: ListaService
   ) {}
 
   async ngOnInit() {
-    this.listaId = Number(this.route.snapshot.paramMap.get('id'));
+    this.listaId = Number(this.route.snapshot.paramMap.get('id'));    
+    this.lista = await this.listaService.GetListaById(this.listaId);
+    this.titulo = this.lista.nome;
     await this.load();
   }
 
