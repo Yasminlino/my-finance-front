@@ -38,6 +38,7 @@ export class ContaMensalEstruturaComponent implements OnInit {
 
   // mês
   defaultMonth = this.getCurrentYearMonth();
+  private readonly STORAGE_KEY = 'contaMensalSelectedMonth';
   selectedMonth = this.defaultMonth;
 
   // filtros gerais
@@ -68,6 +69,7 @@ export class ContaMensalEstruturaComponent implements OnInit {
 
     this.route.queryParams.subscribe(async params => {
       const date = params['date'];
+      const storedMonth = localStorage.getItem(this.STORAGE_KEY);
 
       if (date) {
         // seta filtro de dia
@@ -79,7 +81,7 @@ export class ContaMensalEstruturaComponent implements OnInit {
 
         await this.loadMonth(yearMonth);
       } else {
-        await this.loadMonth(this.defaultMonth);
+        await this.loadMonth(storedMonth ?? this.defaultMonth);
       }
     });
   }
@@ -88,6 +90,7 @@ export class ContaMensalEstruturaComponent implements OnInit {
     try {
       this.loading = true;
       this.selectedMonth = monthYYYYMM;
+      localStorage.setItem(this.STORAGE_KEY, monthYYYYMM);
 
       const grouped = await this.service.getGroupingByMonth(formatYearMonth(monthYYYYMM));
       this.rows = await this.flatten(grouped ?? []);
