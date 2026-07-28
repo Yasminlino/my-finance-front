@@ -72,10 +72,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "my-finance-front:build:production"
+              "buildTarget": "my-finance-front:build:production"
             },
             "development": {
-              "browserTarget": "my-finance-front:build:development"
+              "buildTarget": "my-finance-front:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -83,7 +83,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "my-finance-front:build"
+            "buildTarget": "my-finance-front:build"
           }
         },
         "test": {
