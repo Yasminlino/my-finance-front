@@ -14,7 +14,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     ContaMensalListComponent,
     ContaMensalFormComponent,
   ],
-  imports: [
+  imports: [ 
     SharedModule,
     ReactiveFormsModule,
     ContaMensalRoutingModule,
