@@ -1,28 +1,17 @@
 <div class="page page-center">
   <div class="container container-tight py-4">
-    <div class="text-center mb-4">
-      <a href="." class="navbar-brand navbar-brand-autodark">
-        <!-- opcional: seu logo -->
-        MyFinance
-      </a>
-    </div>
 
     <div class="card card-md">
       <div class="card-body">
-        <h2 class="h2 text-center mb-4">Entrar</h2>
-
+        <div class="text-center mb-4">
+          <img src="assets/MyFinance.png" alt="MyFinance" width="200">
+        </div>
+        
         <form (ngSubmit)="submit()" [formGroup]="form" autocomplete="on" novalidate>
           <div class="mb-3">
             <label class="form-label" for="username">E-mail ou usuário</label>
-            <input
-              id="username"
-              type="text"
-              class="form-control"
-              [class.is-invalid]="!!errors.username"
-              placeholder="voce@email.com"
-              formControlName="username"
-              autofocus
-            />
+            <input id="username" type="text" class="form-control" [class.is-invalid]="!!errors.username"
+              placeholder="voce@email.com" formControlName="username" autofocus />
             <div class="invalid-feedback" *ngIf="errors.username">
               {{ errors.username }}
             </div>
@@ -31,23 +20,12 @@
           <div class="mb-2">
             <label class="form-label" for="password">Senha</label>
             <div class="input-group input-group-flat">
-              <input
-                id="password"
-                [type]="showPwd ? 'text' : 'password'"
-                class="form-control"
-                [class.is-invalid]="!!errors.password"
-                placeholder="Sua senha"
-                formControlName="password"
-                autocomplete="current-password"
-              />
+              <input id="password" [type]="showPwd ? 'text' : 'password'" class="form-control"
+                [class.is-invalid]="!!errors.password" placeholder="Sua senha" formControlName="password"
+                autocomplete="current-password" />
               <span class="input-group-text">
-                <a
-                  href="#"
-                  class="link-secondary"
-                  (click)="$event.preventDefault(); togglePwd()"
-                  [attr.aria-label]="showPwd ? 'Ocultar senha' : 'Mostrar senha'"
-                  title="Mostrar/ocultar senha"
-                >
+                <a href="#" class="link-secondary" (click)="$event.preventDefault(); togglePwd()"
+                  [attr.aria-label]="showPwd ? 'Ocultar senha' : 'Mostrar senha'" title="Mostrar/ocultar senha">
                   <span *ngIf="!showPwd">👁️</span>
                   <span *ngIf="showPwd">🙈</span>
                 </a>
@@ -87,8 +65,5 @@
     </div>
   </div>
 
-  <app-registro-usuario
-    *ngIf="showModalCreate"
-    (closeModal)="closeRegister()"
-  ></app-registro-usuario>
+  <app-registro-usuario *ngIf="showModalCreate" (closeModal)="closeRegister()"></app-registro-usuario>
 </div>
