@@ -8,6 +8,7 @@ import { ContaMensalListComponent } from './conta-mensal-list/conta-mensal-list.
 import { SharedModule } from 'src/app/shared/shared.module';
 import { ChartsModule } from 'src/app/core/components/charts/charts.module';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { AsyncPipe, NgFor } from '@angular/common';
 
 @NgModule({
   declarations: [
@@ -19,7 +20,8 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     ReactiveFormsModule,
     ContaMensalRoutingModule,
     ChartsModule,
-    NgbModule
+    NgbModule,
+    NgFor, AsyncPipe
   ]
 })
 export class CadastroContaMensalModule { }

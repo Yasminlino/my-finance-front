@@ -1,13 +1,11 @@
 <div class="container-xl py-3">
 
   <!-- Alert -->
-  <div *ngIf="alert.message"
-       class="alert"
-       [class.alert-success]="alert.type==='success'"
-       [class.alert-danger]="alert.type==='error'">
+  @if (alert.message) {
+  <div class="alert" [class.alert-success]="alert.type==='success'" [class.alert-danger]="alert.type==='error'">
     {{ alert.message }}
   </div>
-
+  }
   <!-- Header Tabler -->
   <div class="page-header d-print-none mb-3">
     <div class="row align-items-center">
@@ -35,17 +33,13 @@
       <div class="row g-2 align-items-end">
         <div class="col-12 col-md-5">
           <label class="form-label">Buscar</label>
-          <input class="form-control"
-                 placeholder="Nome, ID ou Categoria"
-                 [value]="q"
-                 (input)="onSearchChange(($any($event.target)).value)" />
+          <input class="form-control" placeholder="Nome, ID ou Categoria" [value]="q"
+            (input)="onSearchChange(($any($event.target)).value)" />
         </div>
 
         <div class="col-12 col-md-4">
           <label class="form-label">Categoria</label>
-          <select class="form-select"
-                  [value]="catFilter"
-                  (change)="onCatChange(($any($event.target)).value)">
+          <select class="form-select" [value]="catFilter" (change)="onCatChange(($any($event.target)).value)">
             <option value="ALL">Todas</option>
             <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
           </select>
@@ -78,7 +72,8 @@
         </thead>
 
         <tbody>
-          <tr *ngFor="let acc of filtered">
+          @for (acc of filtered; track acc) {
+          <tr >
             <!-- <td class="text-muted text-center">{{ acc.id }}</td> -->
             <td class="fw-medium text-center">{{ acc.name }}</td>
             <td class="text-center">{{ money(acc.value) }}</td>
@@ -93,23 +88,19 @@
 
             <td class="text-center">
               <div class="d-flex gap-2 justify-content-center">
-                <button type="button"
-                        class="btn btn-icon btn-soft-secondary"
-                        title="Editar"
-                        (click)="openEdit(acc)">
+                <button type="button" class="btn btn-icon btn-soft-secondary" title="Editar" (click)="openEdit(acc)">
                   ✏️
                 </button>
-                <button type="button"
-                        class="btn btn-icon btn-soft-danger"
-                        title="Excluir"
-                        (click)="onDelete(acc)">
+                <button type="button" class="btn btn-icon btn-soft-danger" title="Excluir" (click)="onDelete(acc)">
                   🗑️
                 </button>
               </div>
             </td>
           </tr>
+        }
 
-          <tr *ngIf="!loading && filtered.length === 0">
+          <tr>
+            @if (!loading && filtered.length === 0) {
             <td colspan="8" class="p-5">
               <div class="text-center text-secondary">
                 <div class="fs-1 mb-2">🧾</div>
@@ -118,10 +109,13 @@
                 <button class="btn btn-primary" (click)="openCreate()">+ Nova conta</button>
               </div>
             </td>
+            }
           </tr>
 
-          <tr *ngIf="loading">
+          <tr>
+            @if (loading) {
             <td colspan="8" class="text-center text-secondary py-4">Carregando...</td>
+            }
           </tr>
 
           <tr *ngIf="errorMsg">
@@ -129,23 +123,22 @@
           </tr>
         </tbody>
 
-        <tfoot *ngIf="filtered.length > 0">
+        <tfoot>
+          @if (!loading && filtered.length > 0) {
           <tr>
             <td colspan="2" class="text-end fw-bold">Total:</td>
             <td class="text-end fw-bold">{{ money(total) }}</td>
             <td colspan="3"></td>
           </tr>
+          }
         </tfoot>
       </table>
     </div>
   </div>
 
   <!-- Modal do Form -->
-  <app-conta-mensal-form
-    *ngIf="showModalForm"
-    [account]="editing"
-    [categories]="categories"
-    (closed)="closeForm($event)">
+  @if (showModalForm) {
+  <app-conta-mensal-form [account]="editing" [categories]="categories" (closed)="closeForm($event)">
   </app-conta-mensal-form>
-
+  }
 </div>
