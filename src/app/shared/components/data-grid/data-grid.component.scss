@@ -3,10 +3,24 @@
 }
 
 ::ng-deep .p-datatable-wrapper {
-    margin: 0 1rem 1rem 1rem;
-    margin-top: none;
+    margin: 0 1rem 0 1rem;
+    border: solid 1px #d1d5db;    
+    border-bottom: none;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+::ng-deep .p-paginator {
+    margin: 1rem;
+    margin-top: 0;
     border: solid 1px #d1d5db;
-    border-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    border-top: none;
+}
+
+::ng-deep .pi-file-excel{
+    font-size: 1.2rem;
 }
 
 ::ng-deep .text-sm{
@@ -270,9 +284,8 @@ td {
 }
 
 :host ::ng-deep .p-toolbar {
-    margin: 1rem;
-    background: white;
-    border-color: #d1d5db;
+    border: none;
+    padding: 0;
 }
 
 :host ::ng-deep .p-datatable-header {
@@ -282,9 +295,29 @@ td {
     padding-top: 0;
 }
 
-:host ::ng-deep .p-datatable-header > div > h5 {
+:host ::ng-deep .p-breadcrumb {
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    padding-bottom: 0.5rem;
+    font-size: 0.8rem;
+    padding-left: 0.5rem; 
+}
+
+:host ::ng-deep .p-menuitem-icon, .p-menuitem-separator {
+    font-size: 0.8rem;
+}
+
+:host ::ng-deep  .p-icon {
+    height: 0.8rem;
+    width:  0.8rem;
+}
+
+.title {
     font-family: inherit;
-    font-size: 1rem;    
+    font-size: 1.5rem;   
+    padding-left: 0.5rem; 
 }
 
 .text-align-center{

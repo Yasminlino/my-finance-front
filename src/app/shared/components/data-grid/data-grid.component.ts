@@ -14,6 +14,7 @@ import { FileUploadModule } from 'primeng/fileupload';
 import { ToolbarModule } from 'primeng/toolbar';
 import { RippleModule } from 'primeng/ripple';
 import { TagModule } from 'primeng/tag';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 
 
 export interface GridColumnOption {
@@ -38,13 +39,14 @@ export interface GridColumnOption {
     FileUploadModule,
     ToolbarModule,
     RippleModule,
-    TagModule
+    TagModule,
+    BreadcrumbModule
   ],
   templateUrl: './data-grid.component.html',
   styleUrl: './data-grid.component.scss'
 })
 export class DataGridComponent {
-  @Input('titulo') titulo: string = 'Cadastro';
+  @Input('titulo') titulo: string = 'Cadastro de Categorias';
   private _dataSource: any[] = [];
   @Input('dataSource')
   set dataSource(value: any[]) {
@@ -60,6 +62,7 @@ export class DataGridComponent {
   @Input('sortable') sortable: boolean = false;
   @Input('export') export: boolean = false;
   @Input('columns') columns: GridColumn[] = [];
+  @Input('breadcrumb') breadcrumb: any;
   @Input('columnIcons') columnIcons: Record<string, string> = {};
   @Input('dataKey') dataKey: string = 'id';
   /** Exibe a barra com "Salvar tudo" e "Excluir selecionadas". */
@@ -76,6 +79,7 @@ export class DataGridComponent {
   @Output() deleteSelected = new EventEmitter<any[]>();
 
   @ViewChild('dt') dt?: Table;
+  home = { icon: 'pi pi-home', routerLink: '/' };
 
   productDialog: boolean = false;
   submitted: boolean = false;
