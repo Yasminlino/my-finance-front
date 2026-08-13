@@ -1,0 +1,297 @@
+::ng-deep .p-datatable .p-datatable-table {
+    border-collapse: collapse;
+}
+
+::ng-deep .p-datatable-wrapper {
+    margin: 0 1rem 1rem 1rem;
+    margin-top: none;
+    border: solid 1px #d1d5db;
+    border-radius: 6px;
+}
+
+::ng-deep .text-sm{
+    align-self: center;
+}
+::ng-deep tr.ng-star-inserted{
+    height: 3rem;
+}
+::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+    border-bottom: 1px solid #d1d5db !important;
+}
+
+::ng-deep .p-datatable .p-datatable-thead > tr > th {
+    border-bottom: 1px solid #d1d5db !important;
+}
+.border-b-0 {
+    border-bottom: 1px solid #d1d5db !important;
+}
+
+::ng-deep .p-datatable .p-datatable-tbody>tr>td {
+    padding: 0.1rem 0.5rem !important;
+}
+
+::ng-deep .p-datatable .p-datatable-thead>tr>th {
+    padding: 0.5rem 0.5rem !important;
+}
+
+::ng-deep .p-datatable .p-datatable-thead>tr>th>input {
+    padding: 0.5rem 0.5rem !important;
+}
+
+::ng-deep .p-datatable .p-datatable-tbody>tr>td.dg-actions-column,
+::ng-deep .p-datatable .p-datatable-thead>tr>th.dg-actions-column {
+    width: 7rem !important;
+    min-width: 7rem !important;
+    max-width: 7rem !important;
+    white-space: nowrap;
+    text-align: center;
+}
+
+button,
+input,
+optgroup,
+select,
+textarea {
+    font-size: 14px !important;
+    line-height: 14px !important;
+}
+
+/* Linha ativada para edição */
+::ng-deep .p-datatable .p-datatable-tbody>tr.row-active>td {
+    background-color: #e6f0ff !important;
+}
+
+::ng-deep .p-datatable .p-datatable-tbody>tr.row-active:hover>td {
+    background-color: #d9e8ff !important;
+}
+
+/* ----- Filtros: controles ocupam a largura total da coluna ----- */
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th {
+    padding: 0.35rem 0.4rem !important;
+    vertical-align: middle;
+}
+
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th p-dropdown,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th p-multiselect,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th p-calendar,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th p-inputnumber,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th>input {
+    width: 100% !important;
+}
+
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-dropdown,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-dropdown-label,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-multiselect,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-multiselect-label,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-calendar,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-calendar input,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-inputnumber,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-inputnumber input {
+    width: 100% !important;
+}
+
+/* Altura uniforme dos controles de filtro */
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-dropdown-label,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-multiselect-label,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-calendar input,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-inputnumber input,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th>input {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+}
+
+/* ----- Barra de ações em lote (Salvar tudo / Excluir selecionadas) ----- */
+.dg-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.dg-toolbar-left,
+.dg-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dg-hint {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+/* ----- Linha em edição inline e com alterações pendentes ----- */
+::ng-deep .p-datatable .p-datatable-tbody>tr.row-editing>td {
+    background-color: #fef9e746 !important;
+}
+
+::ng-deep .p-datatable .p-datatable-tbody>tr.row-editing:hover>td {
+    background-color: #fdf3d0 !important;
+}
+
+::ng-deep .p-datatable .p-datatable-tbody>tr.row-dirty>td {
+    box-shadow: inset 3px 0 0 #f59e0b;
+}
+
+.dg-dot {
+    position: relative;
+}
+
+.dg-dot::before {
+    content: '';
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-right: 0.35rem;
+    border-radius: 50%;
+    background-color: #f59e0b;
+    vertical-align: middle;
+}
+
+/* Editores inline ocupam a célula */
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td p-dropdown,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td p-multiselect,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td p-calendar,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td p-inputnumber,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td>input {
+    width: 100% !important;
+}
+
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-dropdown,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-dropdown-label,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-multiselect,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-multiselect-label,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-calendar,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-calendar input,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-inputnumber,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-inputnumber input {
+    width: 100% !important;
+}
+
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-dropdown-label,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-multiselect-label,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-calendar input,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-inputnumber input,
+::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td>input {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+::ng-deep th,
+td {
+    font-size: 14px;
+}
+
+::ng-deep .p-sortable-column-icon,
+.pi,
+.p-checkbox-box {
+    width: 12px !important;
+    height: 12px !important;
+    align-items: center;
+    justify-content: center;
+}
+
+::ng-deep .p-checkbox-box {
+    width: 16px !important;
+    height: 16px !important;
+    align-items: center;
+    justify-content: center;
+}
+
+::ng-deep .p-sortable-column>div {
+    display: flex;
+    align-items: flex-start;
+}
+
+::ng-deep .p-datatable .p-datatable-thead>tr>th {
+    background-color: white !important;
+}
+
+::ng-deep .p-inputtext>i {
+
+    font-size: 12px !important;
+    height: 24px;
+}
+
+::ng-deep .excluir-selecionado   {
+    border-radius: 0.5rem !important;
+    background-color: #fb6e59;
+    color: white;
+}
+
+::ng-deep .salvar   {
+    border-radius: 0.5rem !important;
+    background-color: #3B82F6;
+    color: white;
+}
+
+::ng-deep p-table > thead{
+    margin: 1rem;
+    border-radius: 0.5rem !important;
+    border: 1px solid #d1d5db !important
+}
+
+.semRegistros {
+    height: 5rem !important;
+    font-size: 16px;
+    color: #797575 !important;
+}
+
+.p-button.p-button-text:not(:disabled):hover
+{
+    border-radius: 1rem !important;
+}
+.p-button.p-button-icon-only {
+    padding: 0 !important;
+    width: 2rem !important;
+    height: 2rem !important;
+    margin-top: 0.8rem !important;
+    margin-bottom: 0.8rem !important;
+}
+
+:host ::ng-deep .p-dialog .product-image {
+    width: 150px;
+    margin: 0 auto 2rem auto;
+    display: block;
+}
+
+:host ::ng-deep .p-ripple {
+ border-radius: 0.5rem;
+ padding: 0.3rem 0.8rem;
+ font-size: 14px!important;
+}
+
+:host ::ng-deep .p-button-icon {
+    margin-bottom: 3px!important;
+}
+
+:host ::ng-deep .p-toolbar {
+    margin: 1rem;
+    background: white;
+    border-color: #d1d5db;
+}
+
+:host ::ng-deep .p-datatable-header {
+    background: white;
+    border: none;
+    margin-top: none;
+    padding-top: 0;
+}
+
+:host ::ng-deep .p-datatable-header > div > h5 {
+    font-family: inherit;
+    font-size: 1rem;    
+}
+
+.text-align-center{
+    text-align: center;
+}
+
+.col-status{
+    width: 0.8rem;
+    text-align: center;
+}

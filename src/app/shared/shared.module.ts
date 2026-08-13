@@ -8,6 +8,8 @@ import { CurrencyInputDirective } from './directives/currency-input.directive';
 import { MoneyMaskBrDirective } from './directives/money-mask.directive';
 import { CalendarComponent } from '../core/components/calendar/calendar.component';
 
+import { TableModule } from 'primeng/table';
+
 @NgModule({
   declarations: [
     CurrencyMaskDirective,
@@ -19,7 +21,8 @@ import { CalendarComponent } from '../core/components/calendar/calendar.componen
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    RouterModule
+    RouterModule,
+    TableModule
   ],
   exports: [
     CommonModule,
@@ -29,7 +32,8 @@ import { CalendarComponent } from '../core/components/calendar/calendar.componen
     CurrencyMaskDirective,
     CurrencyInputDirective,
     MoneyMaskBrDirective,
-    CalendarComponent
+    CalendarComponent,
+    TableModule
   ]
 })
 export class SharedModule {}

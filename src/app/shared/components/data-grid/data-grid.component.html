@@ -1,0 +1,190 @@
+<div class="card">
+    <p-toolbar styleClass="mb-4 gap-2">
+        <ng-template pTemplate="left">
+            <p-button severity="success" label="Novo" icon="pi pi-plus" class="mr-2" (onClick)="openNew()" />
+            <p-button severity="danger" label="Delete" icon="pi pi-trash" (onClick)="onDeleteSelected()"
+                [disabled]="!selectedItems || !selectedItems.length" />
+        </ng-template>
+
+        <ng-template pTemplate="right">
+            <!-- <p-fileUpload mode="basic" accept="image/*" [ ]="1000000" label="Import" chooseLabel="Import"
+                class="mr-2 inline-block" /> -->
+            <p-button severity="help" label="Export" icon="pi pi-upload" (onClick)="onExport()" />
+        </ng-template>
+    </p-toolbar>
+
+    <p-table #dt [value]="tableRows" [dataKey]="dataKey" showGridLines stripedRows [(selection)]="selectedItems"
+        [resizableColumns]="true" [scrollable]="true" [paginator]="paginator" [filterDelay]="0" [rows]="rows"
+        [rowsPerPageOptions]="[5, 10, 20]" [first]="first" [totalRecords]="tableRows.length" size="small"
+        [rowHover]="true" [showCurrentPageReport]="true" filterDisplay="row" [globalFilterFields]="globalFilterFields"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros">
+
+        <ng-template pTemplate="caption">
+            <div class="flex align-items-center justify-content-between">
+                <h5 class="m-0">{{titulo}}</h5>
+                <span class="p-input-icon-left">
+                    <i class="pi pi-search"></i>
+                    <input pInputText type="text" (input)="dt.filterGlobal($any($event.target).value, 'contains')"
+                        placeholder="Pesquisar..." />
+                </span>
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+            <tr>
+                @if(selected) {
+                <th>
+                    <p-tableHeaderCheckbox />
+                </th>
+                }
+                @for(col of columns; track col.field) {
+                @if(col.type !== 'actions') {
+                @if(sortable) {
+                <th [pSortableColumn]="col.field">
+                    <div class="flex items-center gap-2">
+                        @if(getColumnIcon(col)){
+                        <i class="{{ getColumnIcon(col) }} text-sm"></i>
+                        }
+                        {{ col.header }}
+                        <p-sortIcon [field]="col.field"></p-sortIcon>
+                    </div>
+                </th>
+                } @else {
+                <th>
+                    <div class="flex items-center gap-2">
+                        @if(getColumnIcon(col)){
+                        <i class="{{ getColumnIcon(col) }} text-sm"></i>
+                        }
+                        {{ col.header }}
+                    </div>
+                </th>
+                }
+                }
+                @else {
+                <th>
+                    <div class="flex items-center gap-2 ">
+                        @if(getColumnIcon(col)){
+                        <i class="{{ getColumnIcon(col) }} text-sm"></i>
+                        }
+                        {{ col.header }}
+                    </div>
+                </th>
+                }
+                }
+            </tr>
+            @if(filter){
+            <tr class="dg-filter-row">
+                @if(selected){
+                <th></th>
+                }
+                @for(col of columns; track col.field) {
+                @if(col.type !== 'actions') {
+                <th>
+                    @switch(col.type || 'text') {
+                    @case('select') {
+                    <p-dropdown [options]="col.options" optionLabel="label" optionValue="value" placeholder="Todos"
+                        [showClear]="true" appendTo="body" (onChange)="onSelectFilter($event, col, dt)">
+                    </p-dropdown>
+                    }
+                    @case('multiselect') {
+                    <p-multiSelect [options]="col.options" optionLabel="label" optionValue="value" placeholder="Todos"
+                        [showClear]="true" appendTo="body" (onChange)="onMultiSelectFilter($event, col, dt)">
+                    </p-multiSelect>
+                    }
+                    @case('number') {
+                    <p-inputNumber placeholder="Buscar" (onInput)="onNumberFilter($event, col, dt)">
+                    </p-inputNumber>
+                    }
+                    @case('date') {
+                    <p-calendar placeholder="Buscar" [showClear]="true" dateFormat="dd/mm/yy"
+                        (onSelect)="onDateFilter($event, col, dt)" (onClear)="onDateFilter(null, col, dt)"></p-calendar>
+                    }
+                    @case('boolean') {
+                    <div class="flex justify-content-center">
+                        <p-checkbox [binary]="true" (onChange)="onBooleanFilter($event, col, dt)">
+                        </p-checkbox>
+                    </div>
+                    }
+                    @default {
+                    <input pInputText class="p-inputtext-sm" placeholder="Buscar" (input)="onFilter($event, col, dt)" />
+                    }
+                    }
+                </th>
+                } @else {
+                <th class="text-align-center">
+                    <p-button [outlined]="true" icon="pi pi-filter-slash" (onClick)="clear(dt)" />
+                </th>
+                }
+                }
+            </tr>
+            }
+        </ng-template>
+
+        <ng-template pTemplate="body" let-product>
+            <tr [class.row-active]="isRowActive(product)">
+                @if(selected){
+                <td>
+                    <p-tableCheckbox [value]="product" />
+                </td>
+                }
+                @for(col of columns; track col.field){
+                <td [ngSwitch]="col.type" [ngClass]="{'col-status' : col.field == 'status'}">
+                    @switch(col.type || 'text') {
+                    @case('actions'){
+                    <ng-container>
+                        <div class="dg-actions-container">
+                            <!-- Ativar linha para edição -->
+                            @if(hasActivation(col) && !isRowActive(product)){
+                            <button pButton type="button" icon="pi pi-unlock" title="Ativar linha para edição"
+                                class="p-button-rounded p-button-text p-button-sm p-button-icon-only p-button-success"
+                                (click)="activateRow(product)" aria-label="Ativar linha"></button>
+                            }
+                            @if(hasActivation(col) && isRowActive(product)){
+                            <!-- Desativar linha (bloquear edição) -->
+                            <button pButton type="button" icon="pi pi-lock" title="Desativar linha (bloquear edição)"
+                                class="p-button-rounded p-button-text p-button-sm p-button-icon-only p-button-warning"
+                                (click)="deactivateRow(product)" aria-label="Desativar linha"></button>
+                            }
+                            <!-- Editar (abre a modal de edição) -->
+                            @if(colActions(col).includes('edit')){
+                            <button pButton type="button" icon="pi pi-pencil"
+                                [disabled]="hasActivation(col) && !isRowActive(product)"
+                                [title]="hasActivation(col) && !isRowActive(product) ? 'Ative a linha para editar' : 'Editar'"
+                                class="p-button-rounded p-button-text p-button-sm p-button-icon-only"
+                                (click)="onEditClick(product, col)" aria-label="Editar"></button>
+                            } @if(colActions(col).includes('delete')){
+
+                            <!-- Excluir -->
+                            <button pButton type="button" icon="pi pi-trash" title="Excluir"
+                                class="p-button-rounded p-button-text p-button-sm p-button-icon-only p-button-danger"
+                                (click)="delete.emit(product)" aria-label="Excluir"></button>
+                            }
+                        </div>
+                    </ng-container>} @default{
+                    <ng-container>
+                        @if(col.field === 'status'){
+                        <p-tag
+                            [severity]="(col.formatter ? col.formatter(product) : product[col.field]) === 'Ativo' ? 'success' : 'danger'"
+                            [value]="col.formatter ? col.formatter(product) : product[col.field]">
+                        </p-tag>
+                        } @else{
+                        {{ col.formatter ? col.formatter(product) : product[col.field] }}
+                        }
+                    </ng-container>}
+                    }
+                </td>
+                }
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td [attr.colspan]="(selected ? 1 : 0) + columns.length"
+                    class="semRegistros text-center text-secondary py-4 ">
+                    Nenhum registro encontrado.
+                </td>
+            </tr>
+        </ng-template>
+
+    </p-table>
+</div>
