@@ -98,12 +98,14 @@ textarea,
 }
 
 //Padding 0.3 0.3
-::ng-deep .p-multiselect-panel .p-multiselect-header .p-multiselect-filter-container .p-inputtext{
+::ng-deep .p-multiselect-panel .p-multiselect-header .p-multiselect-filter-container .p-inputtext {
     padding: 0.3rem 0.3rem !important;
 }
-::ng-deep .p-input-icon-right>.p-icon-wrapper{
+
+::ng-deep .p-input-icon-right>.p-icon-wrapper {
     width: 0.7rem;
 }
+
 ::ng-deep td>.p-element>.p-inputtext,
 ::ng-deep td>.p-element>.p-inputtext-sm,
 ::ng-deep .p-calendar>input {
@@ -263,7 +265,7 @@ textarea,
     table-layout: fixed;
 }
 
-:host ::ng-deep .p-inputnumber > .p-inputtext{
+:host ::ng-deep .p-inputnumber>.p-inputtext {
     width: 100%;
 }
 
@@ -376,10 +378,132 @@ textarea,
 }
 
 
-::ng-deep .p-tag{
-    width: 8rem!important;
+::ng-deep .p-tag {
+    width: 8rem !important;
 }
 
 ::ng-deep .p-toast {
     margin-top: 4rem;
+}
+
+/* Garante que o container da tabela permita scroll horizontal fluido no celular */
+::ng-deep .p-datatable-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Remove a largura fixa estrita em telas pequenas para evitar esmagamento */
+@media screen and (max-width: 768px) {
+    :host ::ng-deep .p-datatable table {
+        table-layout: auto !important;
+        /* Deixa o conteúdo dimensionar dinamicamente */
+    }
+
+    /* Aumenta a área de toque dos botões de ação em dispositivos móveis */
+    ::ng-deep .p-datatable .p-button.p-button-icon-only {
+        width: 2.5rem !important;
+        height: 2.5rem !important;
+    }
+
+    /* Ajusta o toolbar do topo para empilhar em telas pequenas */
+    .p-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+
+    .p-toolbar-group-left,
+    .p-toolbar-group-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    ::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th .p-inputtext,
+    ::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th .p-dropdown,
+    ::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th .p-multiselect,
+    ::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th .p-calendar {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Garante que o grupo de botões superiores se ajuste no mobile */
+    .p-datatable-header .flex.align-items-center.justify-content-between {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    @media screen and (max-width: 768px) {
+
+        /* Empilha a barra de pesquisa e os botões de ação no topo da tabela */
+        .p-datatable-header .flex.align-items-center.justify-content-between>div {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .p-datatable-header .d-flex.flex-column.gap-2 {
+            width: 100%;
+        }
+
+        /* Deixa os botões de topo com tamanho flexível para não cortar o texto */
+        .p-datatable-header p-toggleButton ::ng-deep .p-button {
+            width: auto !important;
+            min-width: 7rem;
+        }
+    }
+
+    /* Corrige a quebra feia do título */
+    .title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        white-space: nowrap;
+        /* Impede que o título 'Contas a Pagar' quebre letras individualmente */
+    }
+
+    .p-datatable-header .d-flex.align-items-center.justify-content-between {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+    }
+
+    .p-datatable-header .d-flex.align-items-center.justify-content-between>div {
+        width: 100% !important;
+    }
+
+    /* Faz o input de pesquisa ocupar toda a largura da linha */
+    .p-datatable-header .p-input-icon-left,
+    .p-datatable-header .p-input-icon-left>input {
+        width: 100% !important;
+    }
+
+    ::ng-deep .p-toolbar-group-right {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    // ::ng-deep .buttons-actions {
+    //     width: 100%;
+    //     align-items: self-end;
+    // }
+
+    ::ng-deep .buttons-actions .p-button-label {
+        display: none !important;
+    }
+
+    ::ng-deep .buttons-actions .p-button {
+        width: 2.5rem !important;
+        /* Deixa o botão quadrado (largura igual à altura) */
+        height: 2.5rem !important;
+        justify-content: center !important;
+
+    }
+    ::ng-deep .p-button .p-button-icon-left {
+        margin-right: 0;
+    }
+}
+
+/* Facilita a interação com inputs e selects em touch screens */
+::ng-deep .p-datatable .p-datatable-tbody>tr>td {
+    padding: 0.5rem !important;
+    /* Dá umrespiro maior para os dedos clicarem */
 }

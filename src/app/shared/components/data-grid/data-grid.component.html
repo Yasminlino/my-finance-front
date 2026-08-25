@@ -1,21 +1,16 @@
-<p-toolbar styleClass="mb-2 mt-2 mb-2">
-
+<p-toolbar styleClass="mb-2 mt-2">
     <ng-template pTemplate="left">
-        <div class="d-flex flex-md-column">
+        <div class="d-flex flex-column w-100 gap-1">
             <p-breadcrumb class="max-w-full" [model]="breadcrumb" [home]="home" />
-            <div class="d-flex flex-md-row align-items-center ">
-                <!-- <i class="pi pi-angle-left d-flex" style="font-size: 1.6rem; height: 100%!important;"></i> -->
-                <h5 class="m-0 title p-2">{{titulo}}</h5>
-            </div>
+            <h5 class="m-0 title">{{titulo}}</h5>
         </div>
     </ng-template>
     <ng-template pTemplate="right">
         @if(exibeCampos?.filterMonth){
         <p-calendar [(ngModel)]="dateFilter" view="month" (onSelect)="onLoadMonth($event)" dateFormat="MM 'de' yy"
-            class="p-03" [iconDisplay]="'input'" [showIcon]="true" [readonlyInput]="true" />
+            class="p-03 mt-2 mt-md-0" [iconDisplay]="'input'" [showIcon]="true" [readonlyInput]="true" />
         }
     </ng-template>
-
 </p-toolbar>
 <!-- Espaço para projetar conteúdo (como os totais) -->
 <ng-content></ng-content>
@@ -30,7 +25,8 @@
         currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros">
 
         <ng-template pTemplate="caption">
-            <div class="flex align-items-center justify-content-between">
+            <!-- Adicionado 'flex-wrap gap-2' aqui para permitir a quebra de linha -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div>
                     <span class="p-input-icon-left">
                         <i class="pi pi-search"></i>
@@ -38,23 +34,23 @@
                             placeholder="Pesquisar..." />
                     </span>
                 </div>
-                <div class="d-flex flex-column gap-2">
+                <div class="d-flex flex-column gap-2 buttons-actions">
 
                     <!-- Ações principais -->
-                    <div class="d-flex align-items-center">
+                    <div class="d-flex align-items-center flex-wrap gap-2">
                         @if(exibeCampos?.buttonNew){
-                        <p-button severity="success" label="Novo" [outlined]="true" icon="pi pi-plus" class="mr-2"
+                        <p-button severity="success" label="Novo" [outlined]="true" icon="pi pi-plus"
                             (onClick)="openNew()" />
                         }
 
                         @if(exibeCampos?.buttonDeleteAll){
-                        <p-button severity="danger" label="Delete" [outlined]="true" icon="pi pi-trash" class="mr-2"
+                        <p-button severity="danger" label="Delete" [outlined]="true" icon="pi pi-trash"
                             (onClick)="onDeleteSelected()" [disabled]="!selectedItems?.length" [loading]="deleting" />
                         }
                         @if(exibeCampos?.buttonLock){
                         <p-toggleButton [ngModel]="!editandoTabela" (onChange)="toggleEdicaoTabela()"
                             onLabel="Bloqueado" offLabel="Desbloqueado" onIcon="pi pi-lock" offIcon="pi pi-lock-open"
-                            class="mr-2" styleClass="w-9rem" />
+                            styleClass="w-9rem" />
                         }
                         @if(exibeCampos?.buttonPopUp){
                         <div class="botao-popup" style="position: relative;">
@@ -122,19 +118,22 @@
                     } -->
                     @case('select') {
                     <p-multiSelect [options]="col.options" optionLabel="label" optionValue="value" placeholder="Todos"
-                        [panelStyle]="{'width': '12rem', 'min-width': '12rem'}" [showClear]="true" appendTo="body" [(ngModel)]="filtroValores[col.field]"
-                        (onChange)="onMultiSelectFilter($event, col, dt)">
+                        [panelStyle]="{'width': '12rem', 'min-width': '12rem'}" [showClear]="true" appendTo="body"
+                        [(ngModel)]="filtroValores[col.field]" (onChange)="onMultiSelectFilter($event, col, dt)">
                     </p-multiSelect>
                     }
                     @case('number') {
-                    <input pInputText class="p-inputtext-sm" placeholder="Buscar" (input)="onFilter($event, col, dt)" [(ngModel)]="filtroValores[col.field]" />
+                    <input pInputText class="p-inputtext-sm" placeholder="Buscar" (input)="onFilter($event, col, dt)"
+                        [(ngModel)]="filtroValores[col.field]" />
                     }
                     @case('money') {
-                    <p-inputNumber placeholder="Buscar" (onInput)="onNumberFilter($event, col, dt)" [(ngModel)]="filtroValores[col.field]">
+                    <p-inputNumber placeholder="Buscar" (onInput)="onNumberFilter($event, col, dt)"
+                        [(ngModel)]="filtroValores[col.field]">
                     </p-inputNumber>
                     }
                     @case('date') {
-                    <p-calendar placeholder="Buscar" [showClear]="true" dateFormat="dd/mm/yy" [(ngModel)]="filtroValores[col.field]"
+                    <p-calendar placeholder="Buscar" [showClear]="true" dateFormat="dd/mm/yy"
+                        [(ngModel)]="filtroValores[col.field]"
                         [panelStyle]="{'width': '15rem', 'min-width': '15rem', 'height': 'auto', 'min-height': '15rem', 'padding':'0', 'margin':'0'}"
                         (onSelect)="onDateFilter($event, col, dt)" (onClear)="onDateFilter(null, col, dt)">
                     </p-calendar>
@@ -143,12 +142,14 @@
 
                     @case('boolean') {
                     <div class="flex justify-content-center">
-                        <p-checkbox [binary]="true" (onChange)="onBooleanFilter($event, col, dt)" [(ngModel)]="filtroValores[col.field]">
+                        <p-checkbox [binary]="true" (onChange)="onBooleanFilter($event, col, dt)"
+                            [(ngModel)]="filtroValores[col.field]">
                         </p-checkbox>
                     </div>
                     }
                     @default {
-                    <input pInputText class="p-inputtext-sm" [(ngModel)]="filtroValores[col.field]" placeholder="Buscar" (input)="onFilter($event, col, dt)" />
+                    <input pInputText class="p-inputtext-sm" [(ngModel)]="filtroValores[col.field]" placeholder="Buscar"
+                        (input)="onFilter($event, col, dt)" />
                     }
                     }
                 </th>
@@ -362,8 +363,8 @@
         </ng-template>
 
     </p-table>
-    <p-dialog [header]="dialogColumn?.header" [(visible)]="dialogVisible" [modal]="true" [resizable]="false"
-        [style]="{ width: '20vw', height: '12vw' }" [draggable]="false">
+    <p-dialog [header]="dialogColumn?.header" [(visible)]="dialogVisible" [modal]="true"
+        [style]="{ width: '90vw', maxWidth: '500px' }" [draggable]="false">
 
         <div class="flex flex-column gap-2">
 
@@ -383,7 +384,7 @@
 
     </p-dialog>
     <p-dialog [header]="viewDialogTitle" [(visible)]="viewDialogVisible" [modal]="true" [resizable]="false"
-        [style]="{ width: '20vw' }" [draggable]="false">
+        [style]="{ width: '90vw', maxWidth: '500px' }" [draggable]="false">
 
         <div class="text-area-view">
             {{ viewDialogValue || 'Nenhum conteúdo informado.' }}
