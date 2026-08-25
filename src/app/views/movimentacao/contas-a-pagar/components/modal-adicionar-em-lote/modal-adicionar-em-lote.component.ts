@@ -9,6 +9,7 @@ import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { formatCurrencyBR, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
 import { formatDateVencimento } from 'src/app/core/utils/mask';
 import { AgrupamentoContaMensal, ContaMensal } from 'src/app/core/models/conta-mensal.model';
+import { AlertService } from 'src/app/shared/components/alert.service';
 
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
@@ -19,8 +20,9 @@ type AlertState = { type: 'success' | 'error' | ''; message: string };
   styleUrls: ['./modal-adicionar-em-lote.component.scss'],
 })
 export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
-  @Input() month!: string | Date; // pode ser '2026-01-01' ou Date
-  @Output() closed = new EventEmitter<boolean>(); // true = salvou algo, false = cancelou
+  @Input() month!: string; // pode ser '2026-01-01' ou Date
+  @Output() closed = new EventEmitter<boolean>(); // true = salvou algo, false = cancelou  
+  @Output() 'reload' = new EventEmitter<any[]>();
 
   alert: AlertState = { type: '', message: '' };
   saving = false;
@@ -39,7 +41,8 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly contaService: ContaService,
-    private readonly contaMensalService: ContaMensalService
+    private readonly contaMensalService: ContaMensalService,
+    private readonly alertService: AlertService,
   ) { }
 
   ngOnInit(): void {
@@ -109,7 +112,7 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
     try {
       const [contas, contasMensais] = await Promise.all([
         this.contaService.buscarContasAtivas(),
-        this.contaMensalService.GetTransactionByDate(String(this.month)),
+        this.contaMensalService.BuscarContasMensais(this.month, false),
       ]);
 
       this.contas = contas ?? [];
@@ -191,12 +194,13 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
     this.saving = false;
 
     if (successCount > 0) {
-      this.showSuccess(`${successCount} ${successCount === 1 ? 'conta adicionada' : 'contas adicionadas'} com sucesso.`);
+      this.alertService.success(`${successCount} itens adicionados com sucesso!`);
+      this.reload.emit();
       this.close(true);
     }
-
+    
     if (errorCount > 0) {
-      this.showError('Houve erros ao processar algumas contas.');
+      this.alertService.error( `${errorCount} itens não foram adicionados!`);
     }
   }
 }

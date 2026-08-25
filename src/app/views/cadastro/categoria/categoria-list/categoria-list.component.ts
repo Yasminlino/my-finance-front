@@ -14,7 +14,6 @@ import { AlertService } from 'src/app/shared/components/alert.service';
 export class CategoriaListComponent implements OnInit {
   categorias: Category[] = [];
   exibirCampos: ExibirCampos | null = null;
-  deleting: boolean = false
 
   naturezaOperacaoOptions: GridColumnOption[] = Object.entries(NaturezaOperacaoLabel).map(([value, label]) => ({
     label,

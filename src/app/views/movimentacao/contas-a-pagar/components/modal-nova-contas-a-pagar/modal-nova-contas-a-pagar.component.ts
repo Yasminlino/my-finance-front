@@ -6,11 +6,11 @@ import { formatDateVencimento } from 'src/app/core/utils/mask';
 import { parseMoneyBRToNumber } from 'src/app/core/utils/mask';
 
 @Component({
-  selector: 'app-modal-nova-conta-mensal',
-  templateUrl: './modal-nova-conta-mensal.component.html',
-  styleUrls: ['./modal-nova-conta-mensal.component.scss']
+  selector: 'app-modal-nova-contas-a-pagar',
+  templateUrl: './modal-nova-contas-a-pagar.component.html',
+  styleUrls: ['./modal-nova-contas-a-pagar.component.scss']
 })
-export class ModalNovaContaMensalComponent implements OnInit {
+export class ModalNovaContasAPagarComponent implements OnInit {
   @Output() closed = new EventEmitter<boolean>();
   @Input() dataOperacao = null as any;
 

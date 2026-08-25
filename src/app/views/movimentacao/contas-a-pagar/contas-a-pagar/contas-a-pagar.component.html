@@ -1,0 +1,24 @@
+ <div class="container-xl mt-3"><div class="container-xl py-3">
+  <app-data-grid #grid [titulo]="titulo" [dataSource]="contasMensais" [breadcrumb]="breadcrumb" [columns]="gridColumns"
+    [tipoTabela]="tipoTabela" [dateFilter]="dateFilter" [loading]="loading" (edit)="onEdit($event)"
+    (delete)="onDelete($event)" (new)="onOpenCreate()" (reload)="loadMonth()" [statusOptions]="statusOptions"
+    (selectionChange)="onSelectionChange($event)" (deleteSelected)="onDeleteSelected($event)"
+    [exibeCampos]="exibirCampos" (saveInline)="onSaveInline($event)" [itemsButtom]="itemsButtom"
+    (addBatch)="onOpenAddBatch()">
+    <app-contas-a-pagar-totais [receita]="selectedTotals.receita" [despesa]="selectedTotals.despesa"
+      [saldo]="selectedTotals.saldo" [count]="selectedTotals.count"></app-contas-a-pagar-totais>
+  </app-data-grid>
+
+  <!-- Modal Form -->
+  <!-- <app-categoria-form *ngIf="showModalForm" [category]="editing" (closed)="closeForm($event)">
+    </app-categoria-form> -->
+  <p-toast></p-toast>
+  <app-modal-adicionar-em-lote *ngIf="showModalAdd" [month]="selectedMonth" (closed)="showModalAdd=false; $event"
+    (reload)="loadMonth()">
+  </app-modal-adicionar-em-lote>
+
+  <app-modal-nova-contas-a-pagar *ngIf="showModalCreate" [dataOperacao]="dateFilter"
+    (closed)="showModalCreate=false; $event">
+  </app-modal-nova-contas-a-pagar>
+
+</div></div>

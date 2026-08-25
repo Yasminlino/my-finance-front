@@ -87,10 +87,12 @@
                 <button type="button" class="btn btn-secondary" (click)="close(false)" [disabled]="saving">
                     Fechar
                 </button>
-
-                <button type="button" class="btn btn-primary" (click)="handleSave()"
+                <button type="button" class="btn btn-primary d-flex align-items-center gap-2" (click)="handleSave()"
                     [disabled]="saving || selectedIds.size === 0">
-                    {{ saving ? 'Adicionando...' : 'ADICIONAR ITENS' }}
+                    <!-- Spinner do Bootstrap que aparece apenas quando saving for true -->
+                    <span *ngIf="saving" class="spinner-border spinner-border-sm" role="status"
+                        aria-hidden="true"></span>
+                    <span>{{ saving ? 'Adicionando...' : 'ADICIONAR ITENS' }}</span>
                 </button>
             </div>
         </div>

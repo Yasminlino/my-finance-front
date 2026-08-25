@@ -1,3 +1,25 @@
+export type LinhaContasMensais = {
+  id: number;
+  idAccount: number;
+
+  name: string;
+  value: string | number;        // pode vir number do backend; no input usamos string formatada
+  date: Date;                 // ideal: YYYY-MM-DD
+  ehParcelado: boolean;
+  parcelaAtual?: number;       // "1/3", "2/4", etc
+  quantidadeParcelas?: number;  // "1/3", "2/4", etc
+  observacao?: string;
+
+  categoryId: number;
+  categoryName: string;
+  tipoContaId: string;
+  subCategoryName?: string;          // "Receita" | "Despesa"
+
+  status: string;
+  statusSalvo: string;
+  desbloqueiaCampos: boolean;
+};
+
 export type LinhaContaMensal = {
   id: number;
   idAccount: number;

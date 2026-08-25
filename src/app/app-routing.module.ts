@@ -46,9 +46,9 @@ const routes: Routes = [
           import('./views/cadastro/tipo-movimentacao/tipo-movimentacao.module').then(m => m.TipoMovimentacaoModule),
       },
       {
-        path: 'conta-mensal',
+        path: 'contas-a-pagar',
         loadChildren: () =>
-          import('./views/movimentacao/conta-mensal/conta-mensal.module').then(m => m.ContaMensalModule),
+          import('./views/movimentacao/contas-a-pagar/contas-a-pagar.module').then(m => m.ContasAPagarModule),
       },
       {
         path: 'extrato-bancario',

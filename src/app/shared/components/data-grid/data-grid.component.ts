@@ -110,6 +110,7 @@ export class DataGridComponent {
   @Input() itemsButtom: MenuItem[] = [];
   @Input() statusOptions: GridColumnOption[] = [];
   @Input() exibeCampos: ExibirCampos | null = null;
+  @Input() deleting = false;
 
   // ---------------------------------------------------------------------------
   // Outputs
@@ -149,7 +150,6 @@ export class DataGridComponent {
 
   editandoTabela = false;
 
-  deleting = false;
   deletingId: number | null = null;
 
   tableRows: any[] = [];

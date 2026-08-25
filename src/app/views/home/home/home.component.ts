@@ -128,7 +128,7 @@ export class HomeComponent implements OnInit {
       date: formatDateInput(dataVencimento) || isoDateMinusHours(),
     };
 
-    this.router.navigate(['conta-mensal'], { queryParams: params });
+    this.router.navigate(['contas-a-pagar'], { queryParams: params });
   }
 
   money(v: any) {
