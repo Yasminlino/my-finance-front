@@ -2,6 +2,10 @@
     border-collapse: collapse;
 }
 
+.text-align-center {
+    text-align: center;
+}
+
 //Bordas ao redor da grid
 ::ng-deep .p-datatable-wrapper {
     margin: 0 1rem 0 1rem;
@@ -171,8 +175,6 @@ textarea,
     padding: 0 !important;
     width: 2rem !important;
     height: 2rem !important;
-    margin-top: 0.8rem !important;
-    margin-bottom: 0.8rem !important;
 }
 
 //layout botões
@@ -450,6 +452,14 @@ textarea,
             width: auto !important;
             min-width: 7rem;
         }
+
+        ::ng-deep .p-datatable .p-datatable-thead>tr>th>div {
+            display: block !important;
+            max-width: calc(100% - 30px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     }
 
     /* Corrige a quebra feia do título */
@@ -497,8 +507,17 @@ textarea,
         justify-content: center !important;
 
     }
+
     ::ng-deep .p-button .p-button-icon-left {
         margin-right: 0;
+    }
+
+    ::ng-deep .dg-actions-container {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important; // Espaçamento entre os ícones
     }
 }
 
