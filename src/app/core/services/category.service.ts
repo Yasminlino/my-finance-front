@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
-import { Status } from 'src/app/shared/enums/status.enum';
 
 export type Category = {
   id: number;
