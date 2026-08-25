@@ -49,11 +49,8 @@ function parseBRLToNumber(value: any): number {
 }
 
 
-export function formatYearMonth(value: string): string {
-  // entrada type="month": YYYY-MM
-  // você usava formatDateMonth no React (pra API)
-  // aqui devolve o mesmo "YYYY-MM"
-  return value || '';
+export function formatYearMonth(date: Date): string {
+  return date.getFullYear().toString() + "-" + (date.getMonth() + 1).toString().padStart(2, '0');
 }
 
 export function formatDateVencimento(baseMonth: string | Date, dataOperacao: any): Date {
@@ -77,6 +74,14 @@ export function formatDateVencimento(baseMonth: string | Date, dataOperacao: any
   const dia = Math.min(diaInformado, ultimoDiaMes);
 
   return new Date(ano, mes, dia);
+}
+
+export function formatDateVencimentoView(dataOperacao: string): string {
+  var date = new Date(dataOperacao)
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${dd}/${mm}/${yyyy}`;
 }
 
 export function formatMoneyBRFromAny(inputValue: string): string {

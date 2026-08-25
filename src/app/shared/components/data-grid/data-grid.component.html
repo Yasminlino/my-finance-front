@@ -1,133 +1,160 @@
-<p-toolbar styleClass="mb-2 mt-2 mb-4">
+<p-toolbar styleClass="mb-2 mt-2 mb-2">
 
     <ng-template pTemplate="left">
         <div class="d-flex flex-md-column">
             <p-breadcrumb class="max-w-full" [model]="breadcrumb" [home]="home" />
             <div class="d-flex flex-md-row align-items-center ">
                 <!-- <i class="pi pi-angle-left d-flex" style="font-size: 1.6rem; height: 100%!important;"></i> -->
-                <h5 class="m-0 title">{{titulo}}</h5>
+                <h5 class="m-0 title p-2">{{titulo}}</h5>
             </div>
         </div>
     </ng-template>
     <ng-template pTemplate="right">
-        <!-- <p-fileUpload mode="basic" accept="image/*" [ ]="1000000" label="Import" chooseLabel="Import"
-            class="mr-2 inline-block" /> -->
+        @if(exibeCampos?.filterMonth){
+        <p-calendar [(ngModel)]="dateFilter" view="month" (onSelect)="onLoadMonth($event)" dateFormat="MM 'de' yy"
+            class="p-03" [iconDisplay]="'input'" [showIcon]="true" [readonlyInput]="true" />
+        }
     </ng-template>
 
 </p-toolbar>
-<div class="card pt-4">
-    <p-table #dt [value]="tableRows" [dataKey]="dataKey" showGridLines stripedRows [(selection)]="selectedItems"
-        [resizableColumns]="true" [scrollable]="true" [paginator]="paginator" [filterDelay]="0" [rows]="rows"
-        [rowsPerPageOptions]="[5, 10, 20]" [first]="first" [totalRecords]="tableRows.length" size="small"
-        [rowHover]="true" [showCurrentPageReport]="true" filterDisplay="row" [globalFilterFields]="globalFilterFields"
-        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros">
+<!-- Espaço para projetar conteúdo (como os totais) -->
+<ng-content></ng-content>
 
+<div class="card pt-4">
+    <p-table #dt [value]="tableRows" [dataKey]="dataKey" editMode="row" showGridLines stripedRows
+        styleClass="p-datatable-gridlines" [(selection)]="selectedItems" [resizableColumns]="false" [scrollable]="true"
+        [paginator]="exibeCampos?.paginator" (selectionChange)="selectionChange.emit($event)" [filterDelay]="0"
+        [rows]="5" [loading]="loading" [rowsPerPageOptions]="[5, 10, 20]" [first]="0" [totalRecords]="tableRows.length"
+        size="small" [rowHover]="true" [showCurrentPageReport]="true" filterDisplay="row"
+        [globalFilterFields]="globalFilterFields"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros">
 
         <ng-template pTemplate="caption">
             <div class="flex align-items-center justify-content-between">
-
                 <div>
-                    <p-button severity="success" label="Novo" icon="pi pi-plus" class="mr-2" (onClick)="openNew()" />
-                    <p-button severity="danger" label="Delete" icon="pi pi-trash" (onClick)="onDeleteSelected()"
-                        [disabled]="!selectedItems || !selectedItems.length" />
-                </div>
-                <div >
                     <span class="p-input-icon-left">
                         <i class="pi pi-search"></i>
                         <input pInputText type="text" (input)="dt.filterGlobal($any($event.target).value, 'contains')"
-                        placeholder="Pesquisar..." />
+                            placeholder="Pesquisar..." />
                     </span>
                 </div>
-            </div>
-            <div class="flex justify-content-end pt-2">
-                <p-button severity="secondary"  [outlined]="true" title="Exportar para excel" icon="pi pi-file-excel" (onClick)="onExport()" />
+                <div class="d-flex flex-column gap-2">
+
+                    <!-- Ações principais -->
+                    <div class="d-flex align-items-center">
+                        @if(exibeCampos?.buttonNew){
+                        <p-button severity="success" label="Novo" [outlined]="true" icon="pi pi-plus" class="mr-2"
+                            (onClick)="openNew()" />
+                        }
+
+                        @if(exibeCampos?.buttonDeleteAll){
+                        <p-button severity="danger" label="Delete" [outlined]="true" icon="pi pi-trash" class="mr-2"
+                            (onClick)="onDeleteSelected()" [disabled]="!selectedItems?.length" [loading]="deleting" />
+                        }
+                        @if(exibeCampos?.buttonLock){
+                        <p-toggleButton [ngModel]="!editandoTabela" (onChange)="toggleEdicaoTabela()"
+                            onLabel="Bloqueado" offLabel="Desbloqueado" onIcon="pi pi-lock" offIcon="pi pi-lock-open"
+                            class="mr-2" styleClass="w-9rem" />
+                        }
+                        @if(exibeCampos?.buttonPopUp){
+                        <div class="botao-popup" style="position: relative;">
+                            <p-menu #menu [model]="itemsButtom" [popup]="true" appendTo="body" />
+                            <p-button (onClick)="menu.toggle($event)" icon="pi pi-ellipsis-v" />
+                        </div>
+                        }
+                    </div>
+
+                </div>
             </div>
         </ng-template>
 
 
-
         <ng-template pTemplate="header">
+
             <tr>
-                @if(selected) {
-                <th>
+                @if(exibeCampos?.selected) {
+                <th style="width: 2rem">
                     <p-tableHeaderCheckbox />
                 </th>
                 }
                 @for(col of columns; track col.field) {
                 @if(col.type !== 'actions') {
-                @if(sortable) {
-                <th [pSortableColumn]="col.field">
-                    <div class="flex items-center gap-2">
-                        @if(getColumnIcon(col)){
-                        <i class="{{ getColumnIcon(col) }} text-sm"></i>
-                        }
+                @if(exibeCampos?.sortable) {
+                <th [pSortableColumn]="col.field" style="text-align: center;" [style.width]="col.width"
+                    [style.min-width]="col.width" [style.max-width]="col.width">
+                    <div class="flex items-center gap-1">
                         {{ col.header }}
                         <p-sortIcon [field]="col.field"></p-sortIcon>
                     </div>
                 </th>
                 } @else {
-                <th>
-                    <div class="flex items-center gap-2">
-                        @if(getColumnIcon(col)){
-                        <i class="{{ getColumnIcon(col) }} text-sm"></i>
-                        }
+                <th [pSortableColumn]="col.field" [style.width]="col.width" [style.min-width]="col.width"
+                    [style.max-width]="col.width">
+                    <div class="flex items-center gap-1">
                         {{ col.header }}
                     </div>
                 </th>
                 }
                 }
                 @else {
-                <th>
-                    <div class="flex items-center gap-2 ">
-                        @if(getColumnIcon(col)){
-                        <i class="{{ getColumnIcon(col) }} text-sm"></i>
-                        }
+                <th [pSortableColumn]="col.field" [style.width]="col.width" [style.min-width]="col.width"
+                    [style.max-width]="col.width">
+                    <div class="flex items-center gap-1 ">
                         {{ col.header }}
                     </div>
                 </th>
                 }
                 }
             </tr>
-            @if(filter){
+            @if(exibeCampos?.filter){
             <tr class="dg-filter-row">
-                @if(selected){
-                <th></th>
+                @if(exibeCampos?.selected){
+                <th style="width: 2rem"></th>
                 }
                 @for(col of columns; track col.field) {
                 @if(col.type !== 'actions') {
-                <th>
+                <th [style.width]="col.width" [style.min-width]="col.width" [style.max-width]="col.width">
                     @switch(col.type || 'text') {
-                    @case('select') {
+                    <!-- @case('select') {
                     <p-dropdown [options]="col.options" optionLabel="label" optionValue="value" placeholder="Todos"
                         [showClear]="true" appendTo="body" (onChange)="onSelectFilter($event, col, dt)">
                     </p-dropdown>
-                    }
-                    @case('multiselect') {
+                    } -->
+                    @case('select') {
                     <p-multiSelect [options]="col.options" optionLabel="label" optionValue="value" placeholder="Todos"
-                        [showClear]="true" appendTo="body" (onChange)="onMultiSelectFilter($event, col, dt)">
+                        [panelStyle]="{'width': '12rem', 'min-width': '12rem'}" [showClear]="true" appendTo="body" [(ngModel)]="filtroValores[col.field]"
+                        (onChange)="onMultiSelectFilter($event, col, dt)">
                     </p-multiSelect>
                     }
                     @case('number') {
-                    <p-inputNumber placeholder="Buscar" (onInput)="onNumberFilter($event, col, dt)">
+                    <input pInputText class="p-inputtext-sm" placeholder="Buscar" (input)="onFilter($event, col, dt)" [(ngModel)]="filtroValores[col.field]" />
+                    }
+                    @case('money') {
+                    <p-inputNumber placeholder="Buscar" (onInput)="onNumberFilter($event, col, dt)" [(ngModel)]="filtroValores[col.field]">
                     </p-inputNumber>
                     }
                     @case('date') {
-                    <p-calendar placeholder="Buscar" [showClear]="true" dateFormat="dd/mm/yy"
-                        (onSelect)="onDateFilter($event, col, dt)" (onClear)="onDateFilter(null, col, dt)"></p-calendar>
+                    <p-calendar placeholder="Buscar" [showClear]="true" dateFormat="dd/mm/yy" [(ngModel)]="filtroValores[col.field]"
+                        [panelStyle]="{'width': '15rem', 'min-width': '15rem', 'height': 'auto', 'min-height': '15rem', 'padding':'0', 'margin':'0'}"
+                        (onSelect)="onDateFilter($event, col, dt)" (onClear)="onDateFilter(null, col, dt)">
+                    </p-calendar>
                     }
+
+
                     @case('boolean') {
                     <div class="flex justify-content-center">
-                        <p-checkbox [binary]="true" (onChange)="onBooleanFilter($event, col, dt)">
+                        <p-checkbox [binary]="true" (onChange)="onBooleanFilter($event, col, dt)" [(ngModel)]="filtroValores[col.field]">
                         </p-checkbox>
                     </div>
                     }
                     @default {
-                    <input pInputText class="p-inputtext-sm" placeholder="Buscar" (input)="onFilter($event, col, dt)" />
+                    <input pInputText class="p-inputtext-sm" [(ngModel)]="filtroValores[col.field]" placeholder="Buscar" (input)="onFilter($event, col, dt)" />
                     }
                     }
                 </th>
                 } @else {
-                <th class="text-align-center">
+                <th [style.width]="col.width" [style.min-width]="col.width" [style.max-width]="col.width"
+                    class="text-align-center">
                     <p-button [outlined]="true" icon="pi pi-filter-slash" (onClick)="clear(dt)" />
                 </th>
                 }
@@ -136,71 +163,251 @@
             }
         </ng-template>
 
-        <ng-template pTemplate="body" let-product>
-            <tr [class.row-active]="isRowActive(product)">
-                @if(selected){
-                <td>
+        <ng-template pTemplate="body" let-product let-editing="editing">
+
+            <tr [pEditableRow]="product" [ngClass]="isRowChanged(product) ? 'row-dirty' : ''">
+                @if(exibeCampos?.selected){
+                <td style="width: 2rem">
                     <p-tableCheckbox [value]="product" />
                 </td>
                 }
                 @for(col of columns; track col.field){
-                <td [ngSwitch]="col.type" [ngClass]="{'col-status' : col.field == 'status'}">
-                    @switch(col.type || 'text') {
-                    @case('actions'){
+
+                @switch(col.type || 'text') {
+                @case('actions'){
+                <td [style.width]="col.width" [style.min-width]="col.width" [style.max-width]="col.width"
+                    [ngSwitch]="col.type" style=" justify-items: center;">
                     <ng-container>
                         <div class="dg-actions-container">
-                            <!-- Ativar linha para edição -->
-                            @if(hasActivation(col) && !isRowActive(product)){
-                            <button pButton type="button" icon="pi pi-unlock" title="Ativar linha para edição"
-                                class="p-button-rounded p-button-text p-button-sm p-button-icon-only p-button-success"
-                                (click)="activateRow(product)" aria-label="Ativar linha"></button>
-                            }
-                            @if(hasActivation(col) && isRowActive(product)){
-                            <!-- Desativar linha (bloquear edição) -->
-                            <button pButton type="button" icon="pi pi-lock" title="Desativar linha (bloquear edição)"
-                                class="p-button-rounded p-button-text p-button-sm p-button-icon-only p-button-warning"
-                                (click)="deactivateRow(product)" aria-label="Desativar linha"></button>
-                            }
                             <!-- Editar (abre a modal de edição) -->
-                            @if(colActions(col).includes('edit')){
-                            <button pButton type="button" icon="pi pi-pencil"
-                                [disabled]="hasActivation(col) && !isRowActive(product)"
-                                [title]="hasActivation(col) && !isRowActive(product) ? 'Ative a linha para editar' : 'Editar'"
+
+                            @if(exibeCampos?.buttonEditLine ){
+                            <button pButton type="button" icon="pi pi-pencil" [title]="'Ative a linha para editar'"
                                 class="p-button-rounded p-button-text p-button-sm p-button-icon-only"
                                 (click)="onEditClick(product, col)" aria-label="Editar"></button>
-                            } @if(colActions(col).includes('delete')){
+                            }@if(exibeCampos?.buttonDeleteLine && !isRowChanged(product)){
 
                             <!-- Excluir -->
                             <button pButton type="button" icon="pi pi-trash" title="Excluir"
                                 class="p-button-rounded p-button-text p-button-sm p-button-icon-only p-button-danger"
-                                (click)="delete.emit(product)" aria-label="Excluir"></button>
+                                (click)="onDelete(product)" aria-label="Excluir"
+                                [loading]="deletingId === product.id"></button>
+                            }@if(isRowChanged(product)){
+                            <button pButton type="button" icon="pi pi-undo" title="Reverter alterações"
+                                class="p-button-rounded p-button-text p-button-sm p-button-icon-only"
+                                (click)="revertRow(product)" aria-label="Reverter alterações">
+                            </button>
                             }
                         </div>
-                    </ng-container>} @default{
+                    </ng-container>
+                </td>
+                } @default{
+                <!-- @if(!tipoTabela){
+                <td [style.width]="col.width" [style.min-width]="col.width" [style.max-width]="col.width">
                     <ng-container>
                         @if(col.field === 'status'){
-                        <p-tag
-                            [severity]="(col.formatter ? col.formatter(product) : product[col.field]) === 'Ativo' ? 'success' : 'danger'"
+                        <p-tag [severity]="getSeverityStatus(product[col.field])"
                             [value]="col.formatter ? col.formatter(product) : product[col.field]">
                         </p-tag>
                         } @else{
                         {{ col.formatter ? col.formatter(product) : product[col.field] }}
                         }
-                    </ng-container>}
+                    </ng-container>
+                </td>}
+                @else{ -->
+                <td [pEditableColumn]="col.field" [pEditableColumnField]="col.field"
+                    [pEditableColumnDisabled]="!editandoTabela || !col.editable" [style.width]="col.width"
+                    [style.min-width]="col.width" [style.max-width]="col.width">
+
+                    <!-- Se a coluna NÃO for editável, exibe apenas a visualização estática -->
+                    @if (col.editable === false) {
+                    @switch(col.type) {
+                    @case('number') { <span class="fs-14">{{ product[col.field] |
+                        currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</span> }
+                    @case('money') { <span class="fs-14">{{ product[col.field] | currency:'BRL':'symbol':'1.2-2':'pt-BR'
+                        }}</span> }
+                    @case('date') { <span class="fs-14">{{ product[col.field] | date:'dd/MM/yyyy':'UTC' }}</span> }
+                    @case('text-area') {
+                    <div class="d-flex align-items-center gap-1" style="min-width: 0;">
+                        <span class="text-area-preview fs-14" [title]="product[col.field]">
+                            {{ product[col.field] || '-' }}
+                        </span>
+                        <button pButton type="button" icon="pi pi-eye"
+                            class="p-button-rounded p-button-text p-button-sm fs-14 flex-shrink-0" title="Visualizar"
+                            (click)="openTextAreaViewDialog(product, col)">
+                        </button>
+                    </div>
+                    }
+                    @default { <span class="fs-14">{{ product[col.field] }}</span> }
+                    }
+                    } @else {
+                    <!-- Se a coluna for editável, usa o p-cellEditor para alternar entre input e output -->
+                    <p-cellEditor>
+                        @switch(col.type || 'text') {
+                        @case('text'){
+                        <ng-template pTemplate="input">
+                            <input pInputText type="text" [(ngModel)]="product[col.field]"
+                                (ngModelChange)="onCellChange(product)" class="w-full p-inputtext-sm" />
+                        </ng-template>
+                        }
+                        @case('text-area'){
+                        <ng-template pTemplate="input">
+                            <input pInputText type="text" [value]="product[col.field]" readonly
+                                placeholder="Digite aqui..." [title]="product[col.field]" class="w-full p-inputtext-sm"
+                                (click)="openTextAreaDialog(product, col)">
+                        </ng-template>
+                        }
+                        @case('number'){
+                        <ng-template pTemplate="input">
+                            <input pInputText type="number" [(ngModel)]="product[col.field]" style="width: 100%;"
+                                placeholder="Digite..." (ngModelChange)="onCellChange(product)" class="ng-pristine" />
+                        </ng-template>
+                        }
+                        @case('money'){
+                        <ng-template pTemplate="input">
+                            <input pInputText type="text" inputmode="decimal" currencyInput
+                                [(ngModel)]="product[col.field]" (ngModelChange)="onCellChange(product)"
+                                class="w-full p-inputtext-sm" />
+                        </ng-template>
+                        }
+                        @case('date'){
+                        <ng-template pTemplate="input">
+                            <p-calendar [(ngModel)]="product[col.field]" (ngModelChange)="onCellChange(product)"
+                                dateFormat="dd/mm/yy" [showIcon]="true" [readonlyInput]="true" appendTo="body"
+                                inputStyleClass="w-full" [panelStyle]="{'width': '15rem', 'min-width': '15rem'}"
+                                class="dg-inline-calendar" />
+                        </ng-template>
+                        }
+                        @case('select') {
+                        <ng-template pTemplate="input">
+
+                            @if (col.field === 'status') {
+
+                            <p-dropdown [options]="col.options" optionLabel="label" optionValue="value" appendTo="body"
+                                [(ngModel)]="product[col.field]" (ngModelChange)="onCellChange(product)"
+                                [styleClass]="'status-dropdown ' + getStatusClass(product[col.field])" class="w-full">
+
+                                <ng-template pTemplate="selectedItem" let-option>
+                                    @if (option) {
+                                    <p-tag [severity]="$any(getSeverityStatus(option.value))" [rounded]="true"
+                                        class="d-flex justify-content-center fs-14" [value]="option.label">
+                                    </p-tag>
+                                    }
+                                </ng-template>
+
+                                <ng-template pTemplate="item" let-option>
+                                    <p-tag [severity]="$any(getSeverityStatus(option.value))" [rounded]="true"
+                                        class="d-flex justify-content-center fs-14" [value]="option.label">
+                                    </p-tag>
+                                </ng-template>
+
+                            </p-dropdown>
+
+                            } @else {
+
+                            <p-dropdown [options]="col.options" appendTo="body" [(ngModel)]="product[col.field]"
+                                (ngModelChange)="onCellChange(product)" class="w-full">
+                            </p-dropdown>
+
+                            }
+
+                        </ng-template>
+                        }
+                        }
+                        <ng-template pTemplate="output">
+                            @if(col.type === 'text-area') {
+                            <div class="d-flex align-items-center justify-content-between gap-1 fs-14">
+                                <span class="text-area-preview" [title]="product[col.field]">
+                                    {{ product[col.field] || '-' }}
+                                </span>
+                                <button pButton type="button" icon="pi pi-eye"
+                                    class="p-button-rounded p-button-text p-button-sm" title="Visualizar"
+                                    (click)="openTextAreaViewDialog(product, col)">
+                                </button>
+                            </div>
+                            } @else if (col.field === 'status') {
+                            <p-tag [severity]="$any(getSeverityStatus(product[col.field]))" [rounded]="true"
+                                class="d-flex justify-content-center fs-14"
+                                [value]="col.formatter ? col.formatter(product) : product[col.field]">
+                            </p-tag>}@else {
+                            <span class="fs-14">
+                                {{ col.formatter ? col.formatter(product) : product[col.field] }}
+                            </span>
+                            }
+                        </ng-template>
+                    </p-cellEditor>
                     }
                 </td>
-                }
+                }}}
+                <!-- } -->
             </tr>
         </ng-template>
 
         <ng-template pTemplate="emptymessage">
             <tr>
-                <td [attr.colspan]="(selected ? 1 : 0) + columns.length"
+                <td [attr.colspan]="(exibeCampos?.selected ? 1 : 0) + columns.length"
                     class="semRegistros text-center text-secondary py-4 ">
                     Nenhum registro encontrado.
                 </td>
             </tr>
         </ng-template>
+        <ng-template pTemplate="loadingbody">
+            <tr>
+                <td [attr.colspan]="(exibeCampos?.selected ? 1 : 0) + columns.length" class="text-center py-4">
+                    <div class="dg-loading-spinner d-flex justify-content-center align-items-center">
+                        <p-progressSpinner ariaLabel="loading" />
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
 
     </p-table>
+    <p-dialog [header]="dialogColumn?.header" [(visible)]="dialogVisible" [modal]="true" [resizable]="false"
+        [style]="{ width: '20vw', height: '12vw' }" [draggable]="false">
+
+        <div class="flex flex-column gap-2">
+
+            <textarea pInputTextarea [(ngModel)]="dialogValue" rows="12" class="w-full">
+        </textarea>
+
+        </div>
+        <ng-template pTemplate="footer">
+
+            <p-button label="Cancelar" icon="pi pi-times" severity="secondary" [outlined]="true"
+                (onClick)="closeTextAreaDialog()">
+            </p-button>
+
+            <p-button label="Salvar" icon="pi pi-check" (onClick)="saveTextAreaDialog()">
+            </p-button>
+        </ng-template>
+
+    </p-dialog>
+    <p-dialog [header]="viewDialogTitle" [(visible)]="viewDialogVisible" [modal]="true" [resizable]="false"
+        [style]="{ width: '20vw' }" [draggable]="false">
+
+        <div class="text-area-view">
+            {{ viewDialogValue || 'Nenhum conteúdo informado.' }}
+        </div>
+
+        <ng-template pTemplate="footer">
+
+            <p-button label="Fechar" icon="pi pi-times" severity="secondary" [outlined]="true"
+                (onClick)="closeTextAreaViewDialog()">
+            </p-button>
+
+        </ng-template>
+
+    </p-dialog>
 </div>
+
+
+@if(exibeCampos?.buttonSaveCancel){
+<p-toolbar styleClass="mb-2 mt-2 mb-4 d-flex justify-content-end">
+    <ng-template pTemplate="right">
+        <p-button label="Cancelar" icon="pi pi-times" class="mr-2" [outlined]="true" [disabled]="pendingCount === 0"
+            (onClick)="cancelarTodasAlteracoes()" />
+        <p-button label="Salvar" icon="pi pi-check" class="mr-2" [disabled]="pendingCount === 0"
+            (onClick)="onSaveAll()" />
+    </ng-template>
+</p-toolbar>
+}

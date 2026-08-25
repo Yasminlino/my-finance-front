@@ -13,8 +13,6 @@ import { TableModule } from 'primeng/table';
 @NgModule({
   declarations: [
     CurrencyMaskDirective,
-    CurrencyInputDirective,
-    MoneyMaskBrDirective,
     CalendarComponent
   ],
   imports: [
@@ -22,7 +20,9 @@ import { TableModule } from 'primeng/table';
     FormsModule,
     ReactiveFormsModule,
     RouterModule,
-    TableModule
+    TableModule,
+    MoneyMaskBrDirective,
+    CurrencyInputDirective
   ],
   exports: [
     CommonModule,
@@ -37,4 +37,3 @@ import { TableModule } from 'primeng/table';
   ]
 })
 export class SharedModule {}
-

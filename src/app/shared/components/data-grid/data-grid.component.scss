@@ -2,14 +2,16 @@
     border-collapse: collapse;
 }
 
+//Bordas ao redor da grid
 ::ng-deep .p-datatable-wrapper {
     margin: 0 1rem 0 1rem;
-    border: solid 1px #d1d5db;    
+    border: solid 1px #d1d5db;
     border-bottom: none;
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
 }
 
+//Formatação paginação
 ::ng-deep .p-paginator {
     margin: 1rem;
     margin-top: 0;
@@ -19,195 +21,125 @@
     border-top: none;
 }
 
-::ng-deep .pi-file-excel{
-    font-size: 1.2rem;
+//
+::ng-deep .p-paginator .p-dropdown {
+    margin-left: 0.1rem;
+    margin-right: 0.1rem;
+    height: 2rem;
+    width: 4rem !important;
+    text-align-last: center;
+    align-self: anchor-center;
 }
 
-::ng-deep .text-sm{
-    align-self: center;
-}
-::ng-deep tr.ng-star-inserted{
-    height: 3rem;
-}
-::ng-deep .p-datatable .p-datatable-tbody > tr > td {
-    border-bottom: 1px solid #d1d5db !important;
-}
-
-::ng-deep .p-datatable .p-datatable-thead > tr > th {
-    border-bottom: 1px solid #d1d5db !important;
-}
-.border-b-0 {
-    border-bottom: 1px solid #d1d5db !important;
+//
+::ng-deep .p-paginator-page,
+::ng-deep .p-paginator-next,
+::ng-deep .p-paginator-prev,
+::ng-deep .p-paginator-last,
+::ng-deep .p-paginator-first,
+::ng-deep .p-dropdown-trigger {
+    height: 2rem;
+    border-radius: 100%;
+    min-width: 2rem;
+    width: 2rem;
 }
 
+//border inline header-grid
+::ng-deep .p-datatable .p-datatable-thead>tr>th {
+    border-bottom: 1px solid #d1d5db !important;
+    padding: 0.5rem 0.5rem !important;
+}
+
+//formatação inline body-grid
 ::ng-deep .p-datatable .p-datatable-tbody>tr>td {
+    border-bottom: 1px solid #d1d5db !important;
     padding: 0.1rem 0.5rem !important;
 }
 
-::ng-deep .p-datatable .p-datatable-thead>tr>th {
+//Padroniza inputs com selects
+::ng-deep .p-datatable .p-datatable-thead>tr>th>.p-inputtext-sm {
     padding: 0.5rem 0.5rem !important;
-}
-
-::ng-deep .p-datatable .p-datatable-thead>tr>th>input {
-    padding: 0.5rem 0.5rem !important;
-}
-
-::ng-deep .p-datatable .p-datatable-tbody>tr>td.dg-actions-column,
-::ng-deep .p-datatable .p-datatable-thead>tr>th.dg-actions-column {
-    width: 7rem !important;
-    min-width: 7rem !important;
-    max-width: 7rem !important;
-    white-space: nowrap;
-    text-align: center;
 }
 
 button,
 input,
 optgroup,
 select,
-textarea {
+textarea,
+::ng-deep .p-paginator {
     font-size: 14px !important;
     line-height: 14px !important;
 }
 
-/* Linha ativada para edição */
-::ng-deep .p-datatable .p-datatable-tbody>tr.row-active>td {
-    background-color: #e6f0ff !important;
+//padroniza font-size
+.fs-14,
+::ng-deep .p-button,
+::ng-deep .p-dropdown-item,
+::ng-deep .p-dropdown-label,
+::ng-deep .p-menuitem-text,
+::ng-deep .p-multiselect-item>span,
+::ng-deep .p-multiselect-label,
+::ng-deep .p-paginator,
+::ng-deep .p-calendar input,
+::ng-deep .p-inputnumber input,
+::ng-deep .ng-pristine {
+    font-size: 14px !important;
 }
 
-::ng-deep .p-datatable .p-datatable-tbody>tr.row-active:hover>td {
-    background-color: #d9e8ff !important;
-}
 
-/* ----- Filtros: controles ocupam a largura total da coluna ----- */
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th {
-    padding: 0.35rem 0.4rem !important;
-    vertical-align: middle;
-}
-
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th p-dropdown,
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th p-multiselect,
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th p-calendar,
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th p-inputnumber,
+::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th .p-multiselect,
 ::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th>input {
     width: 100% !important;
 }
 
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-dropdown,
+//Remove padding desnecessário
+::ng-deep .p-multiselect-clearable .p-multiselect-label-container {
+    padding: 0 !important;
+}
+
+//Padding 0.3 0.3
+::ng-deep .p-multiselect-panel .p-multiselect-header .p-multiselect-filter-container .p-inputtext{
+    padding: 0.3rem 0.3rem !important;
+}
+::ng-deep .p-input-icon-right>.p-icon-wrapper{
+    width: 0.7rem;
+}
+::ng-deep td>.p-element>.p-inputtext,
+::ng-deep td>.p-element>.p-inputtext-sm,
+::ng-deep .p-calendar>input {
+    padding: 0.5rem 0.5rem !important;
+}
+
+::ng-deep .p-calendar>input,
+::ng-deep .p-dropdown-label {
+    padding: 0.375rem 0.375rem !important;
+}
+
+// /* Altura uniforme dos controles de filtro */
 ::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-dropdown-label,
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-multiselect,
 ::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-multiselect-label,
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-calendar,
 ::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-calendar input,
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-inputnumber,
 ::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-inputnumber input {
-    width: 100% !important;
-}
-
-/* Altura uniforme dos controles de filtro */
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-dropdown-label,
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-multiselect-label,
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-calendar input,
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row .p-inputnumber input,
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th>input {
-    font-size: 0.875rem;
     line-height: 1.25rem;
     padding-top: 0.375rem;
     padding-bottom: 0.375rem;
 }
 
-/* ----- Barra de ações em lote (Salvar tudo / Excluir selecionadas) ----- */
-.dg-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.dg-toolbar-left,
-.dg-toolbar-right {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.dg-hint {
-    font-size: 0.8rem;
-    color: #6b7280;
-}
-
-/* ----- Linha em edição inline e com alterações pendentes ----- */
-::ng-deep .p-datatable .p-datatable-tbody>tr.row-editing>td {
-    background-color: #fef9e746 !important;
-}
-
-::ng-deep .p-datatable .p-datatable-tbody>tr.row-editing:hover>td {
-    background-color: #fdf3d0 !important;
-}
-
-::ng-deep .p-datatable .p-datatable-tbody>tr.row-dirty>td {
-    box-shadow: inset 3px 0 0 #f59e0b;
-}
-
-.dg-dot {
-    position: relative;
-}
-
-.dg-dot::before {
-    content: '';
-    display: inline-block;
-    width: 0.5rem;
-    height: 0.5rem;
-    margin-right: 0.35rem;
-    border-radius: 50%;
-    background-color: #f59e0b;
-    vertical-align: middle;
-}
-
-/* Editores inline ocupam a célula */
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td p-dropdown,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td p-multiselect,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td p-calendar,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td p-inputnumber,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td>input {
-    width: 100% !important;
-}
-
+//alinhamento dropdown edição
 ::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-dropdown,
 ::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-dropdown-label,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-multiselect,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-multiselect-label,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-calendar,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-calendar input,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-inputnumber,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-inputnumber input {
+::ng-deep .p-dropdown {
     width: 100% !important;
 }
 
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-dropdown-label,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-multiselect-label,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-calendar input,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-inputnumber input,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td>input {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-}
-
-::ng-deep th,
-td {
-    font-size: 14px;
-}
-
-::ng-deep .p-sortable-column-icon,
-.pi,
-.p-checkbox-box {
+//Diminui o icone de ordenação
+::ng-deep .p-sortable-column-icon {
     width: 12px !important;
     height: 12px !important;
     align-items: center;
     justify-content: center;
 }
+
 
 ::ng-deep .p-checkbox-box {
     width: 16px !important;
@@ -216,49 +148,23 @@ td {
     justify-content: center;
 }
 
-::ng-deep .p-sortable-column>div {
-    display: flex;
-    align-items: flex-start;
-}
-
 ::ng-deep .p-datatable .p-datatable-thead>tr>th {
     background-color: white !important;
 }
 
-::ng-deep .p-inputtext>i {
-
-    font-size: 12px !important;
-    height: 24px;
-}
-
-::ng-deep .excluir-selecionado   {
-    border-radius: 0.5rem !important;
-    background-color: #fb6e59;
-    color: white;
-}
-
-::ng-deep .salvar   {
-    border-radius: 0.5rem !important;
-    background-color: #3B82F6;
-    color: white;
-}
-
-::ng-deep p-table > thead{
-    margin: 1rem;
-    border-radius: 0.5rem !important;
-    border: 1px solid #d1d5db !important
-}
-
+//Mensagem tabela sem dados
 .semRegistros {
     height: 5rem !important;
     font-size: 16px;
     color: #797575 !important;
 }
 
-.p-button.p-button-text:not(:disabled):hover
-{
+//hover do icone excluir
+.p-button.p-button-text:not(:disabled):hover {
     border-radius: 1rem !important;
 }
+
+//Padroniza layout icone
 .p-button.p-button-icon-only {
     padding: 0 !important;
     width: 2rem !important;
@@ -267,27 +173,19 @@ td {
     margin-bottom: 0.8rem !important;
 }
 
-:host ::ng-deep .p-dialog .product-image {
-    width: 150px;
-    margin: 0 auto 2rem auto;
-    display: block;
+//layout botões
+:host ::ng-deep .p-button {
+    border-radius: 0.5rem;
+    padding: 0.3rem 0.8rem;
 }
 
-:host ::ng-deep .p-ripple {
- border-radius: 0.5rem;
- padding: 0.3rem 0.8rem;
- font-size: 14px!important;
-}
-
-:host ::ng-deep .p-button-icon {
-    margin-bottom: 3px!important;
-}
-
+//footer - botões
 :host ::ng-deep .p-toolbar {
     border: none;
     padding: 0;
 }
 
+//header - botões
 :host ::ng-deep .p-datatable-header {
     background: white;
     border: none;
@@ -295,6 +193,7 @@ td {
     padding-top: 0;
 }
 
+//breadcrumb
 :host ::ng-deep .p-breadcrumb {
     padding: 0;
     margin: 0;
@@ -302,29 +201,185 @@ td {
     border: none;
     padding-bottom: 0.5rem;
     font-size: 0.8rem;
-    padding-left: 0.5rem; 
+    padding-left: 0.5rem;
 }
 
-:host ::ng-deep .p-menuitem-icon, .p-menuitem-separator {
-    font-size: 0.8rem;
+//breadcrumb - icon
+:host ::ng-deep .p-icon {
+    height: 0.75rem;
+    width: 0.75rem;
 }
 
-:host ::ng-deep  .p-icon {
-    height: 0.8rem;
-    width:  0.8rem;
+
+//breadcrumb - item
+::ng-deep a:hover {
+    text-decoration: unset !important;
 }
 
+//titulo
 .title {
     font-family: inherit;
-    font-size: 1.5rem;   
-    padding-left: 0.5rem; 
+    font-size: 1.5rem;
+    padding-left: 0.5rem;
 }
 
-.text-align-center{
+//buttom - focus{
+:host ::ng-deep button:focus:not(:focus-visible),
+:host ::ng-deep .p-button:focus:not(:focus-visible) {
+    box-shadow: none !important;
+}
+
+//multiselect - alinhamento checkbox bom item 
+::ng-deep .p-multiselect-item>.p-checkbox {
+    align-items: center;
+}
+
+//modal - text area --------------------
+
+::ng-deep .p-dialog-content {
+    padding-top: 4px;
+    padding-bottom: 1rem;
+}
+
+::ng-deep .p-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+::ng-deep .p-inputtextarea {
+    height: 3vw;
+}
+
+.text-area-preview {
+    display: block;
+    max-width: calc(100% - 30px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap; // Adicionado para impedir a quebra de linha
+}
+
+:host ::ng-deep .p-datatable table {
+    table-layout: fixed;
+}
+
+:host ::ng-deep .p-inputnumber > .p-inputtext{
+    width: 100%;
+}
+
+//----------------------------------
+
+
+/* ----- Loading spinner abaixo da barra de ferramentas ----- */
+.dg-loading-spinner {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding-top: 0.5rem;
+}
+
+/* Oculta o overlay de loading nativo da p-table do PrimeNG */
+::ng-deep .p-datatable .p-datatable-loading-overlay {
+    display: none !important;
+}
+
+/* ----- Calendário ----- */
+
+:host ::ng-deep .dg-inline-calendar,
+:host ::ng-deep .dg-inline-calendar .p-calendar {
+    width: 100% !important;
+    min-width: 9rem;
+}
+
+:host ::ng-deep .dg-inline-calendar .p-datepicker {
+    width: 15rem !important;
+    min-width: 15rem !important;
+    font-size: 0.875rem !important;
+}
+
+::ng-deep .p-datepicker table td>span {
+    width: auto;
+    height: auto;
+    border-radius: 50%;
+    transition: box-shadow 0.2s;
+    border: 1px solid transparent;
+    padding: 0 !important;
+    margin: 0;
+    border-radius: 0 !important;
+    font-size: 12px !important;
+}
+
+::ng-deep .p-datepicker table th>span {
+    width: auto;
+    height: auto;
+    transition: box-shadow 0.2s;
+    border: 1px solid transparent;
+    padding: 0 !important;
+    margin: 0;
+    border-radius: 0 !important;
+    font-size: 12px !important;
+}
+
+::ng-deep .p-datepicker-header {
+    padding: 0;
+    margin: 0;
+    height: 2.5rem;
+    // font-size: 14px;
+}
+
+::ng-deep .p-datepicker table th,
+::ng-deep .p-datepicker table td {
+    padding: 0.2rem !important;
     text-align: center;
 }
 
-.col-status{
-    width: 0.8rem;
-    text-align: center;
+::ng-deep .p-datepicker table tr.ng-star-inserted {
+    height: 1rem !important;
+}
+
+::ng-deep .p-datepicker-trigger {
+    background: white !important;
+    border-bottom-left-radius: 0 !important;
+    border-top-left-radius: 0 !important;
+    border: solid 1.5px #d1d5db !important;
+    color: #4b5563;
+    box-sizing: border-box;
+    padding: 0.3rem 0.5rem !important;
+}
+
+::ng-deep .botao-popup>.p-element>button {
+    border: solid 1px #d1d5db;
+    height: auto;
+    height: 2rem;
+    width: 2rem;
+    background-color: white;
+
+    span {
+        color: black !important;
+        margin: 0 !important;
+    }
+}
+
+/* ----- --------------------- */
+
+::ng-deep .p-datatable .p-datatable-tbody>tr.row-active:hover>td {
+    background-color: #d9e8ff !important;
+}
+
+// /* Linha com alterações pendentes (não salvas) */
+::ng-deep .p-datatable .p-datatable-tbody>tr.row-dirty>td {
+    background-color: #fef3c7 !important;
+}
+
+::ng-deep .p-datatable .p-datatable-tbody>tr.row-dirty.row-editing>td {
+    background-color: #fde68a !important;
+}
+
+
+::ng-deep .p-tag{
+    width: 8rem!important;
+}
+
+::ng-deep .p-toast {
+    margin-top: 4rem;
 }

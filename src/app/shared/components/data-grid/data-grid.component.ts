@@ -1,6 +1,14 @@
-import { Component, Input, Output, EventEmitter, ViewChild } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  ViewChild
+} from '@angular/core';
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+
 import { Table, TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
 import { DropdownModule } from 'primeng/dropdown';
@@ -9,18 +17,30 @@ import { MultiSelectModule } from 'primeng/multiselect';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
-import { GridColumn, GridColumnType, GridRowChange } from './data-grid.interface';
 import { FileUploadModule } from 'primeng/fileupload';
 import { ToolbarModule } from 'primeng/toolbar';
 import { RippleModule } from 'primeng/ripple';
 import { TagModule } from 'primeng/tag';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { MenuModule } from 'primeng/menu';
+import { ToggleButtonModule } from 'primeng/togglebutton';
 
+import { MenuItem } from 'primeng/api';
 
-export interface GridColumnOption {
-  label: string;
-  value: any;
-}
+import {
+  ExibirCampos,
+  GridColumn,
+  GridColumnOption,
+  GridColumnType,
+  GridRowChange,
+  TypeGrid
+} from './data-grid.interface';
+
+import { CurrencyInputDirective } from '../../directives/currency-input.directive';
+
 
 @Component({
   selector: 'app-data-grid',
@@ -40,98 +60,166 @@ export interface GridColumnOption {
     ToolbarModule,
     RippleModule,
     TagModule,
-    BreadcrumbModule
+    BreadcrumbModule,
+    InputTextareaModule,
+    DialogModule,
+    CurrencyInputDirective,
+    ProgressSpinnerModule,
+    MenuModule,
+    ToggleButtonModule
   ],
   templateUrl: './data-grid.component.html',
   styleUrl: './data-grid.component.scss'
 })
 export class DataGridComponent {
-  @Input('titulo') titulo: string = 'Cadastro de Categorias';
+
+  // ---------------------------------------------------------------------------
+  // Inputs
+  // ---------------------------------------------------------------------------
+
+  @Input() titulo = '';
+
   private _dataSource: any[] = [];
-  @Input('dataSource')
+
+  @Input()
   set dataSource(value: any[]) {
-    this._dataSource = value ?? [];
+    this._dataSource = (value ?? []).map(row => {
+      const item = { ...row };
+      this.columns
+        .filter(col => col.type === 'date')
+        .forEach(col => {
+          if (item[col.field] && typeof item[col.field] === 'string') {
+            item[col.field] = new Date(item[col.field]);
+          }
+        });
+      return item;
+    });
     this.updateTableRows();
   }
+
   get dataSource(): any[] {
     return this._dataSource;
   }
-  @Input('filter') filter: boolean = false;
-  @Input('selected') selected: boolean = false;
-  @Input('paginator') paginator: boolean = false;
-  @Input('sortable') sortable: boolean = false;
-  @Input('export') export: boolean = false;
-  @Input('columns') columns: GridColumn[] = [];
-  @Input('breadcrumb') breadcrumb: any;
-  @Input('columnIcons') columnIcons: Record<string, string> = {};
-  @Input('dataKey') dataKey: string = 'id';
-  /** Exibe a barra com "Salvar tudo" e "Excluir selecionadas". */
-  @Input('batchActions') batchActions: boolean = false;
+
+  @Input() columns: GridColumn[] = [];
+  @Input() breadcrumb: MenuItem[] = [];
+  @Input() dataKey = 'id';
+  @Input() tipoTabela: TypeGrid = TypeGrid.editaModal;
+  @Input() dateFilter: Date | undefined;
+  @Input() loading = false;
+  @Input() itemsButtom: MenuItem[] = [];
+  @Input() statusOptions: GridColumnOption[] = [];
+  @Input() exibeCampos: ExibirCampos | null = null;
+
+  // ---------------------------------------------------------------------------
+  // Outputs
+  // ---------------------------------------------------------------------------
 
   @Output() new = new EventEmitter<any>();
   @Output() edit = new EventEmitter<any>();
   @Output() delete = new EventEmitter<any>();
   @Output() activate = new EventEmitter<any>();
   @Output() deactivate = new EventEmitter<any>();
-  /** Emitido ao clicar em "Salvar tudo" com as alterações inline pendentes. */
   @Output() saveInline = new EventEmitter<GridRowChange[]>();
-  /** Emitido ao clicar em "Excluir selecionadas" com as linhas marcadas. */
   @Output() deleteSelected = new EventEmitter<any[]>();
+  @Output() saveSelected = new EventEmitter<any[]>();
+  @Output() addBatch = new EventEmitter<any[]>();
+  @Output() selectionChange = new EventEmitter<any[]>();
+  @Output() reload = new EventEmitter<any>();
 
-  @ViewChild('dt') dt?: Table;
-  home = { icon: 'pi pi-home', routerLink: '/' };
+  // ---------------------------------------------------------------------------
+  // ViewChild
+  // ---------------------------------------------------------------------------
 
-  productDialog: boolean = false;
-  submitted: boolean = false;
+  @ViewChild('dt')
+  dt?: Table;
 
-  defaultColumnIcons: Record<string, string> = {
-    name: 'pi pi-file',
-    subCategory: 'pi pi-tags',
-    naturezaOperacao: 'pi pi-sitemap',
-    status: 'pi pi-info-circle',
-    actions: 'pi pi-ellipsis-v'
+  // ---------------------------------------------------------------------------
+  // Template helpers
+  // ---------------------------------------------------------------------------
+
+  home: MenuItem = {
+    icon: 'pi pi-home',
+    routerLink: '/'
   };
 
-  getColumnIcon(col: GridColumn): string | undefined {
-    return col?.icon || this.columnIcons[col?.field] || this.defaultColumnIcons[col?.field];
-  }
+  // ---------------------------------------------------------------------------
+  // Estado
+  // ---------------------------------------------------------------------------
 
-  first: number = 0;
-  rows: number = 5;
+  editandoTabela = false;
+
+  deleting = false;
+  deletingId: number | null = null;
+
+  tableRows: any[] = [];
   selectedItems: any[] = [];
 
-  /** Versão da `dataSource` enriquecida com campos formatados para pesquisa/exportação. */
-  tableRows: any[] = [];
-
-  /** Linhas ativadas para edição (chave = valor de dataKey). */
   activeRows: Set<any> = new Set();
 
+  // ---------------------------------------------------------------------------
+  // Dialog - Textarea
+  // ---------------------------------------------------------------------------
+
+  dialogVisible = false;
+  dialogRow: any = null;
+  dialogColumn: GridColumn | null = null;
+  dialogValue = '';
+
+  viewDialogVisible = false;
+  viewDialogValue = '';
+  viewDialogTitle = '';
+
+  // ---------------------------------------------------------------------------
+  // Edição inline
+  // ---------------------------------------------------------------------------
+
+  originalRows = new Map<any, any>();
+
+  pendingChanges = new Map<any, GridRowChange>();
+  filtroValores: { [key: string]: any } = {};
+  // ---------------------------------------------------------------------------
+  // Filtros
+  // ---------------------------------------------------------------------------
+
   get globalFilterFields(): string[] {
-    const base = this.columns.map(c => c.field).filter(f => f !== 'actions');
-    const formatted = this.columns
-      .filter(c => typeof c.formatter === 'function')
-      .map(c => `__dg_${c.field}`);
-    return [...base, ...formatted];
+    const fields = this.columns
+      .filter(column => column.type !== 'actions')
+      .map(column => column.field);
+
+    const formattedFields = this.columns
+      .filter(column => typeof column.formatter === 'function')
+      .map(column => `__dg_${column.field}`);
+
+    return [...fields, ...formattedFields];
   }
 
+  // ---------------------------------------------------------------------------
+  // Data source
+  // ---------------------------------------------------------------------------
+
   private updateTableRows(): void {
-    if (!this._dataSource) {
-      this.tableRows = [];
-      return;
-    }
-    // Cria clones das linhas e adiciona campos auxiliares com os valores formatados
-    this.tableRows = this._dataSource.map(row => {
-      const clone: any = { ...row };
-      this.columns.forEach(col => {
-        if (typeof col.formatter === 'function') {
-          try {
-            const formatted = col.formatter(row);
-            clone[`__dg_${col.field}`] = formatted == null ? '' : String(formatted);
-          } catch (e) {
-            clone[`__dg_${col.field}`] = '';
-          }
+    this.tableRows = (this._dataSource ?? []).map(row => {
+      const clone = { ...row };
+
+      this.columns.forEach(column => {
+        if (typeof column.formatter !== 'function') {
+          return;
+        }
+
+        try {
+          const formattedValue = column.formatter(row);
+
+          clone[`__dg_${column.field}`] =
+            formattedValue == null
+              ? ''
+              : String(formattedValue);
+
+        } catch {
+          clone[`__dg_${column.field}`] = '';
         }
       });
+
       return clone;
     });
   }
@@ -140,177 +228,482 @@ export class DataGridComponent {
     return row?.[this.dataKey];
   }
 
-  colActions(col: GridColumn): string[] {
-    return col.functions?.length ? col.functions : ['edit', 'delete'];
+  // ---------------------------------------------------------------------------
+  // Textarea
+  // ---------------------------------------------------------------------------
+
+  openTextAreaDialog(
+    row: any,
+    column: GridColumn
+  ): void {
+    this.dialogRow = row;
+    this.dialogColumn = column;
+    this.dialogValue = row[column.field] ?? '';
+
+    this.dialogVisible = true;
   }
 
-  /** Indica se a coluna de ações usa o recurso de ativar/desativar linha para edição. */
-  hasActivation(col: GridColumn): boolean {
-    const functions = col.functions ?? [];
-    return functions.includes('activate') || functions.includes('deactivate');
-  }
-
-  isRowActive(row: any): boolean {
-    return this.activeRows.has(this.rowKey(row));
-  }
-
-  activateRow(row: any): void {
-    this.activeRows.add(this.rowKey(row));
-    this.activate.emit(row);
-  }
-
-  deactivateRow(row: any): void {
-    this.activeRows.delete(this.rowKey(row));
-    this.deactivate.emit(row);
-  }
-
-  onEditClick(row: any, col: GridColumn): void {
-    // Sem o recurso de ativação (ou já ativo) o editar dispara normalmente.
-    if (!this.hasActivation(col) || this.isRowActive(row)) {
-      this.edit.emit(row);
+  saveTextAreaDialog(): void {
+    if (!this.dialogRow || !this.dialogColumn) {
+      return;
     }
+
+    this.dialogRow[this.dialogColumn.field] = this.dialogValue;
+
+    this.onCellChange(this.dialogRow);
+
+    this.closeTextAreaDialog();
   }
 
-  onNewClick(row: any, col: GridColumn): void {
+  closeTextAreaDialog(): void {
+    this.dialogVisible = false;
+    this.dialogRow = null;
+    this.dialogColumn = null;
+    this.dialogValue = '';
+  }
+
+  openTextAreaViewDialog(
+    row: any,
+    column: GridColumn
+  ): void {
+    this.viewDialogValue = row[column.field] ?? '';
+    this.viewDialogTitle = column.header;
+    this.viewDialogVisible = true;
+  }
+
+  closeTextAreaViewDialog(): void {
+    this.viewDialogVisible = false;
+    this.viewDialogValue = '';
+    this.viewDialogTitle = '';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Ações
+  // ---------------------------------------------------------------------------
+
+  colActions(column: GridColumn): string[] {
+    return column.functions?.length
+      ? column.functions
+      : ['edit', 'delete'];
+  }
+
+  onEditClick(row: any, _column: GridColumn): void {
+    this.edit.emit(row);
+  }
+
+  onDelete(row: any): void {
+    this.delete.emit(row);
+  }
+
+  openNew(): void {
     this.new.emit();
   }
 
-  // ---------------------------------- Edição inline ----------------------------------
+  onOpenAddBatch(): void {
+    this.addBatch.emit();
+  }
 
-  /** Linhas em modo de edição inline (chave = valor de dataKey). */
-  editingRows: Set<any> = new Set();
-  /** Snapshot dos valores originais de cada linha em edição (usado no cancelar). */
-  rowSnapshots: Map<any, Record<string, any>> = new Map();
-  /** Alterações pendentes aguardando o botão "Salvar tudo". */
-  pendingChanges: Map<any, GridRowChange> = new Map();
+  // ---------------------------------------------------------------------------
+  // Edição inline
+  // ---------------------------------------------------------------------------
 
   get pendingCount(): number {
     return this.pendingChanges.size;
   }
 
-  isRowEditing(row: any): boolean {
-    return this.editingRows.has(this.rowKey(row));
+  toggleEdicaoTabela(): void {
+    if (this.editandoTabela) {
+      this.disableEditMode();
+    } else {
+      this.enableEditMode();
+    }
   }
 
-  isRowDirty(row: any): boolean {
-    return this.pendingChanges.has(this.rowKey(row));
+  private enableEditMode(): void {
+    this.editandoTabela = true;
+
+    const editingRowKeys: Record<string, boolean> = {};
+
+    this.tableRows.forEach(row => {
+      const key = this.rowKey(row);
+
+      if (key === undefined) {
+        return;
+      }
+
+      if (this.isRowBlocked(row)) {
+        return;
+      }
+
+      editingRowKeys[key] = true;
+
+      this.prepareDateFields(row);
+
+      if (!this.originalRows.has(key)) {
+        this.originalRows.set(
+          key,
+          this.cloneRow(row)
+        );
+      }
+    });
+
+    if (this.dt) {
+      this.dt.editingRowKeys = editingRowKeys;
+    }
   }
 
-  isInlineEditable(col: GridColumn): boolean {
-    if (col.field === 'actions' || col.editable === false) return false;
-    return (
-      col.type === undefined ||
-      col.type === 'text' ||
-      col.type === 'select' ||
-      col.type === 'multiselect' ||
-      col.type === 'number' ||
-      col.type === 'date' ||
-      col.type === 'boolean'
+  private disableEditMode(): void {
+    this.editandoTabela = false;
+
+    if (this.dt) {
+      this.dt.editingRowKeys = {};
+    }
+  }
+
+  private isRowBlocked(row: any): boolean {
+    return row?.status === 'PAGO' || row?.bloqueado === true;
+  }
+
+  private prepareDateFields(row: any): void {
+    this.editableColumns()
+      .filter(column => column.type === 'date')
+      .forEach(column => {
+        const value = row[column.field];
+
+        if (typeof value === 'string') {
+          row[column.field] = new Date(value);
+        }
+      });
+  }
+
+  private cloneRow(row: any): any {
+    const clone = { ...row };
+
+    this.columns.forEach(column => {
+      clone[column.field] =
+        this.cloneValue(row[column.field]);
+    });
+
+    return clone;
+  }
+
+  isRowChanged(row: any): boolean {
+    const key = this.rowKey(row);
+
+    if (key === undefined) {
+      return false;
+    }
+
+    const original = this.originalRows.get(key);
+
+    if (!original) {
+      return false;
+    }
+
+    return this.editableColumns().some(column =>
+      !this.valuesEqual(
+        original[column.field],
+        row[column.field]
+      )
     );
   }
 
+  isInlineEditable(column: GridColumn): boolean {
+    if (
+      column.field === 'actions' ||
+      column.editable === false
+    ) {
+      return false;
+    }
+
+    return [
+      undefined,
+      'text',
+      'text-area',
+      'select',
+      'multiselect',
+      'number',
+      'money',
+      'date',
+      'boolean'
+    ].includes(column.type);
+  }
+
   editableColumns(): GridColumn[] {
-    return this.columns.filter(c => this.isInlineEditable(c));
+    return this.columns.filter(column =>
+      this.isInlineEditable(column)
+    );
   }
 
-  /** Liga o modo de edição inline da linha, guardando os valores originais. */
-  startInlineEdit(row: any): void {
+  onCellChange(row: any): void {
     const key = this.rowKey(row);
-    if (key === undefined || this.isRowEditing(row)) return;
-    this.editingRows.add(key);
-    const snapshot: Record<string, any> = {};
-    this.editableColumns().forEach(c => (snapshot[c.field] = this.cloneValue(row[c.field])));
-    this.rowSnapshots.set(key, snapshot);
-  }
 
-  /** Aplica as alterações da linha e as marca como pendentes (para "Salvar tudo"). */
-  commitInlineEdit(row: any): void {
-    const key = this.rowKey(row);
-    if (key === undefined || !this.isRowEditing(row)) return;
-    const snapshot = this.rowSnapshots.get(key) ?? {};
+    if (key === undefined) {
+      return;
+    }
+
+    const original = this.originalRows.get(key);
+
+    if (!original) {
+      return;
+    }
+
+    if (!this.isRowChanged(row)) {
+      this.pendingChanges.delete(key);
+      return;
+    }
+
     const changes: Record<string, any> = {};
-    this.editableColumns().forEach(c => {
-      if (!this.valuesEqual(snapshot[c.field], row[c.field])) {
-        changes[c.field] = row[c.field];
+
+    this.editableColumns().forEach(column => {
+      const currentValue =
+        this.normalizeComparableValue(
+          row[column.field]
+        );
+
+      const originalValue =
+        this.normalizeComparableValue(
+          original[column.field]
+        );
+
+      if (!this.valuesEqual(
+        originalValue,
+        currentValue
+      )) {
+        changes[column.field] = currentValue;
       }
     });
-    this.editingRows.delete(key);
-    this.rowSnapshots.delete(key);
-    if (Object.keys(changes).length > 0) {
-      this.pendingChanges.set(key, { row, changes });
-    } else {
-      this.pendingChanges.delete(key);
-    }
+
+    this.pendingChanges.set(key, {
+      row,
+      changes
+    });
   }
 
-
-  /** Descarta a edição inline, restaurando os valores originais da linha. */
-  cancelInlineEdit(row: any): void {
+  revertRow(row: any): void {
     const key = this.rowKey(row);
-    if (key === undefined || !this.isRowEditing(row)) return;
-    const snapshot = this.rowSnapshots.get(key);
-    if (snapshot) {
-      this.editableColumns().forEach(c => (row[c.field] = snapshot[c.field]));
+
+    if (key === undefined) {
+      return;
     }
-    this.editingRows.delete(key);
-    this.rowSnapshots.delete(key);
+
+    const original = this.originalRows.get(key);
+
+    if (!original) {
+      return;
+    }
+
+    this.editableColumns().forEach(column => {
+      row[column.field] =
+        this.cloneValue(
+          original[column.field]
+        );
+    });
+
+    this.pendingChanges.delete(key);
   }
 
-  /** Emite para o componente pai as alterações pendentes salvarem (bulk). */
-  onSaveAll(): void {
-    // Consolida linhas ainda em modo de edição antes de salvar.
-    if (this.editingRows.size) {
-      this.dataSource.filter(r => this.isRowEditing(r)).forEach(r => this.commitInlineEdit(r));
+  async onSaveAll(): Promise<void> {
+    if (this.pendingCount === 0) {
+      return;
     }
-    if (this.pendingCount === 0) return;
-    this.saveInline.emit(Array.from(this.pendingChanges.values()));
+
+    const changes = Array.from(
+      this.pendingChanges.values()
+    );
+
+    this.saveInline.emit(changes);
+  }
+
+  public finishInlineSave(): void {
     this.pendingChanges.clear();
+    this.originalRows.clear();
+
+    this.editandoTabela = false;
+
+    if (this.dt) {
+      this.dt.editingRowKeys = {};
+    }
   }
 
-  clear(table: Table) {
-    table.clear();
+  cancelarTodasAlteracoes(): void {
+    if (this.pendingCount === 0) {
+      this.disableEditMode();
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Tem certeza que deseja desfazer todas as alterações?'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.clearAllPendingChanges();
+    this.disableEditMode();
   }
 
-  /** Emite para o componente pai as linhas selecionadas excluírem (bulk). */
+  clearAllPendingChanges(): void {
+    this.pendingChanges.forEach((_, key) => {
+      const row = this.tableRows.find(
+        item => this.rowKey(item) === key
+      );
+
+      const original = this.originalRows.get(key);
+
+      if (!row || !original) {
+        return;
+      }
+
+      this.editableColumns().forEach(column => {
+        row[column.field] =
+          this.cloneValue(
+            original[column.field]
+          );
+      });
+    });
+
+    this.pendingChanges.clear();
+    this.originalRows.clear();
+  }
+
+  public clearPendingChanges(): void {
+    this.pendingChanges.clear();
+    this.originalRows.clear();
+  }
+
+  private cloneValue(value: any): any {
+    if (value instanceof Date) {
+      return new Date(value.getTime());
+    }
+
+    if (Array.isArray(value)) {
+      return [...value];
+    }
+
+    if (
+      value &&
+      typeof value === 'object'
+    ) {
+      return { ...value };
+    }
+
+    return value;
+  }
+
+  private normalizeComparableValue(value: any): any {
+    if (value instanceof Date) {
+      return new Date(
+        value.getFullYear(),
+        value.getMonth(),
+        value.getDate()
+      ).toISOString();
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+
+      if (!trimmed) {
+        return '';
+      }
+
+      const isoDate = new Date(trimmed);
+
+      if (
+        !isNaN(isoDate.getTime()) &&
+        /^\d{4}-\d{2}-\d{2}T/.test(trimmed)
+      ) {
+        return new Date(
+          isoDate.getFullYear(),
+          isoDate.getMonth(),
+          isoDate.getDate()
+        ).toISOString();
+      }
+
+      return trimmed;
+    }
+
+    return value;
+  }
+
+  protected valuesEqual(
+    a: any,
+    b: any
+  ): boolean {
+    if (a === b) {
+      return true;
+    }
+
+    if (a == null || b == null) {
+      return a == null && b == null;
+    }
+
+    const normalizedA =
+      this.normalizeComparableValue(a);
+
+    const normalizedB =
+      this.normalizeComparableValue(b);
+
+    return normalizedA === normalizedB;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Status
+  // ---------------------------------------------------------------------------
+
+  getSeverityStatus(
+    statusValue: string
+  ): any {
+    const option =
+      this.statusOptions.find(
+        item => item.value === statusValue
+      );
+
+    return option?.classe ?? 'info';
+  }
+
+  getStatusClass(
+    statusValue: string
+  ): string {
+    return `status-${this.getSeverityStatus(statusValue)}`;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Seleção
+  // ---------------------------------------------------------------------------
+
   onDeleteSelected(): void {
-    if (!this.selectedItems.length) return;
-    this.deleteSelected.emit([...this.selectedItems]);
-  }
+    if (!this.selectedItems.length) {
+      return;
+    }
 
-  openNew() {
-    this.new.emit();
+    this.deleting = true;
+
+    this.deleteSelected.emit([
+      ...this.selectedItems
+    ]);
   }
 
   clearSelection(): void {
     this.selectedItems = [];
+
+    this.selectionChange.emit([]);
   }
 
-  protected valuesEqual(a: any, b: any): boolean {
-    if (a === b) return true;
-    if (a == null || b == null) return a == null && b == null;
-    if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
-    return false;
-  }
+  // ---------------------------------------------------------------------------
+  // Filtros
+  // ---------------------------------------------------------------------------
 
-  private cloneValue(v: any): any {
-    if (v instanceof Date) return new Date(v.getTime());
-    if (Array.isArray(v)) return [...v];
-    return v;
-  }
-
-  // ---------------------------------- Filtros ----------------------------------
-
-  /** Match mode padrão por tipo de filtro. */
   defaultMatchMode(type?: GridColumnType): string {
     switch (type) {
       case 'select':
-        return 'equals';
       case 'multiselect':
         return 'in';
       case 'number':
         return 'equals';
       case 'date':
-        return 'dateIs';
+        return 'dateIs'; // Garanta que está usando dateIs
       case 'boolean':
         return 'equals';
       default:
@@ -318,95 +711,231 @@ export class DataGridComponent {
     }
   }
 
-  matchMode(col: GridColumn): string {
-    return col.filterMatchMode ?? this.defaultMatchMode(col.type);
+  matchMode(
+    column: GridColumn
+  ): string {
+    return (
+      column.filterMatchMode ??
+      this.defaultMatchMode(column.type)
+    );
   }
 
-  onFilter(event: Event, col: GridColumn, table: Table) {
-    const value = (event.target as HTMLInputElement)?.value;
-    table.filter(value, col.field, this.matchMode(col));
+  onFilter(
+    event: Event,
+    column: GridColumn,
+    table: Table
+  ): void {
+    const value =
+      (event.target as HTMLInputElement)?.value;
+
+    table.filter(
+      value,
+      column.field,
+      this.matchMode(column)
+    );
   }
 
-  onSelectFilter(event: any, col: GridColumn, table: Table) {
-    const value = event?.value ?? null;
-    table.filter(value, col.field, this.matchMode(col));
+  onSelectFilter(
+    event: any,
+    column: GridColumn,
+    table: Table
+  ): void {
+    table.filter(
+      event?.value ?? null,
+      column.field,
+      this.matchMode(column)
+    );
   }
 
-  onMultiSelectFilter(event: any, col: GridColumn, table: Table) {
-    const value = event?.value ?? null;
-    table.filter(value, col.field, this.matchMode(col));
+  onMultiSelectFilter(
+    event: any,
+    column: GridColumn,
+    table: Table
+  ): void {
+    table.filter(
+      event?.value ?? null,
+      column.field,
+      this.matchMode(column)
+    );
   }
 
-  onBooleanFilter(event: any, col: GridColumn, table: Table) {
-    const value = event.checked ? true : null;
-    table.filter(value, col.field, this.matchMode(col));
+  onBooleanFilter(
+    event: any,
+    column: GridColumn,
+    table: Table
+  ): void {
+    const value =
+      event?.checked ? true : null;
+
+    table.filter(
+      value,
+      column.field,
+      this.matchMode(column)
+    );
   }
 
-  onNumberFilter(event: any, col: GridColumn, table: Table) {
-    const value = event?.value ?? null;
-    table.filter(value, col.field, this.matchMode(col));
+  onNumberFilter(
+    event: any,
+    column: GridColumn,
+    table: Table
+  ): void {
+    table.filter(
+      event?.value ?? null,
+      column.field,
+      this.matchMode(column)
+    );
   }
 
-  onDateFilter(event: any, col: GridColumn, table: Table) {
+  onDateFilter(
+    event: any,
+    column: GridColumn,
+    table: Table
+  ): void {
+    // Se houver evento, pega o objeto Date limpo (sem hora)
     const value = event ? this.toDateOnly(event) : null;
-    table.filter(value, col.field, this.matchMode(col));
+
+    table.filter(
+      value,
+      column.field,
+      this.matchMode(column)
+    );
   }
 
-  private toDateOnly(date: Date | string): Date {
-    const d = new Date(date);
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  private toDateOnly(
+    date: Date | string
+  ): Date {
+    const value = new Date(date);
+
+    return new Date(
+      value.getFullYear(),
+      value.getMonth(),
+      value.getDate()
+    );
   }
 
-  /** Aciona a exportação CSV da tabela PrimeNG. */
-  onExport(): void {
-    // Tentativa primária: usar o exportCSV do PrimeNG quando disponível.
-    try {
-      if (this.dt && typeof this.dt.exportCSV === 'function') {
-        // Some PrimeNG versions may throw when internal filteredValue is undefined,
-        // so prefer usar a implementação nativa e cair para o fallback somente se falhar.
-        try {
-          this.dt.exportCSV();
-          return;
-        } catch (e) {
-          // tslint:disable-next-line:no-console
-          console.warn('PrimeNG exportCSV failed, using fallback CSV exporter', e);
-        }
-      }
-    } catch (e) {
-      // tslint:disable-next-line:no-console
-      console.warn('PrimeNG exportCSV not available or failed', e);
+  // Adicione propriedades de controle de filtro se desejar, 
+  // ou atualize o método clear para resetar os valores via ViewChild/Query:
+
+
+  clear(table: Table): void {
+    table.clear();
+    this.filtroValores = {}; // Zera todos os modelos de uma vez só!
+  }
+
+  // ---------------------------------------------------------------------------
+  // Calendário / período
+  // ---------------------------------------------------------------------------
+
+  onLoadMonth(event: Date | undefined): void {
+    if (event) {
+      this.dateFilter = event;
+
+      localStorage.setItem(
+        'dataFiltroContaMensal',
+        event.toISOString()
+      );
     }
 
-    // Fallback: gerar CSV manualmente a partir das linhas visíveis (filtro aplicado) ou dataSource.
-    const rows: any[] = (this.dt as any)?.filteredValue ?? this.dataSource ?? [];
-    const exportColumns = this.columns.filter(c => c.type !== 'actions');
-    const headers = exportColumns.map(c => c.header ?? c.field);
-    const csvRows: string[] = [];
-    csvRows.push(headers.map(h => `"${String(h).replace(/"/g, '""')}"`).join(','));
+    this.reload.emit(event);
+  }
 
-    rows.forEach(row => {
-      const values = exportColumns.map(col => {
-        const raw = col.formatter ? col.formatter(row) : row?.[col.field];
-        const text = raw == null ? '' : String(raw);
-        return `"${text.replace(/"/g, '""')}"`;
-      });
+  load(): void {
+    this.reload.emit();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Exportação
+  // ---------------------------------------------------------------------------
+
+  onExport(): void {
+    if (!this.dt) {
+      return;
+    }
+
+    try {
+      this.dt.exportCSV();
+    } catch (error) {
+      console.warn(
+        'PrimeNG exportCSV falhou. Usando fallback.',
+        error
+      );
+
+      this.exportFallback();
+    }
+  }
+
+  private exportFallback(): void {
+    const rows =
+      (this.dt as any)?.filteredValue ??
+      this.dataSource ??
+      [];
+
+    const exportColumns =
+      this.columns.filter(
+        column => column.type !== 'actions'
+      );
+
+    const headers =
+      exportColumns.map(
+        column => column.header ?? column.field
+      );
+
+    const csvRows: string[] = [];
+
+    csvRows.push(
+      headers
+        .map(value =>
+          `"${String(value).replace(/"/g, '""')}"`
+        )
+        .join(',')
+    );
+
+    rows.forEach((row: any) => {
+      const values =
+        exportColumns.map(column => {
+          const rawValue =
+            column.formatter
+              ? column.formatter(row)
+              : row?.[column.field];
+
+          const value =
+            rawValue == null
+              ? ''
+              : String(rawValue);
+
+          return `"${value.replace(/"/g, '""')}"`;
+        });
+
       csvRows.push(values.join(','));
     });
 
-    const csv = csvRows.join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    const fileName = `${(this.titulo || 'export')}.csv`;
-    link.setAttribute('download', fileName);
-    link.style.visibility = 'hidden';
+    const csv =
+      csvRows.join('\r\n');
+
+    const blob = new Blob(
+      [csv],
+      {
+        type: 'text/csv;charset=utf-8;'
+      }
+    );
+
+    const link =
+      document.createElement('a');
+
+    const url =
+      URL.createObjectURL(blob);
+
+    link.href = url;
+
+    link.download =
+      `${this.titulo || 'export'}.csv`;
+
     document.body.appendChild(link);
+
     link.click();
+
     document.body.removeChild(link);
+
     URL.revokeObjectURL(url);
   }
 }
-
-
-
