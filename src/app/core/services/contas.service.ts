@@ -12,13 +12,14 @@ export type AccountDto = {
   parcelaAtual: number;
   quantidadeParcelas: number;
 
-  contaVencimentos?: ContaVencimentoDto[]; // 👈 correto
+  contaVencimentos?: ContaVencimentoDto[]; 
 };
 
 export type ContaVencimentoDto = {
   id: number;
   contaId: number;
   dia: number;
+  diasVencimentoString: string;
 };
 
 @Injectable({ providedIn: 'root' })

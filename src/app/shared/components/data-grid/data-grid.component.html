@@ -2,7 +2,7 @@
     <ng-template pTemplate="left">
         <div class="d-flex flex-column w-100 gap-1">
             <p-breadcrumb class="max-w-full" [model]="breadcrumb" [home]="home" />
-            <h5 class="m-0 title">{{titulo}}</h5>
+            <h5 class="m-0 mb-2 title">{{titulo}}</h5>
         </div>
     </ng-template>
     <ng-template pTemplate="right">
@@ -33,6 +33,12 @@
                         <input pInputText type="text" (input)="dt.filterGlobal($any($event.target).value, 'contains')"
                             placeholder="Pesquisar..." />
                     </span>
+                    @if((selectedItems?.length ?? 0) > 0) {
+                    <span class="pl-2 align-self-center">
+                        {{ selectedItems.length }} selecionado(s)
+                    </span>
+                    }
+
                 </div>
                 <div class="d-flex flex-column gap-2 buttons-actions">
 
@@ -290,14 +296,14 @@
 
                                 <ng-template pTemplate="selectedItem" let-option>
                                     @if (option) {
-                                    <p-tag [severity]="$any(getSeverityStatus(option.value))" [rounded]="true"
+                                    <p-tag [severity]="$any(getSeverityStatus(option.value))"
                                         class="d-flex justify-content-center fs-14" [value]="option.label">
                                     </p-tag>
                                     }
                                 </ng-template>
 
                                 <ng-template pTemplate="item" let-option>
-                                    <p-tag [severity]="$any(getSeverityStatus(option.value))" [rounded]="true"
+                                    <p-tag [severity]="$any(getSeverityStatus(option.value))" 
                                         class="d-flex justify-content-center fs-14" [value]="option.label">
                                     </p-tag>
                                 </ng-template>
@@ -327,7 +333,7 @@
                                 </button>
                             </div>
                             } @else if (col.field === 'status') {
-                            <p-tag [severity]="$any(getSeverityStatus(product[col.field]))" [rounded]="true"
+                            <p-tag [severity]="$any(getSeverityStatus(product[col.field]))" 
                                 class="d-flex justify-content-center fs-14"
                                 [value]="col.formatter ? col.formatter(product) : product[col.field]">
                             </p-tag>}@else {

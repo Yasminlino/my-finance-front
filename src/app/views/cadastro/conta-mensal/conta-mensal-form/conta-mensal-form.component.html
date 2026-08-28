@@ -31,7 +31,12 @@
 
         <div class="mb-3">
           <label class="form-label">Dias Vencimentos</label>
-          <input type="text" class="form-control" formControlName="dataOperacao" placeholder="Ex: 5, 20" (input)="onInputChange(($any($event.target)).value)"  (blur)="onDiasChange(($any($event.target)).value)" />
+          <input type="text" class="form-control" formControlName="dataOperacao" placeholder="Ex: 5, 20"
+            (input)="onInputChange(($any($event.target)).value)" (blur)="onDiasChange(($any($event.target)).value)"
+            [class.is-invalid]="form.controls.value.touched && form.controls.value.invalid" />
+          <div class="invalid-feedback" *ngIf="form.controls.value.touched && form.controls.value.invalid">
+            Informe ao menos um dia de vencimento.
+          </div>
         </div>
 
         <div class="mb-3">
@@ -77,7 +82,7 @@
 
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary" (click)="close(false)">Cancelar</button>
-        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving">
+        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving || form.invalid">
           {{ saving ? 'Salvando...' : 'Salvar' }}
         </button>
       </div>

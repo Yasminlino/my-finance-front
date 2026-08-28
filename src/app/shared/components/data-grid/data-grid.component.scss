@@ -25,6 +25,9 @@
     border-top: none;
 }
 
+::ng-deep .p-paginator .p-paginator-current{
+    height: 2rem;
+}
 //
 ::ng-deep .p-paginator .p-dropdown {
     margin-left: 0.1rem;
@@ -46,12 +49,14 @@
     border-radius: 100%;
     min-width: 2rem;
     width: 2rem;
+    align-self: center;
 }
 
 //border inline header-grid
 ::ng-deep .p-datatable .p-datatable-thead>tr>th {
     border-bottom: 1px solid #d1d5db !important;
     padding: 0.5rem 0.5rem !important;
+    font-size: 12px !important;
 }
 
 //formatação inline body-grid
@@ -94,6 +99,11 @@ textarea,
 ::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th .p-multiselect,
 ::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th>input {
     width: 100% !important;
+}
+
+::ng-deep .p-multiselect-trigger {
+    width: 1rem;
+    padding-right: 1rem;
 }
 
 //Remove padding desnecessário
@@ -154,7 +164,21 @@ textarea,
     justify-content: center;
 }
 
-::ng-deep .p-datatable .p-datatable-thead>tr>th {
+::ng-deep .p-datatable .p-datatable-thead>tr.ng-star-inserted>th {
+    background-color: #f0f4fa !important;
+    color: #157c8d !important;
+    padding: 0.3rem!important;
+    min-height: 0.5rem!important;
+    height: 0.5rem!important;
+}
+
+::ng-deep .p-datatable .p-datatable-thead>tr.ng-star-inserted>th>div>.p-element>.p-icon-wrapper>svg {
+    background-color: #f0f4fa !important;
+    color: #157c8d !important;
+    font-size: 10px;
+}
+
+::ng-deep .p-datatable .p-datatable-thead>tr.dg-filter-row>th {
     background-color: white !important;
 }
 
@@ -341,6 +365,10 @@ textarea,
     height: 1rem !important;
 }
 
+::ng-deep .p-datatable-tbody tr.ng-star-inserted {
+    height: 1rem !important;
+}
+
 ::ng-deep .p-datepicker-trigger {
     background: white !important;
     border-bottom-left-radius: 0 !important;
@@ -382,6 +410,36 @@ textarea,
 
 ::ng-deep .p-tag {
     width: 8rem !important;
+}
+
+::ng-deep .p-tag {
+    background-color: #d0e1fd !important;
+    color: #295bac !important;
+}
+
+::ng-deep .p-tag-secondary {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+}
+
+::ng-deep .p-tag-success {
+    background-color: #caf1d8 !important;
+    color: #188a42 !important;
+}
+
+::ng-deep .p-tag-info {
+    background-color: #d0e1fd !important;
+    color: #295bac !important;
+}
+
+::ng-deep .p-tag-warning {
+    background-color: #feddc7 !important;
+    color: #ae510f !important;
+}
+
+::ng-deep .p-tag-danger {
+    background-color: #ffd0ce !important;
+    color: #b32b23 !important;
 }
 
 ::ng-deep .p-toast {

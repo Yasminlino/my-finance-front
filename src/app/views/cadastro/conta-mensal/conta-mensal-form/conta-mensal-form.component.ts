@@ -3,6 +3,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { AccountDto, ContaService } from 'src/app/core/services/contas.service';
 import { Category } from 'src/app/core/services/category.service';
 import { formatMoneyBRFromAny, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
+import { AlertService } from 'src/app/shared/components/alert.service'; // <-- Importe o AlertService
 
 @Component({
   selector: 'app-conta-mensal-form',
@@ -17,7 +18,6 @@ export class ContaMensalFormComponent implements OnInit {
   parcelaAtual = 2;
   quantidadeParcelas = 2;
 
-
   saving = false;
 
   form = this.fb.group({
@@ -31,20 +31,24 @@ export class ContaMensalFormComponent implements OnInit {
     quantidadeParcelas: [1]
   });
 
-  constructor(private fb: FormBuilder, private contaService: ContaService) { }
+  // Injete o AlertService no construtor
+  constructor(
+    private fb: FormBuilder, 
+    private contaService: ContaService,
+    private alertService: AlertService 
+  ) { }
 
   ngOnInit(): void {
     if (this.account) {
-
       const dias = this.account.contaVencimentos
         ?.map(v => v.dia)
-        .sort((a, b) => a - b) // opcional (organiza)
+        .sort((a, b) => a - b)
         .join(',');
 
       this.form.patchValue({
         name: this.account.name,
         value: this.formataDecimal(this.account.value),
-        dataOperacao: dias, // 👈 aqui
+        dataOperacao: dias, 
         categoryid: this.account.categoryid,
         status: this.account.status,
         ehParcelado: this.account.ehParcelado,
@@ -55,9 +59,7 @@ export class ContaMensalFormComponent implements OnInit {
   }
 
   onInputChange(valor: string) {
-
     var a = valor.replace(/[^0-9,]/g, '');
-
     this.form.patchValue({ dataOperacao: a });
 
     if (valor.includes(',')) {
@@ -86,7 +88,6 @@ export class ContaMensalFormComponent implements OnInit {
       alert('Valor não pode ser maior que 31');
       this.form.patchValue({ dataOperacao: "" });
     }
-
   }
 
   onDiasChange(valor: string) {
@@ -101,9 +102,6 @@ export class ContaMensalFormComponent implements OnInit {
     var valor = value
     var valorFixed = valor.toFixed(2)
     var valorconvertido = valorFixed.toString().replace('.', ',')
-
-    console.log('contem .', valorconvertido)
-
     return valorconvertido
   }
 
@@ -140,9 +138,13 @@ export class ContaMensalFormComponent implements OnInit {
         await this.contaService.create(payload);
       }
 
-      this.close(true);
+      this.alertService.success('Conta salva com sucesso!');      
+      setTimeout(() => {
+        this.close(true);
+      }, 300);
+
     } catch {
-      alert('Erro ao salvar conta.');
+      this.alertService.error('Erro ao salvar conta.');
     } finally {
       this.saving = false;
     }
