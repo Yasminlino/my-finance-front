@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { TipoMovimentacaoDto } from 'src/app/core/models/tipo-movimentacao.model';
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
+import { AlertService } from 'src/app/shared/components/alert.service';
 
 @Component({
   selector: 'app-tipo-movimentacao-form',
@@ -20,7 +21,7 @@ export class TipoMovimentacaoFormComponent implements OnInit {
     valorMeta: [0, [Validators.required]],
   });
 
-  constructor(private fb: FormBuilder, private service: TipoMovimentacaoService) {}
+  constructor(private fb: FormBuilder, private service: TipoMovimentacaoService, private readonly alertService: AlertService) {}
 
   ngOnInit(): void {
     if (this.item) {
@@ -55,9 +56,10 @@ export class TipoMovimentacaoFormComponent implements OnInit {
       if (this.item) await this.service.update(payload);
       else await this.service.create(payload);
 
+      this.alertService.success(`Tipo Movimentação "${this.form.value.nomeTipoMovimentacao!}" salvo com sucesso.`)
       this.close(true);
     } catch {
-      alert('Erro ao salvar Tipo de Movimentação.');
+      this.alertService.success(`Erro ao salvar o Tipo Movimentação  "${this.form.value.nomeTipoMovimentacao!}".`)
     } finally {
       this.saving = false;
     }

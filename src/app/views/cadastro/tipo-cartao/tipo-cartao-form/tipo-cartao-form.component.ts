@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { TipoCartaoCreateUpdateDto, TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
+import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
+import { AlertService } from 'src/app/shared/components/alert.service';
 
 @Component({
   selector: 'app-tipo-cartao-form',
@@ -18,7 +19,7 @@ export class TipoCartaoFormComponent implements OnInit {
     // ativo: [true], // descomente se existir no seu backend
   });
 
-  constructor(private fb: FormBuilder, private service: TipoCartaoService) {}
+  constructor(private fb: FormBuilder, private service: TipoCartaoService, private readonly alertService: AlertService) {}
 
   ngOnInit(): void {
     if (this.item) {
@@ -51,9 +52,10 @@ export class TipoCartaoFormComponent implements OnInit {
       if (this.item) await this.service.update(payload);
       else await this.service.create(payload);
 
+      this.alertService.success(`Tipo cartão "${this.form.value.nomeTipoCartao!}" salvo com sucesso.`)
       this.close(true);
     } catch {
-      alert('Erro ao salvar banco.');
+      this.alertService.success(`Erro ao salvar o Tipo cartão "${this.form.value.nomeTipoCartao!}".`)
     } finally {
       this.saving = false;
     }

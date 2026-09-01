@@ -11,7 +11,7 @@
 
     <div class="modal-body" [formGroup]="form">
       <div class="mb-3">
-        <label class="form-label">Tipo Movimentação</label>
+        <label class="form-label">Tipo Movimentação <strong style="color: red;">*</strong></label>
         <input class="form-control"
                formControlName="nomeTipoMovimentacao"
                [class.is-invalid]="form.controls.nomeTipoMovimentacao.touched && form.controls.nomeTipoMovimentacao.invalid" />

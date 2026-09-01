@@ -1,8 +1,11 @@
-import { Component, OnInit } from '@angular/core';
-import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { AlertService } from 'src/app/shared/components/alert.service';
+import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
+import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { TipoMovimentacaoDto } from 'src/app/core/models/tipo-movimentacao.model';
+import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
 
-type AlertState = { type: 'success' | 'error' | ''; message: string };
 
 @Component({
   selector: 'app-tipo-movimentacao-list',
@@ -10,34 +13,64 @@ type AlertState = { type: 'success' | 'error' | ''; message: string };
   styleUrls: ['./tipo-movimentacao-list.component.scss'],
 })
 export class TipoMovimentacaoListComponent implements OnInit {
-  items: TipoMovimentacaoDto[] = [];
-  filtered: TipoMovimentacaoDto[] = [];
+
+  tipoMovimentacoes: TipoMovimentacaoDto[] = [];
+  exibirCampos: ExibirCampos | null = null;
+  gridColumns: GridColumn[] = []
+  breadcrumb = [{ label: 'Cadastros' }, { label: 'Tipo movimentação' }]
 
   loading = false;
-  errorMsg = '';
-
   q = '';
 
-  // modal/form
   showModalForm = false;
   editing: TipoMovimentacaoDto | null = null;
+  @ViewChild('grid') grid?: DataGridComponent;
 
-  alert: AlertState = { type: '', message: '' };
-
-  constructor(private service: TipoMovimentacaoService) {}
+  constructor(private tipoMovimentacaoService: TipoMovimentacaoService, private readonly alertService: AlertService) { }
 
   async ngOnInit() {
+    this.setGridColumns()
+    this.setExibirCampos()
     await this.load();
+  }
+
+  private setExibirCampos(): void {
+    this.exibirCampos = {
+      filter: true,
+      sortable: true,
+      selected: true,
+      paginator: true,
+      buttonDeleteAll: true,
+      buttonNew: true,
+      buttonLock: false,
+      buttonPopUp: false,
+      buttonEditLine: true,
+      buttonDeleteLine: true,
+      buttonSaveCancel: false,
+    }
+  }
+
+  private setGridColumns(): void {
+
+    this.gridColumns = [
+      { field: 'nomeTipoMovimentacao', header: 'NOME TIPO MOVIMENTAÇÃO', type: GridColumnTypeEnum.Text, width: "40%" },
+      { field: 'descricao', header: 'DESCRIÇÃO', type: GridColumnTypeEnum.Text, width: "50%" },
+      { field: 'actions', header: 'AÇÕES', type: 'actions', functions: ['edit', 'delete'] },
+    ];
   }
 
   async load() {
     try {
       this.loading = true;
-      this.errorMsg = '';
-      this.items = (await this.service.list()) ?? [];
+      const response = await this.tipoMovimentacaoService.list();
+
+      this.tipoMovimentacoes = response.map(item => ({
+        ...item
+      }));
+
       this.applyFilters();
     } catch (e: any) {
-      this.errorMsg = e?.message ?? 'Erro ao carregar Tipos de Movimentação.';
+      this.alertService.error(e?.message ?? 'Erro ao carregar Tipos de movimentação.');
     } finally {
       this.loading = false;
     }
@@ -46,29 +79,12 @@ export class TipoMovimentacaoListComponent implements OnInit {
   applyFilters() {
     const term = this.q.trim().toLowerCase();
 
-    this.filtered = [...this.items]
+    this.tipoMovimentacoes = [...this.tipoMovimentacoes]
       .sort((a, b) => (a.nomeTipoMovimentacao ?? '').localeCompare(b.nomeTipoMovimentacao ?? ''))
-      .filter((c) => {
+      .filter(c => {
         if (!term) return true;
-        return (
-          (c.nomeTipoMovimentacao ?? '').toLowerCase().includes(term) ||
-          String(c.id).includes(term)
-        );
+        return (c.nomeTipoMovimentacao ?? '').toLowerCase().includes(term) || String(c.id).includes(term);
       });
-  }
-
-  onSearchChange(v: string) {
-    this.q = v;
-    this.applyFilters();
-  }
-
-  get totalMetas(): number {
-    return this.filtered.reduce((sum, c) => sum + (Number(c.valorMeta) || 0), 0);
-  }
-
-  formatMoney(value: any) {
-    const n = Number(value) || 0;
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
   }
 
   openCreate() {
@@ -76,8 +92,8 @@ export class TipoMovimentacaoListComponent implements OnInit {
     this.showModalForm = true;
   }
 
-  openEdit(item: TipoMovimentacaoDto) {
-    this.editing = item;
+  onEdit(tipoC: TipoMovimentacaoDto) {
+    this.editing = tipoC;
     this.showModalForm = true;
   }
 
@@ -87,21 +103,48 @@ export class TipoMovimentacaoListComponent implements OnInit {
     if (reload) this.load();
   }
 
-  async onDelete(item: TipoMovimentacaoDto) {
-    const ok = window.confirm(`Excluir o tipo de movimentação "${item.nomeTipoMovimentacao}"?`);
+  async onDelete(c: TipoMovimentacaoDto) {
+    const ok = window.confirm(`Excluir o Tipo movimentação "${c.nomeTipoMovimentacao}"?`);
     if (!ok) return;
 
     try {
-      await this.service.delete(item.id);
-      this.alert = { type: 'success', message: 'Tipo de Movimentação deletado com sucesso!' };
-      setTimeout(() => (this.alert = { type: '', message: '' }), 3000);
+      await this.tipoMovimentacaoService.delete(c.id);
+      this.alertService.success('Tipo movimentação deletada com sucesso!')
       await this.load();
-    } catch {
-      this.alert = {
-        type: 'error',
-        message: 'Falha ao deletar. O tipo de Movimentação pode estar vinculado a transações.',
-      };
-      setTimeout(() => (this.alert = { type: '', message: '' }), 12000);
+    } catch (e) {
+      this.alertService.error('Falha ao deletar. Tipo movimentação pode estar vinculada a transações.');
+    }
+  }
+
+  async onDeleteSelected(rows: TipoMovimentacaoDto[]) {
+    if (!rows.length) return;
+
+    const ok = window.confirm(`Excluir ${rows.length} Tipo movimentação selecionado(s)?`);
+    if (!ok) {
+      if (this.grid) {
+        this.grid.deleting = false;
+      }
+      return;
+    }
+
+    try {
+      var response;
+      for (const row of rows) {
+        response = await this.tipoMovimentacaoService.delete(row.id);
+      }
+
+      if (response) {
+        this.alertService.success(`${rows.length} Tipos excluído(s) com sucesso!`);
+      }
+
+      this.grid?.clearSelection();
+      await this.load();
+    } catch (e) {
+      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
+    } finally {
+      if (this.grid) {
+        this.grid.deleting = false;
+      }
     }
   }
 }

@@ -19,7 +19,7 @@
     <p-table #dt [value]="tableRows" [dataKey]="dataKey" editMode="row" showGridLines stripedRows
         styleClass="p-datatable-gridlines" [(selection)]="selectedItems" [resizableColumns]="false" [scrollable]="true"
         [paginator]="exibeCampos?.paginator" (selectionChange)="selectionChange.emit($event)" [filterDelay]="0"
-        [rows]="5" [loading]="loading" [rowsPerPageOptions]="[5, 10, 20]" [first]="0" [totalRecords]="tableRows.length"
+        [rows]="10" [loading]="loading" [rowsPerPageOptions]="[5, 10, 20]" [first]="0" [totalRecords]="tableRows.length"
         size="small" [rowHover]="true" [showCurrentPageReport]="true" filterDisplay="row"
         [globalFilterFields]="globalFilterFields"
         currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros">

@@ -12,7 +12,7 @@
 
       <div class="modal-body" [formGroup]="form">
         <div class="mb-3">
-          <label class="form-label">Nome categoria <span style="color: red">*</span></label>
+          <label class="form-label">Nome categoria <strong style="color: red">*</strong></label>
           <input class="form-control" type="text" formControlName="name" placeholder="Preencha o nome da categoria."
             [class.is-invalid]="form.controls.name.touched && form.controls.name.invalid" />
           <div class="invalid-feedback" *ngIf="form.controls.name.touched && form.controls.name.invalid">
@@ -21,7 +21,7 @@
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Tipo Categoria <span style="color: red">*</span></label>
+          <label class="form-label">Tipo Categoria <strong style="color: red">*</strong></label>
           <select class="form-select" formControlName="subCategory"
             [class.is-invalid]="form.controls.subCategory.touched && form.controls.subCategory.invalid">
             <option value="">Selecione...</option>

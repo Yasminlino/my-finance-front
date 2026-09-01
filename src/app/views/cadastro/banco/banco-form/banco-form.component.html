@@ -11,7 +11,7 @@
 
             <div class="modal-body" [formGroup]="form">
                 <div class="mb-3">
-                    <label class="form-label">Nome Banco <span style="color: red">*</span></label>
+                    <label class="form-label">Nome Banco <strong style="color: red">*</strong></label>
                     <input class="form-control" formControlName="nomeBanco" placeholder="Preencha o nome do banco..."
                         [class.is-invalid]="form.controls.nomeBanco.touched && form.controls.nomeBanco.invalid" />
                     <div class="invalid-feedback"
@@ -20,7 +20,7 @@
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Tipo Cartão <span style="color: red">*</span></label>
+                    <label class="form-label">Tipo Cartão <strong style="color: red">*</strong></label>
 
                     <select class="form-select" formControlName="tipoCartaoId" aria-placeholder="Selecione..."
                         [class.is-invalid]="form.controls.tipoCartaoId.touched && form.controls.tipoCartaoId.invalid">
