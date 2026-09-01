@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { BancoDto } from 'src/app/core/services/banco.service';
 import { Category } from 'src/app/core/services/category.service';
 import { ExtratoBancarioItemService, ExtratoItemDto } from 'src/app/core/services/extrato-bancario-item.service';
 import { TipoCartaoDto } from 'src/app/core/services/tipo-cartao.service';
@@ -10,6 +9,7 @@ import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { BancoService } from 'src/app/core/services/banco.service';
 import { isoDateMinusHours, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
+import { BancoDto } from 'src/app/core/interfaces/banco.interface';
 
 type AlertState = { type: '' | 'success' | 'error' | 'warning'; message: string };
 

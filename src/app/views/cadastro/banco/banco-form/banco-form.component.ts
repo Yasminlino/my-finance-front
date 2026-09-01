@@ -1,7 +1,10 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { BancoDto, BancoService } from 'src/app/core/services/banco.service';
+import { BancoDto } from 'src/app/core/interfaces/banco.interface';
+import { BancoService } from 'src/app/core/services/banco.service';
 import { TipoCartao } from 'src/app/core/services/tipo-cartao.service';
+import { formataDecimal, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
+import { AlertService } from 'src/app/shared/components/alert.service';
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
 
@@ -21,18 +24,18 @@ export class BancoFormComponent implements OnInit {
 
   form = this.fb.group({
     nomeBanco: ['', [Validators.required, Validators.minLength(2)]],
-    saldoInicial: [0, [Validators.required]],
+    saldoInicial: [formataDecimal(0), [Validators.required]],
     ativo: [true, [Validators.required]],
     tipoCartaoId: [null as number | null, [Validators.required]], // ✅ novo
   });
 
-  constructor(private fb: FormBuilder, private bancoService: BancoService) {}
+  constructor(private fb: FormBuilder, private bancoService: BancoService, private readonly alertService: AlertService) {}
 
   ngOnInit(): void {
     if (this.banco) {
       this.form.patchValue({
         nomeBanco: this.banco.nomeBanco,
-        saldoInicial: this.banco.saldoInicial,
+        saldoInicial: formataDecimal(this.banco.saldoInicial),
         ativo: this.banco.ativo,
         tipoCartaoId: this.banco.tipoCartaoId ?? null,
       });
@@ -55,31 +58,26 @@ export class BancoFormComponent implements OnInit {
       const payload = {
         id: this.banco?.id || 0,
         nomeBanco: this.form.value.nomeBanco!,
-        saldoInicial: Number(this.form.value.saldoInicial) || 0,
+        saldoInicial: parseMoneyBRToNumber(this.form.value.saldoInicial!) ?? 0, // Evita erro do TS
         tipoCartaoId: Number(this.form.value.tipoCartaoId), // ✅ novo
         ativo: !!this.form.value.ativo,
       };
 
       if (this.banco){
-        await this.bancoService.update(payload).then(() => {
-          this.alert = { type: 'success', message: 'Item atualizado com sucesso!' };
-        }).catch(() => {
-          this.alert = { type: 'error', message: 'Erro ao atualizar item.' };
-        });
+        await this.bancoService.update(payload)
       } 
       else{
-
-        await  this.bancoService.create(payload).then(() => {
-          this.alert = { type: 'success', message: 'Item atualizado com sucesso!' };
-        }).catch(() => {
-          this.alert = { type: 'error', message: 'Erro ao atualizar item.' };
-        });
-
+        await  this.bancoService.create(payload)
       } 
+      
+      this.alertService.success(`Banco "${this.form.value.nomeBanco!}" com sucesso!`);      
+      setTimeout(() => {
+        this.close(true);
+      }, 300);
 
       this.close(true);
     } catch {
-      alert('Erro ao salvar banco.');
+      this.alertService.error(`Erro ao salvar Banco "${this.form.value.nomeBanco}".`);
     } finally {
       this.saving = false;
     }

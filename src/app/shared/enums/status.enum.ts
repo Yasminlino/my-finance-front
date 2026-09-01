@@ -6,10 +6,11 @@ export enum Status {
 export enum TagStatus {
     Primary = "", 
     Secondary = "secondary", 
+    Alert = "alert", 
     Success = "success",
     Info = "info",
     Warning = "warning",
     Help = "help",
-    Danger = "danger",
+    Danger = "DangerSucess",
     Contrast = "contrast",
 }

@@ -4,63 +4,68 @@
 <!-- Modal -->
 <div class="modal modal-blur fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
-   <div class="modal-content">
-    <div class="modal-header">
-      <h5 class="modal-title">{{ category ? 'Editar Categoria' : 'Nova Categoria' }}</h5>
-      <button type="button" class="btn-close" aria-label="Fechar" (click)="close(false)"></button>
-    </div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ category ? 'Editar Categoria' : 'Nova Categoria' }}</h5>
+        <button type="button" class="btn-close" aria-label="Fechar" (click)="close(false)"></button>
+      </div>
 
-    <div class="modal-body" [formGroup]="form">
-      <div class="mb-3">
-        <label class="form-label">Nome</label>
-        <input class="form-control" type="text" formControlName="name"
-          [class.is-invalid]="form.controls.name.touched && form.controls.name.invalid" />
-        <div class="invalid-feedback" *ngIf="form.controls.name.touched && form.controls.name.invalid">
-          Informe um nome válido.
+      <div class="modal-body" [formGroup]="form">
+        <div class="mb-3">
+          <label class="form-label">Nome categoria <span style="color: red">*</span></label>
+          <input class="form-control" type="text" formControlName="name" placeholder="Preencha o nome da categoria."
+            [class.is-invalid]="form.controls.name.touched && form.controls.name.invalid" />
+          <div class="invalid-feedback" *ngIf="form.controls.name.touched && form.controls.name.invalid">
+            Informe um nome válido.
+          </div>
         </div>
-      </div>
 
-      <div class="mb-3">
-        <label class="form-label">Tipo Categoria</label>
-        <select class="form-select" formControlName="subCategory">
-          <option value="Receita">Receita</option>
-          <option value="Despesa">Despesa</option>
-        </select>
-      </div>
-
-      <div class="mb-3" *ngIf="perfilEmpresa ?? form.get('subCategory')?.value != 'Receita'">
-        <label class="form-label">Natureza do gasto</label>
-        <select class="form-select" formControlName="naturezaOperacao">
-          <option *ngIf="!perfilEmpresa" [ngValue]="1">Essencial</option><!-- 50% -->
-          <option *ngIf="!perfilEmpresa" [ngValue]="2">Estilo de Vida/ Lazer</option><!-- 50% -->
-          <option *ngIf="!perfilEmpresa" [ngValue]="3">Reserva/ Investimento</option><!-- 50% -->
-          <option *ngIf="perfilEmpresa" [ngValue]="4">Pessoal</option><!-- 50% -->
-          <option *ngIf="perfilEmpresa" [ngValue]="5">Empresa</option><!-- 50% -->
-        </select>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Status</label>
-        <select class="form-select" formControlName="status"
-          [class.is-invalid]="form.controls.status.touched && form.controls.status.invalid">
-          <option [ngValue]="0">Inativo</option>
-          <option [ngValue]="1">Ativo</option>
-        </select>
-        <div class="invalid-feedback" *ngIf="form.controls.status.touched && form.controls.status.invalid">
-          Selecione uma categoria.
+        <div class="mb-3">
+          <label class="form-label">Tipo Categoria <span style="color: red">*</span></label>
+          <select class="form-select" formControlName="subCategory"
+            [class.is-invalid]="form.controls.subCategory.touched && form.controls.subCategory.invalid">
+            <option value="">Selecione...</option>
+            <option value="Receita">Receita</option>
+            <option value="Despesa">Despesa</option>
+          </select>
+          <div class="invalid-feedback" *ngIf="form.controls.subCategory.touched && form.controls.subCategory.invalid">
+            Selecione um tipo categoria.
+          </div>
         </div>
+
+        <div class="mb-3" *ngIf="perfilEmpresa ?? form.get('subCategory')?.value != 'Receita'">
+          <label class="form-label">Natureza do gasto</label>
+          <select class="form-select" formControlName="naturezaOperacao">
+            <option *ngIf="!perfilEmpresa" [ngValue]="1">Essencial</option><!-- 50% -->
+            <option *ngIf="!perfilEmpresa" [ngValue]="2">Estilo de Vida/ Lazer</option><!-- 50% -->
+            <option *ngIf="!perfilEmpresa" [ngValue]="3">Reserva/ Investimento</option><!-- 50% -->
+            <option *ngIf="perfilEmpresa" [ngValue]="4">Pessoal</option><!-- 50% -->
+            <option *ngIf="perfilEmpresa" [ngValue]="5">Empresa</option><!-- 50% -->
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Status</label>
+          <select class="form-select" formControlName="status"
+            [class.is-invalid]="form.controls.status.touched && form.controls.status.invalid">
+            <option [ngValue]="0">Inativo</option>
+            <option [ngValue]="1">Ativo</option>
+          </select>
+          <div class="invalid-feedback" *ngIf="form.controls.status.touched && form.controls.status.invalid">
+            Selecione uma categoria.
+          </div>
+        </div>
+
       </div>
 
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" (click)="close(false)">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving">
+          {{ saving ? 'Salvando...' : 'Salvar' }}
+        </button>
+      </div>
     </div>
-
-    <div class="modal-footer">
-      <button type="button" class="btn btn-outline-secondary" (click)="close(false)">
-        Cancelar
-      </button>
-      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving">
-        {{ saving ? 'Salvando...' : 'Salvar' }}
-      </button>
-    </div>
-  </div>
   </div>
 </div>

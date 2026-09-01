@@ -128,7 +128,7 @@ export class ContaMensalListComponent implements OnInit {
         formatter: (row) => this.statusLabel(row.status),
         width: "10%"
       },
-      { field: 'actions', header: 'Ações', type: 'actions', functions: ['edit', 'delete'] },
+      { field: 'actions', header: 'AÇÕES', type: 'actions', functions: ['edit', 'delete'] },
     ];
   }
 

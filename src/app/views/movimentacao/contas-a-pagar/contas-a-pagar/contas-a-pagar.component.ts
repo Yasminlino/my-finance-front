@@ -36,7 +36,7 @@ export class ContasAPagarComponent implements OnInit {
   statusOptions: GridColumnOption[] = [
     { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Danger },
     { label: 'PAGO NO PRAZO', value: 'PAGO NO PRAZO', classe: TagStatus.Success },
-    { label: 'AGUARDANDO', value: 'AGUARDANDO', classe: TagStatus.Info },
+    { label: 'AGUARDANDO', value: 'AGUARDANDO', classe: TagStatus.Alert },
     { label: 'PAGO ATRASADO', value: 'PAGO ATRASADO', classe: TagStatus.Warning }
   ];
 

@@ -1,26 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
-
-export type BancoDto = {
-  id: number;
-  nomeBanco: string;
-  saldoInicial: number;
-  ativo: boolean;
-  tipoCartaoId?: number | null;
-  tipoCartao?: {
-    id: number,
-    nomeTipoCartao: string,
-  } | null;
-};
-
-export type BancoCreateUpdateDto = {
-  id: number;
-  nomeBanco: string;
-  saldoInicial: number;
-  tipoCartaoId?: number | null;
-  ativo: boolean;
-};
-
+import { BancoCreateUpdateDto, BancoDto } from '../interfaces/banco.interface';
 
 @Injectable({ providedIn: 'root' })
 export class BancoService {

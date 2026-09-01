@@ -168,8 +168,8 @@ textarea,
     background-color: #f0f4fa !important;
     color: #157c8d !important;
     padding: 0.3rem!important;
-    min-height: 0.5rem!important;
-    height: 0.5rem!important;
+    min-height: 2.2rem!important;
+    height: 2.2rem!important;
 }
 
 ::ng-deep .p-datatable .p-datatable-thead>tr.ng-star-inserted>th>div>.p-element>.p-icon-wrapper>svg {
@@ -437,6 +437,11 @@ textarea,
     color: #ae510f !important;
 }
 
+::ng-deep .p-tag-alert {
+    background-color: #fdebcd !important;
+    color: #f59f00 !important;
+}
+
 ::ng-deep .p-tag-danger {
     background-color: #ffd0ce !important;
     color: #b32b23 !important;
@@ -450,6 +455,10 @@ textarea,
 ::ng-deep .p-datatable-wrapper {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
+}
+
+::ng-deep .actions-center{
+    justify-self: center!important;
 }
 
 /* Remove a largura fixa estrita em telas pequenas para evitar esmagamento */

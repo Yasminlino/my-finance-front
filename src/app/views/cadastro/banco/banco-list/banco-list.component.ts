@@ -1,8 +1,16 @@
-import { Component, OnInit } from '@angular/core';
-import { BancoDto, BancoService } from 'src/app/core/services/banco.service';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Category } from 'src/app/core/services/category.service';
+import { formatCurrencyBR, formatMoneyBRFromAny, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
+import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
+import { TagStatus } from 'src/app/shared/enums/status.enum';
+import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
+import { AlertService } from 'src/app/shared/components/alert.service';
+import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { TipoCartao, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
+import { BancoService } from 'src/app/core/services/banco.service';
+import { BancoDto } from 'src/app/core/interfaces/banco.interface';
 
-type AlertState = { type: 'success' | 'error' | ''; message: string };
 
 @Component({
   selector: 'app-banco-list',
@@ -11,48 +19,123 @@ type AlertState = { type: 'success' | 'error' | ''; message: string };
 })
 export class BancoListComponent implements OnInit {
   bancos: BancoDto[] = [];
-  filtered: BancoDto[] = [];
   tiposCartao: TipoCartao[] = [];
+  tipoCartaoOpcoes: GridColumnOption[] = [];
+  exibirCampos: ExibirCampos | null = null;
+  gridColumns: GridColumn[] = []
+
+  money(v: any) { return formatCurrencyBR(v); }
+
+  statusOptions: GridColumnOption[] = [
+    { label: 'Ativo', value: 1, classe: TagStatus.Success },
+    { label: 'Inativo', value: 0, classe: TagStatus.Secondary }
+  ];
+
+  statusLabel(value: boolean): string {
+    return value === true ? 'Ativo' : 'Inativo';
+  }
+
+  breadcrumb = [{ label: 'Cadastros' }, { label: 'Bancos' }]
+
   loading = false;
   errorMsg = '';
 
   q = '';
   statusFilter: 'ALL' | 'Ativo' | 'Inativo' = 'ALL';
 
-  alert: AlertState = { type: '', message: '' };
-
-  // modal
-  showModal = false;
+  showModalForm = false;
   editing: BancoDto | null = null;
+  @ViewChild('grid') grid?: DataGridComponent;
 
-  // resumo
-  totalGeral = 0;
-  totalAtivo = 0;
-  totalInativo = 0;
-
-  constructor(
-    private bancoService: BancoService,
-    private tipoCartaoService: TipoCartaoService
-  ) {}
+  constructor(private tipoCartaoService: TipoCartaoService, private bancoService: BancoService, private readonly alertService: AlertService) { }
 
   async ngOnInit() {
+    await this.getTiposCartao();
+    this.setGridColumns()
+    this.setExibirCampos()
     await this.load();
+  }
+
+  private setExibirCampos(): void {
+    this.exibirCampos = {
+      filter: true,
+      sortable: true,
+      selected: true,
+      paginator: true,
+      buttonDeleteAll: true,
+      buttonNew: true,
+      buttonLock: false,
+      buttonPopUp: false,
+      buttonEditLine: true,
+      buttonDeleteLine: true,
+      buttonSaveCancel: false,
+    }
+  }
+
+
+  private async getTiposCartao(): Promise<void> {
+    const res = await this.tipoCartaoService.list();
+
+    this.tiposCartao = res;
+
+    this.tipoCartaoOpcoes = res.map(element => ({
+      label: element.nomeTipoCartao,
+      value: element.nomeTipoCartao
+    }));
+
+  }
+
+  private setGridColumns(): void {
+
+    this.gridColumns = [
+      { field: 'nomeBanco', header: 'NOME BANCO', type: GridColumnTypeEnum.Text, width: "25%" },
+      {
+        field: "nomeTipoCartaoFormatado",
+        header: "TIPO CARTÃO",
+        type: GridColumnTypeEnum.Select,
+        options: this.tipoCartaoOpcoes,
+        width: '25%',
+        editable: false
+      },
+      {
+        field: "saldoInicial",
+        header: "SALDO INICIAL",
+        type: GridColumnTypeEnum.Money,
+        formatter: (row) => this.money(row.saldoInicial),
+        width: '20%',
+        editable: true
+      },
+      {
+        field: 'status',
+        header: 'STATUS',
+        type: 'select',
+        options: this.statusOptions,
+        formatter: (row) => this.statusLabel(row.status),
+        width: "20%"
+      },
+      { field: 'actions', header: 'AÇÕES', type: 'actions', functions: ['edit', 'delete'] },
+    ];
+  }
+  getTipoCadastrado(row: TipoCartao) {
+    return row.nomeTipoCartao
   }
 
   async load() {
     try {
       this.loading = true;
-      this.errorMsg = '';
+      const response = await this.bancoService.list();
 
-      const [bancos, tipos] = await Promise.all([
-        this.bancoService.list(),
-        this.tipoCartaoService.list(),
-      ]);
-      this.bancos = bancos ?? [];
-      this.tiposCartao = tipos ?? [];
+      this.bancos = response.map(item => ({
+        ...item,
+        
+        nomeTipoCartaoFormatado: item.tipoCartao?.nomeTipoCartao ||
+          this.tiposCartao.find(t => t.id === item.tipoCartaoId)?.nomeTipoCartao || '-',
+        status: item.ativo ? 1 : 0
+      }));
+
       this.applyFilters();
     } catch (e: any) {
-      this.errorMsg = e?.message ?? 'Erro ao carregar bancos.';
+      this.alertService.error(e?.message ?? 'Erro ao carregar bancos.');
     } finally {
       this.loading = false;
     }
@@ -61,91 +144,87 @@ export class BancoListComponent implements OnInit {
   applyFilters() {
     const term = this.q.trim().toLowerCase();
 
-    this.filtered = [...this.bancos]
+    this.bancos = [...this.bancos]
       .sort((a, b) => (a.nomeBanco ?? '').localeCompare(b.nomeBanco ?? ''))
-      .filter((b) => {
-        if (this.statusFilter === 'ALL') return true;
-        const status = b.ativo ? 'Ativo' : 'Inativo';
-        return status === this.statusFilter;
-      })
-      .filter((b) => {
+      .filter(c => {
         if (!term) return true;
-        return (
-          (b.nomeBanco ?? '').toLowerCase().includes(term) ||
-          String(b.id).includes(term)
-        );
+        return (c.nomeBanco ?? '').toLowerCase().includes(term) || String(c.id).includes(term);
       });
-
-    this.calcSummary();
   }
 
-  calcSummary() {
-    let totalGeral = 0, totalAtivo = 0, totalInativo = 0;
-
-    for (const b of this.bancos) {
-      const saldo = Number(b.saldoInicial) || 0;
-      totalGeral += saldo;
-      if (b.ativo) totalAtivo += saldo;
-      else totalInativo += saldo;
-    }
-
-    this.totalGeral = totalGeral;
-    this.totalAtivo = totalAtivo;
-    this.totalInativo = totalInativo;
-  }
-
-  onSearchChange(v: string) {
-    this.q = v;
+  onSearchChange(value: string) {
+    this.q = value;
     this.applyFilters();
   }
 
-  onStatusChange(v: string) {
-    this.statusFilter = v as any;
+  onStatusChange(value: any) {
+    this.statusFilter = value;
     this.applyFilters();
   }
 
   openCreate() {
     this.editing = null;
-    this.showModal = true;
+    this.showModalForm = true;
+  }
+
+  onEdit(banco: BancoDto) {
+    this.editing = banco;
+    this.showModalForm = true;
   }
 
   openEdit(banco: BancoDto) {
     this.editing = banco;
-    this.showModal = true;
+    this.showModalForm = true;
   }
 
-  closeModal(reload?: boolean) {
-    this.showModal = false;
+  closeForm(reload?: boolean) {
+    this.showModalForm = false;
     this.editing = null;
     if (reload) this.load();
   }
 
-  async onDelete(banco: BancoDto) {
-    const ok = window.confirm(`Excluir o banco "${banco.nomeBanco}"?`);
+  async onDelete(c: BancoDto) {
+    const ok = window.confirm(`Excluir o banco "${c.nomeBanco}"?`);
     if (!ok) return;
 
     try {
-      await this.bancoService.delete(banco.id);
-
-      this.alert = { type: 'success', message: 'Banco deletado com sucesso!' };
-      setTimeout(() => (this.alert = { type: '', message: '' }), 3000);
-
+      await this.bancoService.delete(c.id);
+      this.alertService.success('Banco deletada com sucesso!')
       await this.load();
-    } catch {
-      this.alert = {
-        type: 'error',
-        message: 'Falha ao deletar. O banco pode estar vinculado a transações.',
-      };
-      setTimeout(() => (this.alert = { type: '', message: '' }), 12000);
+    } catch (e) {
+      this.alertService.error('Falha ao deletar. Banco pode estar vinculada a transações.');
     }
   }
 
-  badgeClass(ativo: boolean) {
-    return ativo ? 'badge bg-success-lt' : 'badge bg-secondary-lt';
-  }
+  async onDeleteSelected(rows: BancoDto[]) {
+    if (!rows.length) return;
 
-  formatMoney(value: any) {
-    const n = Number(value) || 0;
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
+    const ok = window.confirm(`Excluir ${rows.length} banco(s) selecionado(s)?`);
+    if (!ok) {
+      if (this.grid) {
+        this.grid.deleting = false;
+      }
+      return;
+    }
+
+    try {
+      var response;
+      for (const row of rows) {
+        response = await this.bancoService.delete(row.id);
+      }
+
+      if (response) {
+        this.alertService.success(`${rows.length} banco(s) excluído(s) com sucesso!`);
+      }
+
+      this.grid?.clearSelection();
+      await this.load();
+    } catch (e) {
+      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
+    } finally {
+      if (this.grid) {
+        this.grid.deleting = false;
+      }
+    }
   }
 }

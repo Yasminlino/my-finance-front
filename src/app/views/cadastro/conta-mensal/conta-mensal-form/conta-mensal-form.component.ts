@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { AccountDto, ContaService } from 'src/app/core/services/contas.service';
 import { Category } from 'src/app/core/services/category.service';
-import { formatMoneyBRFromAny, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
+import { formataDecimal, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
 import { AlertService } from 'src/app/shared/components/alert.service'; // <-- Importe o AlertService
 
 @Component({
@@ -22,7 +22,7 @@ export class ContaMensalFormComponent implements OnInit {
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
-    value: [null as any, [Validators.required]],
+    value: [formataDecimal(0), [Validators.required]],
     dataOperacao: [null as any, [Validators.required]],
     categoryid: [null as any, [Validators.required, Validators.min(1)]],
     status: [1, Validators.required],
@@ -47,7 +47,7 @@ export class ContaMensalFormComponent implements OnInit {
 
       this.form.patchValue({
         name: this.account.name,
-        value: this.formataDecimal(this.account.value),
+        value: formataDecimal(this.account.value),
         dataOperacao: dias, 
         categoryid: this.account.categoryid,
         status: this.account.status,
@@ -98,13 +98,6 @@ export class ContaMensalFormComponent implements OnInit {
     }
   }
 
-  formataDecimal(value: number) {
-    var valor = value
-    var valorFixed = valor.toFixed(2)
-    var valorconvertido = valorFixed.toString().replace('.', ',')
-    return valorconvertido
-  }
-
   close(reload = false) {
     this.closed.emit(reload);
   }
@@ -123,7 +116,7 @@ export class ContaMensalFormComponent implements OnInit {
       const payload: Partial<AccountDto> = {
         id: this.account?.id,
         name: this.form.value.name!,
-        value: parseMoneyBRToNumber(this.form.value.value) ?? 0,
+        value: parseMoneyBRToNumber(this.form.value.value!) ?? 0,
         categoryid: Number(this.form.value.categoryid),
         status: Number(this.form.value.status),
         ehParcelado: Boolean(this.form.value.ehParcelado),

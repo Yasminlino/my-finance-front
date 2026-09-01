@@ -11,8 +11,8 @@
 
       <div class="modal-body" [formGroup]="form">
         <div class="mb-3">
-          <label class="form-label">Nome</label>
-          <input class="form-control" formControlName="name"
+          <label class="form-label">Descrição <span style="color: red">*</span></label>
+          <input class="form-control" formControlName="name" placeholder="Preencha o nome da conta..."
             [class.is-invalid]="form.controls.name.touched && form.controls.name.invalid" />
           <div class="invalid-feedback" *ngIf="form.controls.name.touched && form.controls.name.invalid">
             Informe um nome válido.
@@ -21,7 +21,7 @@
 
         <div class="mb-3">
           <label class="form-label">Valor</label>
-          <input class="form-control" type="text" inputmode="decimal" formControlName="value" appMoneyMaskBR
+          <input class="form-control" type="text" inputmode="decimal" formControlName="value" appMoneyMaskBR 
             [class.is-invalid]="form.controls.value.touched && form.controls.value.invalid" />
 
           <div class="invalid-feedback" *ngIf="form.controls.value.touched && form.controls.value.invalid">
@@ -40,8 +40,8 @@
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Categoria</label>
-          <select class="form-select" formControlName="categoryid"
+          <label class="form-label">Categoria <span style="color: red">*</span></label>
+          <select class="form-select" formControlName="categoryid" aria-placeholder="Selecione..."
             [class.is-invalid]="form.controls.categoryid.touched && form.controls.categoryid.invalid">
             <option [ngValue]="null">Selecione...</option>
             <option *ngFor="let c of categories" [ngValue]="c.id">{{ c.name }}</option>
@@ -82,7 +82,7 @@
 
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary" (click)="close(false)">Cancelar</button>
-        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving || form.invalid">
+        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving ">
           {{ saving ? 'Salvando...' : 'Salvar' }}
         </button>
       </div>

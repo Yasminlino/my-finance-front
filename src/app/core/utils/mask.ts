@@ -117,6 +117,14 @@ export function parseMoneyBRToNumber(masked: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+
+export function formataDecimal(value: number) {
+  var valor = value
+  var valorFixed = valor.toFixed(2)
+  var valorconvertido = valorFixed.toString().replace('.', ',')
+  return valorconvertido
+}
+
 //retorna o dia de hoje formatado, soma com a quantidade de dias que quiser
 export function isoDateMinusHours(): string {
   const d = new Date();
