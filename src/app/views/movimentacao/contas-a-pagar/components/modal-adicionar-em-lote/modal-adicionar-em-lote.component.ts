@@ -1,18 +1,13 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { Subscription, firstValueFrom } from 'rxjs';
-
-// ⬇️ Ajuste os imports para seus services reais
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { AlertService } from 'src/app/shared/components/alert.service';
+import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
+import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
+import { Subscription } from 'rxjs';
 import { AccountDto, ContaService } from 'src/app/core/services/contas.service';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
-
-// ⬇️ Ajuste para seus helpers reais
-import { formatCurrencyBR, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
-import { formatDateVencimento } from 'src/app/core/utils/mask';
-import { AgrupamentoContaMensal, ContaMensal } from 'src/app/core/models/conta-mensal.model';
-import { AlertService } from 'src/app/shared/components/alert.service';
-
-
-type AlertState = { type: 'success' | 'error' | ''; message: string };
+import { ContaMensal } from 'src/app/core/models/conta-mensal.model';
+import { formatCurrencyBR, formatDateVencimento, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
 
 @Component({
   selector: 'app-modal-adicionar-em-lote',
@@ -21,23 +16,27 @@ type AlertState = { type: 'success' | 'error' | ''; message: string };
 })
 export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
   @Input() month!: string; // pode ser '2026-01-01' ou Date
-  @Output() closed = new EventEmitter<boolean>(); // true = salvou algo, false = cancelou  
+  @Output() closed = new EventEmitter<boolean>(); // true = salvou algo, false = cancelou
   @Output() 'reload' = new EventEmitter<any[]>();
-
-  alert: AlertState = { type: '', message: '' };
-  saving = false;
 
   contas: AccountDto[] = [];
   contasMensais: ContaMensal[] = [];
-
-  /** contas que já possuem transação no mês */
   disabledIds = new Set<number>();
-
-  /** selecionados */
   selectedIds = new Set<number>();
 
+  exibirCampos: ExibirCampos | null = null;
+  gridColumns: GridColumn[] = []
+  breadcrumb = [{ label: 'Cadastros' }, { label: 'Tipo movimentação' }]
+
+  loading = false;
+  saving = false;
+  q = '';
+
+  showModalForm = false;
+  @ViewChild('grid') grid?: DataGridComponent;
   private sub = new Subscription();
-  private alertTimer: any;
+  alertTimer: any;
+
 
   constructor(
     private readonly contaService: ContaService,
@@ -45,8 +44,11 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
     private readonly alertService: AlertService,
   ) { }
 
-  ngOnInit(): void {
-    this.load();
+
+  async ngOnInit() {
+    this.setGridColumns()
+    this.setExibirCampos()
+    await this.load();
   }
 
   ngOnDestroy(): void {
@@ -54,9 +56,40 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
     if (this.alertTimer) clearTimeout(this.alertTimer);
   }
 
-  // =========================
-  // Helpers UI
-  // =========================
+
+  private setExibirCampos(): void {
+    this.exibirCampos = {
+      filter: false,
+      sortable: true,
+      selected: true,
+      paginator: false,
+      buttonDeleteAll: false,
+      buttonNew: false,
+      buttonLock: false,
+      buttonPopUp: false,
+      buttonEditLine: false,
+      buttonDeleteLine: false,
+      buttonSaveCancel: false,
+    }
+  }
+
+  private setGridColumns(): void {
+
+    this.gridColumns = [
+      { field: 'name', header: 'NOME DA CONTA', type: GridColumnTypeEnum.Text, width: "40%" }, {
+        field: 'parcelaFormatada',
+        header: 'PARCELAS',
+        type: GridColumnTypeEnum.Text,
+        width: "40%",
+        formatter: (row: any) => row.ehParcelado ? `${row.parcelaAtual} de ${row.quantidadeParcelas}` : '-'
+      },
+      {
+        field: 'value', header: 'VALOR',
+        formatter: (row) => this.money(row.value), type: GridColumnTypeEnum.Money, width: "20%"
+      }
+    ];
+  }
+
   money(v: any) {
     return formatCurrencyBR(v);
   }
@@ -78,18 +111,6 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
     this.closed.emit(saved);
   }
 
-  showError(msg: string) {
-    this.alert = { type: 'error', message: msg };
-    if (this.alertTimer) clearTimeout(this.alertTimer);
-    this.alertTimer = setTimeout(() => (this.alert = { type: '', message: '' }), 6000);
-  }
-
-  showSuccess(msg: string) {
-    this.alert = { type: 'success', message: msg };
-    if (this.alertTimer) clearTimeout(this.alertTimer);
-    this.alertTimer = setTimeout(() => (this.alert = { type: '', message: '' }), 4000);
-  }
-
   toggleOne(accountId: number) {
     const next = new Set(this.selectedIds);
     if (next.has(accountId)) next.delete(accountId);
@@ -105,9 +126,11 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
     this.selectedIds = new Set(this.selectableAccounts.map(a => a.id));
   }
 
-  // =========================
-  // Data
-  // =========================
+  /** Atualiza `selectedIds` a partir da seleção emitida pelo data-grid. */
+  onSelectionChange(selected: any[]): void {
+    this.selectedIds = new Set(selected.map(item => item.id));
+  }
+
   private async load() {
     try {
       const [contas, contasMensais] = await Promise.all([
@@ -148,15 +171,18 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
         [...this.selectedIds].filter(id => !this.disabledIds.has(id))
       );
 
+      // 🔹 Sincroniza a seleção do data-grid com o novo estado de disabledIds
+      this.grid?.clearSelection();
+
     } catch (e) {
       console.error(e);
-      this.showError('Erro ao carregar contas/transações.');
+      this.alertService.error('Erro ao carregar contas cadastradas')
     }
   }
 
   async handleSave() {
     if (this.selectedIds.size === 0) {
-      this.showError('Por favor, selecione ao menos uma conta!');
+      this.alertService.error('Por favor, selecione ao menos uma conta!')
       return;
     }
 
@@ -198,9 +224,9 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
       this.reload.emit();
       this.close(true);
     }
-    
+
     if (errorCount > 0) {
-      this.alertService.error( `${errorCount} itens não foram adicionados!`);
+      this.alertService.error(`${errorCount} itens não foram adicionados!`);
     }
   }
 }

@@ -94,6 +94,7 @@ export type ContaMensal = {
   idAccount: number;
   status: string;
   categoryId?: any;
+  parcelaFormatada?: string;
 }
 
 export type ContaVencendo = {

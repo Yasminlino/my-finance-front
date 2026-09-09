@@ -1,9 +1,14 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
-import {
-  PessoaMovimentacaoDto,
-} from 'src/app/core/services/pessoa-movimentacao.service';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { AlertService } from 'src/app/shared/components/alert.service';
+import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
+import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
+import { Subscription } from 'rxjs';
+import { AccountDto, ContaService } from 'src/app/core/services/contas.service';
+import { ContaMensal } from 'src/app/core/models/conta-mensal.model';
+import { formatCurrencyBR, formatDateVencimento, formatDateVencimentoView, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
 import { ExtratoBancarioDto, ExtratoBancarioService } from 'src/app/core/services/extrato-bancario.service';
+
 
 @Component({
   selector: 'app-modal-importacoes-mensais',
@@ -11,45 +16,92 @@ import { ExtratoBancarioDto, ExtratoBancarioService } from 'src/app/core/service
   styleUrls: ['./modal-importacoes-mensais.component.scss'],
 })
 export class ModalImportacoesMensaisComponent implements OnInit {
-  @Input() mesExtrato = '';
-  @Output() closed = new EventEmitter<{ reload: boolean }>();
+  @Input() monthFilter!: string; // pode ser '2026-01-01' ou Date
+  @Output() closed = new EventEmitter<boolean>(); // true = salvou algo, false = cancelou
+  @Output() 'reload' = new EventEmitter<any[]>();
+
+  importacaoesMensais: ExtratoBancarioDto[] = [];
+  disabledIds = new Set<number>();
+  selectedIds = new Set<number>();
+
+  exibirCampos: ExibirCampos | null = null;
+  gridColumns: GridColumn[] = []
 
   loading = false;
-  errorMsg = '';
+  saving = false;
+  q = '';
 
-  savingIds = new Set<number>();
-  importacaoesMensais: ExtratoBancarioDto[] = [];
+  showModalForm = false;
+  @ViewChild('grid') grid?: DataGridComponent;  
+  deletingId: number | null = null;
 
   constructor(
-    private extratobancarioService: ExtratoBancarioService
-  ) {}
+    private readonly extratobancarioService: ExtratoBancarioService,
+    private readonly alertService: AlertService,
+  ) { }
 
-  async ngOnInit(): Promise<void> {
-    await this.loadAll();
+
+  async ngOnInit() {
+    this.setGridColumns()
+    this.setExibirCampos()
+    await this.load();
   }
 
-  private async loadAll() {
+  private setExibirCampos(): void {
+    this.exibirCampos = {
+      filter: true,
+      sortable: true,
+      selected: false,
+      paginator: false,
+      buttonDeleteAll: false,
+      buttonNew: false,
+      buttonLock: false,
+      buttonPopUp: false,
+      buttonEditLine: false,
+      buttonDeleteLine: true,
+      buttonSaveCancel: false,
+    }
+  }
+
+  private setGridColumns(): void {
+
+    this.gridColumns = [
+      { field: 'dataImportacao', header: 'DATA IMPORTAÇÃO', type: GridColumnTypeEnum.Text, width: "15%" }, 
+      { field: 'bancoNome', header: 'BANCO IMPORTAÇÃO', type: GridColumnTypeEnum.Text, width: "15%" }, 
+      { field: 'nomeArquivoOrigem', header: 'NOME ARQUIVO', type: GridColumnTypeEnum.Text, width: "40%" }, 
+      { field: 'quantidadeLancamentos', header: 'QUANTIDADE DE REGISTROS', type: GridColumnTypeEnum.Number, width: "20%" }, 
+      { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions}, 
+      
+    ];
+  }
+
+  money(v: any) {
+    return formatCurrencyBR(v);
+  }
+
+  close(saved = false) {
+    this.closed.emit(saved);
+  }
+
+
+  private async load() {
     this.loading = true;
-    this.errorMsg = '';
     try {
-      this.importacaoesMensais = await this.extratobancarioService.listExtratos(this.mesExtrato);
-    } catch (e: any) {
-      this.errorMsg = e?.error?.message || e?.message || 'Erro ao carregar dados.';
+
+      var response = await this.extratobancarioService.listExtratos(this.monthFilter)
+
+      this.importacaoesMensais = response.map(item => ({
+        ...item,
+        dataImportacao: formatDateVencimentoView(item.dataImportacao),
+      }));
+    } catch (e) {
+      console.error(e);
+      this.alertService.error('Erro ao carregar contas cadastradas')
     } finally {
       this.loading = false;
     }
   }
-
-  close(reload = false) {
-    this.closed.emit({ reload });
-  }
-
-  trackById = (_: number, r: ExtratoBancarioDto) => r.id;
-
-  async removeRow(r: ExtratoBancarioDto) {
-    this.errorMsg = '';
-
-    // se ainda não salvou, só remove do array
+  async deleteRow(r: ExtratoBancarioDto) {
     if (r.id < 0) {
       this.importacaoesMensais = this.importacaoesMensais.filter(x => x.id !== r.id);
       return;
@@ -57,14 +109,14 @@ export class ModalImportacoesMensaisComponent implements OnInit {
 
     if (!confirm(`Excluir "${r.nomeArquivoOrigem}"?`)) return;
 
-    this.savingIds.add(r.id);
     try {
       await this.extratobancarioService.deleteExtrato(r.id);
       this.importacaoesMensais = this.importacaoesMensais.filter(x => x.id !== r.id);
+      this.alertService.success('Registro excluído com sucesso');
     } catch (e: any) {
-      this.errorMsg = e?.error?.message || e?.message || 'Erro ao excluir.';
+      this.alertService.error(e?.error?.message ?? 'Erro ao excluir registro');
     } finally {
-      this.savingIds.delete(r.id);
+      this.deletingId = null;
     }
   }
 }

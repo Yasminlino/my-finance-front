@@ -428,8 +428,7 @@
     </div>
   </div>
 
-  <app-modal-configuracao-vinculo-pessoa *ngIf="showModalConfigPessoas" [mesAtualizacao]="month" [bancoId]="bancoId"
-    (closed)="fecharConfigPessoas($event)">
+  <app-modal-configuracao-vinculo-pessoa *ngIf="showModalConfigPessoas" 
+    (closed)="showModalConfigPessoas = false; $event">
   </app-modal-configuracao-vinculo-pessoa>
-
 </div>

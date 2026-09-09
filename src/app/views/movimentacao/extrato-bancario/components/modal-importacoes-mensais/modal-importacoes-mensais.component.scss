@@ -1,0 +1,35 @@
+.modal-backdrop-custom {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 3000;
+}
+
+.modal-custom {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 3001;
+  padding: 16px;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 50vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-adicionar-em-lote .card-body {
+  overflow: auto;
+  max-height: 60vh;
+}
+
+@media screen and (max-width: 768px) {
+  .modal-card {
+    max-width: 80vw;
+  }
+}

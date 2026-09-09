@@ -406,11 +406,6 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     this.showModalConfigPessoas = true;
   }
 
-  fecharConfigPessoas(evt: { reload: boolean }) {
-    this.showModalConfigPessoas = false;
-    if (evt?.reload) this.refresh();
-  }
-
   // -----------------------
   // Navegar para Detalhe
   // -----------------------

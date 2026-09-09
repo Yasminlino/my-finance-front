@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component,
   EventEmitter,
   Input,
@@ -102,7 +102,7 @@ export class DataGridComponent {
   }
 
   @Input() columns: GridColumn[] = [];
-  @Input() breadcrumb: MenuItem[] = [];
+  @Input() breadcrumb?: null | MenuItem[] = null;
   @Input() dataKey = 'id';
   @Input() tipoTabela: TypeGrid = TypeGrid.editaModal;
   @Input() dateFilter: Date | undefined;
@@ -111,6 +111,7 @@ export class DataGridComponent {
   @Input() statusOptions: GridColumnOption[] = [];
   @Input() exibeCampos: ExibirCampos | null = null;
   @Input() deleting = false;
+  @Input() disabledRowIds?: Set<any>;
 
   // ---------------------------------------------------------------------------
   // Outputs
@@ -171,7 +172,7 @@ export class DataGridComponent {
   viewDialogTitle = '';
 
   // ---------------------------------------------------------------------------
-  // Edição inline
+
   // ---------------------------------------------------------------------------
 
   originalRows = new Map<any, any>();
@@ -224,9 +225,36 @@ export class DataGridComponent {
     });
   }
 
-  rowKey(row: any): any {
+    rowKey(row: any): any {
     return row?.[this.dataKey];
   }
+
+  // ---------------------------------------------------------------------------
+  // Disabled rows
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Returns true when the row must be rendered as disabled / non-selectable.
+   * A row is considered disabled when its dataKey value is present in the
+   * `disabledRowIds` set provided by the host component.
+   */
+  isRowDisabled(row: any): boolean {
+    if (!this.disabledRowIds || this.disabledRowIds.size === 0) {
+      return false;
+    }
+
+    const key = this.rowKey(row);
+    return key !== undefined && this.disabledRowIds.has(key);
+  }
+
+  /**
+   * PrimeNG `p-table` `rowSelectable` callback.
+   * Returning `false` prevents the row from being added to (or removed from)
+   * the selection â€” both when the user clicks the row checkbox and when the
+   * header "select all" checkbox is toggled.
+   */
+  readonly rowSelectableFn = ({ data }: { data: any; index: number }): boolean =>
+    !this.isRowDisabled(data);
 
   // ---------------------------------------------------------------------------
   // Textarea
@@ -278,7 +306,7 @@ export class DataGridComponent {
   }
 
   // ---------------------------------------------------------------------------
-  // Ações
+  // AÃ§Ãµes
   // ---------------------------------------------------------------------------
 
   colActions(column: GridColumn): string[] {
@@ -304,7 +332,6 @@ export class DataGridComponent {
   }
 
   // ---------------------------------------------------------------------------
-  // Edição inline
   // ---------------------------------------------------------------------------
 
   get pendingCount(): number {
@@ -703,7 +730,7 @@ export class DataGridComponent {
       case 'number':
         return 'equals';
       case 'date':
-        return 'dateIs'; // Garanta que está usando dateIs
+        return 'dateIs'; // Garanta que estÃ¡ usando dateIs
       case 'boolean':
         return 'equals';
       default:

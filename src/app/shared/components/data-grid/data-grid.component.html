@@ -1,8 +1,12 @@
-<p-toolbar styleClass="mb-2 mt-2">
+﻿<p-toolbar styleClass="mb-2 mt-2">
     <ng-template pTemplate="left">
         <div class="d-flex flex-column w-100 gap-1">
+            @if(breadcrumb !== null){
             <p-breadcrumb class="max-w-full" [model]="breadcrumb" [home]="home" />
+            }
+            @if(titulo != ''){
             <h5 class="m-0 mb-2 title">{{titulo}}</h5>
+            }
         </div>
     </ng-template>
     <ng-template pTemplate="right">
@@ -12,16 +16,16 @@
         }
     </ng-template>
 </p-toolbar>
-<!-- Espaço para projetar conteúdo (como os totais) -->
+
 <ng-content></ng-content>
 
-<div class="card pt-4">
+<div [ngClass]="{ 'card pt-4': breadcrumb && breadcrumb.length > 0 }">
     <p-table #dt [value]="tableRows" [dataKey]="dataKey" editMode="row" showGridLines stripedRows
-        styleClass="p-datatable-gridlines" [(selection)]="selectedItems" [resizableColumns]="false" [scrollable]="true"
-        [paginator]="exibeCampos?.paginator" (selectionChange)="selectionChange.emit($event)" [filterDelay]="0"
-        [rows]="10" [loading]="loading" [rowsPerPageOptions]="[5, 10, 20]" [first]="0" [totalRecords]="tableRows.length"
-        size="small" [rowHover]="true" [showCurrentPageReport]="true" filterDisplay="row"
-        [globalFilterFields]="globalFilterFields"
+        styleClass="p-datatable-gridlines overflow-grid" [(selection)]="selectedItems" [resizableColumns]="false"
+        [scrollable]="true" [paginator]="exibeCampos?.paginator" (selectionChange)="selectionChange.emit($event)"
+        [filterDelay]="0" [rows]="10" [loading]="loading" [rowsPerPageOptions]="[5, 10, 20]" [first]="0"
+        [totalRecords]="tableRows.length" size="small" [rowHover]="true" [showCurrentPageReport]="true"
+        filterDisplay="row" [globalFilterFields]="globalFilterFields" [rowSelectable]="rowSelectableFn"
         currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros">
 
         <ng-template pTemplate="caption">
@@ -42,7 +46,7 @@
                 </div>
                 <div class="d-flex flex-column gap-2 buttons-actions">
 
-                    <!-- Ações principais -->
+                    <!-- AÃ§Ãµes principais -->
                     <div class="d-flex align-items-center flex-wrap gap-2">
                         @if(exibeCampos?.buttonNew){
                         <p-button severity="success" label="Novo" [outlined]="true" icon="pi pi-plus"
@@ -172,10 +176,11 @@
 
         <ng-template pTemplate="body" let-product let-editing="editing">
 
-            <tr [pEditableRow]="product" [ngClass]="isRowChanged(product) ? 'row-dirty' : ''">
+            <tr [pEditableRow]="product" [ngClass]="isRowChanged(product) ? 'row-dirty' : ''"
+                [class.row-disabled]="isRowDisabled(product)">
                 @if(exibeCampos?.selected){
                 <td style="width: 2rem">
-                    <p-tableCheckbox [value]="product" />
+                    <p-tableCheckbox [value]="product" [disabled]="isRowDisabled(product)" />
                 </td>
                 }
                 @for(col of columns; track col.field){
@@ -186,7 +191,6 @@
                     [ngSwitch]="col.type" style=" justify-items: center;">
                     <ng-container>
                         <div class="dg-actions-container">
-                            <!-- Editar (abre a modal de edição) -->
 
                             @if(exibeCampos?.buttonEditLine ){
                             <button pButton type="button" icon="pi pi-pencil" [title]="'Ative a linha para editar'"
@@ -200,9 +204,9 @@
                                 (click)="onDelete(product)" aria-label="Excluir"
                                 [loading]="deletingId === product.id"></button>
                             }@if(isRowChanged(product)){
-                            <button pButton type="button" icon="pi pi-undo" title="Reverter alterações"
+                            <button pButton type="button" icon="pi pi-undo" title="Reverter alteraÃ§Ãµes"
                                 class="p-button-rounded p-button-text p-button-sm p-button-icon-only"
-                                (click)="revertRow(product)" aria-label="Reverter alterações">
+                                (click)="revertRow(product)" aria-label="Reverter alteraÃ§Ãµes">
                             </button>
                             }
                         </div>
@@ -226,7 +230,7 @@
                     [pEditableColumnDisabled]="!editandoTabela || !col.editable" [style.width]="col.width"
                     [style.min-width]="col.width" [style.max-width]="col.width">
 
-                    <!-- Se a coluna NÃO for editável, exibe apenas a visualização estática -->
+                    <!-- Se a coluna NÃƒO for editÃ¡vel, exibe apenas a visualizaÃ§Ã£o estÃ¡tica -->
                     @if (col.editable === false) {
                     @switch(col.type) {
                     @case('number') { <span class="fs-14">{{ product[col.field] |
@@ -248,7 +252,6 @@
                     @default { <span class="fs-14">{{ product[col.field] }}</span> }
                     }
                     } @else {
-                    <!-- Se a coluna for editável, usa o p-cellEditor para alternar entre input e output -->
                     <p-cellEditor>
                         @switch(col.type || 'text') {
                         @case('text'){
@@ -303,7 +306,7 @@
                                 </ng-template>
 
                                 <ng-template pTemplate="item" let-option>
-                                    <p-tag [severity]="$any(getSeverityStatus(option.value))" 
+                                    <p-tag [severity]="$any(getSeverityStatus(option.value))"
                                         class="d-flex justify-content-center fs-14" [value]="option.label">
                                     </p-tag>
                                 </ng-template>
@@ -333,7 +336,7 @@
                                 </button>
                             </div>
                             } @else if (col.field === 'status') {
-                            <p-tag [severity]="$any(getSeverityStatus(product[col.field]))" 
+                            <p-tag [severity]="$any(getSeverityStatus(product[col.field]))"
                                 class="d-flex justify-content-center fs-14"
                                 [value]="col.formatter ? col.formatter(product) : product[col.field]">
                             </p-tag>}@else {

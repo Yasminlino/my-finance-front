@@ -307,13 +307,13 @@
     </div>
   </div>
   
-  <app-modal-importacoes-mensais *ngIf="showModalImportacoesMensais" [mesExtrato]="monthFilter"
-    (closed)="fecharImportacoesMensais($event)">
+  <app-modal-importacoes-mensais *ngIf="showModalImportacoesMensais" [monthFilter]="monthFilter"
+    (closed)="showModalImportacoesMensais=false; $event">
   </app-modal-importacoes-mensais>
 
   
   <app-modal-configuracao-vinculo-pessoa *ngIf="showModalConfigPessoas" 
-    (closed)="fecharConfigPessoas($event)">
+    (closed)="showModalConfigPessoas = false; $event">
   </app-modal-configuracao-vinculo-pessoa>
 
 </div>

@@ -48,3 +48,28 @@
   overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
+
+
+.modal-card {
+  width: 100%;
+  max-width: 50vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-configuracao-vinculo-pessoa .card-body {
+  overflow: auto;
+  max-height: 60vh;
+}
+
+
+/* Garante que o painel flutuante gerado no body não seja cortado por contextos de modais */
+body > .p-dropdown-panel {
+  max-height: 200px !important;
+}
+
+.p-dropdown-panel {
+  z-index: 11000 !important;
+}

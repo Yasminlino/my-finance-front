@@ -1,12 +1,18 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
+import { TipoMovimentacaoDto } from '../models/tipo-movimentacao.model';
+import { Category } from './category.service';
 
 export type PessoaMovimentacaoDto = {
     id: number;
     nomePessoa: string;
     categoriaId: number | null;
+    categoriaName: string | null;
     tipoMovimentacaoId: number | null;
+    tipoMovimentacaoName: string | null;
     mesAtualizacao?: string | null;
+    categoria?: Category | null;
+    tipoMovimentacao?: TipoMovimentacaoDto | null;
 };
 
 export type PessoaMovimentacaoCreateDto = Omit<PessoaMovimentacaoDto, 'id'>;

@@ -10,6 +10,8 @@ import { RelatorioGastosMensaisComponent } from './components/relatorio-gastos-m
 import { ChartsModule } from 'src/app/core/components/charts/charts.module';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
+import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
+import { ToastModule } from 'primeng/toast';
 
 @NgModule({
   declarations: [
@@ -23,7 +25,9 @@ import { CommonModule } from '@angular/common';
     SharedModule,
     ExtratoBancarioRoutingModule,
     ChartsModule,
-    NgbModule
+    NgbModule,
+    DataGridComponent,
+    ToastModule
   ]
 })
 export class ExtratoBancarioModule { }
