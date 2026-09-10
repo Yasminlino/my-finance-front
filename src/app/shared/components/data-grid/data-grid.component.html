@@ -326,8 +326,9 @@
                         }
                         <ng-template pTemplate="output">
                             @if(col.type === 'text-area') {
-                            <div class="d-flex align-items-center justify-content-between gap-1 fs-14">
-                                <span class="text-area-preview" [title]="product[col.field]">
+                            <div
+                                [class]="'d-flex align-items-center justify-content-between gap-1 fs-14 ' + (col.classe || '')">
+                                <span [class]="'text-area-preview ' + (col.classe || '')" [title]="product[col.field]">
                                     {{ product[col.field] || '-' }}
                                 </span>
                                 <button pButton type="button" icon="pi pi-eye"
@@ -337,10 +338,11 @@
                             </div>
                             } @else if (col.field === 'status') {
                             <p-tag [severity]="$any(getSeverityStatus(product[col.field]))"
-                                class="d-flex justify-content-center fs-14"
+                                [class]="'d-flex justify-content-center fs-14 ' + (col.classe || '')"
                                 [value]="col.formatter ? col.formatter(product) : product[col.field]">
-                            </p-tag>}@else {
-                            <span class="fs-14">
+                            </p-tag>
+                            } @else {
+                            <span [class]="'fs-14 ' + (col.classe || '')">
                                 {{ col.formatter ? col.formatter(product) : product[col.field] }}
                             </span>
                             }

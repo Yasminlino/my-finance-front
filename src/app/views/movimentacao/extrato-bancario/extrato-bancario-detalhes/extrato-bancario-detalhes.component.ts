@@ -157,7 +157,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
         const firstDay = new Date(this.month + '-01T00:00:00');
         this.dateFrom = firstDay.toISOString().substring(0, 10);
 
-        const lastDay = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0);     
+        const lastDay = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0);
         await this.loadCatalogos();
 
         if (!this.tipoLancamentoFilter) this.tipoLancamentoFilter = '';
@@ -527,7 +527,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
   // -----------------------
   rowKey(e: any): RowId {
     const id = e?.id ?? e?.Id ?? e?.extratoId ?? e?.codigo;
-    if (id !== undefined && id !== null && String(id) !== '') return id;
+    if (id !== undefined && id !== null && String(id) !== '') return String(id);
 
     const ident = e?.identificador ?? e?.grupoParcelamento ?? e?.GrupoParcelamento;
     if (ident) return String(ident);
@@ -609,7 +609,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
       await this.extratoItemService.delete(e.id);
       this.alert = { type: 'success', message: `${e.nomePessoaTransacao} deletado com sucesso!` };
       setTimeout(() => (this.alert = { type: '', message: '' }), 3000);
-    await this.refresh();
+      await this.refresh();
     } catch {
       this.alert = { type: 'error', message: 'Falha ao deletar.' + e.message };
       setTimeout(() => (this.alert = { type: '', message: '' }), 12000);
@@ -628,7 +628,8 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
     const f = this.rowForms.get(idKey);
     if (!f) return;
 
-    const idReal = Number(e?.id ?? e?.Id ?? 0);
+    // Garante que pega o ID correto da linha
+    const idReal = Number(e?.id ?? e?.Id ?? e?.extratoId ?? 0);
     if (!idReal) {
       this.setAlert('error', 'Este item não possui Id válido para atualizar.');
       return;
@@ -644,22 +645,15 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
         DataMovimentacao: f.controls.dataMovimentacao.value,
         Valor: valorNumber,
         TipoLancamento: f.controls.tipoLancamento.value,
-
         Descricao: f.controls.descricao.value || null,
         NomePessoaTransacao: f.controls.nomePessoaTransacao.value || null,
         Identificador: e?.identificador ?? e?.Identificador ?? null,
-
         BancoId: e?.bancoId ?? e?.BancoId ?? this.bancoId ?? null,
         CategoriaId: f.controls.categoriaId.value ? Number(f.controls.categoriaId.value) : null,
-
-        TipoMovimentacaoId: f.controls.tipoMovimentacaoId.value
-          ? Number(f.controls.tipoMovimentacaoId.value)
-          : null,
-
+        TipoMovimentacaoId: f.controls.tipoMovimentacaoId.value ? Number(f.controls.tipoMovimentacaoId.value) : null,
         EhParcelado: e?.ehParcelado ?? e?.EhParcelado ?? null,
         ParcelaAtual: f.controls.parcelaAtual.value ? Number(f.controls.parcelaAtual.value) : null,
         QuantidadeParcelas: f.controls.quantidadeParcelas.value ? Number(f.controls.quantidadeParcelas.value) : null,
-
         TipoCartaoId: e?.tipoCartaoId ?? e?.TipoCartaoId ?? this.tipoContaId ?? null,
         UserId: e?.userId ?? e?.UserId ?? 0,
         ChaveDescricao: e?.chaveDescricao ?? e?.ChaveDescricao ?? null,
@@ -668,32 +662,15 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
         AlteraVinculoPessoa: true
       };
 
-      await this.extratoItemService.updateExtratoItem(dto).then(
-        () => {
-          this.refresh()
-          this.setAlert('success', 'Linha atualizada com sucesso!')
-        }
-      ).catch(() => this.setAlert('error', 'Erro ao atualizar linha.'));
-
-
-      const applyUpdate = (arr: any[]) =>
-        arr.map(x => (String(this.rowKey(x)) === String(idKey)
-          ? { ...x, ...e, ...dto, valor: valorNumber }
-          : x));
-
-      this.localItems = applyUpdate(this.localItems as any);
-      this.extratos = applyUpdate(this.extratos as any);
-
-      this.rebuildForms();
-      this.editingIds.delete(idKey);
-      f.markAsPristine();
-
-      this.setAlert('success', 'Linha atualizada!');
+      await this.extratoItemService.updateExtratoItem(dto);
+      
+      this.setAlert('success', 'Linha atualizada com sucesso!');
+      await this.refresh();
     } catch (err: any) {
       this.setAlert('error', err?.error?.message || err?.message || 'Falha ao salvar edição.');
     } finally {
-      this.refresh()
       this.savingRowIds.delete(idKey);
+      this.editingIds.delete(idKey);
     }
   }
 
@@ -825,14 +802,14 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
       var totalCriado = 0
       // 2.1) Parcelado e "gerar todas"
       if (this.manualGerarTodasParcelas) {
-        
+
         for (let p = this.manualParcelaAtual; p <= quantidadeParcelas; p++) {
           const groupKey = `PARC-${p}/${quantidadeParcelas}`;
           const [y, m] = this.month.split('-').map(Number)
 
-          if(p > this.manualParcelaAtual){
+          if (p > this.manualParcelaAtual) {
             var diferenca = p - this.manualParcelaAtual
-            basePayload.NumeroFatura = y + '-' + (m+diferenca).toString().padStart(2, '0')
+            basePayload.NumeroFatura = y + '-' + (m + diferenca).toString().padStart(2, '0')
           }
 
           const payloadParcela: any = {

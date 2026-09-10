@@ -1,67 +1,61 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { Category, CategoryService } from 'src/app/core/services/category.service';
+import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
+import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
+import { ExibirCampos, GridColumn, GridColumnOption, GridRowChange } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { TagStatus } from 'src/app/shared/enums/status.enum';
+import { AlertService } from 'src/app/shared/components/alert.service';
+import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { Router } from '@angular/router';
-import { Category } from 'src/app/core/services/category.service';
+import { formatYearMonth, isoDateMinusHours, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
+import { BancoDto } from 'src/app/core/interfaces/banco.interface';
+import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { ExtratoBancarioItemService, ExtratoItemDto } from 'src/app/core/services/extrato-bancario-item.service';
-import { TipoCartaoDto } from 'src/app/core/services/tipo-cartao.service';
-import { CategoryService } from 'src/app/core/services/category.service';
 import { ContaService } from 'src/app/core/services/contas.service';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
-import { TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { BancoService } from 'src/app/core/services/banco.service';
-import { isoDateMinusHours, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
-import { BancoDto } from 'src/app/core/interfaces/banco.interface';
+import { MenuItem } from 'primeng/api';
 
-type AlertState = { type: '' | 'success' | 'error' | 'warning'; message: string };
-
-function getCurrentMonthISO() {
-  var mes = localStorage.getItem('monthResumoFilter') 
-  if(mes)
-    return mes
-
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  return `${now.getFullYear()}-${month}`;
-}
-
-function formatMoneyBR(v: any) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
-}
 
 @Component({
   selector: 'app-extrato-bancario-resumo',
   templateUrl: './extrato-bancario-resumo.component.html',
 })
 export class ExtratoBancarioResumoComponent implements OnInit {
-  // filtros
-  monthFilter = getCurrentMonthISO();
-  bancoFilter = '';
-  tipoContaFilter = '';
+  exibirCampos: ExibirCampos | null = null;
+  dateFilter: Date | undefined
+  gridColumns: GridColumn[] = [];
+  categorias: Category[] = [];
+  tiposConta: TipoCartaoDto[] = [];
+  bancos: BancoDto[] = [];
+  extratos: ExtratoItemDto[] = [];
+  resumo: any[] = [];
+  file: any;
+  selectedMonth: any;
+  itemsButtom: MenuItem[] = [];
 
-  alert: AlertState = { type: '', message: '' };
+  statusLabel(value: number): string {
+    return value === 1 ? 'Ativo' : 'Inativo';
+  }
 
-  showModalConfigPessoas = false;
+  breadcrumb = [{ label: 'Movimentações' }, { label: 'Resumo Extrato Bancário' }]
 
   loading = false;
 
-  extratos: ExtratoItemDto[] = [];
+  q = '';
+  statusFilter: 'ALL' | 'Ativo' | 'Inativo' = 'ALL';
 
-  bancos: BancoDto[] = [];
-  tiposConta: TipoCartaoDto[] = [];
-  categorias: Category[] = [];
-
-  // modais
   showImportModal = false;
+  showManualModal = false;
+  showModalImportacoesMensais = false;
+  showModalConfigPessoas = false;
+  showToolbar = false;
   importLoading = false;
+  savingManual = false;
 
   selectedBancoId = '';
   selectedBancoNome = '';
   selectedTipoContaId = '';
-
-  showManualModal = false;
-  savingManual = false;
-  file: any;
-  showToolbar = false;
-  showModalImportacoesMensais = false;
 
   manualForm = {
     dataMovimentacao: isoDateMinusHours(),
@@ -81,6 +75,9 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     grupoParcelamentoId: '',
   };
 
+  editing: Category | null = null;
+  @ViewChild('grid') grid?: DataGridComponent;
+
   constructor(
     private router: Router,
     private extratoItemService: ExtratoBancarioItemService,
@@ -89,18 +86,36 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     private tipoCartaoService: TipoCartaoService,
     private categoryService: CategoryService,
     private bancoService: BancoService,
+    private readonly alertService: AlertService
   ) { }
 
-  ngOnInit() {
-    const now = new Date();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    this.monthFilter = localStorage.getItem('monthResumoFilter') ?? `${now.getFullYear()}-${mm}`; // ex: 2026-02
-
-    this.refresh();
-    this.carregaFiltros();
+  async ngOnInit() {
+    this.setExibirCampos()
+    this.setitemsButtom();
+    this.setGridColumns()
+    await this.carregarDados()
+    this.resumo = this.buildResumo()
+    await this.load();
   }
 
-  async carregaFiltros() {
+  private setExibirCampos(): void {
+    this.exibirCampos = {
+      filter: true,
+      sortable: true,
+      selected: false,
+      paginator: true,
+      filterMonth: true,
+      buttonDeleteAll: false,
+      buttonNew: false,
+      buttonLock: false,
+      buttonPopUp: true,
+      buttonEditLine: true,
+      buttonDeleteLine: false,
+      buttonSaveCancel: false,
+    }
+  }
+
+  async carregarDados() {
     try {
       const [bancos, tipos, cats] = await Promise.all([
         this.bancoService.list(),
@@ -112,52 +127,124 @@ export class ExtratoBancarioResumoComponent implements OnInit {
       this.tiposConta = tipos ?? [];
       this.categorias = cats ?? [];
     } catch (e: any) {
-      this.setAlert('warning', 'Falha ao carregar catálogos (bancos/tipos/categorias).');
+      this.alertService.info('Falha ao carregar catálogos (bancos/tipos/categorias).');
     }
+  }
+
+
+  private setitemsButtom(): void {
+    this.itemsButtom = [
+      {
+        label: 'Importações Mensais',
+        icon: 'pi pi-download',
+        command: () => {
+          this.showModalImportacoesMensais = true;
+        }
+      },
+      {
+        label: 'Relatório Mensal',
+        icon: 'pi pi-chart-line',
+        command: () => {
+          this.abrirRelatorioMensal();
+        }
+      },
+      {
+        label: 'Configurar Pessoas',
+        icon: 'pi pi-cog',
+        command: () => {
+          this.abrirConfigPessoas();
+        }
+      },
+      {
+        label: 'Exportar tabela',
+        icon: 'pi pi-upload',
+        command: () => {
+          this.grid?.onExport();
+        }
+      },
+      {
+        label: 'Atualizar',
+        icon: 'pi pi-refresh',
+        command: () => {
+          this.load();
+        }
+      },
+    ];
+  }
+
+  private setGridColumns(): void {
+    this.gridColumns = [
+      { field: 'bancoNome', header: 'BANCO', type: GridColumnTypeEnum.Text, width: "20%" },
+      { field: 'tipoContaNome', header: 'TIPO CONTA', type: GridColumnTypeEnum.Text, width: "25%" },
+      {
+        field: 'totalEntrada',
+        header: 'TOTAL ENTRADAS',
+        type: GridColumnTypeEnum.Text,
+        width: "25%",
+        formatter: (row: any) => this.formatarMoeda(row.totalEntrada),
+        classe: 'text-success fw-bold'
+      },
+      {
+        field: 'totalSaida',
+        header: 'TOTAL SAÍDAS',
+        type: GridColumnTypeEnum.Text,
+        width: "25%",
+        formatter: (row: any) => this.formatarMoeda(row.totalSaida),
+        classe: 'text-danger fw-bold'
+      },
+      { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions },
+    ];
+  }
+
+  // Helper opcional para formatar valores em Real (caso sua grid não faça isso nativamente)
+  private formatarMoeda(valor: number): string {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
   }
 
   abrirRelatorioMensal() {
     const params: any = {
-      month: this.monthFilter,
+      month: this.dateFilter,
     };
 
     this.router.navigate(['extrato-bancario/RelatorioGastosMensais'], { queryParams: params });
   }
 
-
-  async refresh() {
-    this.loading = true;
+  async load(dataSelecionada?: Date) {
     try {
-      const bancoId = this.bancoFilter ? Number(this.bancoFilter) : null;
-      localStorage.setItem('monthResumoFilter', this.monthFilter)
+      this.loading = true;
+
+      if (dataSelecionada) {
+        this.dateFilter = dataSelecionada;
+        localStorage.setItem('dataFiltroContaMensal', dataSelecionada.toISOString());
+      } else {
+        const ultimoMesSelecionado = localStorage.getItem('dataFiltroContaMensal');
+        this.dateFilter = ultimoMesSelecionado ? new Date(ultimoMesSelecionado) : new Date();
+      }
+
+      const mesFormatado = formatYearMonth(this.dateFilter);
+      this.selectedMonth = mesFormatado
+
       // a API já recebe monthFilter e opcional bancoId
-      const rows = await this.extratoItemService.listExtratos(this.monthFilter, bancoId);
+      const rows = await this.extratoItemService.listExtratos(this.selectedMonth);
       this.extratos = Array.isArray(rows) ? rows : [];
-    } catch (e: any) {
-      this.setAlert('error', 'Erro ao carregar extrato.');
+
+    } catch {
+      // Trata o erro
     } finally {
       this.loading = false;
+      this.resumo = this.buildResumo();
     }
   }
 
-  fecharImportacoesMensais(evt: { reload: boolean }) {
-    this.showModalImportacoesMensais = false;
-    if (evt?.reload) this.refresh();
-  }
-
-
-  // -----------------------
-  // Resumo agrupado
-  // -----------------------
-  get resumo() {
+  private buildResumo(): any[] {
     const map = new Map<string, any>();
 
     for (const banco of this.bancos) {
-      // ✅ aplica filtro de banco
-      if (this.bancoFilter && String(banco.id) !== String(this.bancoFilter)) continue;
+      // // ✅ aplica filtro de banco
+      // if (this.bancoFilter && String(banco.id) !== String(this.bancoFilter)) continue;
 
-      // ✅ aplica filtro de tipo de conta/cartão
-      if (this.tipoContaFilter && String(banco.tipoCartaoId ?? '') !== String(this.tipoContaFilter)) continue;
+      // // ✅ aplica filtro de tipo de conta/cartão
+      // if (this.tipoContaFilter && String(banco.tipoCartaoId ?? '') !== String(this.tipoContaFilter)) continue;
 
       const bancoId = String(banco.id);
       const tipoCartaoId = String(banco.tipoCartaoId ?? 'null');
@@ -209,9 +296,6 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     this.showToolbar = !this.showToolbar;
   }
 
-  // -----------------------
-  // Importação
-  // -----------------------
   openImportModal() {
     this.selectedBancoId = '';
     this.selectedBancoNome = '';
@@ -242,12 +326,12 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
   async onSave(ev: Event) {
     if (!this.file)
-      this.setAlert('error', 'Nenhum arquivo selecionado.');
+      this.alertService.error('Nenhum arquivo selecionado.');
 
     const input = ev.target as HTMLInputElement;
 
     if (!this.selectedBancoId) {
-      this.setAlert('error', 'Informe o banco antes de continuar.');
+      this.alertService.error('Informe o banco antes de continuar.');
       input.value = '';
       return;
     }
@@ -260,20 +344,17 @@ export class ExtratoBancarioResumoComponent implements OnInit {
         tipoCartaoId: this.selectedTipoContaId ? Number(this.selectedTipoContaId) : null,
       });
 
-      this.setAlert('success', 'Extrato importado com sucesso!');
+      this.alertService.success('Extrato importado com sucesso!');
       this.showImportModal = false;
-      await this.refresh();
+      await this.load();
     } catch {
-      this.setAlert('error', 'Falha ao importar arquivo.');
+      this.alertService.error('Falha ao importar arquivo.');
     } finally {
       this.importLoading = false;
       input.value = '';
     }
   }
 
-  // -----------------------
-  // Manual modal
-  // -----------------------
   openManualModal() {
     this.manualForm = {
       dataMovimentacao: isoDateMinusHours(),
@@ -341,16 +422,16 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   async saveManualItem() {
     console.log('this.manualForm', this.manualForm.pessoaTransacao);
     if (!this.manualForm.bancoId) {
-      this.setAlert('error', 'Selecione um banco.');
+      this.alertService.error('Selecione um banco.');
       return;
     }
     if (!this.manualForm.tipoCartaoId) {
-      this.setAlert('error', 'Tipo de conta/cartão não identificado. Verifique o banco.');
+      this.alertService.error('Tipo de conta/cartão não identificado. Verifique o banco.');
       return;
     }
 
     if (!this.manualForm.valor) {
-      this.setAlert('error', 'Informe um valor válido.');
+      this.alertService.error('Informe um valor válido.');
       return;
     }
 
@@ -359,11 +440,11 @@ export class ExtratoBancarioResumoComponent implements OnInit {
       const parc = Number(this.manualForm.numeroParcela);
 
       if (!total || total < 2) {
-        this.setAlert('error', 'Total de parcelas deve ser >= 2.');
+        this.alertService.error('Total de parcelas deve ser >= 2.');
         return;
       }
       if (!parc || parc < 1 || parc > total) {
-        this.setAlert('error', 'Número da parcela inválido.');
+        this.alertService.error('Número da parcela inválido.');
         return;
       }
     }
@@ -392,11 +473,11 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
       await this.extratoItemService.createExtratoManualItem(payload);
 
-      this.setAlert('success', 'Item manual adicionado com sucesso!');
+      this.alertService.success('Item manual adicionado com sucesso!');
       this.showManualModal = false;
-      await this.refresh();
+      await this.load();
     } catch (e: any) {
-      this.setAlert('error', e?.error?.message || 'Falha ao adicionar item manual.');
+      this.alertService.error(e?.error?.message || 'Falha ao adicionar item manual.');
     } finally {
       this.savingManual = false;
     }
@@ -406,30 +487,15 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     this.showModalConfigPessoas = true;
   }
 
-  // -----------------------
-  // Navegar para Detalhe
-  // -----------------------
-  goToDetalhe(row: any) {
-    console.log('row', row);
+  onEdit(row: ExtratoItemDto) {
+    console.log('Objeto recebido no onEdit:', row);
     const params: any = {
-      month: this.monthFilter,
+      month: this.selectedMonth,
       bancoId: row.bancoId,
       tipoContaId: row.tipoCartaoId,
     };
 
     this.router.navigate(['extrato-bancario/ExtratoBancarioDetalhe'], { queryParams: params });
   }
-
-  trackById(_: number, row: any) {
-    return row.id;
-  }
-
-  setAlert(type: AlertState['type'], message: string) {
-    this.alert = { type, message };
-    setTimeout(() => (this.alert = { type: '', message: '' }), 4000);
-  }
-
-  money(v: any) {
-    return formatMoneyBR(v);
-  }
 }
+

@@ -38,7 +38,6 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   saving = false;
   q = '';
 
-  showModalForm = false;
   @ViewChild('grid') grid?: DataGridComponent;
   deletingId: number | null = null;
 

@@ -23,6 +23,7 @@ export interface GridColumn {
   filterMatchMode?: string;
   width?: string;
   editable?: boolean;
+  classe?: string;
 }
 
 export enum TypeGrid {
