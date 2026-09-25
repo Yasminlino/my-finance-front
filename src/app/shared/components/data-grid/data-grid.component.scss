@@ -212,10 +212,17 @@ textarea,
 //Padroniza layout icone
 .p-button.p-button-icon-only {
     padding: 0 !important;
-    width: 3rem !important;
-    height: 3rem !important;
+    width: 1.5rem !important;
+    height: 1.5rem !important;
 }
 
+.text-truncate-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+}
 //layout botões
 :host ::ng-deep .p-button {
     border-radius: 0.5rem;
@@ -493,8 +500,8 @@ textarea,
 
     /* Aumenta a área de toque dos botões de ação em dispositivos móveis */
     ::ng-deep .p-datatable .p-button.p-button-icon-only {
-        width: 2.5rem !important;
-        height: 2.5rem !important;
+        width: 1rem !important;
+        height: 1rem !important;
     }
 
     /* Ajusta o toolbar do topo para empilhar em telas pequenas */
@@ -591,9 +598,9 @@ textarea,
     }
 
     ::ng-deep .buttons-actions .p-button {
-        width: 2.5rem !important;
+        width: 1rem !important;
         /* Deixa o botão quadrado (largura igual à altura) */
-        height: 2.5rem !important;
+        height: 1rem !important;
         justify-content: center !important;
 
     }

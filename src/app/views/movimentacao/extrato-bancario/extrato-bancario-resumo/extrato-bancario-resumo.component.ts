@@ -95,7 +95,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     this.setGridColumns()
     await this.carregarDados()
     this.resumo = this.buildResumo()
-    await this.load();
+    await this.loadMonth();
   }
 
   private setExibirCampos(): void {
@@ -166,7 +166,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
         label: 'Atualizar',
         icon: 'pi pi-refresh',
         command: () => {
-          this.load();
+          this.loadMonth();
         }
       },
     ];
@@ -209,15 +209,15 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     this.router.navigate(['extrato-bancario/RelatorioGastosMensais'], { queryParams: params });
   }
 
-  async load(dataSelecionada?: Date) {
+  async loadMonth(dataSelecionada?: Date) {
     try {
       this.loading = true;
 
       if (dataSelecionada) {
         this.dateFilter = dataSelecionada;
-        localStorage.setItem('dataFiltroContaMensal', dataSelecionada.toISOString());
+        localStorage.setItem('dataFiltroResumo', dataSelecionada.toISOString());
       } else {
-        const ultimoMesSelecionado = localStorage.getItem('dataFiltroContaMensal');
+        const ultimoMesSelecionado = localStorage.getItem('dataFiltroResumo');
         this.dateFilter = ultimoMesSelecionado ? new Date(ultimoMesSelecionado) : new Date();
       }
 
@@ -346,7 +346,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
       this.alertService.success('Extrato importado com sucesso!');
       this.showImportModal = false;
-      await this.load();
+      await this.loadMonth();
     } catch {
       this.alertService.error('Falha ao importar arquivo.');
     } finally {
@@ -475,7 +475,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
       this.alertService.success('Item manual adicionado com sucesso!');
       this.showManualModal = false;
-      await this.load();
+      await this.loadMonth();
     } catch (e: any) {
       this.alertService.error(e?.error?.message || 'Falha ao adicionar item manual.');
     } finally {

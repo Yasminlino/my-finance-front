@@ -5,7 +5,12 @@
             <p-breadcrumb class="max-w-full" [model]="breadcrumb" [home]="home" />
             }
             @if(titulo != ''){
-            <h5 class="m-0 mb-2 title">{{titulo}}</h5>
+            <h5 class="m-0 mb-2 title">
+                <a class="cursor-pointer" (click)="goBack()" style="text-decoration: none; color: inherit;">
+                    <i class="pi pi-chevron-left"></i>
+                </a>
+                {{titulo}}
+            </h5>
             }
         </div>
     </ng-template>
@@ -249,7 +254,7 @@
                         </button>
                     </div>
                     }
-                    @default { <span class="fs-14">{{ product[col.field] }}</span> }
+                    @default { <span class="fs-14 text-truncate-cell">{{ product[col.field] }}</span> }
                     }
                     } @else {
                     <p-cellEditor>
@@ -315,8 +320,8 @@
 
                             } @else {
 
-                            <p-dropdown [options]="col.options" appendTo="body" [(ngModel)]="product[col.field]"
-                                (ngModelChange)="onCellChange(product)" class="w-full">
+                            <p-dropdown [options]="col.options" optionLabel="label" optionValue="value" appendTo="body"
+                                [(ngModel)]="product[col.field]" (ngModelChange)="onCellChange(product)" class="w-full">
                             </p-dropdown>
 
                             }
@@ -326,13 +331,14 @@
                         }
                         <ng-template pTemplate="output">
                             @if(col.type === 'text-area') {
+                            <!-- Mantém o comportamento de text-area preview se houver -->
                             <div
                                 [class]="'d-flex align-items-center justify-content-between gap-1 fs-14 ' + (col.classe || '')">
-                                <span [class]="'text-area-preview ' + (col.classe || '')" [title]="product[col.field]">
+                                <span class="text-area-preview fs-14 text-truncate-cell" [title]="product[col.field]">
                                     {{ product[col.field] || '-' }}
                                 </span>
                                 <button pButton type="button" icon="pi pi-eye"
-                                    class="p-button-rounded p-button-text p-button-sm" title="Visualizar"
+                                    class="p-button-rounded p-button-text p-button-sm flex-shrink-0" title="Visualizar"
                                     (click)="openTextAreaViewDialog(product, col)">
                                 </button>
                             </div>
@@ -341,8 +347,14 @@
                                 [class]="'d-flex justify-content-center fs-14 ' + (col.classe || '')"
                                 [value]="col.formatter ? col.formatter(product) : product[col.field]">
                             </p-tag>
+                            } @else if (col.type === 'select') {
+                            <!-- Converte o ID numérico (ex: 7) no nome correspondente (ex: "Investimento") -->
+                            <span [class]="'fs-14 text-truncate-cell ' + (col.classe || '')"
+                                [title]="col.formatter ? col.formatter(product) : getSelectLabel(col, product[col.field])">
+                                {{ col.formatter ? col.formatter(product) : getSelectLabel(col, product[col.field]) }}
+                            </span>
                             } @else {
-                            <span [class]="'fs-14 ' + (col.classe || '')">
+                            <span [class]="'fs-14 text-truncate-cell ' + getColumnClass(col, product)">
                                 {{ col.formatter ? col.formatter(product) : product[col.field] }}
                             </span>
                             }

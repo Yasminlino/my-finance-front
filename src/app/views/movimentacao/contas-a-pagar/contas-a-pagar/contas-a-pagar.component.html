@@ -3,7 +3,7 @@
     [tipoTabela]="tipoTabela" [dateFilter]="dateFilter" [loading]="loading" (edit)="onEdit($event)"
     (delete)="onDelete($event)" (new)="onOpenCreate()" (reload)="loadMonth()" [statusOptions]="statusOptions"
     (selectionChange)="onSelectionChange($event)" (deleteSelected)="onDeleteSelected($event)"
-    [exibeCampos]="exibirCampos" (saveInline)="onSaveInline($event)" [itemsButtom]="itemsButtom"
+    [exibeCampos]="exibirCampos" (saveInline)="onSaveInline($event)" [itemsButtom]="itemsButtom" [localStorage]="'dataFiltroContaMensal'"
     (addBatch)="onOpenAddBatch()">
     <app-contas-a-pagar-totais [receita]="selectedTotals.receita" [despesa]="selectedTotals.despesa"
       [saldo]="selectedTotals.saldo" [count]="selectedTotals.count"></app-contas-a-pagar-totais>

@@ -1,118 +1,46 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom, Subscription } from 'rxjs';
-import { Category, CategoryService } from 'src/app/core/services/category.service';
-import { BancoService } from 'src/app/core/services/banco.service';
-import { TipoCartaoService, TipoCartaoDto } from 'src/app/core/services/tipo-cartao.service';
-import { ExtratoBancarioItemService, ExtratoItemDto } from 'src/app/core/services/extrato-bancario-item.service';
-import { isoDateMinusHours, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
-import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
+import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
+import { formatCurrencyBR, formatDateBRView, formatDateInput, formatYearMonth, isoDateMinusHours, parseMoneyBRToNumber, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
+import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
+import { GridColumn, TypeGrid, GridRowChange, GridColumnOption, ExibirCampos } from "src/app/shared/components/data-grid/data-grid.interface"
+import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
+import { formatDateVencimentoView } from 'src/app/core/utils/mask';
+import { CategoryService } from 'src/app/core/services/category.service';
+import { Category } from 'src/app/core/services/category.service';
+import { RowForm } from 'src/app/core/interfaces/conta-mensal.interface';
+import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
+import { MenuItem } from 'primeng/api';
+import { AlertService } from 'src/app/shared/components/alert.service';
+import { TagStatus } from 'src/app/shared/enums/status.enum';
+import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
-import { Observable } from 'rxjs';
-import { debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
 import { PessoaMovimentacaoDto, PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
-
-type AlertState = { type: '' | 'success' | 'error' | 'warning'; message: string };
-
-
-function formatMoneyBR(v: any) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
-}
-
-function formatDateBR(dateString?: string) {
-  if (!dateString) return '—';
-  const d = new Date(dateString);
-  if (isNaN(d.getTime())) return String(dateString);
-  return d.toLocaleDateString('pt-BR');
-}
-
-function addMonthsISO(isoDate: string, monthsToAdd: number) {
-  const [y, m, d] = isoDate.split('-').map(Number);
-  const dt = new Date(y, (m - 1) + monthsToAdd, d);
-  const yy = dt.getFullYear();
-  const mm = String(dt.getMonth() + 1).padStart(2, '0');
-  const dd = String(dt.getDate()).padStart(2, '0');
-  return `${yy}-${mm}-${dd}`;
-}
-
-type RowId = string | number;
-
-type RowForm = FormGroup<{
-  dataMovimentacao: FormControl<string>;
-  tipoLancamento: FormControl<string>;
-  categoriaId: FormControl<string>;
-  tipoMovimentacaoId: FormControl<string>;
-  descricao: FormControl<string>;
-  nomePessoaTransacao: FormControl<string>;
-  valor: FormControl<string>;
-  numeroFatura: FormControl<string>;
-  parcelaAtual: FormControl<string>;
-  quantidadeParcelas: FormControl<string>;
-}>;
-
-type TableFilters = {
-  data: string;
-  tipo: string;
-  categoriaId: string;
-  nomeTipoMovimentacao: string;
-  tipoMovimentacaoId: string; // ✅ agora filtra pelo ID mesmo
-  pessoa: string;
-  minValor: string;
-  maxValor: string;
-  fatura: string;
-};
+import { TipoMovimentacaoDto } from 'src/app/core/models/tipo-movimentacao.model';
+import { ExtratoBancarioItemService, ExtratoItemDto } from 'src/app/core/services/extrato-bancario-item.service';
+import { debounceTime, distinctUntilChanged, map, Observable } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+import { BancoService } from 'src/app/core/services/banco.service';
 
 @Component({
   selector: 'app-extrato-bancario-detalhes',
   templateUrl: './extrato-bancario-detalhes.component.html',
 })
-export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
-  private sub = new Subscription();
+export class ExtratoBancarioDetalhesComponent implements OnInit {
+  @ViewChild('grid') grid?: DataGridComponent;
+  breadcrumb = [] = [{ label: 'Extrato Bancário' }, { label: 'Detalhes Extrato Bancário' }]
+  titulo = 'Detalhes Extrato Bancário'
+  tipoTabela = TypeGrid.editaLinha
+  extratoMensal: ExtratoItemDto[] = [];
+  dateFilter: Date | undefined
 
-  month = '';
-  bancoId: number | null = null;
-  tipoContaId: number | null = null;
-  pessoasMov: PessoaMovimentacaoDto[] = [];
+  gridColumns: GridColumn[] = [];
+  itemsButtom: MenuItem[] = [];
 
-  tiposMovimentacao: any[] = [];
-  headerBancoNomeValue: string = 'Banco';
-
-  loading = false;
-  extratos: ExtratoItemDto[] = [];
-  localItems: ExtratoItemDto[] = [];
-
-  categorias: Category[] = [];
-  tiposConta: TipoCartaoDto[] = [];
-
-  alert: AlertState = { type: '', message: '' };
 
   showModalConfigPessoas = false;
-
-  // filtros gerais
-  dateFrom = '';
-  tipoLancamentoFilter: string | '' = '';
-  descricaoFilter = '';
-  pessoaFilter = '';
-  categoriaFilter: number | '' = '';
-  minValue = '';
-  maxValue = '';
-
-  // ✅ filtros por coluna (tabela)
-  tableFilters: TableFilters = {
-    data: '',
-    tipo: '',
-    categoriaId: '',
-    nomeTipoMovimentacao: '',
-    tipoMovimentacaoId: '',
-    pessoa: '',
-    minValor: '',
-    maxValor: '',
-    fatura: '',
-  };
-
-  // modal add
   showAddModal = false;
-  saving = false;
+
 
   manualData = isoDateMinusHours();
   manualValor = '';
@@ -130,68 +58,171 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
   manualGerarTodasParcelas = true;
   manualNumeroFatura = '';
 
-  // ✅ edição inline
-  rowForms = new Map<RowId, RowForm>();
-  editingIds = new Set<RowId>();
-  savingRowIds = new Set<RowId>();
+  categorias: Category[] = [];
+  tiposMovimentacao: TipoMovimentacaoDto[] = [];
+  tiposConta: TipoCartaoDto[] = [];
+  pessoasMov: PessoaMovimentacaoDto[] = [];
+  isCreditCard: boolean = false;
+
+  categoriasOptions: GridColumnOption[] = [];
+  tiposMovimentacaoOptions: GridColumnOption[] = [];
+  tiposContaOptions: GridColumnOption[] = [];
+  pessoasMovOptions: GridColumnOption[] = [];
+
+  month = '';
+  bancoId: number | null = null;
+  tipoContaId: number | null = null;
+
+  editing: ExtratoItemDto | null = null;
+  saving = false;
+
+  statusOptions: GridColumnOption[] = [
+    { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Danger },
+    { label: 'PAGO NO PRAZO', value: 'PAGO NO PRAZO', classe: TagStatus.Success },
+    { label: 'AGUARDANDO', value: 'AGUARDANDO', classe: TagStatus.Alert },
+    { label: 'PAGO ATRASADO', value: 'PAGO ATRASADO', classe: TagStatus.Warning }
+  ];
+
+
+  deletingId: number | null = null;
+  selectedMonth: any;
+  loading: boolean = false;
+  selectedTotals = { receita: 0, despesa: 0, saldo: 0, count: 0 };
+  exibirCampos: ExibirCampos | null = null;
+
+  statusLabel(value: number): string {
+    return value === 1 ? 'Ativo' : 'Inativo';
+  }
+
+  rowForms = new Map<number, RowForm>();
+
+  categoriaOptions: string[] = [];
+
+  money(v: any) { return formatCurrencyBR(v); }
+  dateInput(v: any) { return formatDateInput(v); }
+
 
   constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private categoriaService: CategoryService,
-    private tipoCartaoService: TipoCartaoService,
-    private extratoItemService: ExtratoBancarioItemService,
     private fb: FormBuilder,
-    private tipoMovimentacaoService: TipoMovimentacaoService,
-    private bancoService: BancoService,
-    private pessoaMovService: PessoaMovimentacaoService,
+    private contaMensalService: ContaMensalService,
+    private readonly categoriaService: CategoryService,
+    private readonly alertService: AlertService,
+    private readonly tipoCartaoService: TipoCartaoService,
+    private readonly tipoMovimentacaoService: TipoMovimentacaoService,
+    private readonly pessoaMovService: PessoaMovimentacaoService,
+    private readonly bancoService: BancoService,
+    private readonly extratoItemService: ExtratoBancarioItemService,
+    private route: ActivatedRoute
   ) { }
 
-  ngOnInit(): void {
-    this.sub.add(
-      this.route.queryParamMap.subscribe(async (qp) => {
-        this.month = qp.get('month') ?? '';
-        this.bancoId = qp.get('bancoId') ? Number(qp.get('bancoId')) : null;
-        this.tipoContaId = qp.get('tipoContaId') ? Number(qp.get('tipoContaId')) : null;
+  async ngOnInit() {
+    await this.carregaDadosUrl();
+    await this.carregarDados();
+    this.setGridColumns();
+    this.setitemsButtom();
+    this.setExibirCampos();
 
-        const firstDay = new Date(this.month + '-01T00:00:00');
-        this.dateFrom = firstDay.toISOString().substring(0, 10);
-
-        const lastDay = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0);
-        await this.loadCatalogos();
-
-        if (!this.tipoLancamentoFilter) this.tipoLancamentoFilter = '';
-        if (!this.categoriaFilter) this.categoriaFilter = '';
-
-        await this.carregarBancoNome();
-        await this.refresh();
-      })
-    );
+    await this.loadMonth();
   }
 
-  ngOnDestroy(): void {
-    this.sub.unsubscribe();
+  async carregaDadosUrl() {
+    // Se os parâmetros foram enviados como Query Params (ex: ?bancoId=1&month=2026-05)
+    const bancoIdParam = this.route.snapshot.queryParamMap.get('bancoId');
+    const monthParam = this.route.snapshot.queryParamMap.get('month');
+    const contaIdParam = this.route.snapshot.queryParamMap.get('tipoContaId');
+
+    if (bancoIdParam) {
+      this.bancoId = Number(bancoIdParam);
+    }
+
+    if (monthParam) {
+      this.month = monthParam;
+      const dataFormatada = this.parseAnoMesParaData(monthParam)
+      if(dataFormatada)
+        localStorage.setItem('dataFiltroDetalheExtrato', dataFormatada.toISOString())
+    }
+
+    if (contaIdParam !== null) {
+      this.tipoContaId = Number(contaIdParam);
+    }
+    console.log('Valores recuperados:', { bancoId: this.bancoId, month: this.month, isCreditCard: this.isCreditCard, tipoContaId: this.tipoContaId });
   }
 
-  async loadCatalogos() {
+  parseAnoMesParaData(anoMesStr: string): Date | null {
+  if (!anoMesStr) return null;
+
+  // Espera o formato "YYYY-MM" (ex: "2026-10")
+  const partes = anoMesStr.split('-');
+  if (partes.length >= 2) {
+    const ano = Number(partes[0]);
+    const mes = Number(partes[1]) - 1; // Meses em JavaScript vão de 0 a 11 (0 = Janeiro, 9 = Outubro)
+    
+    // Cria a data fixando o dia como 1 para evitar problemas de fuso horário
+    return new Date(ano, mes, 1);
+  }
+
+  return null;
+}
+
+
+  async carregarDados() {
     try {
-      const [cats, tiposCartao, tiposMov, pessoas] = await Promise.all([
-        this.categoriaService.buscarCategoriasAtivas(),
-        this.tipoCartaoService.list(),
-        this.tipoMovimentacaoService.list(),
-        this.pessoaMovService.list(),
-      ]);
+      const [cats,
+        tiposCartao, tiposMov, pessoas] = await Promise.all([
+          this.categoriaService.buscarCategoriasAtivas(),
+          this.tipoCartaoService.list(),
+          this.tipoMovimentacaoService.list(),
+          this.pessoaMovService.list(),
+        ]);
       this.categorias = cats ?? [];
       this.tiposConta = tiposCartao ?? [];
       this.tiposMovimentacao = tiposMov ?? [];
       this.pessoasMov = pessoas ?? [];
+
+      var bancoIdDisplay = this.bancoId ? await this.bancoService.getById(this.bancoId)?.then((banco) => banco?.nomeBanco) : 'Banco Desconhecido';
+      var tipoCartaoDisplay = this.tipoContaId ? tiposCartao.find(e => e.id == this.tipoContaId)?.nomeTipoCartao : 'Tipo de Cartão Desconhecido';
+      this.isCreditCard = tipoCartaoDisplay === "Cartão de crédito" ? true: false;
+
+      var tituloBase = `${tipoCartaoDisplay} - ${bancoIdDisplay}`;
+
+      this.titulo =  tituloBase ?? `Extrato Bancário - Detalhes`;
+
+
+      this.categoriasOptions = this.categorias.map(element => ({
+        label: element.name,
+        value: element.id
+      }));
+      this.tiposContaOptions = this.tiposConta.map(element => ({
+        label: element.nomeTipoCartao,
+        value: element.id
+      }));
+      this.tiposMovimentacaoOptions = this.tiposMovimentacao.map(element => ({
+        label: element.nomeTipoMovimentacao,
+        value: element.id
+      }));
+      this.pessoasMovOptions = this.pessoasMov.map(element => ({
+        label: element.nomePessoa,
+        value: element.id
+      }));
+
     } catch {
-      this.setAlert('warning', 'Não foi possível carregar catálogos.');
+      this.alertService.info('Não foi possível carregar catálogos.');
     }
   }
 
-  // texto exibido no input quando seleciona um item
-  formatterPessoa = (p: PessoaMovimentacaoDto | null) => p?.nomePessoa ?? '';
+  onSelectionChange(selectedItems: ExtratoItemDto[]) {
+    let receita = 0;
+    let despesa = 0;
+
+    selectedItems.forEach((item) => {
+      const val = removeFormatCurrencyBR(item.valor);
+      const sub = String(item.tipoLancamento || '').toLowerCase();
+      if (sub === 'entrada' || sub === 'entradas') receita += val;
+      if (sub === "saída" || sub === "saídas") despesa += val;
+    });
+
+    this.selectedTotals = { receita, despesa, saldo: receita - despesa, count: selectedItems.length };
+  }
 
   searchPessoa = (text$: Observable<string>) =>
     text$.pipe(
@@ -207,511 +238,353 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
       })
     );
 
-  abrirConfigPessoas() {
-    this.showModalConfigPessoas = true;
-  }
-  fecharConfigPessoas(evt: { reload: boolean }) {
-    this.showModalConfigPessoas = false;
-    if (evt?.reload) this.refresh();
-  }
-
-  // -----------------------
-  // Normalizações (fonte da verdade)
-  // -----------------------
-  private toDecimalBR(input: any): number {
-    if (input === null || input === undefined) return 0;
-
-    if (typeof input === 'number') return Number.isFinite(input) ? input : 0;
-
-    const s = String(input).trim();
-
-    const normalized = s
-      .replace(/\s/g, '')
-      .replace(/^R\$/i, '')
-      .replace(/\./g, '')
-      .replace(/,/g, '.')
-      .replace(/[^\d.-]/g, '');
-
-    const n = Number(normalized);
-    return Number.isFinite(n) ? n : 0;
+  private setExibirCampos(): void {
+    this.exibirCampos = {
+      filter: true,
+      sortable: true,
+      selected: true,
+      paginator: true,
+      filterMonth: true,
+      buttonDeleteAll: true,
+      buttonNew: false,
+      buttonLock: true,
+      buttonPopUp: true,
+      buttonEditLine: false,
+      buttonDeleteLine: true,
+      buttonSaveCancel: true,
+    }
   }
 
-  private getValorNumber(e: any): number {
-    const raw = e?.valor ?? e?.Valor ?? 0;
-    if (typeof raw === 'number') return Number.isFinite(raw) ? raw : 0;
-    return this.toDecimalBR(raw);
+  private setitemsButtom(): void {
+    this.itemsButtom = [
+      {
+        label: 'Adicionar lançamento',
+        icon: 'pi pi-plus',
+        command: () => {
+          this.openAddModal();
+        }
+      },
+      {
+        label: 'Configurar Vinculo',
+        icon: 'pi pi-plus',
+        command: () => {
+          this.abrirConfigPessoas();
+        }
+      },
+      {
+        label: 'Exportar',
+        icon: 'pi pi-upload',
+        command: () => {
+          this.grid?.onExport();
+        }
+      },
+      {
+        label: 'Atualizar',
+        icon: 'pi pi-load',
+        command: () => {
+          this.loadMonth();
+        }
+      },
+    ];
   }
 
-  private getTipoLancamentoNorm(e: any): 'Entrada' | 'Saída' | '' {
-    const raw = String(e?.tipoLancamento ?? e?.TipoLancamento ?? '').trim().toLowerCase();
-    if (!raw) return '';
-    if (raw.includes('entrada')) return 'Entrada';
-    if (raw.includes('saída') || raw.includes('saida')) return 'Saída';
-    return '';
+  private setGridColumns(): void {
+    this.gridColumns = [
+      {
+        field: "dataMovimentacao",
+        header: "DATA",
+        type: GridColumnTypeEnum.Date,
+        formatter: (row) => formatDateBRView(row.dataMovimentacao),
+        width:  '15%',
+        editable: true
+      },
+      {
+        field: "nomePessoaTransacao",
+        header: "PESSOA",
+        type: GridColumnTypeEnum.Text,
+        width: this.isCreditCard ? '15%' : '20%',
+        editable: true
+      },
+      // Adição condicional correta usando spread operator e operador ternário
+      ...(this.isCreditCard ? [{
+        field: "parcelaAtual",
+        header: "PARCELA",
+        type: GridColumnTypeEnum.Number,
+        formatter: (row: any) => // <--- Adicionado o tipo (row: any)
+          row.dataMovimentacao && row.parcelaAtual && row.quantidadeParcelas
+            ? `${row.parcelaAtual}/${row.quantidadeParcelas}`
+            : '',
+        width: '10%',
+        editable: true
+      }] : []),
+      {
+        field: "categoriaId",
+        header: "CATEGORIA",
+        type: GridColumnTypeEnum.Select,
+        options: this.categoriasOptions,
+        width: this.isCreditCard ? '12%' : '17%',
+        editable: true
+      },
+      {
+        field: "descricao",
+        header: "DESCRIÇÃO",
+        type: GridColumnTypeEnum.TextArea,
+        width: '12%',
+        editable: true
+      },
+      {
+        field: "tipoMovimentacaoId",
+        header: "TIPO MOVIMENTAÇÃO",
+        type: GridColumnTypeEnum.Select,
+        options: this.tiposMovimentacaoOptions,
+        width: '15%',
+        editable: true
+      },
+      {
+        field: "valor",
+        header: "VALOR",
+        type: GridColumnTypeEnum.Money,
+        formatter: (row) => this.money(row.valor),
+        classe: (row) => row.tipoLancamento == "Saída" ? 'text-danger fw-bold' : 'text-success fw-bold',
+        width: '10%',
+        editable: true
+      },
+      {
+        field: 'actions',
+        header: 'AÇÕES',
+        type: GridColumnTypeEnum.Actions,
+        functions: ['delete']
+      }
+    ];
   }
 
-  private getCategoriaId(e: any): string {
-    const catId = e?.categoriaId ?? e?.categoryId ?? e?.categoria?.id ?? e?.category?.id ?? '';
-    return catId == null ? '' : String(catId);
-  }
 
-  private getTipoMovimentacaoId(e: any): string {
-    const id = e?.tipoMovimentacaoId ?? e?.TipoMovimentacaoId ?? e?.tipoMovimentacao?.id ?? '';
-    return id == null ? '' : String(id);
-  }
-
-  // -----------------------
-  // Carregar / atualizar lista
-  // -----------------------
-  async refresh() {
-    this.loading = true;
+  async loadMonth(dataSelecionada?: Date) {
     try {
-      const rows = await this.extratoItemService.listExtratos(this.month, this.bancoId, this.isCreditCard);
-      this.extratos = Array.isArray(rows) ? rows : [];
-      console.log('extratos:', this.extratos)
-      this.rebuildForms();
+      this.loading = true;
+
+      if (dataSelecionada) {
+        this.dateFilter = dataSelecionada;
+        localStorage.setItem('dataFiltroDetalheExtrato', dataSelecionada.toISOString());
+      } else {
+        const ultimoMesSelecionado = localStorage.getItem('dataFiltroDetalheExtrato');
+        this.dateFilter = ultimoMesSelecionado ? new Date(ultimoMesSelecionado) : new Date();
+      }
+
+      const mesFormatado = formatYearMonth(this.dateFilter);
+      this.selectedMonth = mesFormatado
+      this.extratoMensal = (await this.extratoItemService.listExtratos(this.selectedMonth, this.bancoId, this.isCreditCard)).map(item => ({
+        ...item,
+        categoriaNome: item.categoriaNome ?? item.categoria?.name ?? '',
+        tipoMovimentacaoNome: item.tipoMovimentacaoNome ?? item.tipoMovimentacao?.nomeTipoMovimentacao ?? '',
+      }));
+      console.log(this.extratoMensal)
     } catch {
-      this.setAlert('error', 'Erro ao carregar detalhes.');
+      // Trata o erro
     } finally {
       this.loading = false;
     }
   }
 
-  // -----------------------
-  // Derivações
-  // -----------------------
-  get items(): ExtratoItemDto[] {
-    return [...this.localItems, ...this.extratos];
+  formatterPessoa = (p: PessoaMovimentacaoDto | null) => p?.nomePessoa ?? '';
+
+
+  abrirConfigPessoas() {
+    this.showModalConfigPessoas = true;
+  }
+  fecharConfigPessoas(evt: { reload: boolean }) {
+    this.showModalConfigPessoas = false;
+    if (evt?.reload) this.loadMonth();
   }
 
-  get tipoContaSelecionada(): TipoCartaoDto | null {
-    if (!this.tipoContaId) return null;
-    return this.tiposConta.find(t => String((t as any).id) === String(this.tipoContaId)) ?? null;
-  }
+  async onDeleteSelected(rows: ExtratoItemDto[]) {
+    if (!rows.length) return;
 
-  get isCreditCard(): boolean {
-    const t: any = this.tipoContaSelecionada;
-    if (!t) return false;
-
-    const bool = t.isCredito ?? t.IsCredito ?? t.ehCredito ?? t.EhCredito ?? t.cartaoCredito ?? t.CartaoCredito;
-    if (typeof bool === 'boolean') return bool;
-
-    const nome = String(t.nomeTipoCartao ?? t.nome ?? t.Nome ?? t.descricao ?? t.Descricao ?? '');
-    return /cr[eé]dito/i.test(nome);
-  }
-
-  async carregarBancoNome() {
-    if (!this.bancoId) {
-      this.headerBancoNomeValue = 'Banco';
+    const ok = window.confirm(`Excluir ${rows.length} conta(s) selecionada(s)?`);
+    if (!ok) {
+      if (this.grid) {
+        this.grid.deleting = false;
+      }
       return;
     }
 
-    const banco = await this.bancoService.getById(this.bancoId);
-    this.headerBancoNomeValue = banco?.nomeBanco ?? 'Banco';
-  }
-
-  get headerBancoNome(): string {
-    return this.headerBancoNomeValue;
-  }
-
-  get headerTipoContaNome(): string {
-    return this.tipoContaSelecionada?.nomeTipoCartao ?? this.tipoContaSelecionada?.nomeTipoCartao ?? 'Tipo Conta';
-  }
-
-
-  // -----------------------
-  // Totais (✅ corrigidos)
-  // -----------------------
-  get totalItens() {
-    return this.filteredExtratos.length;
-  }
-
-  get totalEntrada() {
-    return this.filteredExtratos.reduce((sum: number, e: any) => {
-      const tipo = this.getTipoLancamentoNorm(e);
-      const v = Math.abs(this.getValorNumber(e));
-      return sum + (tipo === 'Entrada' ? v : 0);
-    }, 0);
-  }
-
-  get totalSaida() {
-    return this.filteredExtratos.reduce((sum: number, e: any) => {
-      const tipo = this.getTipoLancamentoNorm(e);
-      const v = Math.abs(this.getValorNumber(e));
-      return sum + (tipo === 'Saída' ? v : 0);
-    }, 0);
-  }
-
-  get totalValor() {
-    return this.totalEntrada - this.totalSaida;
-  }
-
-  // -----------------------
-  // Mapas de nomes
-  // -----------------------
-  get categoriaNomePorId(): Map<string, string> {
-    const map = new Map<string, string>();
-    for (const c of this.categorias) {
-      const id = (c as any).id ?? (c as any).Id;
-      const nome = (c as any).nome ?? (c as any).name ?? (c as any).descricao ?? (c as any).Descricao;
-      if (id != null) map.set(String(id), nome || `Categoria #${id}`);
-    }
-    return map;
-  }
-
-  get tipoMovNomePorId(): Map<string, string> {
-    const map = new Map<string, string>();
-    for (const tm of this.tiposMovimentacao ?? []) {
-      const id = (tm as any).id ?? (tm as any).Id;
-      const nome = (tm as any).nome ?? (tm as any).descricao ?? (tm as any).Descricao;
-      if (id != null) map.set(String(id), nome || `Tipo #${id}`);
-    }
-    return map;
-  }
-
-  get tipoLancamentoOptions(): string[] {
-    const set = new Set(['Saída', 'Entrada']);
-    for (const e of this.items as any[]) {
-      const tl = (e as any).tipoLancamento;
-      if (tl) set.add(tl);
-    }
-    return Array.from(set);
-  }
-
-  // -----------------------
-  // ✅ RELATÓRIOS
-  // -----------------------
-  get reportPorCategoria() {
-    const nomeCat = this.categoriaNomePorId;
-    const acc = new Map<string, any>();
-
-    for (const e of this.filteredExtratos as any[]) {
-      const catIdRaw = this.getCategoriaId(e);
-      const catId = catIdRaw ? String(catIdRaw) : '—';
-      const catNome = nomeCat.get(catId) ?? (catId === '—' ? 'Sem categoria' : `Categoria #${catId}`);
-
-      const tipo = this.getTipoLancamentoNorm(e);
-      const v = Math.abs(this.getValorNumber(e));
-
-      if (!acc.has(catId)) {
-        acc.set(catId, { categoriaId: catId, categoriaNome: catNome, entradas: 0, saidas: 0, liquido: 0, qtd: 0 });
-      }
-
-      const row = acc.get(catId);
-      row.qtd++;
-
-      if (tipo === 'Entrada') row.entradas += v;
-      if (tipo === 'Saída') row.saidas += v;
-
-      row.liquido = row.entradas - row.saidas;
-    }
-
-    return Array.from(acc.values())
-      .sort((a, b) => Math.abs(b.liquido) - Math.abs(a.liquido));
-  }
-
-  get reportPorTipoMovimentacao() {
-    const nomeTipo = this.tipoMovNomePorId;
-    const acc = new Map<string, any>();
-
-    for (const e of this.filteredExtratos as any[]) {
-      const idRaw = this.getTipoMovimentacaoId(e);
-      const id = idRaw ? String(idRaw) : '—';
-      const nome = nomeTipo.get(id) ?? (id === '—' ? 'Sem tipo' : `Tipo #${id}`);
-
-      const tipoLanc = this.getTipoLancamentoNorm(e);
-      const v = Math.abs(this.getValorNumber(e));
-
-      if (!acc.has(id)) {
-        acc.set(id, { tipoMovimentacaoId: id, tipoMovimentacaoNome: nome, entradas: 0, saidas: 0, liquido: 0, qtd: 0 });
-      }
-
-      const row = acc.get(id);
-      row.qtd++;
-
-      if (tipoLanc === 'Entrada') row.entradas += v;
-      if (tipoLanc === 'Saída') row.saidas += v;
-
-      row.liquido = row.entradas - row.saidas;
-    }
-
-    return Array.from(acc.values())
-      .sort((a, b) => Math.abs(b.liquido) - Math.abs(a.liquido));
-  }
-
-  // -----------------------
-  // ✅ filtros por coluna + filtros gerais
-  // -----------------------
-  get filteredExtratos(): ExtratoItemDto[] {
-    const t = this.tableFilters;
-
-    return this.items.filter((e: any) => {
-      const valor = this.getValorNumber(e);
-
-      const itemTipoContaId = e?.tipoCartaoId ?? e?.tipoCartao?.id ?? e?.tipoContaId ?? null;
-      if (this.tipoContaId && String(itemTipoContaId) !== String(this.tipoContaId)) return false;
-
-
-      // gerais: tipo lançamento
-      const lanc = String(e?.tipoLancamento ?? '');
-      if (this.tipoLancamentoFilter && lanc !== this.tipoLancamentoFilter) return false;
-
-      // gerais: categoria
-      const catId = e?.categoriaId ?? e?.categoryId ?? e?.categoria?.id ?? e?.category?.id ?? null;
-      if (this.categoriaFilter && String(catId) !== String(this.categoriaFilter)) return false;
-
-      // gerais: descrição
-      if (this.descricaoFilter.trim()) {
-        const needle = this.descricaoFilter.trim().toLowerCase();
-        const desc = String(e?.nomeTipoMovimentacao || '').toLowerCase();
-        const obs = String(e?.observacao || e?.descricaoManual || '').toLowerCase();
-        if (!desc.includes(needle) && !obs.includes(needle)) return false;
-      }
-
-      // gerais: pessoa
-      if (this.pessoaFilter.trim()) {
-        const pessoa = String(e?.nomePessoaTransacao || '').toLowerCase();
-        if (!pessoa.includes(this.pessoaFilter.trim().toLowerCase())) return false;
-      }
-
-      // gerais: min/max
-      if (this.minValue !== '' && valor < Number(this.minValue)) return false;
-      if (this.maxValue !== '' && valor > Number(this.maxValue)) return false;
-
-      // ✅ por coluna (tabela)
-      if (t.data) {
-        const d = String(e?.dataMovimentacao ?? '').substring(0, 10);
-        if (d !== t.data) return false;
-      }
-
-      if (t.tipo) {
-        if (!String(e?.tipoLancamento ?? '').toLowerCase().includes(t.tipo.toLowerCase())) return false;
-      }
-
-      if (t.categoriaId) {
-        const idStr = String(catId ?? '');
-        if (idStr !== String(t.categoriaId)) return false;
-      }
-
-      if (t.fatura && this.isCreditCard) {
-        if (!String(e?.numeroFatura ?? '').toLowerCase().includes(t.fatura.toLowerCase())) return false;
-      }
-
-      if (t.nomeTipoMovimentacao) {
-        const desc = String(e?.nomeTipoMovimentacao ?? '').toLowerCase();
-        const obs = String(e?.observacao ?? e?.descricaoManual ?? '').toLowerCase();
-        const needle = t.nomeTipoMovimentacao.toLowerCase();
-        if (!desc.includes(needle) && !obs.includes(needle)) return false;
-      }
-
-      // ✅ agora filtra por ID (não mais por observação)
-      if (t.tipoMovimentacaoId) {
-        const id = this.getTipoMovimentacaoId(e);
-        if (String(id) !== String(t.tipoMovimentacaoId)) return false;
-      }
-
-      if (t.pessoa) {
-        const pessoa = String(e?.nomePessoaTransacao ?? '').toLowerCase();
-        if (!pessoa.includes(t.pessoa.toLowerCase())) return false;
-      }
-
-      if (t.minValor !== '' && valor < Number(t.minValor)) return false;
-      if (t.maxValor !== '' && valor > Number(t.maxValor)) return false;
-
-      return true;
-    });
-  }
-
-  // -----------------------
-  // Forms inline
-  // -----------------------
-  rowKey(e: any): RowId {
-    const id = e?.id ?? e?.Id ?? e?.extratoId ?? e?.codigo;
-    if (id !== undefined && id !== null && String(id) !== '') return String(id);
-
-    const ident = e?.identificador ?? e?.grupoParcelamento ?? e?.GrupoParcelamento;
-    if (ident) return String(ident);
-
-    return String(e?.dataMovimentacao ?? '') + '|' + String(e?.descricao ?? '') + '|' + String(e?.valor ?? '');
-  }
-
-  private rebuildForms() {
-    const visibleIds = new Set<RowId>();
-
-    for (const e of this.items as any[]) {
-      const id = this.rowKey(e);
-      visibleIds.add(id);
-
-      if (!this.rowForms.has(id)) {
-        const fg: RowForm = this.fb.group({
-          dataMovimentacao: this.fb.control(String(e?.dataMovimentacao ?? '').substring(0, 10), { nonNullable: true }),
-          tipoLancamento: this.fb.control(String(e?.tipoLancamento ?? ''), { nonNullable: true }),
-          categoriaId: this.fb.control(this.getCategoriaId(e), { nonNullable: true }),
-          tipoMovimentacaoId: this.fb.control(this.getTipoMovimentacaoId(e), { nonNullable: true }),
-          descricao: this.fb.control(String(e?.descricao ?? ''), { nonNullable: true }),
-          nomePessoaTransacao: this.fb.control(String(e?.nomePessoaTransacao ?? ''), { nonNullable: true }),
-          valor: this.fb.control(formatMoneyBR(this.getValorNumber(e) ?? 0), { nonNullable: true }),
-          numeroFatura: this.fb.control(
-            { value: String(e?.numeroFatura ?? ''), disabled: true },
-            { nonNullable: true }
-          ),
-          parcelaAtual: this.fb.control(String(e?.parcelaAtual ?? ''), { nonNullable: true }),
-          quantidadeParcelas: this.fb.control(String(e?.quantidadeParcelas ?? ''), { nonNullable: true }),
-        });
-
-        this.rowForms.set(id, fg);
-      }
-    }
-
-    for (const id of Array.from(this.rowForms.keys())) {
-      if (!visibleIds.has(id)) {
-        this.rowForms.delete(id);
-        this.editingIds.delete(id);
-        this.savingRowIds.delete(id);
-      }
-    }
-  }
-
-  isEditing(e: any) {
-    return this.editingIds.has(this.rowKey(e));
-  }
-
-  startEdit(e: any) {
-    const id = this.rowKey(e);
-
-    if (!this.rowForms.has(id)) {
-      this.rebuildForms();
-    }
-
-    const f = this.rowForms.get(id);
-    if (!f) return;
-
-    this.editingIds.add(id);
-
-    f.reset({
-      dataMovimentacao: String(e?.dataMovimentacao ?? '').substring(0, 10),
-      tipoLancamento: String(e?.tipoLancamento ?? ''),
-      categoriaId: this.getCategoriaId(e),
-      tipoMovimentacaoId: this.getTipoMovimentacaoId(e),
-      descricao: String(e?.descricao ?? ''),
-      nomePessoaTransacao: String(e?.nomePessoaTransacao ?? ''),
-      valor: formatMoneyBR(this.getValorNumber(e) ?? 0),
-      numeroFatura: String(e?.numeroFatura ?? this.month),
-      parcelaAtual: String(e?.parcelaAtual ?? ''),
-      quantidadeParcelas: String(e?.quantidadeParcelas ?? ''),
-    });
-  }
-
-  async onDelete(e: any) {
-    const ok = window.confirm(`Excluir a movimentação "${e.nomePessoaTransacao}"?`);
-    if (!ok) return;
     try {
-      await this.extratoItemService.delete(e.id);
-      this.alert = { type: 'success', message: `${e.nomePessoaTransacao} deletado com sucesso!` };
-      setTimeout(() => (this.alert = { type: '', message: '' }), 3000);
-      await this.refresh();
-    } catch {
-      this.alert = { type: 'error', message: 'Falha ao deletar.' + e.message };
-      setTimeout(() => (this.alert = { type: '', message: '' }), 12000);
-    }
-  }
+      var response;
+      for (const row of rows) {
+        response = await this.extratoItemService.delete(row.id);
+      }
 
-  cancelEdit(e: any) {
-    const id = this.rowKey(e);
-    this.editingIds.delete(id);
-    const f = this.rowForms.get(id);
-    f?.markAsPristine();
-  }
+      if (response) {
+        this.alertService.success(`'${rows.length}' itens deletados com sucesso!`);
+      }
 
-  async saveEdit(e: any) {
-    const idKey = this.rowKey(e);
-    const f = this.rowForms.get(idKey);
-    if (!f) return;
-
-    // Garante que pega o ID correto da linha
-    const idReal = Number(e?.id ?? e?.Id ?? e?.extratoId ?? 0);
-    if (!idReal) {
-      this.setAlert('error', 'Este item não possui Id válido para atualizar.');
-      return;
-    }
-
-    this.savingRowIds.add(idKey);
-
-    try {
-      const valorNumber = this.toDecimalBR(f.controls.valor.value);
-
-      const dto: any = {
-        Id: idReal,
-        DataMovimentacao: f.controls.dataMovimentacao.value,
-        Valor: valorNumber,
-        TipoLancamento: f.controls.tipoLancamento.value,
-        Descricao: f.controls.descricao.value || null,
-        NomePessoaTransacao: f.controls.nomePessoaTransacao.value || null,
-        Identificador: e?.identificador ?? e?.Identificador ?? null,
-        BancoId: e?.bancoId ?? e?.BancoId ?? this.bancoId ?? null,
-        CategoriaId: f.controls.categoriaId.value ? Number(f.controls.categoriaId.value) : null,
-        TipoMovimentacaoId: f.controls.tipoMovimentacaoId.value ? Number(f.controls.tipoMovimentacaoId.value) : null,
-        EhParcelado: e?.ehParcelado ?? e?.EhParcelado ?? null,
-        ParcelaAtual: f.controls.parcelaAtual.value ? Number(f.controls.parcelaAtual.value) : null,
-        QuantidadeParcelas: f.controls.quantidadeParcelas.value ? Number(f.controls.quantidadeParcelas.value) : null,
-        TipoCartaoId: e?.tipoCartaoId ?? e?.TipoCartaoId ?? this.tipoContaId ?? null,
-        UserId: e?.userId ?? e?.UserId ?? 0,
-        ChaveDescricao: e?.chaveDescricao ?? e?.ChaveDescricao ?? null,
-        NumeroFatura: e?.numeroFatura ?? this.month,
-        PessoaMovimentacaoId: e?.pessoaMovimentacaoId ?? e?.PessoaMovimentacaoId ?? null,
-        AlteraVinculoPessoa: true
-      };
-
-      await this.extratoItemService.updateExtratoItem(dto);
-      
-      this.setAlert('success', 'Linha atualizada com sucesso!');
-      await this.refresh();
-    } catch (err: any) {
-      this.setAlert('error', err?.error?.message || err?.message || 'Falha ao salvar edição.');
+      this.grid?.clearSelection();
+      await this.loadMonth();
+    } catch (e) {
+      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
     } finally {
-      this.savingRowIds.delete(idKey);
-      this.editingIds.delete(idKey);
+      if (this.grid) {
+        this.grid.deleting = false;
+      }
     }
   }
 
-  trackByRow = (_: number, e: any) => this.rowKey(e);
 
-  isSavingRow(e: any) {
-    return this.savingRowIds.has(this.rowKey(e));
+
+  async onDelete(row: ExtratoItemDto) {
+    const ok = window.confirm(`Excluir a conta '${row.nomePessoaTransacao}'?`);
+    if (!ok) return;
+
+    // Define o ID que está sendo deletado (ativa o loading na linha correspondente)
+    this.deletingId = row.id;
+
+    try {
+      const response = await this.extratoItemService.delete(row.id);
+
+      if (response) {
+        this.alertService.success(`Conta '${row.nomePessoaTransacao}' deletada com sucesso!`);
+      }
+
+      await this.loadMonth();
+    } catch (e: any) {
+      this.alertService.error(e);
+    } finally {
+      // 🔹 O loading só some aqui, quando a API termina (com sucesso ou erro)
+      this.deletingId = null;
+    }
   }
 
-  // -----------------------
-  // UI actions
-  // -----------------------
-  back() { this.router.navigateByUrl('/extrato-bancario'); }
+  // 1. Obtenha a referência do seu componente data-grid no HTML do pai
+  // Substitua 'AppDataGridComponent' pelo nome real da classe do seu componente de grid
 
-  clearFilters() {
-    const firstDay = new Date(this.month + '-01T00:00:00');
-    this.dateFrom = firstDay.toISOString().substring(0, 10);
+/** Salva em lote as alterações feitas via edição inline ("Salvar tudo"). */
+  /** Salva em lote as alterações feitas via edição inline ("Salvar tudo"). */
+  async onSaveInline(changes: GridRowChange[]) {
+    if (!changes.length) {
+      return;
+    }
 
-    const lastDay = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0);
+    try {
+      let response;
+      for (const change of changes) {
+        // Junta os dados originais da linha com as alterações feitas
+        const linhaAtual = {
+          ...change.row,
+          ...change.changes
+        };
 
-    this.tipoLancamentoFilter = '';
-    this.categoriaFilter = '';
-    this.descricaoFilter = '';
-    this.pessoaFilter = '';
-    this.minValue = '';
-    this.maxValue = '';
+        // 1. Trata a data para o formato exato YYYY-MM-DD exigido pelo DateOnly do C#
+        let dataFormatada = '';
+        const rawDate = linhaAtual.DataMovimentacao || linhaAtual.dataMovimentacao;
+        if (rawDate) {
+          dataFormatada = typeof rawDate === 'string' 
+            ? rawDate.split('T')[0] 
+            : new Date(rawDate).toISOString().split('T')[0];
+        }
 
-    this.tableFilters = {
-      data: '',
-      tipo: '',
-      categoriaId: '',
-      nomeTipoMovimentacao: '',
-      tipoMovimentacaoId: '',
-      pessoa: '',
-      minValor: '',
-      maxValor: '',
-      fatura: '',
-    };
+        // 2. Garante o TipoLancamento (obrigatório no backend)
+        const tipoLanc = linhaAtual.TipoLancamento || linhaAtual.tipoLancamento || linhaAtual.tipoMovimentacaoNome || 'Saída';
+
+        // 3. Resolução inteligente de CategoriaId caso venha o nome ou ID
+        let resolvedCategoriaId = 0;
+        let resolvedCategoriaNome = '';
+        const rawCatId = linhaAtual.CategoriaId ?? linhaAtual.categoriaId;
+        const rawCatNome = linhaAtual.CategoriaNome ?? linhaAtual.categoriaNome;
+
+        if (rawCatId !== undefined && rawCatId !== null && rawCatId !== '') {
+          resolvedCategoriaId = Number(rawCatId);
+          const catObj = this.categorias.find(c => c.id === resolvedCategoriaId);
+          resolvedCategoriaNome = catObj ? catObj.name : rawCatNome;
+        } else if (rawCatNome) {
+          resolvedCategoriaNome = rawCatNome;
+          const catEncontrada = this.categorias.find(c => c.name?.toLowerCase() === String(rawCatNome).toLowerCase());
+          if (catEncontrada) resolvedCategoriaId = catEncontrada.id;
+        }
+
+        // 4. Resolução inteligente de TipoMovimentacaoId caso venha o nome ou ID
+        let resolvedTipoMovId = 0;
+        let resolvedTipoMovNome = '';
+        const rawTipoMovId = linhaAtual.TipoMovimentacaoId ?? linhaAtual.tipoMovimentacaoId;
+        const rawTipoMovNome = linhaAtual.TipoMovimentacaoNome ?? linhaAtual.tipoMovimentacaoNome;
+
+        if (rawTipoMovId !== undefined && rawTipoMovId !== null && rawTipoMovId !== '') {
+          resolvedTipoMovId = Number(rawTipoMovId);
+          const movObj = this.tiposMovimentacao.find(m => m.id === resolvedTipoMovId);
+          resolvedTipoMovNome = movObj ? movObj.nomeTipoMovimentacao : rawTipoMovNome;
+        } else if (rawTipoMovNome) {
+          resolvedTipoMovNome = rawTipoMovNome;
+          const movEncontrada = this.tiposMovimentacao.find(m => m.nomeTipoMovimentacao?.toLowerCase() === String(rawTipoMovNome).toLowerCase());
+          if (movEncontrada) resolvedTipoMovId = movEncontrada.id;
+        }
+
+        // 5. Mapeia exatamente para a estrutura do ExtratoBancarioItemDTO do backend
+        const dtoMapeado = {
+          id: Number(linhaAtual.Id ?? linhaAtual.id),
+          extratoBancarioId: linhaAtual.ExtratoBancarioId !== undefined ? linhaAtual.ExtratoBancarioId : (linhaAtual.extratoBancarioId ?? null),
+          dataMovimentacao: dataFormatada,
+          valor: Number(linhaAtual.Valor ?? linhaAtual.valor ?? 0),
+          tipoLancamento: tipoLanc,
+          
+          descricao: linhaAtual.Descricao ?? linhaAtual.descricao ?? null,
+          observacao: linhaAtual.Observacao ?? linhaAtual.observacao ?? null,
+          
+          pessoaMovimentacaoId: linhaAtual.PessoaMovimentacaoId !== undefined && linhaAtual.PessoaMovimentacaoId !== null ? Number(linhaAtual.PessoaMovimentacaoId) : null,
+          nomePessoaTransacao: linhaAtual.NomePessoaTransacao ?? linhaAtual.nomePessoaTransacao ?? null,
+          identificador: linhaAtual.Identificador ?? linhaAtual.identificador ?? null,
+          
+          bancoId: linhaAtual.BancoId !== undefined && linhaAtual.BancoId !== null ? Number(linhaAtual.BancoId) : (this.bancoId ? Number(this.bancoId) : null),
+          bancoNome: linhaAtual.BancoNome ?? linhaAtual.bancoNome ?? null,
+          
+          categoriaId: resolvedCategoriaId,
+          numeroFatura: linhaAtual.NumeroFatura ?? linhaAtual.numeroFatura ?? this.month ?? null,
+          categoriaNome: resolvedCategoriaNome,
+          
+          ehParcelado: Boolean(linhaAtual.EhParcelado ?? linhaAtual.ehParcelado ?? false),
+          parcelaAtual: linhaAtual.ParcelaAtual !== undefined ? linhaAtual.ParcelaAtual : null,
+          quantidadeParcelas: linhaAtual.QuantidadeParcelas !== undefined ? linhaAtual.QuantidadeParcelas : null,
+          
+          tipoCartaoId: linhaAtual.TipoCartaoId !== undefined && linhaAtual.TipoCartaoId !== null ? Number(linhaAtual.TipoCartaoId) : (this.tipoContaId ? Number(this.tipoContaId) : null),
+          tipoCartaoNome: linhaAtual.TipoCartaoNome ?? linhaAtual.tipoCartaoNome ?? null,
+          
+          tipoMovimentacaoId: resolvedTipoMovId,
+          tipoMovimentacaoNome: resolvedTipoMovNome,
+          
+          userId: Number(linhaAtual.UserId ?? linhaAtual.userId ?? 1),
+          chaveDescricao: linhaAtual.ChaveDescricao ?? linhaAtual.chaveDescricao ?? null,
+          
+          alteraVinculoPessoa: Boolean(linhaAtual.AlteraVinculoPessoa ?? linhaAtual.alteraVinculoPessoa ?? false)
+        };
+
+        response = await this.extratoItemService.updateExtratoItem(dtoMapeado);
+
+        // 6. Atualiza o estado local imediatamente na lista exibida
+        const idAlterado = Number(linhaAtual.Id ?? linhaAtual.id);
+        const index = this.extratoMensal.findIndex(item => item.id === idAlterado);
+        if (index !== -1) {
+          this.extratoMensal[index] = {
+            ...this.extratoMensal[index],
+            ...change.changes,
+            categoriaId: resolvedCategoriaId,
+            categoriaNome: resolvedCategoriaNome,
+            tipoMovimentacaoId: resolvedTipoMovId,
+            tipoMovimentacaoNome: resolvedTipoMovNome
+          };
+        }
+      }
+
+      if (response) {
+        this.alertService.success(`${changes.length} alteração(ões) salva(s) com sucesso!`);
+      }
+
+      this.grid?.clearSelection();
+      this.grid?.finishInlineSave(); 
+      await this.loadMonth();        
+
+    } catch (e: any) {
+      this.alertService.error(e?.error?.message || 'Erro ao salvar as alterações. Tente novamente.');
+    }
   }
-
-  openAddModal() {
+    openAddModal() {
     if (this.isCreditCard)
       this.manualNumeroFatura = this.month
     else
@@ -746,12 +619,12 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
   async handleSaveManual() {
     // validações
     if (!this.manualData) {
-      this.alert = { type: 'error', message: 'Informe uma data válida.' };
+      this.alertService.error('Informe uma data válida.');
       return;
     }
 
     if (!this.manualValor || String(this.manualValor).trim() === '') {
-      this.alert = { type: 'error', message: 'Informe um valor válido.' };
+      this.alertService.error('Informe um valor válido.');
       return;
     }
 
@@ -789,10 +662,10 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
       if (!this.isCreditCard || !this.manualParcelado) {
         await this.extratoItemService.createExtratoManualItem(basePayload);
 
-        this.alert = { type: 'success', message: 'Lançamento adicionado com sucesso!' };
+        this.alertService.success('Lançamento adicionado com sucesso!');
         this.showAddModal = false;
 
-        await this.refresh();
+        await this.loadMonth();
         return;
       }
 
@@ -826,10 +699,10 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
           await this.extratoItemService.createExtratoManualItem(payloadParcela);
         }
 
-        this.alert = { type: 'success', message: `Parcelamento criado: ${totalCriado} parcelas.` };
+        this.alertService.success(`Parcelamento criado: ${totalCriado} parcelas.`);
         this.showAddModal = false;
 
-        await this.refresh();
+        await this.loadMonth();
         return;
       }
 
@@ -843,27 +716,18 @@ export class ExtratoBancarioDetalhesComponent implements OnInit, OnDestroy {
 
       await this.extratoItemService.createExtratoManualItem(payloadSingle);
 
-      this.alert = { type: 'success', message: `Compra parcelada registrada (1/${quantidadeParcelas}).` };
+      this.alertService.success(`Compra parcelada registrada (1/${quantidadeParcelas}).`);
       this.showAddModal = false;
 
-      await this.refresh();
+      await this.loadMonth();
       return;
 
     } catch (err: any) {
-      this.alert = {
-        type: 'error',
-        message: err?.error?.message || err?.message || 'Erro ao adicionar lançamento.'
-      };
+      this.alertService.error(err?.error?.message || err?.message || 'Erro ao adicionar lançamento.');
     } finally {
       this.saving = false;
     }
   }
 
-  setAlert(type: AlertState['type'], message: string) {
-    this.alert = { type, message };
-    setTimeout(() => (this.alert = { type: '', message: '' }), 4000);
-  }
 
-  money(v: any) { return formatMoneyBR(v); }
-  dateBR(v: any) { return formatDateBR(v); }
 }

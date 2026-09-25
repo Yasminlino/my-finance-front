@@ -1,7 +1,7 @@
 <div class="container-xl py-3">
   <p-toast></p-toast>
   <app-data-grid #grid [dataSource]="resumo" [breadcrumb]="breadcrumb" [columns]="gridColumns"
-  (reload)="load()" [titulo]="'Resumo de Extratos Bancários'" [dateFilter]="dateFilter" [itemsButtom]="itemsButtom"
+  (reload)="loadMonth($event)" [titulo]="'Resumo de Extratos Bancários'" [dateFilter]="dateFilter" [itemsButtom]="itemsButtom"
   [exibeCampos]="exibirCampos" [loading]="loading" (edit)="onEdit($event)">
 </app-data-grid>
   <!-- MODAL DE IMPORTAÇÃO DE EXTRATO (ARQUIVO) -->
@@ -182,10 +182,10 @@
 
   <!-- MODAIS EXTERNOS (FORA DO CONTAINER DA MODAL MANUAL) -->
   <app-modal-importacoes-mensais *ngIf="showModalImportacoesMensais" [monthFilter]="selectedMonth"
-    (closed)="showModalImportacoesMensais = false; load()">
+    (closed)="showModalImportacoesMensais = false; loadMonth()">
   </app-modal-importacoes-mensais>
 
   <app-modal-configuracao-vinculo-pessoa *ngIf="showModalConfigPessoas" 
-    (closed)="showModalConfigPessoas = false; load()">
+    (closed)="showModalConfigPessoas = false; loadMonth()">
   </app-modal-configuracao-vinculo-pessoa>
 </div>

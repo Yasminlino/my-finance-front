@@ -112,6 +112,7 @@ export class DataGridComponent {
   @Input() exibeCampos: ExibirCampos | null = null;
   @Input() deleting = false;
   @Input() disabledRowIds?: Set<any>;
+  @Input() localStorage?: String;
 
   // ---------------------------------------------------------------------------
   // Outputs
@@ -334,6 +335,15 @@ export class DataGridComponent {
   // ---------------------------------------------------------------------------
   // ---------------------------------------------------------------------------
 
+  getSelectLabel(col: any, value: any): string {
+    if (!col.options || value === null || value === undefined) {
+      return value ?? '-';
+    }
+    // Procura na lista de opções aquela cujo 'value' (o ID) seja igual ao valor atual da linha
+    const option = col.options.find((opt: any) => opt.value === value);
+    return option ? option.label : value;
+  }
+
   get pendingCount(): number {
     return this.pendingChanges.size;
   }
@@ -475,31 +485,28 @@ export class DataGridComponent {
       return;
     }
 
-    if (!this.isRowChanged(row)) {
-      this.pendingChanges.delete(key);
-      return;
-    }
-
     const changes: Record<string, any> = {};
 
     this.editableColumns().forEach(column => {
-      const currentValue =
-        this.normalizeComparableValue(
-          row[column.field]
-        );
+      const currentValue = this.normalizeComparableValue(
+        row[column.field]
+      );
 
-      const originalValue =
-        this.normalizeComparableValue(
-          original[column.field]
-        );
+      const originalValue = this.normalizeComparableValue(
+        original[column.field]
+      );
 
-      if (!this.valuesEqual(
-        originalValue,
-        currentValue
-      )) {
-        changes[column.field] = currentValue;
+      // Se for select ou qualquer campo editável, garante que capturamos a mudança
+      if (!this.valuesEqual(originalValue, currentValue)) {
+        changes[column.field] = row[column.field]; // Mantém o valor cru real (objeto, string ou número)
       }
     });
+
+    // Se não houver nenhuma mudança real detectada, remove dos pendentes
+    if (Object.keys(changes).length === 0) {
+      this.pendingChanges.delete(key);
+      return;
+    }
 
     this.pendingChanges.set(key, {
       row,
@@ -813,19 +820,20 @@ export class DataGridComponent {
     );
   }
 
-  onDateFilter(
-    event: any,
-    column: GridColumn,
-    table: Table
-  ): void {
-    // Se houver evento, pega o objeto Date limpo (sem hora)
-    const value = event ? this.toDateOnly(event) : null;
+  onDateFilter(event: any, column: GridColumn, table: Table): void {
+    let value = null;
 
-    table.filter(
-      value,
-      column.field,
-      this.matchMode(column)
-    );
+    if (event) {
+      const date = new Date(event);
+      // Força o formato yyyy-mm-dd para testar se bate certo com os dados da linha
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      value = `${year}-${month}-${day}`;
+    }
+
+    // Tente fixar temporariamente 'contains' ou 'equals' para validar
+    table.filter(value, column.field, 'equals');
   }
 
   private toDateOnly(
@@ -856,9 +864,10 @@ export class DataGridComponent {
   onLoadMonth(event: Date | undefined): void {
     if (event) {
       this.dateFilter = event;
+      var local = this.localStorage?.valueOf();
 
       localStorage.setItem(
-        'dataFiltroContaMensal',
+        local ?? 'dataFiltro',
         event.toISOString()
       );
     }
@@ -866,6 +875,10 @@ export class DataGridComponent {
     this.reload.emit(event);
   }
 
+  goBack(): void {
+    window.history.back();
+  }
+  
   load(): void {
     this.reload.emit();
   }
@@ -964,5 +977,17 @@ export class DataGridComponent {
     document.body.removeChild(link);
 
     URL.revokeObjectURL(url);
+  }
+
+  getColumnClass(col: any, product: any): string {
+    if (!col.classe) {
+      return '';
+    }
+    // Se a classe for uma função (ex: para o valor positivo/negativo), executa-a passando a linha
+    if (typeof col.classe === 'function') {
+      return col.classe(product);
+    }
+    // Se for apenas uma string normal (ex: 'p-tag-danger')
+    return col.classe;
   }
 }

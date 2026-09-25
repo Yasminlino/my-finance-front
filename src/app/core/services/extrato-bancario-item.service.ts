@@ -32,7 +32,7 @@ export interface ExtratoItemDto {
 
   pessoaMovimentacaoId?: number;
 
-  categoria?: { id: number; name: string };
+  categoria?: { id: number; name: string, subCategory: string };
   tipoMovimentacao?: { id: number; nomeTipoMovimentacao: string };
 }
 
@@ -41,7 +41,7 @@ export class ExtratoBancarioItemService {
   constructor(private api: ApiService) { }
 
   listExtratos(monthFilter: string, bancoId?: number | null, ehCredito: boolean = false): Promise<ExtratoItemDto[]> {
-    return this.api.get<ExtratoItemDto[]>(`/GetExtratoBancarioItensByMonth?month=${monthFilter}&bancoId=${bancoId ?? ''}&ehCredito=${ehCredito}`);
+    return this.api.get<ExtratoItemDto[]>(`/GetExtratoBancarioItensByMonth?month=${monthFilter}&${bancoId !== undefined && bancoId !== null ? `bancoId=${bancoId}&` : ''}ehCredito=${ehCredito}`);
   }
 
   createExtratoManualItem(payload: any) {

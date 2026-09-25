@@ -23,7 +23,7 @@ export interface GridColumn {
   filterMatchMode?: string;
   width?: string;
   editable?: boolean;
-  classe?: string;
+  classe?: string | ((row: any) => string);
 }
 
 export enum TypeGrid {

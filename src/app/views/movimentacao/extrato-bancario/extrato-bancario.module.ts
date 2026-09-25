@@ -12,6 +12,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { ToastModule } from 'primeng/toast';
+import { ContasAPagarTotaisComponent } from '../contas-a-pagar/contas-a-pagar-totais/contas-a-pagar-totais.component';
 
 @NgModule({
   declarations: [
@@ -19,7 +20,8 @@ import { ToastModule } from 'primeng/toast';
     ExtratoBancarioResumoComponent,
     ModalConfiguracaoVinculoPessoaComponent,
     ModalImportacoesMensaisComponent,
-    RelatorioGastosMensaisComponent
+    RelatorioGastosMensaisComponent,
+    ContasAPagarTotaisComponent
   ],
   imports: [
     SharedModule,
