@@ -17,11 +17,14 @@ import { ToastModule } from 'primeng/toast';
     ModalAdicionarEmLoteComponent,
     ModalNovaContasAPagarComponent,    
   ],
-  imports: [
+    imports: [
     SharedModule,
     ContasAPagarRoutingModule,
     DataGridComponent,
     ToastModule
   ],
+  exports: [
+    ContasAPagarTotaisComponent
+  ]
 })
 export class ContasAPagarModule { }

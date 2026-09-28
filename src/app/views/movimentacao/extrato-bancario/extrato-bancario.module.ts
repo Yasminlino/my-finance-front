@@ -12,7 +12,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { ToastModule } from 'primeng/toast';
-import { ContasAPagarTotaisComponent } from '../contas-a-pagar/contas-a-pagar-totais/contas-a-pagar-totais.component';
+import { ContasAPagarModule } from '../contas-a-pagar/contas-a-pagar.module';
 
 @NgModule({
   declarations: [
@@ -20,8 +20,7 @@ import { ContasAPagarTotaisComponent } from '../contas-a-pagar/contas-a-pagar-to
     ExtratoBancarioResumoComponent,
     ModalConfiguracaoVinculoPessoaComponent,
     ModalImportacoesMensaisComponent,
-    RelatorioGastosMensaisComponent,
-    ContasAPagarTotaisComponent
+    RelatorioGastosMensaisComponent
   ],
   imports: [
     SharedModule,
@@ -29,7 +28,8 @@ import { ContasAPagarTotaisComponent } from '../contas-a-pagar/contas-a-pagar-to
     ChartsModule,
     NgbModule,
     DataGridComponent,
-    ToastModule
+    ToastModule,
+    ContasAPagarModule
   ]
 })
 export class ExtratoBancarioModule { }

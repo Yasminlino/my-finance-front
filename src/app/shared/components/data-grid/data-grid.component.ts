@@ -120,6 +120,7 @@ export class DataGridComponent {
 
   @Output() new = new EventEmitter<any>();
   @Output() edit = new EventEmitter<any>();
+  @Output() view = new EventEmitter<any>();
   @Output() delete = new EventEmitter<any>();
   @Output() activate = new EventEmitter<any>();
   @Output() deactivate = new EventEmitter<any>();
@@ -318,6 +319,10 @@ export class DataGridComponent {
 
   onEditClick(row: any, _column: GridColumn): void {
     this.edit.emit(row);
+  }
+
+  onViewClick(row: any, _column: GridColumn): void {
+    this.view.emit(row);
   }
 
   onDelete(row: any): void {

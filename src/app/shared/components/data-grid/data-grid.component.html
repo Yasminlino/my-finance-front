@@ -196,8 +196,12 @@
                     [ngSwitch]="col.type" style=" justify-items: center;">
                     <ng-container>
                         <div class="dg-actions-container">
-
-                            @if(exibeCampos?.buttonEditLine ){
+                            @if(exibeCampos?.buttonViewLine ){
+                            <button pButton type="button" icon="pi pi-folder-open"
+                                [title]="'Ative a linha para editar'"
+                                class="p-button-rounded p-button-text p-button-sm p-button-icon-only p-button-secondary"
+                                (click)="onViewClick(product, col)" aria-label="Editar"></button>
+                            }@if(exibeCampos?.buttonEditLine ){
                             <button pButton type="button" icon="pi pi-pencil" [title]="'Ative a linha para editar'"
                                 class="p-button-rounded p-button-text p-button-sm p-button-icon-only"
                                 (click)="onEditClick(product, col)" aria-label="Editar"></button>
@@ -208,10 +212,12 @@
                                 class="p-button-rounded p-button-text p-button-sm p-button-icon-only p-button-danger"
                                 (click)="onDelete(product)" aria-label="Excluir"
                                 [loading]="deletingId === product.id"></button>
-                            }@if(isRowChanged(product)){
-                            <button pButton type="button" icon="pi pi-undo" title="Reverter alteraÃ§Ãµes"
+
+                            }
+                            @if(isRowChanged(product)){
+                            <button pButton type="button" icon="pi pi-undo" title="Reverter alterações"
                                 class="p-button-rounded p-button-text p-button-sm p-button-icon-only"
-                                (click)="revertRow(product)" aria-label="Reverter alteraÃ§Ãµes">
+                                (click)="revertRow(product)" aria-label="Reverter alterações">
                             </button>
                             }
                         </div>

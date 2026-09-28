@@ -10,6 +10,8 @@ import { ModalNovoItemListaComponent } from './components/modal-novo-item-lista/
 import { ConfigStatusColorsComponent } from './components/config-status-colors/config-status-colors.component';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { ModalItemChecagemComponent } from './components/modal-item-checagem/modal-item-checagem.component';
+import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
+import { ToastModule } from 'primeng/toast';
 
 @NgModule({
   declarations: [
@@ -24,7 +26,8 @@ import { ModalItemChecagemComponent } from './components/modal-item-checagem/mod
   imports: [
     SharedModule,
     ListaRoutingModule,    
-    
+    DataGridComponent,
+    ToastModule
   ]
 })
 export class ListaModule { }

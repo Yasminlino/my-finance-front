@@ -1,8 +1,11 @@
-import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { ListaDto, ListaService } from 'src/app/core/services/lista.service';
 
-type AlertState = { type: 'success' | 'error' | ''; message: string };
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
+import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { TagStatus } from 'src/app/shared/enums/status.enum';
+import { AlertService } from 'src/app/shared/components/alert.service';
+import { ListaDto, ListaService } from 'src/app/core/services/lista.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-lista-root',
@@ -11,90 +14,146 @@ type AlertState = { type: 'success' | 'error' | ''; message: string };
 })
 export class ListaRootComponent implements OnInit {
   listas: ListaDto[] = [];
-  filtered: ListaDto[] = [];
+  exibirCampos: ExibirCampos | null = null;
+  gridColumns: GridColumn[] = [];
+
+  statusOptions: GridColumnOption[] = [
+    { label: 'Ativo', value: 1, classe: TagStatus.Success },
+    { label: 'Inativo', value: 0, classe: TagStatus.Secondary }
+  ];
+
+  statusLabel(value: number): string {
+    return value === 1 ? 'Ativo' : 'Inativo';
+  }
+
+  lista: ListaDto[] = [];
+  breadcrumb = [{ label: 'Catalago' }, { label: 'Listas' }]
 
   loading = false;
   errorMsg = '';
 
   q = '';
-  statusFilter: 'ALL' | 'true' | 'false' = 'ALL';
+  statusFilter: 'ALL' | 'Ativo' | 'Inativo' = 'ALL';
 
-  alert: AlertState = { type: '', message: '' };
-
-  // modal
   showModalCreate = false;
   showModalUpdate = false;
-  editing: ListaDto | null = null;
 
-  constructor(private service: ListaService, private router: Router) { }
+  editing: ListaDto | null = null;
+  @ViewChild('grid') grid?: DataGridComponent;
+
+  constructor(private listaService: ListaService, private readonly alertService: AlertService, private readonly router: Router) { }
 
   async ngOnInit() {
+    this.setExibirCampos()
+    this.setGridColumns();
     await this.load();
+  }
+
+  private setGridColumns(): void {
+    this.gridColumns = [
+      { field: 'nome', header: 'Nome', type: 'text', width: "40%" },
+      {
+        field: 'tipoMovimentacao',
+        header: 'TIPO',
+        type: 'select',
+        options: [
+          { label: 'Checklist', value: 1 },
+          { label: 'Cronograma', value: 2 },
+          { label: 'Orçamento', value: 3 }
+        ],
+        width: "30%"
+      },
+      {
+        field: 'status',
+        header: 'STATUS',
+        type: 'select',
+        options: this.statusOptions,
+        formatter: (row) => this.statusLabel(row.status),
+        width: "20%"
+      },
+      { field: 'actions', header: 'Ações', type: 'actions', functions: ['view', 'edit', 'delete'] },
+    ]
+  }
+
+  private setExibirCampos(): void {
+    this.exibirCampos = {
+      filter: true,
+      sortable: true,
+      selected: true,
+      paginator: true,
+      buttonDeleteAll: true,
+      buttonNew: true,
+      buttonLock: false,
+      buttonPopUp: false,
+      buttonViewLine: true,
+      buttonEditLine: true,
+      buttonDeleteLine: true,
+      buttonSaveCancel: false,
+    }
   }
 
   async load() {
     try {
       this.loading = true;
-      this.errorMsg = '';
-      this.listas = await this.service.list();
-      this.aplicarFiltros();
+      this.listas = await this.listaService.list();
+      console.log('Listas carregadas:', this.listas);
+      this.applyFilters();
     } catch (e: any) {
-      this.errorMsg = e?.message ?? 'Erro ao carregar tipos de cartão.';
+      this.alertService.error(e?.message ?? 'Erro ao carregar listas.')
     } finally {
       this.loading = false;
     }
   }
 
-  aplicarFiltros() {
+  applyFilters() {
     const term = this.q.trim().toLowerCase();
 
-    this.filtered = [...this.listas]
+    this.lista = [...this.listas]
+      .sort((a, b) => (a.nome ?? '').localeCompare(b.nome ?? ''))
       .filter(c => {
         if (!term) return true;
-        return (
-          (c.nome ?? '').toLowerCase().includes(term) ||
-          String(c.id).includes(term)
-        );
-      })
-      .filter(c => {
-        if (this.statusFilter === 'ALL') return true;
-        return String(c.status) === this.statusFilter;
+        return (c.nome ?? '').toLowerCase().includes(term) || String(c.id).includes(term);
       });
   }
 
-
-  onSearchChange(v: string) {
-    this.q = v;
-    this.aplicarFiltros();
+  onSearchChange(value: string) {
+    this.q = value;
+    this.applyFilters();
   }
 
-  pesquisarStatus(v: string) {
-    this.statusFilter = v as any;
-    this.aplicarFiltros();
+  onStatusChange(value: any) {
+    this.statusFilter = value;
+    this.applyFilters();
   }
 
-  abrirModalCriar() {
+  badgeClass(status: string) {
+    if (status === 'Ativo') return 'badge bg-success';
+    if (status === 'Inativo') return 'badge bg-secondary';
+    return 'badge bg-muted';
+  }
+
+  openCreate() {
     this.editing = null;
     this.showModalCreate = true;
   }
 
-  abrirModalAtualizar(item: ListaDto) {
-    this.editing = item;
+  onEdit(lista: ListaDto) {
+    this.editing = lista;
     this.showModalUpdate = true;
   }
 
   abrirItemLista(item: ListaDto) {
-    if(!item.tipoMovimentacao) return;
-    if(item.tipoMovimentacao === 1) {
+    if (!item.tipoMovimentacao) return;
+    if (item.tipoMovimentacao === 1) {
       this.router.navigate([`/catalogos-listas/${item.id}/checagem`]);
-    } else if(item.tipoMovimentacao === 2) {
+    } else if (item.tipoMovimentacao === 2) {
       window.open(`/#/catalogos-listas/${item.id}/cronograma`, '_blank');
-    } else if(item.tipoMovimentacao === 3) {
+    } else if (item.tipoMovimentacao === 3) {
       this.router.navigate([`/catalogos-listas/${item.id}/orcamento`]);
     } else {
       window.open(`/catalogos-listas/${item.id}`, '_blank');
     }
-    
+
   }
 
   fecharModalCriar(reload: boolean) {
@@ -108,18 +167,48 @@ export class ListaRootComponent implements OnInit {
     if (reload) this.load();
   }
 
-  async onDelete(item: ListaDto) {
-    const ok = window.confirm(`Excluir a lista "${item.nome}"?`);
+  async onDelete(c: ListaDto) {
+    const ok = window.confirm(`Excluir a lista "${c.nome}"?`);
     if (!ok) return;
 
     try {
-      await this.service.delete(item.id);
-      this.alert = { type: 'success', message: 'Tipo de cartão deletado com sucesso!' };
-      setTimeout(() => (this.alert = { type: '', message: '' }), 3000);
+      await this.listaService.delete(c.id);
+      this.alertService.success('Lista deletada com sucesso!')
       await this.load();
-    } catch {
-      this.alert = { type: 'error', message: 'Falha ao deletar. Pode estar vinculado a transações.' };
-      setTimeout(() => (this.alert = { type: '', message: '' }), 12000);
+    } catch (e) {
+      this.alertService.error('Falha ao deletar. Lista pode estar vinculada a transações.');
+    }
+  }
+
+  async onDeleteSelected(rows: ListaDto[]) {
+    if (!rows.length) return;
+
+    const ok = window.confirm(`Excluir ${rows.length} lista(s) selecionada(s)?`);
+    if (!ok) {
+      if (this.grid) {
+        this.grid.deleting = false;
+      }
+      return;
+    }
+
+    try {
+      var response;
+      for (const row of rows) {
+        response = await this.listaService.delete(row.id);
+      }
+
+      if (response) {
+        this.alertService.success(`${rows.length} lista(s) excluída(s) com sucesso!`);
+      }
+
+      this.grid?.clearSelection();
+      await this.load();
+    } catch (e) {
+      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
+    } finally {
+      if (this.grid) {
+        this.grid.deleting = false;
+      }
     }
   }
 }

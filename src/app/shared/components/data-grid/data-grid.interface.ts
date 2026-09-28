@@ -43,6 +43,7 @@ export interface ExibirCampos {
   buttonNew: boolean;
   buttonLock: boolean;
   buttonPopUp: boolean;
+  buttonViewLine?: boolean;
   buttonEditLine: boolean;
   buttonDeleteLine: boolean;
   buttonSaveCancel: boolean;
