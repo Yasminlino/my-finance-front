@@ -8,6 +8,7 @@ export type ItemListaDto = {
     descricao?: string;
     quantidade?: number;
     status?: string;
+    statusBoolean?: boolean;
     valor?: number;
     dataTarefa?: Date;
     horarioTarefa?: Time;

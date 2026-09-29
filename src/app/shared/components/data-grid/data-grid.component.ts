@@ -121,6 +121,7 @@ export class DataGridComponent {
   @Output() new = new EventEmitter<any>();
   @Output() edit = new EventEmitter<any>();
   @Output() view = new EventEmitter<any>();
+  @Output() checkbox = new EventEmitter<any>();
   @Output() delete = new EventEmitter<any>();
   @Output() activate = new EventEmitter<any>();
   @Output() deactivate = new EventEmitter<any>();
@@ -323,6 +324,10 @@ export class DataGridComponent {
 
   onViewClick(row: any, _column: GridColumn): void {
     this.view.emit(row);
+  }
+
+  onCheckBoxClick(row: any): void {
+    this.checkbox.emit(row);
   }
 
   onDelete(row: any): void {

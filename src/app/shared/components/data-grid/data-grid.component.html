@@ -33,6 +33,8 @@
         filterDisplay="row" [globalFilterFields]="globalFilterFields" [rowSelectable]="rowSelectableFn"
         currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros">
 
+
+        <!---------------------------------------------------------------------- SEÇÃO DOS BOTÕES ---------------------------------------------------------------------->
         <ng-template pTemplate="caption">
             <!-- Adicionado 'flex-wrap gap-2' aqui para permitir a quebra de linha -->
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -79,7 +81,7 @@
             </div>
         </ng-template>
 
-
+        <!---------------------------------------------------------------------- TITULO E ORDENAÇÃO DOS CAMPOS ---------------------------------------------------------------------->
         <ng-template pTemplate="header">
 
             <tr>
@@ -90,7 +92,8 @@
                 }
                 @for(col of columns; track col.field) {
                 @if(col.type !== 'actions') {
-                @if(exibeCampos?.sortable) {
+
+                @if(exibeCampos?.sortable && col.type !== 'checkbox') {
                 <th [pSortableColumn]="col.field" style="text-align: center;" [style.width]="col.width"
                     [style.min-width]="col.width" [style.max-width]="col.width">
                     <div class="flex items-center gap-1">
@@ -99,12 +102,20 @@
                     </div>
                 </th>
                 } @else {
+                @if(col.type == 'checkbox') {
+                <th [style.width]="col.width" [style.min-width]="col.width" [style.max-width]="col.width">
+                    <div class="flex items-center gap-1">
+                        {{ col.header }}
+                    </div>
+                </th>
+                } @else{
                 <th [pSortableColumn]="col.field" [style.width]="col.width" [style.min-width]="col.width"
                     [style.max-width]="col.width">
                     <div class="flex items-center gap-1">
                         {{ col.header }}
                     </div>
                 </th>
+                }
                 }
                 }
                 @else {
@@ -117,6 +128,9 @@
                 }
                 }
             </tr>
+
+            <!----------------------------------------------------------------------FILTROS ---------------------------------------------------------------------->
+
             @if(exibeCampos?.filter){
             <tr class="dg-filter-row">
                 @if(exibeCampos?.selected){
@@ -153,13 +167,16 @@
                         (onSelect)="onDateFilter($event, col, dt)" (onClear)="onDateFilter(null, col, dt)">
                     </p-calendar>
                     }
-
-
                     @case('boolean') {
                     <div class="flex justify-content-center">
                         <p-checkbox [binary]="true" (onChange)="onBooleanFilter($event, col, dt)"
                             [(ngModel)]="filtroValores[col.field]">
                         </p-checkbox>
+                    </div>
+                    }
+                    @case('checkbox') {
+                    <div class="flex justify-content-center">
+
                     </div>
                     }
                     @default {
@@ -179,8 +196,8 @@
             }
         </ng-template>
 
+        <!---------------------------------------------------------------------- BODY ---------------------------------------------------------------------->
         <ng-template pTemplate="body" let-product let-editing="editing">
-
             <tr [pEditableRow]="product" [ngClass]="isRowChanged(product) ? 'row-dirty' : ''"
                 [class.row-disabled]="isRowDisabled(product)">
                 @if(exibeCampos?.selected){
@@ -191,14 +208,21 @@
                 @for(col of columns; track col.field){
 
                 @switch(col.type || 'text') {
+                @case('checkbox'){
+                <td [style.width]="col.width" [style.min-width]="col.width" [style.max-width]="col.width"
+                    class="text-center">
+                    <p-checkbox [(ngModel)]="product[col.field]" [binary]="true" [disabled]="isRowDisabled(product)"
+                        (ngModelChange)="onCheckBoxClick(product)">
+                    </p-checkbox>
+                </td>
+                }
                 @case('actions'){
                 <td [style.width]="col.width" [style.min-width]="col.width" [style.max-width]="col.width"
                     [ngSwitch]="col.type" style=" justify-items: center;">
                     <ng-container>
                         <div class="dg-actions-container">
                             @if(exibeCampos?.buttonViewLine ){
-                            <button pButton type="button" icon="pi pi-folder-open"
-                                [title]="'Ative a linha para editar'"
+                            <button pButton type="button" icon="pi pi-folder-open" [title]="'Ative a linha para editar'"
                                 class="p-button-rounded p-button-text p-button-sm p-button-icon-only p-button-secondary"
                                 (click)="onViewClick(product, col)" aria-label="Editar"></button>
                             }@if(exibeCampos?.buttonEditLine ){
@@ -223,26 +247,14 @@
                         </div>
                     </ng-container>
                 </td>
-                } @default{
-                <!-- @if(!tipoTabela){
-                <td [style.width]="col.width" [style.min-width]="col.width" [style.max-width]="col.width">
-                    <ng-container>
-                        @if(col.field === 'status'){
-                        <p-tag [severity]="getSeverityStatus(product[col.field])"
-                            [value]="col.formatter ? col.formatter(product) : product[col.field]">
-                        </p-tag>
-                        } @else{
-                        {{ col.formatter ? col.formatter(product) : product[col.field] }}
-                        }
-                    </ng-container>
-                </td>}
-                @else{ -->
+                }
+                @default{
                 <td [pEditableColumn]="col.field" [pEditableColumnField]="col.field"
                     [pEditableColumnDisabled]="!editandoTabela || !col.editable" [style.width]="col.width"
                     [style.min-width]="col.width" [style.max-width]="col.width">
 
-                    <!-- Se a coluna NÃƒO for editÃ¡vel, exibe apenas a visualizaÃ§Ã£o estÃ¡tica -->
-                    @if (col.editable === false) {
+                    <!-- Se a coluna NÃO for editável, exibe apenas a visualização estática -->
+                    @if (col.editable === false && col.type !== 'checkbox') {
                     @switch(col.type) {
                     @case('number') { <span class="fs-14">{{ product[col.field] |
                         currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</span> }
@@ -271,6 +283,7 @@
                                 (ngModelChange)="onCellChange(product)" class="w-full p-inputtext-sm" />
                         </ng-template>
                         }
+
                         @case('text-area'){
                         <ng-template pTemplate="input">
                             <input pInputText type="text" [value]="product[col.field]" readonly
@@ -348,7 +361,8 @@
                                     (click)="openTextAreaViewDialog(product, col)">
                                 </button>
                             </div>
-                            } @else if (col.field === 'status') {
+                            }
+                            @else if (col.field === 'status') {
                             <p-tag [severity]="$any(getSeverityStatus(product[col.field]))"
                                 [class]="'d-flex justify-content-center fs-14 ' + (col.classe || '')"
                                 [value]="col.formatter ? col.formatter(product) : product[col.field]">
@@ -369,7 +383,6 @@
                     }
                 </td>
                 }}}
-                <!-- } -->
             </tr>
         </ng-template>
 

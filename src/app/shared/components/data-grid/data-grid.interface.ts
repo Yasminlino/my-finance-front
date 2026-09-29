@@ -9,7 +9,8 @@ export type GridColumnType =
   | 'money'
   | 'date'
   | 'boolean'
-  | 'actions';
+  | 'actions'
+  | 'checkbox';
 
 
 export interface GridColumn {

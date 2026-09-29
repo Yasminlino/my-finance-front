@@ -18,12 +18,12 @@ export class ListaRootComponent implements OnInit {
   gridColumns: GridColumn[] = [];
 
   statusOptions: GridColumnOption[] = [
-    { label: 'Ativo', value: 1, classe: TagStatus.Success },
-    { label: 'Inativo', value: 0, classe: TagStatus.Secondary }
+    { label: 'Ativo', value: true, classe: TagStatus.Success },
+    { label: 'Inativo', value: false, classe: TagStatus.Secondary }
   ];
 
-  statusLabel(value: number): string {
-    return value === 1 ? 'Ativo' : 'Inativo';
+  statusLabel(value: boolean): string {
+    return value === true ? 'Ativo' : 'Inativo';
   }
 
   lista: ListaDto[] = [];
@@ -126,9 +126,9 @@ export class ListaRootComponent implements OnInit {
     this.applyFilters();
   }
 
-  badgeClass(status: string) {
-    if (status === 'Ativo') return 'badge bg-success';
-    if (status === 'Inativo') return 'badge bg-secondary';
+  badgeClass(status: boolean) {
+    if (status === true) return 'badge bg-success';
+    if (status === false) return 'badge bg-secondary';
     return 'badge bg-muted';
   }
 

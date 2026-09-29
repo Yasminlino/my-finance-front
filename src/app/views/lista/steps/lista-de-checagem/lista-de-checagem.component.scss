@@ -1,4 +1,16 @@
-.btn-sm{
-    border: none;
-    shadow: none;
+.checklist-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.checklist-item {
+    transition: background-color 0.2s, transform 0.2s;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+
+    &:hover {
+        background: var(--surface-hover);
+        transform: translateY(-1px);
+    }
 }

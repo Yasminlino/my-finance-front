@@ -1,7 +1,11 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
+import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { TagStatus } from 'src/app/shared/enums/status.enum';
+import { AlertService } from 'src/app/shared/components/alert.service';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ItemListaService, ItemListaDto } from 'src/app/core/services/item-lista.service';
-import { ListaDto, ListaService } from 'src/app/core/services/lista.service';
+import { ListaService } from 'src/app/core/services/lista.service';
 
 @Component({
   selector: 'app-lista-de-checagem',
@@ -10,79 +14,107 @@ import { ListaDto, ListaService } from 'src/app/core/services/lista.service';
 })
 export class ListaDeChecagemComponent implements OnInit {
 
-  listaId!: number;
-  lista: ListaDto | null = null;
+  itemListas: ItemListaDto[] = [];
+  exibirCampos: ExibirCampos | null = null;
+  gridColumns: GridColumn[] = [];
 
-  itens: ItemListaDto[] = [];
-  filtered: ItemListaDto[] = [];
+  statusOptions: GridColumnOption[] = [
+    { label: 'CONCLUIDO', value: 'CONCLUIDO', classe: TagStatus.Success },
+    { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Warning }
+  ];
+  listaId: string | null = null;
+
+  statusLabel(value: string): boolean {
+    return value === 'CONCLUIDO' ? true : false;
+  }
+
+  lista: ItemListaDto[] = [];
+  titulo: string = "Checklist"
+  breadcrumb = [{ label: 'Catalago' }, { label: 'Checklist' }]
 
   loading = false;
   errorMsg = '';
 
   q = '';
-  statusFilter: 'ALL' | 'true' | 'false' = 'ALL';
 
   showModalCreateItem = false;
   showModalUpdateItem = false;
-  editingItem: ItemListaDto | null = null;
 
-  titulo = 'Lista de Checagem';
+  editing: ItemListaDto | null = null;
+  @ViewChild('grid') grid?: DataGridComponent;
 
-  constructor(
-    private route: ActivatedRoute,
-    private service: ItemListaService,
-    private listaService: ListaService
-  ) {}
+  constructor(private itemListaService: ItemListaService, private readonly listaService: ListaService, private readonly alertService: AlertService, private readonly router: Router, private readonly route: ActivatedRoute) { }
 
   async ngOnInit() {
-    this.listaId = Number(this.route.snapshot.paramMap.get('id'));    
-    this.lista = await this.listaService.GetListaById(this.listaId);
-    this.titulo = this.lista.nome;
+    this.setExibirCampos()
+    this.setGridColumns();
     await this.load();
+  }
+
+  private setGridColumns(): void {
+    this.gridColumns = [
+      {
+        field: 'statusBoolean',
+        header: 'STATUS',
+        formatter: (row) => this.statusLabel(row.status),
+        type: 'checkbox', // Ou adicione no seu enum
+        width: '5%'
+      },
+      { field: 'descricao', header: 'DESCRIÇÃO', type: 'text', width: "35%", classe: (row) => row.status == "CONCLUIDO" ? 'text-success' : 'text-danger' },
+      { field: 'quantidade', header: 'QUANTIDADE', type: 'number', width: "30%", classe: (row) => row.status == "CONCLUIDO" ? 'text-success' : 'text-danger' },
+      { field: 'actions', header: 'Ações', type: 'actions', functions: ['edit', 'delete'] },
+    ]
+  }
+
+  private setExibirCampos(): void {
+    this.exibirCampos = {
+      filter: false,
+      sortable: true,
+      selected: false,
+      paginator: true,
+      buttonDeleteAll: false,
+      buttonNew: true,
+      buttonLock: false,
+      buttonPopUp: false,
+      buttonViewLine: false,
+      buttonEditLine: true,
+      buttonDeleteLine: true,
+      buttonSaveCancel: false,
+    }
   }
 
   async load() {
     try {
       this.loading = true;
-      this.errorMsg = '';
-      this.itens = await this.service.GetItemListaById(this.listaId);
-      this.aplicarFiltros();
+      this.listaId = this.route.snapshot.paramMap.get('id')
+      this.itemListas = (await this.itemListaService.GetItemListaById(Number(this.listaId))).map(i => ({
+        ...i,
+        statusBoolean: i.status === 'CONCLUIDO'
+      }));
+      this.titulo = (await this.listaService.GetListaById(Number(this.listaId))).nome
+      console.log('Listas carregadas:', this.itemListas);
+      this.applyFilters();
     } catch (e: any) {
-      this.errorMsg = e?.message ?? 'Erro ao carregar itens.';
+      this.alertService.error(e?.message ?? 'Erro ao carregar listas.')
     } finally {
       this.loading = false;
     }
   }
 
-  aplicarFiltros() {
-    const term = this.q.toLowerCase();
+  applyFilters() {
+    const term = this.q.trim().toLowerCase();
 
-    this.filtered = this.itens
-      .filter(i => !term || i.descricao?.toLowerCase().includes(term))
-      .filter(i => {
-        if (this.statusFilter === 'ALL') return true;
-
-        if (this.statusFilter === 'true') {
-          return i.status === 'CONCLUIDO';
-        }
-
-        if (this.statusFilter === 'false') {
-          return i.status !== 'CONCLUIDO';
-        }
-
-        return true;
-      })
-      .sort((a, b) => Number(a.status === 'CONCLUIDO') - Number(b.status === 'CONCLUIDO'));
+    this.lista = [...this.itemListas]
+      .sort((a, b) => (a.descricao ?? '').localeCompare(b.descricao ?? ''))
+      .filter(c => {
+        if (!term) return true;
+        return (c.descricao ?? '').toLowerCase().includes(term) || String(c.id).includes(term);
+      });
   }
 
-  onSearchChange(v: string) {
-    this.q = v;
-    this.aplicarFiltros();
-  }
-
-  pesquisarStatus(v: string) {
-    this.statusFilter = v as any;
-    this.aplicarFiltros();
+  onSearchChange(value: string) {
+    this.q = value;
+    this.applyFilters();
   }
 
   async toggleConcluido(item: ItemListaDto) {
@@ -92,21 +124,21 @@ export class ListaDeChecagemComponent implements OnInit {
     item.status = novoStatus;
 
     try {
-      await this.service.update(item);
+      await this.itemListaService.update(item);
     } catch {
       item.status = oldStatus; // rollback
     }
   }
-
-  abrirCriarItem() {
-    this.editingItem = null;
+  openCreate() {
+    this.editing = null;
     this.showModalCreateItem = true;
   }
 
-  abrirEditarItem(item: ItemListaDto) {
-    this.editingItem = item;
+  onEdit(lista: ItemListaDto) {
+    this.editing = lista;
     this.showModalUpdateItem = true;
   }
+
 
   fecharModalCriarItem(reload: boolean) {
     this.showModalCreateItem = false;
@@ -115,14 +147,52 @@ export class ListaDeChecagemComponent implements OnInit {
 
   fecharModalAtualizarItem(reload: boolean) {
     this.showModalUpdateItem = false;
-    this.editingItem = null;
+    this.editing = null;
     if (reload) this.load();
   }
 
-  async onDelete(item: ItemListaDto) {
-    if (!confirm(`Excluir "${item.descricao}"?`)) return;
+  async onDelete(c: ItemListaDto) {
+    const ok = window.confirm(`Excluir a lista "${c.descricao}"?`);
+    if (!ok) return;
 
-    await this.service.delete(item.id);
-    await this.load();
+    try {
+      await this.itemListaService.delete(c.id);
+      this.alertService.success('Lista deletada com sucesso!')
+      await this.load();
+    } catch (e) {
+      this.alertService.error('Falha ao deletar. Lista pode estar vinculada a transações.');
+    }
+  }
+
+  async onDeleteSelected(rows: ItemListaDto[]) {
+    if (!rows.length) return;
+
+    const ok = window.confirm(`Excluir ${rows.length} lista(s) selecionada(s)?`);
+    if (!ok) {
+      if (this.grid) {
+        this.grid.deleting = false;
+      }
+      return;
+    }
+
+    try {
+      var response;
+      for (const row of rows) {
+        response = await this.itemListaService.delete(row.id);
+      }
+
+      if (response) {
+        this.alertService.success(`${rows.length} lista(s) excluída(s) com sucesso!`);
+      }
+
+      this.grid?.clearSelection();
+      await this.load();
+    } catch (e) {
+      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
+    } finally {
+      if (this.grid) {
+        this.grid.deleting = false;
+      }
+    }
   }
 }
