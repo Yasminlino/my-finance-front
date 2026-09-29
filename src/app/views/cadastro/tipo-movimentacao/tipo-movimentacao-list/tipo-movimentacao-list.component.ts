@@ -1,10 +1,11 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import {GridColumn } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { TipoMovimentacaoDto } from 'src/app/core/models/tipo-movimentacao.model';
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
+import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 
 @Component({
@@ -15,7 +16,7 @@ import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao
 export class TipoMovimentacaoListComponent implements OnInit {
 
   tipoMovimentacoes: TipoMovimentacaoDto[] = [];
-  exibirCampos: ExibirCampos | null = null;
+  exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO };
   gridColumns: GridColumn[] = []
   breadcrumb = [{ label: 'Cadastros' }, { label: 'Tipo movimentação' }]
 
@@ -30,24 +31,7 @@ export class TipoMovimentacaoListComponent implements OnInit {
 
   async ngOnInit() {
     this.setGridColumns()
-    this.setExibirCampos()
     await this.load();
-  }
-
-  private setExibirCampos(): void {
-    this.exibirCampos = {
-      filter: true,
-      sortable: true,
-      selected: true,
-      paginator: true,
-      buttonDeleteAll: true,
-      buttonNew: true,
-      buttonLock: false,
-      buttonPopUp: false,
-      buttonEditLine: true,
-      buttonDeleteLine: true,
-      buttonSaveCancel: false,
-    }
   }
 
   private setGridColumns(): void {

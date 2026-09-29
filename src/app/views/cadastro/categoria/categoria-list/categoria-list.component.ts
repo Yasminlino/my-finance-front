@@ -2,9 +2,10 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { Category, CategoryService } from 'src/app/core/services/category.service';
 import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { ExibirCampos, GridColumn, GridColumnOption, GridRowChange } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 @Component({
   selector: 'app-categoria-list',
@@ -13,7 +14,7 @@ import { AlertService } from 'src/app/shared/components/alert.service';
 })
 export class CategoriaListComponent implements OnInit {
   categorias: Category[] = [];
-  exibirCampos: ExibirCampos | null = null;
+  exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO };
 
   naturezaOperacaoOptions: GridColumnOption[] = Object.entries(NaturezaOperacaoLabel).map(([value, label]) => ({
     label,
@@ -77,26 +78,8 @@ export class CategoriaListComponent implements OnInit {
   constructor(private categoryService: CategoryService, private readonly alertService: AlertService) { }
 
   async ngOnInit() {
-    this.setExibirCampos()
     await this.load();
   }
-
-  private setExibirCampos(): void {
-    this.exibirCampos = {
-      filter: true,
-      sortable: true,
-      selected: true,
-      paginator: true,
-      buttonDeleteAll: true,
-      buttonNew: true,
-      buttonLock: false,
-      buttonPopUp: false,
-      buttonEditLine: true,
-      buttonDeleteLine: true,
-      buttonSaveCancel: false,
-    }
-  }
-
 
   async load() {
     try {

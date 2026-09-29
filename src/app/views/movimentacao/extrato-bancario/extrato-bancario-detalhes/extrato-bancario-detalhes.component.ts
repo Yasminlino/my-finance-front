@@ -1,11 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { FormBuilder } from '@angular/forms';
-import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import { formatCurrencyBR, formatDateBRView, formatDateInput, formatYearMonth, isoDateMinusHours, parseMoneyBRToNumber, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { GridColumn, TypeGrid, GridRowChange, GridColumnOption, ExibirCampos } from "src/app/shared/components/data-grid/data-grid.interface"
-import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
-import { formatDateVencimentoView } from 'src/app/core/utils/mask';
+import { GridColumn, TypeGrid, GridRowChange, GridColumnOption } from "src/app/shared/components/data-grid/data-grid.interface"
 import { CategoryService } from 'src/app/core/services/category.service';
 import { Category } from 'src/app/core/services/category.service';
 import { RowForm } from 'src/app/core/interfaces/conta-mensal.interface';
@@ -21,6 +17,7 @@ import { ExtratoBancarioItemService, ExtratoItemDto } from 'src/app/core/service
 import { debounceTime, distinctUntilChanged, map, Observable } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { BancoService } from 'src/app/core/services/banco.service';
+import { EXIBIR_CAMPOS_MOVIMENTACOES, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 @Component({
   selector: 'app-extrato-bancario-detalhes',
@@ -88,12 +85,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   selectedMonth: any;
   loading: boolean = false;
   selectedTotals = { receita: 0, despesa: 0, saldo: 0, count: 0 };
-  exibirCampos: ExibirCampos | null = null;
-
-  statusLabel(value: number): string {
-    return value === 1 ? 'Ativo' : 'Inativo';
-  }
-
+  exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_MOVIMENTACOES };
   rowForms = new Map<number, RowForm>();
 
   categoriaOptions: string[] = [];
@@ -102,9 +94,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   dateInput(v: any) { return formatDateInput(v); }
 
 
-  constructor(
-    private fb: FormBuilder,
-    private contaMensalService: ContaMensalService,
+  constructor( 
     private readonly categoriaService: CategoryService,
     private readonly alertService: AlertService,
     private readonly tipoCartaoService: TipoCartaoService,
@@ -120,7 +110,6 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
     await this.carregarDados();
     this.setGridColumns();
     this.setitemsButtom();
-    this.setExibirCampos();
 
     await this.loadMonth();
   }
@@ -237,23 +226,6 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
           .slice(0, 10);
       })
     );
-
-  private setExibirCampos(): void {
-    this.exibirCampos = {
-      filter: true,
-      sortable: true,
-      selected: true,
-      paginator: true,
-      filterMonth: true,
-      buttonDeleteAll: true,
-      buttonNew: false,
-      buttonLock: true,
-      buttonPopUp: true,
-      buttonEditLine: false,
-      buttonDeleteLine: true,
-      buttonSaveCancel: true,
-    }
-  }
 
   private setitemsButtom(): void {
     this.itemsButtom = [

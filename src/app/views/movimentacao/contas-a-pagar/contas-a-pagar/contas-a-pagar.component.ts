@@ -3,7 +3,7 @@ import { FormBuilder } from '@angular/forms';
 import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import { formatCurrencyBR, formatDateInput, formatYearMonth, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { GridColumn, TypeGrid, GridRowChange, GridColumnOption, ExibirCampos } from "src/app/shared/components/data-grid/data-grid.interface"
+import { GridColumn, TypeGrid, GridRowChange, GridColumnOption } from "src/app/shared/components/data-grid/data-grid.interface"
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { formatDateVencimentoView } from 'src/app/core/utils/mask';
 import { CategoryService } from 'src/app/core/services/category.service';
@@ -13,6 +13,7 @@ import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/gri
 import { MenuItem } from 'primeng/api';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
+import { EXIBIR_CAMPOS_MOVIMENTACOES, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 @Component({
   selector: 'app-contas-a-pagar',
@@ -45,7 +46,8 @@ export class ContasAPagarComponent implements OnInit {
   selectedMonth: any;
   loading: boolean = false;
   selectedTotals = { receita: 0, despesa: 0, saldo: 0, count: 0 };
-  exibirCampos: ExibirCampos | null = null;
+  
+  exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_MOVIMENTACOES };
 
   showModalCreate: boolean = false;
 
@@ -68,26 +70,8 @@ export class ContasAPagarComponent implements OnInit {
     await this.getCategory();
     this.setGridColumns();
     this.setitemsButtom();
-    this.setExibirCampos();
 
     await this.loadMonth();
-  }
-
-  private setExibirCampos(): void {
-    this.exibirCampos = {
-      filter: true,
-      sortable: true,
-      selected: true,
-      paginator: true,
-      filterMonth: true,
-      buttonDeleteAll: true,
-      buttonNew: false,
-      buttonLock: true,
-      buttonPopUp: true,
-      buttonEditLine: false,
-      buttonDeleteLine: true,
-      buttonSaveCancel: true,
-    }
   }
 
   private setitemsButtom(): void {

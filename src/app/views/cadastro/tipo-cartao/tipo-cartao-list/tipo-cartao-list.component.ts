@@ -1,10 +1,10 @@
  import { Component, OnInit, ViewChild } from '@angular/core';
-import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
-import { TagStatus } from 'src/app/shared/enums/status.enum';
+import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
+import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 
 @Component({
@@ -15,7 +15,7 @@ import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-car
 export class TipoCartaoListComponent implements OnInit {
   tipoCartoes: TipoCartaoDto[] = [];
   tipoCartaoOpcoes: GridColumnOption[] = [];
-  exibirCampos: ExibirCampos | null = null;
+  exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO };
   gridColumns: GridColumn[] = []
   breadcrumb = [{ label: 'Cadastros' }, { label: 'Tipo Cartão' }]
 
@@ -31,26 +31,8 @@ export class TipoCartaoListComponent implements OnInit {
   async ngOnInit() {
     await this.getTiposCartao();
     this.setGridColumns()
-    this.setExibirCampos()
     await this.load();
   }
-
-  private setExibirCampos(): void {
-    this.exibirCampos = {
-      filter: true,
-      sortable: true,
-      selected: true,
-      paginator: true,
-      buttonDeleteAll: true,
-      buttonNew: true,
-      buttonLock: false,
-      buttonPopUp: false,
-      buttonEditLine: true,
-      buttonDeleteLine: true,
-      buttonSaveCancel: false,
-    }
-  }
-
 
   private async getTiposCartao(): Promise<void> {
     const res = await this.tipoCartaoService.list();

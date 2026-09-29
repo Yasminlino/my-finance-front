@@ -33,23 +33,6 @@ export enum TypeGrid {
   visualizacao = 3 
 }
 
-export interface ExibirCampos {
-  filter?: boolean;
-  selected?: boolean;
-  paginator?: boolean;
-  sortable?: boolean;
-  export?: boolean;
-  filterMonth?: boolean;
-  buttonDeleteAll: boolean;
-  buttonNew: boolean;
-  buttonLock: boolean;
-  buttonPopUp: boolean;
-  buttonViewLine?: boolean;
-  buttonEditLine: boolean;
-  buttonDeleteLine: boolean;
-  buttonSaveCancel: boolean;
-}
-
 export interface GridColumnOption {
   label: string;
   value: any;

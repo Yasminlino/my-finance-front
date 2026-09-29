@@ -2,13 +2,13 @@ import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angu
 import { FormBuilder, Validators } from '@angular/forms';
 import { AccountDto, ContaService, ContaVencimentoDto } from 'src/app/core/services/contas.service';
 import { Category, CategoryService } from 'src/app/core/services/category.service';
-import { formatCurrencyBR, formatMoneyBRFromAny, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
-import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
-import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
+import { formatCurrencyBR } from 'src/app/core/utils/mask';
+import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
+import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 
 
@@ -21,7 +21,7 @@ export class ContaMensalListComponent implements OnInit {
   contas: AccountDto[] = [];
   categorias: Category[] = [];
   categoriasOptions: GridColumnOption[] = [];
-  exibirCampos: ExibirCampos | null = null;
+  exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO };
   gridColumns: GridColumn[] = []
 
   money(v: any) { return formatCurrencyBR(v); }
@@ -53,26 +53,8 @@ export class ContaMensalListComponent implements OnInit {
   async ngOnInit() {
     await this.getCategory();
     this.setGridColumns()
-    this.setExibirCampos()
     await this.load();
   }
-
-  private setExibirCampos(): void {
-    this.exibirCampos = {
-      filter: true,
-      sortable: true,
-      selected: true,
-      paginator: true,
-      buttonDeleteAll: true,
-      buttonNew: true,
-      buttonLock: false,
-      buttonPopUp: false,
-      buttonEditLine: true,
-      buttonDeleteLine: true,
-      buttonSaveCancel: false,
-    }
-  }
-
 
   private async getCategory(): Promise<void> {
     const res = await this.categoryService.buscarCategoriasAtivas();

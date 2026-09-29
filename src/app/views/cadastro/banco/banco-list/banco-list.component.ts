@@ -1,8 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { Category } from 'src/app/core/services/category.service';
-import { formatCurrencyBR, formatMoneyBRFromAny, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
-import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
-import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
+import { formatCurrencyBR} from 'src/app/core/utils/mask';
+import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { AlertService } from 'src/app/shared/components/alert.service';
@@ -10,6 +9,7 @@ import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/gri
 import { TipoCartao, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { BancoService } from 'src/app/core/services/banco.service';
 import { BancoDto } from 'src/app/core/interfaces/banco.interface';
+import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 
 @Component({
@@ -21,7 +21,7 @@ export class BancoListComponent implements OnInit {
   bancos: BancoDto[] = [];
   tiposCartao: TipoCartao[] = [];
   tipoCartaoOpcoes: GridColumnOption[] = [];
-  exibirCampos: ExibirCampos | null = null;
+  exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO };
   gridColumns: GridColumn[] = []
 
   money(v: any) { return formatCurrencyBR(v); }
@@ -52,26 +52,8 @@ export class BancoListComponent implements OnInit {
   async ngOnInit() {
     await this.getTiposCartao();
     this.setGridColumns()
-    this.setExibirCampos()
     await this.load();
   }
-
-  private setExibirCampos(): void {
-    this.exibirCampos = {
-      filter: true,
-      sortable: true,
-      selected: true,
-      paginator: true,
-      buttonDeleteAll: true,
-      buttonNew: true,
-      buttonLock: false,
-      buttonPopUp: false,
-      buttonEditLine: true,
-      buttonDeleteLine: true,
-      buttonSaveCancel: false,
-    }
-  }
-
 
   private async getTiposCartao(): Promise<void> {
     const res = await this.tipoCartaoService.list();

@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
-import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import {GridColumn } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
@@ -8,6 +8,7 @@ import { AccountDto, ContaService } from 'src/app/core/services/contas.service';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { ContaMensal } from 'src/app/core/models/conta-mensal.model';
 import { formatCurrencyBR, formatDateVencimento, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
+import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 @Component({
   selector: 'app-modal-adicionar-em-lote',
@@ -24,7 +25,7 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
   disabledIds = new Set<number>();
   selectedIds = new Set<number>();
 
-  exibirCampos: ExibirCampos | null = null;
+  exibirCampos: ExibirCamposConfig | null = null;
   gridColumns: GridColumn[] = []
   breadcrumb = [{ label: 'Cadastros' }, { label: 'Tipo movimentação' }]
 
@@ -59,17 +60,8 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
 
   private setExibirCampos(): void {
     this.exibirCampos = {
-      filter: false,
       sortable: true,
-      selected: true,
-      paginator: false,
-      buttonDeleteAll: false,
-      buttonNew: false,
-      buttonLock: false,
-      buttonPopUp: false,
-      buttonEditLine: false,
-      buttonDeleteLine: false,
-      buttonSaveCancel: false,
+      selected: true
     }
   }
 

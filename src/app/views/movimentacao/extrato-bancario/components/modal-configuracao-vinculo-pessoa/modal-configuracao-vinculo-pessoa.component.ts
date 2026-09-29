@@ -1,17 +1,15 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
-import { ExibirCampos, GridColumn, GridColumnOption, GridRowChange } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { GridColumn, GridColumnOption, GridRowChange } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { Subscription } from 'rxjs';
-import { AccountDto, ContaService } from 'src/app/core/services/contas.service';
-import { ContaMensal } from 'src/app/core/models/conta-mensal.model';
-import { formatCurrencyBR, formatDateVencimento, formatDateVencimentoView, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
-import { ExtratoBancarioDto, ExtratoBancarioService } from 'src/app/core/services/extrato-bancario.service';
+import { formatCurrencyBR} from 'src/app/core/utils/mask';
+import { ExtratoBancarioDto } from 'src/app/core/services/extrato-bancario.service';
 import { PessoaMovimentacaoDto, PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
 import { CategoryService } from 'src/app/core/services/category.service';
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
 import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
+import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 
 @Component({
@@ -29,7 +27,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   disabledIds = new Set<number>();
   selectedIds = new Set<number>();
 
-  exibirCampos: ExibirCampos | null = null;
+  exibirCampos: ExibirCamposConfig | null = null;
   gridColumns: GridColumn[] = []
   categorias: GridColumnOption[] = [];
   movimentacoes: GridColumnOption[] = [];
@@ -62,15 +60,10 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
     this.exibirCampos = {
       filter: true,
       sortable: true,
-      selected: false,
       paginator: true,
-      buttonDeleteAll: false,
       buttonNew: true,
       buttonLock: true,
-      buttonPopUp: false,
-      buttonEditLine: false,
       buttonDeleteLine: true,
-      buttonSaveCancel: false,
     }
   }
 

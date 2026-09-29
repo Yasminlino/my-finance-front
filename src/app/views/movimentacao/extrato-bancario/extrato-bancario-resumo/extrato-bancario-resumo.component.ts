@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { Category, CategoryService } from 'src/app/core/services/category.service';
 import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { ExibirCampos, GridColumn, GridColumnOption, GridRowChange } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { GridColumn} from 'src/app/shared/components/data-grid/data-grid.interface';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
@@ -15,6 +15,7 @@ import { ContaService } from 'src/app/core/services/contas.service';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { BancoService } from 'src/app/core/services/banco.service';
 import { MenuItem } from 'primeng/api';
+import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 
 @Component({
@@ -22,7 +23,7 @@ import { MenuItem } from 'primeng/api';
   templateUrl: './extrato-bancario-resumo.component.html',
 })
 export class ExtratoBancarioResumoComponent implements OnInit {
-  exibirCampos: ExibirCampos | null = null;
+  exibirCampos: ExibirCamposConfig | null = null;
   dateFilter: Date | undefined
   gridColumns: GridColumn[] = [];
   categorias: Category[] = [];
@@ -34,16 +35,9 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   selectedMonth: any;
   itemsButtom: MenuItem[] = [];
 
-  statusLabel(value: number): string {
-    return value === 1 ? 'Ativo' : 'Inativo';
-  }
-
   breadcrumb = [{ label: 'Movimentações' }, { label: 'Resumo Extrato Bancário' }]
 
   loading = false;
-
-  q = '';
-  statusFilter: 'ALL' | 'Ativo' | 'Inativo' = 'ALL';
 
   showImportModal = false;
   showManualModal = false;
@@ -81,8 +75,6 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   constructor(
     private router: Router,
     private extratoItemService: ExtratoBancarioItemService,
-    private contaService: ContaService,
-    private contaMensalService: ContaMensalService,
     private tipoCartaoService: TipoCartaoService,
     private categoryService: CategoryService,
     private bancoService: BancoService,
@@ -102,16 +94,10 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     this.exibirCampos = {
       filter: true,
       sortable: true,
-      selected: false,
       paginator: true,
       filterMonth: true,
-      buttonDeleteAll: false,
-      buttonNew: false,
-      buttonLock: false,
       buttonPopUp: true,
       buttonEditLine: true,
-      buttonDeleteLine: false,
-      buttonSaveCancel: false,
     }
   }
 

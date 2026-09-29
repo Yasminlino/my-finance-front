@@ -1,11 +1,12 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ItemListaService, ItemListaDto } from 'src/app/core/services/item-lista.service';
 import { ListaService } from 'src/app/core/services/lista.service';
+import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 @Component({
   selector: 'app-lista-de-checagem',
@@ -15,7 +16,7 @@ import { ListaService } from 'src/app/core/services/lista.service';
 export class ListaDeChecagemComponent implements OnInit {
 
   itemListas: ItemListaDto[] = [];
-  exibirCampos: ExibirCampos | null = null;
+  exibirCampos: ExibirCamposConfig | null = null;
   gridColumns: GridColumn[] = [];
 
   statusOptions: GridColumnOption[] = [
@@ -68,18 +69,11 @@ export class ListaDeChecagemComponent implements OnInit {
 
   private setExibirCampos(): void {
     this.exibirCampos = {
-      filter: false,
       sortable: true,
-      selected: false,
       paginator: true,
-      buttonDeleteAll: false,
       buttonNew: true,
-      buttonLock: false,
-      buttonPopUp: false,
-      buttonViewLine: false,
       buttonEditLine: true,
       buttonDeleteLine: true,
-      buttonSaveCancel: false,
     }
   }
 

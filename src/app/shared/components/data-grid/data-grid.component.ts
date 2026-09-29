@@ -31,7 +31,6 @@ import { ToggleButtonModule } from 'primeng/togglebutton';
 import { MenuItem } from 'primeng/api';
 
 import {
-  ExibirCampos,
   GridColumn,
   GridColumnOption,
   GridColumnType,
@@ -40,6 +39,7 @@ import {
 } from './data-grid.interface';
 
 import { CurrencyInputDirective } from '../../directives/currency-input.directive';
+import { ExibirCamposConfig } from '../../models/utils/grid-config.constants';
 
 
 @Component({
@@ -109,7 +109,7 @@ export class DataGridComponent {
   @Input() loading = false;
   @Input() itemsButtom: MenuItem[] = [];
   @Input() statusOptions: GridColumnOption[] = [];
-  @Input() exibeCampos: ExibirCampos | null = null;
+  @Input() exibeCampos: ExibirCamposConfig | null = null;
   @Input() deleting = false;
   @Input() disabledRowIds?: Set<any>;
   @Input() localStorage?: String;

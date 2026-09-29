@@ -1,14 +1,15 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { AlertService } from 'src/app/shared/components/alert.service';
-import { ListaDto, ListaService } from 'src/app/core/services/lista.service';
+import { ListaService } from 'src/app/core/services/lista.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ItemListaDto, ItemListaService } from 'src/app/core/services/item-lista.service';
 import { TipoLista } from 'src/app/shared/enums/tipo-lista.enum';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { formatCurrencyBR } from 'src/app/core/utils/mask';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
+import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 
 
@@ -21,7 +22,8 @@ export class ListaDeOrcamentoComponent implements OnInit {
   @ViewChild('grid') grid?: DataGridComponent;
 
   itensLista: ItemListaDto[] = [];
-  exibirCampos: ExibirCampos | null = null;
+  
+  exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO, buttonViewLine: true };
   gridColumns: GridColumn[] = [];
   tipoLista = TipoLista.Orcamento;
   lista: ItemListaDto[] = [];
@@ -53,7 +55,6 @@ export class ListaDeOrcamentoComponent implements OnInit {
 
   async ngOnInit() {
     await this.load();
-    this.setExibirCampos()
     this.setGridColumns();
   }
 
@@ -84,23 +85,6 @@ export class ListaDeOrcamentoComponent implements OnInit {
       },
       { field: 'actions', header: 'Ações', type: 'actions', functions: ['edit', 'delete'] },
     ]
-  }
-
-  private setExibirCampos(): void {
-    this.exibirCampos = {
-      filter: true,
-      sortable: true,
-      selected: true,
-      paginator: true,
-      buttonDeleteAll: true,
-      buttonNew: true,
-      buttonLock: false,
-      buttonPopUp: false,
-      buttonViewLine: false,
-      buttonEditLine: true,
-      buttonDeleteLine: true,
-      buttonSaveCancel: false,
-    }
   }
 
   async load() {

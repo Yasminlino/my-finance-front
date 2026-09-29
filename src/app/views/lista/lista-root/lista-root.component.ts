@@ -1,11 +1,12 @@
 
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ListaDto, ListaService } from 'src/app/core/services/lista.service';
 import { Router } from '@angular/router';
+import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 @Component({
   selector: 'app-lista-root',
@@ -14,7 +15,7 @@ import { Router } from '@angular/router';
 })
 export class ListaRootComponent implements OnInit {
   listas: ListaDto[] = [];
-  exibirCampos: ExibirCampos | null = null;
+  exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO, buttonViewLine: true };
   gridColumns: GridColumn[] = [];
 
   statusOptions: GridColumnOption[] = [
@@ -44,7 +45,6 @@ export class ListaRootComponent implements OnInit {
   constructor(private listaService: ListaService, private readonly alertService: AlertService, private readonly router: Router) { }
 
   async ngOnInit() {
-    this.setExibirCampos()
     this.setGridColumns();
     await this.load();
   }
@@ -73,23 +73,6 @@ export class ListaRootComponent implements OnInit {
       },
       { field: 'actions', header: 'Ações', type: 'actions', functions: ['view', 'edit', 'delete'] },
     ]
-  }
-
-  private setExibirCampos(): void {
-    this.exibirCampos = {
-      filter: true,
-      sortable: true,
-      selected: true,
-      paginator: true,
-      buttonDeleteAll: true,
-      buttonNew: true,
-      buttonLock: false,
-      buttonPopUp: false,
-      buttonViewLine: true,
-      buttonEditLine: true,
-      buttonDeleteLine: true,
-      buttonSaveCancel: false,
-    }
   }
 
   async load() {

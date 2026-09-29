@@ -1,13 +1,11 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
-import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { GridColumn} from 'src/app/shared/components/data-grid/data-grid.interface';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { Subscription } from 'rxjs';
-import { AccountDto, ContaService } from 'src/app/core/services/contas.service';
-import { ContaMensal } from 'src/app/core/models/conta-mensal.model';
-import { formatCurrencyBR, formatDateVencimento, formatDateVencimentoView, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
+import { formatCurrencyBR, formatDateVencimentoView } from 'src/app/core/utils/mask';
 import { ExtratoBancarioDto, ExtratoBancarioService } from 'src/app/core/services/extrato-bancario.service';
+import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 
 @Component({
@@ -24,7 +22,7 @@ export class ModalImportacoesMensaisComponent implements OnInit {
   disabledIds = new Set<number>();
   selectedIds = new Set<number>();
 
-  exibirCampos: ExibirCampos | null = null;
+  exibirCampos: ExibirCamposConfig | null = null;
   gridColumns: GridColumn[] = []
 
   loading = false;
@@ -51,15 +49,7 @@ export class ModalImportacoesMensaisComponent implements OnInit {
     this.exibirCampos = {
       filter: true,
       sortable: true,
-      selected: false,
-      paginator: false,
-      buttonDeleteAll: false,
-      buttonNew: false,
-      buttonLock: false,
-      buttonPopUp: false,
-      buttonEditLine: false,
-      buttonDeleteLine: true,
-      buttonSaveCancel: false,
+      buttonDeleteLine: true
     }
   }
 
