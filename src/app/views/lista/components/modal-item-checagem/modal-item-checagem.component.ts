@@ -79,6 +79,6 @@ export class ModalItemChecagemComponent implements OnInit {
 
   toggleStatus() {
     this.form.status =
-      this.form.status === 'CONCLUIDO' ? 'PENDENTE' : 'CONCLUIDO';
+      this.form.status === 'OK' ? 'PENDENTE' : 'OK';
   }
 }

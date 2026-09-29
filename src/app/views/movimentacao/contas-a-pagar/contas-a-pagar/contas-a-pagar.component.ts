@@ -49,10 +49,6 @@ export class ContasAPagarComponent implements OnInit {
 
   showModalCreate: boolean = false;
 
-  statusLabel(value: number): string {
-    return value === 1 ? 'Ativo' : 'Inativo';
-  }
-
   rowForms = new Map<number, RowForm>();
 
   categoriaOptions: string[] = [];

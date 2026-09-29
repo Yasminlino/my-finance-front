@@ -1,12 +1,15 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
+import { ExibirCampos, GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { AlertService } from 'src/app/shared/components/alert.service';
+import { ListaDto, ListaService } from 'src/app/core/services/lista.service';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ItemListaDto, ItemListaService } from 'src/app/core/services/item-lista.service';
-import { ListaService } from 'src/app/core/services/lista.service';
+import { TipoLista } from 'src/app/shared/enums/tipo-lista.enum';
+import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { formatCurrencyBR } from 'src/app/core/utils/mask';
+import { TagStatus } from 'src/app/shared/enums/status.enum';
 
-type AlertState = { type: 'success' | 'error' | ''; message: string };
-
-type SortKey = 'id' | 'descricao' | 'valor' | 'status';
 
 
 @Component({
@@ -15,80 +18,116 @@ type SortKey = 'id' | 'descricao' | 'valor' | 'status';
   styleUrls: ['./lista-de-orcamento.component.scss'],
 })
 export class ListaDeOrcamentoComponent implements OnInit {
+  @ViewChild('grid') grid?: DataGridComponent;
 
-  sortState: { key: SortKey; dir: 'asc' | 'desc' } = { key: 'id', dir: 'asc' };
-
-  itenslista: ItemListaDto[] = [];
-  filtered: ItemListaDto[] = [];
-  titulo: string = '';
-  tipoLista: number = 0;
-  showModalConfigCores = false;
-  statusColors: Record<string, string> = {};
-
+  itensLista: ItemListaDto[] = [];
+  exibirCampos: ExibirCampos | null = null;
+  gridColumns: GridColumn[] = [];
+  tipoLista = TipoLista.Orcamento;
+  lista: ItemListaDto[] = [];
+  listaId: number = 0;
+  titulo: string = 'Orçamento';
+  breadcrumb = [{ label: 'Catalago' }, { label: 'Orçamento' }]
 
   loading = false;
   errorMsg = '';
-
-  colFilters = {
-    id: '',
-    descricao: '',
-    valorMin: '',
-    valorMax: '',
-    status: [] as string[], // multi
-  };
-
-  statusOptions: string[] = [];
-
+  statusU: string[] = [];
+  statusOptions: GridColumnOption[] = [
+    { label: 'OK', value: 'OK', classe: TagStatus.Success },
+    { label: 'AGUARDANDO', value: 'AGUARDANDO', classe: TagStatus.Warning },
+    { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Danger }
+  ];
 
   q = '';
-  statusFilter: 'ALL' | 'true' | 'false' = 'ALL';
+  selectedTotals = { receita: 0, despesa: 0, saldo: 0, count: 0 };
 
-  alert: AlertState = { type: '', message: '' };
-
-  // modal
   showModalCreateItem = false;
   showModalUpdateItem = false;
 
-  editingItem: ItemListaDto | null = null;
-  listaId: number = 0;
-  total: any = 0;
+
+  editing: ItemListaDto | null = null;
   situacoes: string[] = [];
   totalPorSituacao: { situacao: string | undefined; valorTotal: number; }[] = [];
 
-  constructor(
-    private activatedRoute: ActivatedRoute,
-    private ItemListaservice: ItemListaService, private ListaService: ListaService) { }
+  constructor(private itemListaService: ItemListaService, private listaService: ListaService, private readonly alertService: AlertService, private readonly router: Router, private readonly route: ActivatedRoute) { }
 
   async ngOnInit() {
     await this.load();
+    this.setExibirCampos()
+    this.setGridColumns();
+  }
+
+  money(v: any) { return formatCurrencyBR(v); }
+
+  private setGridColumns(): void {
+    this.gridColumns = [
+      { field: 'descricao', header: 'DESCRIÇÃO', type: GridColumnTypeEnum.Text, width: "30%" },
+      {
+        field: 'valor',
+        header: 'VALOR',
+        type: GridColumnTypeEnum.Money,
+        formatter: (row) => this.money(row.valor),
+        width: "15%"
+      },
+      {
+        field: 'observacao',
+        header: 'OBS.',
+        type: GridColumnTypeEnum.TextArea,
+        width: "25%"
+      },
+      {
+        field: "status",
+        header: "Status",
+        type: GridColumnTypeEnum.Select,
+        options: this.statusOptions,
+        width: '17%'
+      },
+      { field: 'actions', header: 'Ações', type: 'actions', functions: ['edit', 'delete'] },
+    ]
+  }
+
+  private setExibirCampos(): void {
+    this.exibirCampos = {
+      filter: true,
+      sortable: true,
+      selected: true,
+      paginator: true,
+      buttonDeleteAll: true,
+      buttonNew: true,
+      buttonLock: false,
+      buttonPopUp: false,
+      buttonViewLine: false,
+      buttonEditLine: true,
+      buttonDeleteLine: true,
+      buttonSaveCancel: false,
+    }
   }
 
   async load() {
     try {
       this.loading = true;
-      this.errorMsg = '';
-
-      await this.validaItemLista();
-
-      this.itenslista = await this.ItemListaservice.GetItemListaById(this.listaId);
-
-      this.loadStatusColors();
-
-      this.valculaTotal();
-      this.aplicarFiltros();
+      this.listaId = Number(this.route.snapshot.paramMap.get('id'));
+      this.itensLista = await this.itemListaService.GetItemListaById(Number(this.listaId));      
+      this.lista = [...this.itensLista]; 
+      const listaObj = await this.listaService.GetListaById(this.listaId);
+      this.titulo = listaObj?.nome ?? 'Orçamento';
+      console.log('Listas carregadas:', this.itensLista);
+      this.applyFilters();
     } catch (e: any) {
-      this.errorMsg = e?.message ?? 'Erro ao carregar tipos de cartão.';
+      this.alertService.error(e?.message ?? 'Erro ao carregar listas.');
     } finally {
       this.loading = false;
     }
   }
-  valculaTotal() {
-    const situacoesUnicas = Array.from(new Set(this.itenslista.map(i => i.status).filter(Boolean))) as string[];
-    this.statusOptions = situacoesUnicas;
 
-    this.totalPorSituacao = this.itenslista.some(item => item.valor)
+  calculaTotal() {
+    const situacoesUnicas = Array.from(new Set(this.itensLista.map(i => i.status).filter(Boolean))) as string[];
+    this.statusU = situacoesUnicas;
+
+
+    this.totalPorSituacao = this.itensLista.some(item => item.valor)
       ? situacoesUnicas.map(situacao => {
-        const valorTotal = this.itenslista
+        const valorTotal = this.itensLista
           .filter(item => item.status === situacao)
           .reduce((total, item) => total + (item.valor ?? 0), 0);
         return { situacao, valorTotal };
@@ -96,213 +135,100 @@ export class ListaDeOrcamentoComponent implements OnInit {
       : [];
   }
 
-  onColFilterChange<K extends keyof typeof this.colFilters>(key: K, value: any) {
-    (this.colFilters[key] as any) = value;
-    this.aplicarFiltros();
-  }
-
-  onConfigCoresClosed(ev: { reload: boolean; colors?: Record<string, string> }) {
-    this.showModalConfigCores = false;
-
-    if (ev.reload && ev.colors) {
-      this.saveStatusColors(ev.colors);
-    }
-  }
-
-  sortBy(key: SortKey) {
-    if (this.sortState.key === key) {
-      this.sortState.dir = this.sortState.dir === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortState.key = key;
-      this.sortState.dir = 'asc';
-    }
-    this.aplicarFiltros();
-  }
-
-  sortIcon(key: SortKey) {
-    if (this.sortState.key !== key) return '↕️';
-    return this.sortState.dir === 'asc' ? '⬆️' : '⬇️';
-  }
-
-
-  onStatusMultiChange(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    const selected = Array.from(select.selectedOptions).map(o => o.value);
-    this.colFilters.status = selected;
-    this.aplicarFiltros();
-  }
-
-  clearColumnFilters() {
-    this.colFilters = { id: '', descricao: '', valorMin: '', valorMax: '', status: [] };
-    this.aplicarFiltros();
-  }
-
-
-
-  async validaItemLista() {
-    this.listaId = Number(this.activatedRoute.snapshot.paramMap.get('id'));
-
-    var lista = await this.ListaService.GetListaById(this.listaId);
-    
-    switch (lista.tipoMovimentacao) {
-      case 1:
-        this.tipoLista = 1;
-        this.titulo = lista.nome ?? 'Lista de Checagem'; break;
-      case 2:
-        this.tipoLista = 2;
-        this.titulo = lista.nome ?? 'Cronograma'; break;
-      case 3:
-        this.tipoLista = 3;
-        this.titulo = lista.nome ?? 'Orçamento';
-        break;
-    }
-  }
-  aplicarFiltros() {
+  applyFilters() {
     const term = this.q.trim().toLowerCase();
 
-    const idFilter = this.colFilters.id.trim();
-    const descFilter = this.colFilters.descricao.trim().toLowerCase();
-
-    const vMin = this.colFilters.valorMin !== '' ? Number(this.colFilters.valorMin) : null;
-    const vMax = this.colFilters.valorMax !== '' ? Number(this.colFilters.valorMax) : null;
-
-    const statusMulti = this.colFilters.status; // string[]
-
-    this.filtered = [...this.itenslista]
-      // filtro geral (se quiser manter)
+    this.lista = [...this.itensLista]
+      .sort((a, b) => (a.descricao ?? '').localeCompare(b.descricao ?? ''))
       .filter(c => {
         if (!term) return true;
-        return (
-          (c.descricao ?? '').toLowerCase().includes(term) ||
-          String(c.id).includes(term)
-        );
-      })
-
-      // ID coluna
-      .filter(c => {
-        if (!idFilter) return true;
-        return String(c.id).includes(idFilter);
-      })
-
-      // Descrição coluna
-      .filter(c => {
-        if (!descFilter) return true;
-        return (c.descricao ?? '').toLowerCase().includes(descFilter);
-      })
-
-      // Valor min/max
-      .filter(c => {
-        const valor = c.valor ?? 0;
-        if (vMin !== null && !Number.isNaN(vMin) && valor < vMin) return false;
-        if (vMax !== null && !Number.isNaN(vMax) && valor > vMax) return false;
-        return true;
-      })
-
-      // Situação multi
-      .filter(c => {
-        if (!statusMulti.length) return true;
-        return statusMulti.includes(String(c.status));
-      })
-
-      // seu statusFilter antigo (se quiser manter, senão remova)
-      .filter(c => {
-        if (this.statusFilter === 'ALL') return true;
-        return String(c.status) === this.statusFilter;
+        return (c.descricao ?? '').toLowerCase().includes(term) || String(c.id).includes(term);
       });
+  }
 
-    const dir = this.sortState.dir === 'asc' ? 1 : -1;
-    const key = this.sortState.key;
+  onSearchChange(value: string) {
+    this.q = value;
+    this.applyFilters();
+  }
 
-    this.filtered.sort((a, b) => {
-      const av: any = (a as any)[key];
-      const bv: any = (b as any)[key];
+  onSelectionChange(selectedItems: ItemListaDto[]) {
+    let receita = 0;
+    let despesa = 0;
 
-      // números (id/valor)
-      if (key === 'id' || key === 'valor') {
-        const an = Number(av ?? 0);
-        const bn = Number(bv ?? 0);
-        return (an - bn) * dir;
-      }
-
-      // strings (descricao/status)
-      const as = String(av ?? '').toLowerCase();
-      const bs = String(bv ?? '').toLowerCase();
-      return as.localeCompare(bs) * dir;
+    selectedItems.forEach((item) => {
+      const val = item.valor || 0;
+      const sub = String(item.status || '').toLowerCase();
+      if (sub === 'ok') receita += val;
+      if (sub === "aguardando" || sub === "pendente") despesa += val;
     });
+
+    this.selectedTotals = { receita, despesa, saldo: receita - despesa, count: selectedItems.length };
   }
 
-
-  onSearchChange(v: string) {
-    this.q = v;
-    this.aplicarFiltros();
-  }
-
-  pesquisarStatus(v: string) {
-    this.statusFilter = v as any;
-    this.aplicarFiltros();
-  }
-
-  abrirConfigCores() {
-    this.showModalConfigCores = true;
-  }
-  fecharConfigCores(reload: boolean) {
-    this.showModalConfigCores = false;
-    if (reload) this.loadStatusColors(); // reaplica
-  }
-
-  // carrega/salva localStorage (rápido)
-  loadStatusColors() {
-    try {
-      const raw = localStorage.getItem('statusColors');
-      this.statusColors = raw ? JSON.parse(raw) : {};
-    } catch {
-      this.statusColors = {};
-    }
-  }
-
-  saveStatusColors(colors: Record<string, string>) {
-    this.statusColors = colors;
-    localStorage.setItem('statusColors', JSON.stringify(colors));
-  }
-
-  abrirCriarItem() {
-    this.editingItem = null;
+  openCreate() {
+    this.editing = null;
     this.showModalCreateItem = true;
   }
 
-  abrirEditarItem(item: ItemListaDto) {
-    this.editingItem = item;
+  onEdit(lista: ItemListaDto) {
+    this.editing = lista;
     this.showModalUpdateItem = true;
   }
 
-  fecharModalCriarItem(reload: boolean) {
+
+  closeCreate(reload: boolean) {
     this.showModalCreateItem = false;
     if (reload) this.load();
   }
 
-  fecharModalAtualizarItem(reload: boolean) {
+  closeEdit(reload: boolean) {
     this.showModalUpdateItem = false;
-    this.editingItem = null;
+    this.editing = null;
     if (reload) this.load();
   }
-  async onDelete(item: ItemListaDto) {
-    const ok = window.confirm(`Excluir a lista "${item.descricao}"?`);
+
+  async onDelete(c: ItemListaDto) {
+    const ok = window.confirm(`Excluir a lista "${c.descricao}"?`);
     if (!ok) return;
 
     try {
-      await this.ItemListaservice.delete(item.id);
-      this.alert = { type: 'success', message: 'Item da lista deletado com sucesso!' };
-      setTimeout(() => (this.alert = { type: '', message: '' }), 3000);
+      await this.itemListaService.delete(c.id);
+      this.alertService.success('Lista deletada com sucesso!')
       await this.load();
-    } catch {
-      this.alert = { type: 'error', message: 'Falha ao deletar. Pode estar vinculado a transações.' };
-      setTimeout(() => (this.alert = { type: '', message: '' }), 12000);
+    } catch (e) {
+      this.alertService.error('Falha ao deletar. Lista pode estar vinculada a transações.');
     }
   }
 
+  async onDeleteSelected(rows: ItemListaDto[]) {
+    if (!rows.length) return;
 
-  formatCurrency(value: any) {
-    var valorFormatado = formatCurrencyBR(value);
-    return valorFormatado;
+    const ok = window.confirm(`Excluir ${rows.length} lista(s) selecionada(s)?`);
+    if (!ok) {
+      if (this.grid) {
+        this.grid.deleting = false;
+      }
+      return;
+    }
+
+    try {
+      var response;
+      for (const row of rows) {
+        response = await this.itemListaService.delete(row.id);
+      }
+
+      if (response) {
+        this.alertService.success(`${rows.length} lista(s) excluída(s) com sucesso!`);
+      }
+
+      this.grid?.clearSelection();
+      await this.load();
+    } catch (e) {
+      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
+    } finally {
+      if (this.grid) {
+        this.grid.deleting = false;
+      }
+    }
   }
 }

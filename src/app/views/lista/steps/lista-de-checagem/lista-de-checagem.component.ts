@@ -19,13 +19,13 @@ export class ListaDeChecagemComponent implements OnInit {
   gridColumns: GridColumn[] = [];
 
   statusOptions: GridColumnOption[] = [
-    { label: 'CONCLUIDO', value: 'CONCLUIDO', classe: TagStatus.Success },
+    { label: 'OK', value: 'OK', classe: TagStatus.Success },
     { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Warning }
   ];
   listaId: string | null = null;
 
   statusLabel(value: string): boolean {
-    return value === 'CONCLUIDO' ? true : false;
+    return value === 'OK' ? true : false;
   }
 
   lista: ItemListaDto[] = [];
@@ -60,8 +60,8 @@ export class ListaDeChecagemComponent implements OnInit {
         type: 'checkbox', // Ou adicione no seu enum
         width: '5%'
       },
-      { field: 'descricao', header: 'DESCRIÇÃO', type: 'text', width: "35%", classe: (row) => row.status == "CONCLUIDO" ? 'text-success' : 'text-danger' },
-      { field: 'quantidade', header: 'QUANTIDADE', type: 'number', width: "30%", classe: (row) => row.status == "CONCLUIDO" ? 'text-success' : 'text-danger' },
+      { field: 'descricao', header: 'DESCRIÇÃO', type: 'text', width: "35%", classe: (row) => row.status == "OK" ? 'text-success' : 'text-danger' },
+      { field: 'quantidade', header: 'QUANTIDADE', type: 'number', width: "30%", classe: (row) => row.status == "OK" ? 'text-success' : 'text-danger' },
       { field: 'actions', header: 'Ações', type: 'actions', functions: ['edit', 'delete'] },
     ]
   }
@@ -89,7 +89,7 @@ export class ListaDeChecagemComponent implements OnInit {
       this.listaId = this.route.snapshot.paramMap.get('id')
       this.itemListas = (await this.itemListaService.GetItemListaById(Number(this.listaId))).map(i => ({
         ...i,
-        statusBoolean: i.status === 'CONCLUIDO'
+        statusBoolean: i.status === 'OK'
       }));
       this.titulo = (await this.listaService.GetListaById(Number(this.listaId))).nome
       console.log('Listas carregadas:', this.itemListas);
@@ -119,7 +119,7 @@ export class ListaDeChecagemComponent implements OnInit {
 
   async toggleConcluido(item: ItemListaDto) {
     const oldStatus = item.status;
-    const novoStatus = item.status === 'CONCLUIDO' ? 'PENDENTE' : 'CONCLUIDO';
+    const novoStatus = item.status === 'OK' ? 'PENDENTE' : 'OK';
 
     item.status = novoStatus;
 

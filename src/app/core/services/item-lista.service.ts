@@ -10,6 +10,7 @@ export type ItemListaDto = {
     status?: string;
     statusBoolean?: boolean;
     valor?: number;
+    observacao?: string;
     dataTarefa?: Date;
     horarioTarefa?: Time;
 };

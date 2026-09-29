@@ -12,6 +12,7 @@ import { SharedModule } from 'src/app/shared/shared.module';
 import { ModalItemChecagemComponent } from './components/modal-item-checagem/modal-item-checagem.component';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { ToastModule } from 'primeng/toast';
+import { ContasAPagarModule } from '../movimentacao/contas-a-pagar/contas-a-pagar.module';
 
 @NgModule({
   declarations: [
@@ -27,7 +28,8 @@ import { ToastModule } from 'primeng/toast';
     SharedModule,
     ListaRoutingModule,    
     DataGridComponent,
-    ToastModule
+    ToastModule,
+    ContasAPagarModule
   ]
 })
 export class ListaModule { }

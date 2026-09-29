@@ -47,18 +47,27 @@
         </div>
       </div>
 
-
-      <!-- STATUS -->
-      <div class="mb-3" *ngIf="tipoLista === 3">
-        <label class="form-label">Status</label>
-        <input type="text" class="form-control" formControlName="status" />
+      <!-- OBSERVAÇÃO -->
+      <div class="mb-3">
+        <label class="form-label">Observação</label>
+        <input class="form-control" formControlName="observacao" cdkFocusInitial
+          [class.is-invalid]="form.controls.observacao.touched && form.controls.observacao.invalid" />
+        <div class="invalid-feedback" *ngIf="form.controls.observacao.touched && form.controls.observacao.invalid">
+          Informe uma descrição válida.
+        </div>
       </div>
 
-      <div class="mb-3" *ngIf="tipoLista === 1 || tipoLista === 2">
+      <!-- STATUS -->
+      <!-- <div class="mb-3" *ngIf="tipoLista === 3">
+        <label class="form-label">Status</label>
+        <input type="text" class="form-control" formControlName="status" />
+      </div> -->
+
+      <div class="mb-3">
         <label class="form-label">Status</label>
         <select class="form-select" formControlName="status">
           <option [ngValue]="'Pendente'">Pendente</option>
-          <option [ngValue]="'Comprado'">Concluido</option>
+          <option [ngValue]="'Ok'">Ok</option>
         </select>
       </div>
 

@@ -29,7 +29,8 @@ export class ModalNovoItemListaComponent implements OnInit {
     descricao: ['', [Validators.required, Validators.minLength(2)]],
     quantidade: [1, [Validators.required, Validators.min(1)]],
     valor: [null as any | null], // opcional
-    status: ['Comprado', [Validators.required]], // 'Pendente' | 'Comprado'
+    observacao: [''],
+    status: ['Pendente', [Validators.required]], // 'Pendente' | 'Comprado'
     dataTarefa: [null as Date | null], // yyyy-mm-dd
     horarioTarefa: [null as Time | null], // HH:mm
   });
@@ -46,6 +47,7 @@ export class ModalNovoItemListaComponent implements OnInit {
         descricao: this.item.descricao,
         quantidade: this.item.quantidade,
         valor: formatCurrencyMoney(String(this.item.valor)) ?? null,
+        observacao: this.item.observacao,
         status: this.item.status ?? 'Pendente',
         dataTarefa: this.item.dataTarefa ?? null,
         horarioTarefa: this.item.horarioTarefa ?? null,
@@ -74,6 +76,7 @@ export class ModalNovoItemListaComponent implements OnInit {
       quantidade: Number(this.form.value.quantidade),
       status: this.form.value.status!,
       valor: valorFormatoDecimal ?? undefined,
+      observacao: this.form.value.observacao!,
       dataTarefa: this.form.value.dataTarefa ?? undefined,
       horarioTarefa: this.form.value.horarioTarefa ?? undefined,
     };
