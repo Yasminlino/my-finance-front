@@ -11,7 +11,6 @@ import { ChartsModule } from 'src/app/core/components/charts/charts.module';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { ToastModule } from 'primeng/toast';
 import { ContasAPagarModule } from '../contas-a-pagar/contas-a-pagar.module';
 
 @NgModule({
@@ -28,7 +27,6 @@ import { ContasAPagarModule } from '../contas-a-pagar/contas-a-pagar.module';
     ChartsModule,
     NgbModule,
     DataGridComponent,
-    ToastModule,
     ContasAPagarModule
   ]
 })

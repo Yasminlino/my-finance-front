@@ -16,7 +16,6 @@ export class AuthService {
 
     if (response?.token?.token) {
       localStorage.setItem('authToken', response.token?.token);
-      localStorage.setItem('authToken', response.token?.token);
       localStorage.setItem('expiraToken',response.token.dataExpiracao?.toString() ?? '');
       localStorage.setItem('usuarioRole', response?.usuario.role ?? '');
       localStorage.setItem('usuarioNome', response?.usuario.nomeUsuario ?? '');
@@ -36,8 +35,29 @@ export class AuthService {
     return false;
   }
 
+  /**
+   * Chaves de localStorage escritas pelo app e atreladas ao usuário logado.
+   * Antes o logout removia só o authToken: `usuarioNome` sobrevivia e o header,
+   * que lê a chave no construtor, mostrava o nome do usuário anterior (FE-P0-09).
+   */
+  private static readonly CHAVES_DE_SESSAO = [
+    'authToken',
+    'expiraToken',
+    'usuarioRole',
+    'usuarioNome',
+    'remember',
+    'lastUser',
+    // Filtros de período, persistidos por tela.
+    'dataFiltro',
+    'dataFiltroResumo',
+    'dataFiltroContaMensal',
+    'dataFiltroDetalheExtrato'
+  ];
+
   logout() {
-    localStorage.removeItem('authToken');
+    for (const chave of AuthService.CHAVES_DE_SESSAO) {
+      localStorage.removeItem(chave);
+    }
   }
 
   get token(): string | null {

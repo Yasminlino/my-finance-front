@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { formatCurrencyBR, formatDateBRView, formatDateInput, formatYearMonth, isoDateMinusHours, parseMoneyBRToNumber, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
+import { addMonthsToYearMonth, formatCurrencyBR, formatDateBRView, formatDateInput, formatYearMonth, isoDateMinusHours, parseMoneyBRToNumber, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, TypeGrid, GridRowChange, GridColumnOption } from "src/app/shared/components/data-grid/data-grid.interface"
 import { CategoryService } from 'src/app/core/services/category.service';
@@ -8,6 +8,8 @@ import { RowForm } from 'src/app/core/interfaces/conta-mensal.interface';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { MenuItem } from 'primeng/api';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
@@ -76,7 +78,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   statusOptions: GridColumnOption[] = [
     { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Danger },
     { label: 'PAGO NO PRAZO', value: 'PAGO NO PRAZO', classe: TagStatus.Success },
-    { label: 'AGUARDANDO', value: 'AGUARDANDO', classe: TagStatus.Alert },
+    { label: 'AGUARDANDO', value: 'AGUARDANDO', classe: TagStatus.Info },
     { label: 'PAGO ATRASADO', value: 'PAGO ATRASADO', classe: TagStatus.Warning }
   ];
 
@@ -96,7 +98,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
 
   constructor( 
     private readonly categoriaService: CategoryService,
-    private readonly alertService: AlertService,
+    private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService,
     private readonly tipoCartaoService: TipoCartaoService,
     private readonly tipoMovimentacaoService: TipoMovimentacaoService,
     private readonly pessoaMovService: PessoaMovimentacaoService,
@@ -153,6 +155,22 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   return null;
 }
 
+  /**
+   * Devolve o dono do item vindo da própria linha, ou null quando a linha não traz o campo.
+   * Nunca chuta um id: o backend resolve o usuário pelo claim do JWT e rejeita item de
+   * outro dono, então mandar um id inventado só mascararia o problema (FE-P0-12).
+   */
+  private resolveUserIdDaLinha(linha: any): number | null {
+    const bruto = linha?.UserId ?? linha?.userId;
+
+    if (bruto === undefined || bruto === null || bruto === '') {
+      return null;
+    }
+
+    const id = Number(bruto);
+
+    return Number.isFinite(id) && id > 0 ? id : null;
+  }
 
   async carregarDados() {
     try {
@@ -351,8 +369,8 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
         tipoMovimentacaoNome: item.tipoMovimentacaoNome ?? item.tipoMovimentacao?.nomeTipoMovimentacao ?? '',
       }));
       console.log(this.extratoMensal)
-    } catch {
-      // Trata o erro
+    } catch (e) {
+      this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar o extrato do mês.'));
     } finally {
       this.loading = false;
     }
@@ -372,7 +390,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   async onDeleteSelected(rows: ExtratoItemDto[]) {
     if (!rows.length) return;
 
-    const ok = window.confirm(`Excluir ${rows.length} conta(s) selecionada(s)?`);
+    const ok = window.confirm(`Excluir ${rows.length} lançamento(s) selecionado(s)?`);
     if (!ok) {
       if (this.grid) {
         this.grid.deleting = false;
@@ -381,19 +399,14 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
     }
 
     try {
-      var response;
-      for (const row of rows) {
-        response = await this.extratoItemService.delete(row.id);
-      }
-
-      if (response) {
-        this.alertService.success(`'${rows.length}' itens deletados com sucesso!`);
-      }
+      await this.exclusaoEmLote.excluir(
+        rows,
+        row => this.extratoItemService.delete(row.id),
+        { singular: 'lançamento', plural: 'lançamentos' }
+      );
 
       this.grid?.clearSelection();
       await this.loadMonth();
-    } catch (e) {
-      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
     } finally {
       if (this.grid) {
         this.grid.deleting = false;
@@ -419,7 +432,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
 
       await this.loadMonth();
     } catch (e: any) {
-      this.alertService.error(e);
+      this.alertService.error(extrairMensagemErro(e, `Falha ao excluir a conta '${row.nomePessoaTransacao}'.`));
     } finally {
       // 🔹 O loading só some aqui, quando a API termina (com sucesso ou erro)
       this.deletingId = null;
@@ -521,7 +534,9 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
           tipoMovimentacaoId: resolvedTipoMovId,
           tipoMovimentacaoNome: resolvedTipoMovNome,
           
-          userId: Number(linhaAtual.UserId ?? linhaAtual.userId ?? 1),
+          // Sem fallback: o dono do item é sempre resolvido pelo claim do JWT no backend.
+          // O `?? 1` anterior mandava a escrita para o usuário 1 quando o campo não vinha (FE-P0-12).
+          userId: this.resolveUserIdDaLinha(linhaAtual),
           chaveDescricao: linhaAtual.ChaveDescricao ?? linhaAtual.chaveDescricao ?? null,
           
           alteraVinculoPessoa: Boolean(linhaAtual.AlteraVinculoPessoa ?? linhaAtual.alteraVinculoPessoa ?? false)
@@ -553,7 +568,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
       await this.loadMonth();        
 
     } catch (e: any) {
-      this.alertService.error(e?.error?.message || 'Erro ao salvar as alterações. Tente novamente.');
+      this.alertService.error(extrairMensagemErro(e, 'Erro ao salvar as alterações. Tente novamente.'));
     }
   }
     openAddModal() {
@@ -650,11 +665,10 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
 
         for (let p = this.manualParcelaAtual; p <= quantidadeParcelas; p++) {
           const groupKey = `PARC-${p}/${quantidadeParcelas}`;
-          const [y, m] = this.month.split('-').map(Number)
 
           if (p > this.manualParcelaAtual) {
-            var diferenca = p - this.manualParcelaAtual
-            basePayload.NumeroFatura = y + '-' + (m + diferenca).toString().padStart(2, '0')
+            const diferenca = p - this.manualParcelaAtual;
+            basePayload.NumeroFatura = addMonthsToYearMonth(this.month, diferenca);
           }
 
           const payloadParcela: any = {
@@ -695,7 +709,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
       return;
 
     } catch (err: any) {
-      this.alertService.error(err?.error?.message || err?.message || 'Erro ao adicionar lançamento.');
+      this.alertService.error(extrairMensagemErro(err, 'Erro ao adicionar lançamento.'));
     } finally {
       this.saving = false;
     }

@@ -2,6 +2,7 @@
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
@@ -13,7 +14,10 @@ import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/model
   styleUrls: ['./tipo-cartao-list.component.scss'],
 })
 export class TipoCartaoListComponent implements OnInit {
+  /** Fonte: tudo o que veio da API. */
   tipoCartoes: TipoCartaoDto[] = [];
+  /** Projeção exibida no grid — nunca sobrescreve a fonte (ver FE-P0-10). */
+  tipoCartoesExibidos: TipoCartaoDto[] = [];
   tipoCartaoOpcoes: GridColumnOption[] = [];
   exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO };
   gridColumns: GridColumn[] = []
@@ -26,7 +30,7 @@ export class TipoCartaoListComponent implements OnInit {
   editing: TipoCartaoDto | null = null;
   @ViewChild('grid') grid?: DataGridComponent;
 
-  constructor(private tipoCartaoService: TipoCartaoService, private readonly alertService: AlertService) { }
+  constructor(private tipoCartaoService: TipoCartaoService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService) { }
 
   async ngOnInit() {
     await this.getTiposCartao();
@@ -72,7 +76,7 @@ export class TipoCartaoListComponent implements OnInit {
   applyFilters() {
     const term = this.q.trim().toLowerCase();
 
-    this.tipoCartoes = [...this.tipoCartoes]
+    this.tipoCartoesExibidos = [...this.tipoCartoes]
       .sort((a, b) => (a.nomeTipoCartao ?? '').localeCompare(b.nomeTipoCartao ?? ''))
       .filter(c => {
         if (!term) return true;
@@ -121,19 +125,14 @@ export class TipoCartaoListComponent implements OnInit {
     }
 
     try {
-      var response;
-      for (const row of rows) {
-        response = await this.tipoCartaoService.delete(row.id);
-      }
-
-      if (response) {
-        this.alertService.success(`${rows.length} Tipos excluído(s) com sucesso!`);
-      }
+      await this.exclusaoEmLote.excluir(
+        rows,
+        row => this.tipoCartaoService.delete(row.id),
+        { singular: 'tipo de cartão', plural: 'tipos de cartão' }
+      );
 
       this.grid?.clearSelection();
       await this.load();
-    } catch (e) {
-      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
     } finally {
       if (this.grid) {
         this.grid.deleting = false;

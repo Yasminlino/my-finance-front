@@ -7,7 +7,6 @@ import { TipoCartaoListComponent } from './tipo-cartao-list/tipo-cartao-list.com
 import { TipoCartaoFormComponent } from './tipo-cartao-form/tipo-cartao-form.component';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { ToastModule } from 'primeng/toast';
 import { ChartsModule } from 'src/app/core/components/charts/charts.module';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
@@ -18,7 +17,6 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     CommonModule,
     ReactiveFormsModule,
     DataGridComponent,
-    ToastModule,
     ChartsModule,
     NgbModule,
     TipoCartaoRoutingModule

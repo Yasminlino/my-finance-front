@@ -1,6 +1,5 @@
 <div class="container-xl py-3">
-  <p-toast></p-toast>
-  <app-data-grid #grid [dataSource]="tipoCartoes" [breadcrumb]="breadcrumb" [columns]="gridColumns"
+  <app-data-grid #grid [dataSource]="tipoCartoesExibidos" [breadcrumb]="breadcrumb" [columns]="gridColumns"
     [titulo]="'Cadastro de Tipo Cartão'" [exibeCampos]="exibirCampos" [loading]="loading"
     (edit)="onEdit($event)" (new)="openCreate()" (delete)="onDelete($event)"
     (deleteSelected)="onDeleteSelected($event)"></app-data-grid>

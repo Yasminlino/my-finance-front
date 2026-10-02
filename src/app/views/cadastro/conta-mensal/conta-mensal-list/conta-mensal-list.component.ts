@@ -7,6 +7,7 @@ import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-gri
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
@@ -18,7 +19,10 @@ import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/model
   styleUrls: ['./conta-mensal-list.component.scss']
 })
 export class ContaMensalListComponent implements OnInit {
+  /** Fonte: tudo o que veio da API. */
   contas: AccountDto[] = [];
+  /** Projeção exibida no grid — nunca sobrescreve a fonte (ver FE-P0-10). */
+  contasExibidas: AccountDto[] = [];
   categorias: Category[] = [];
   categoriasOptions: GridColumnOption[] = [];
   exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO };
@@ -48,7 +52,7 @@ export class ContaMensalListComponent implements OnInit {
   editing: AccountDto | null = null;
   @ViewChild('grid') grid?: DataGridComponent;
 
-  constructor(private categoryService: CategoryService, private contaService: ContaService, private readonly alertService: AlertService) { }
+  constructor(private categoryService: CategoryService, private contaService: ContaService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService) { }
 
   async ngOnInit() {
     await this.getCategory();
@@ -155,7 +159,7 @@ async load() {
   applyFilters() {
     const term = this.q.trim().toLowerCase();
 
-    this.contas = [...this.contas]
+    this.contasExibidas = [...this.contas]
       .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
       .filter(c => {
         if (!term) return true;
@@ -219,19 +223,14 @@ async load() {
     }
 
     try {
-      var response;
-      for (const row of rows) {
-        response = await this.contaService.delete(row.id);
-      }
-
-      if (response) {
-        this.alertService.success(`${rows.length} conta(s) excluída(s) com sucesso!`);
-      }
+      await this.exclusaoEmLote.excluir(
+        rows,
+        row => this.contaService.delete(row.id),
+        { singular: 'conta', plural: 'contas', feminino: true }
+      );
 
       this.grid?.clearSelection();
       await this.load();
-    } catch (e) {
-      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
     } finally {
       if (this.grid) {
         this.grid.deleting = false;

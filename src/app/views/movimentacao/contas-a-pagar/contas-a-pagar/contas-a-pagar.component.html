@@ -12,7 +12,6 @@
   <!-- Modal Form -->
   <!-- <app-categoria-form *ngIf="showModalForm" [category]="editing" (closed)="closeForm($event)">
     </app-categoria-form> -->
-  <p-toast></p-toast>
   <app-modal-adicionar-em-lote *ngIf="showModalAdd" [month]="selectedMonth" (closed)="showModalAdd=false; $event"
     (reload)="loadMonth()">
   </app-modal-adicionar-em-lote>

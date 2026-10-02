@@ -1,5 +1,4 @@
 <div class="container-xl py-3">
-  <p-toast></p-toast>
   <app-data-grid #grid [dataSource]="extratoMensal" [breadcrumb]="breadcrumb" [columns]="gridColumns" (saveInline)="onSaveInline($event)"
     (reload)="loadMonth()" [titulo]="titulo" [dateFilter]="dateFilter" [localStorage]="'dataFiltroDetalheExtrato'" (selectionChange)="onSelectionChange($event)" (delete)="onDelete($event)" (deleteSelected)="onDeleteSelected($event)"
     [itemsButtom]="itemsButtom" [exibeCampos]="exibirCampos" [loading]="loading">

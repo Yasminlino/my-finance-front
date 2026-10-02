@@ -6,7 +6,6 @@ import { CategoriaRoutingModule } from './categoria-routing.module';
 import { CategoriaListComponent } from './categoria-list/categoria-list.component';
 import { CategoriaFormComponent } from './categoria-form/categoria-form.component';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { ToastModule } from 'primeng/toast';
 
 @NgModule({
   declarations: [
@@ -17,8 +16,7 @@ import { ToastModule } from 'primeng/toast';
     CommonModule,
     ReactiveFormsModule,
     CategoriaRoutingModule,
-    DataGridComponent,
-    ToastModule
+    DataGridComponent
   ]
 })
 export class CategoriaModule {}

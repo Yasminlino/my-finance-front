@@ -7,7 +7,6 @@ import { ContaMensalListComponent } from './conta-mensal-list/conta-mensal-list.
 
 import { CommonModule } from '@angular/common';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { ToastModule } from 'primeng/toast';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { ChartsModule } from 'src/app/core/components/charts/charts.module';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -23,7 +22,6 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     ReactiveFormsModule,
     ContaMensalRoutingModule,
     DataGridComponent,
-    ToastModule,
     ChartsModule,
     NgbModule
   ]

@@ -1,5 +1,4 @@
 <div class="container-xl py-3">
-   <p-toast></p-toast>
   <app-data-grid #grid [dataSource]="listas" [breadcrumb]="breadcrumb" [columns]="gridColumns"  [titulo]="'Cadastro de Listas'"
     [statusOptions]="statusOptions" [exibeCampos]="exibirCampos"
     [loading]="loading" (edit)="onEdit($event)"  (view)="abrirItemLista($event)" (new)="openCreate()" (delete)="onDelete($event)" (deleteSelected)="onDeleteSelected($event)"></app-data-grid>

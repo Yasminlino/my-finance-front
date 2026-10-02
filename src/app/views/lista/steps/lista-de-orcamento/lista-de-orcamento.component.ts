@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { ListaService } from 'src/app/core/services/lista.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ItemListaDto, ItemListaService } from 'src/app/core/services/item-lista.service';
@@ -51,7 +52,7 @@ export class ListaDeOrcamentoComponent implements OnInit {
   situacoes: string[] = [];
   totalPorSituacao: { situacao: string | undefined; valorTotal: number; }[] = [];
 
-  constructor(private itemListaService: ItemListaService, private listaService: ListaService, private readonly alertService: AlertService, private readonly router: Router, private readonly route: ActivatedRoute) { }
+  constructor(private itemListaService: ItemListaService, private listaService: ListaService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService, private readonly router: Router, private readonly route: ActivatedRoute) { }
 
   async ngOnInit() {
     await this.load();
@@ -196,19 +197,14 @@ export class ListaDeOrcamentoComponent implements OnInit {
     }
 
     try {
-      var response;
-      for (const row of rows) {
-        response = await this.itemListaService.delete(row.id);
-      }
-
-      if (response) {
-        this.alertService.success(`${rows.length} lista(s) excluída(s) com sucesso!`);
-      }
+      await this.exclusaoEmLote.excluir(
+        rows,
+        row => this.itemListaService.delete(row.id),
+        { singular: 'item', plural: 'itens' }
+      );
 
       this.grid?.clearSelection();
       await this.load();
-    } catch (e) {
-      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
     } finally {
       if (this.grid) {
         this.grid.deleting = false;

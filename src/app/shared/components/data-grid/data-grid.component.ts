@@ -40,6 +40,7 @@ import {
 
 import { CurrencyInputDirective } from '../../directives/currency-input.directive';
 import { ExibirCamposConfig } from '../../models/utils/grid-config.constants';
+import { TagStatus } from '../../enums/status.enum';
 
 
 @Component({
@@ -698,19 +699,13 @@ export class DataGridComponent {
 
   getSeverityStatus(
     statusValue: string
-  ): any {
+  ): TagStatus {
     const option =
       this.statusOptions.find(
         item => item.value === statusValue
       );
 
-    return option?.classe ?? 'info';
-  }
-
-  getStatusClass(
-    statusValue: string
-  ): string {
-    return `status-${this.getSeverityStatus(statusValue)}`;
+    return option?.classe ?? TagStatus.Info;
   }
 
   // ---------------------------------------------------------------------------

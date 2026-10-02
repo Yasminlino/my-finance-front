@@ -4,6 +4,7 @@ import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { ListaDto, ListaService } from 'src/app/core/services/lista.service';
 import { Router } from '@angular/router';
 import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
@@ -42,7 +43,7 @@ export class ListaRootComponent implements OnInit {
   editing: ListaDto | null = null;
   @ViewChild('grid') grid?: DataGridComponent;
 
-  constructor(private listaService: ListaService, private readonly alertService: AlertService, private readonly router: Router) { }
+  constructor(private listaService: ListaService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService, private readonly router: Router) { }
 
   async ngOnInit() {
     this.setGridColumns();
@@ -175,19 +176,14 @@ export class ListaRootComponent implements OnInit {
     }
 
     try {
-      var response;
-      for (const row of rows) {
-        response = await this.listaService.delete(row.id);
-      }
-
-      if (response) {
-        this.alertService.success(`${rows.length} lista(s) excluída(s) com sucesso!`);
-      }
+      await this.exclusaoEmLote.excluir(
+        rows,
+        row => this.listaService.delete(row.id),
+        { singular: 'lista', plural: 'listas', feminino: true }
+      );
 
       this.grid?.clearSelection();
       await this.load();
-    } catch (e) {
-      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
     } finally {
       if (this.grid) {
         this.grid.deleting = false;

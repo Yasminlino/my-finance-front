@@ -12,6 +12,8 @@ import { RowForm } from 'src/app/core/interfaces/conta-mensal.interface';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { MenuItem } from 'primeng/api';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { EXIBIR_CAMPOS_MOVIMENTACOES, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
@@ -37,7 +39,7 @@ export class ContasAPagarComponent implements OnInit {
   statusOptions: GridColumnOption[] = [
     { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Danger },
     { label: 'PAGO NO PRAZO', value: 'PAGO NO PRAZO', classe: TagStatus.Success },
-    { label: 'AGUARDANDO', value: 'AGUARDANDO', classe: TagStatus.Alert },
+    { label: 'AGUARDANDO', value: 'AGUARDANDO', classe: TagStatus.Info },
     { label: 'PAGO ATRASADO', value: 'PAGO ATRASADO', classe: TagStatus.Warning }
   ];
 
@@ -59,7 +61,7 @@ export class ContasAPagarComponent implements OnInit {
   dateInput(v: any) { return formatDateInput(v); }
 
 
-  constructor(private fb: FormBuilder, private contaMensalService: ContaMensalService, private readonly categoryService: CategoryService, private readonly alertService: AlertService) { }
+  constructor(private fb: FormBuilder, private contaMensalService: ContaMensalService, private readonly categoryService: CategoryService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService) { }
 
   private getCurrentYearMonth(): string {
     const d = new Date();
@@ -198,8 +200,8 @@ export class ContasAPagarComponent implements OnInit {
       this.selectedMonth = mesFormatado
       this.contasMensais = await this.contaMensalService.BuscarContasMensais(mesFormatado, false);
       console.log(this.contasMensais)
-    } catch {
-      // Trata o erro
+    } catch (e) {
+      this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar as contas do mês.'));
     } finally {
       this.loading = false;
     }
@@ -224,19 +226,14 @@ export class ContasAPagarComponent implements OnInit {
     }
 
     try {
-      var response;
-      for (const row of rows) {
-        response = await this.contaMensalService.deleteTransaction(row.id);
-      }
-
-      if (response) {
-        this.alertService.success(`'${rows.length}' itens deletados com sucesso!`);
-      }
+      await this.exclusaoEmLote.excluir(
+        rows,
+        row => this.contaMensalService.deleteTransaction(row.id),
+        { singular: 'conta', plural: 'contas', feminino: true }
+      );
 
       this.grid?.clearSelection();
       await this.loadMonth();
-    } catch (e) {
-      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
     } finally {
       if (this.grid) {
         this.grid.deleting = false;
@@ -262,7 +259,7 @@ export class ContasAPagarComponent implements OnInit {
 
       await this.loadMonth();
     } catch (e: any) {
-      this.alertService.error(e);
+      this.alertService.error(extrairMensagemErro(e, `Falha ao excluir a conta '${row.name}'.`));
     } finally {
       // 🔹 O loading só some aqui, quando a API termina (com sucesso ou erro)
       this.deletingId = null;

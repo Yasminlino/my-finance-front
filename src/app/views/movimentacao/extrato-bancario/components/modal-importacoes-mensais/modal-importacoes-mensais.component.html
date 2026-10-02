@@ -11,7 +11,6 @@
         </div>
 
         <div class="card-body mb-4 p-0">
-            <p-toast></p-toast>
             <app-data-grid #grid [dataSource]="importacaoesMensais" [columns]="gridColumns" [exibeCampos]="exibirCampos" [loading]="loading" (delete)="deleteRow($event)"  >
             </app-data-grid>
         </div>

@@ -1,6 +1,5 @@
 <div class="container-xl py-3">
-   <p-toast></p-toast>
-  <app-data-grid #grid [dataSource]="categorias" [breadcrumb]="breadcrumb" [columns]="gridColumns"  [titulo]="'Cadastro de categorias'"
+  <app-data-grid #grid [dataSource]="categoriasExibidas" [breadcrumb]="breadcrumb" [columns]="gridColumns"  [titulo]="'Cadastro de categorias'"
     [statusOptions]="statusOptions" [exibeCampos]="exibirCampos"
     [loading]="loading" (edit)="onEdit($event)" (new)="openCreate()" (delete)="onDelete($event)" (deleteSelected)="onDeleteSelected($event)"></app-data-grid>
 

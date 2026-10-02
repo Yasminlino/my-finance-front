@@ -3,6 +3,7 @@ import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ItemListaService, ItemListaDto } from 'src/app/core/services/item-lista.service';
 import { ListaService } from 'src/app/core/services/lista.service';
@@ -44,7 +45,7 @@ export class ListaDeChecagemComponent implements OnInit {
   editing: ItemListaDto | null = null;
   @ViewChild('grid') grid?: DataGridComponent;
 
-  constructor(private itemListaService: ItemListaService, private readonly listaService: ListaService, private readonly alertService: AlertService, private readonly router: Router, private readonly route: ActivatedRoute) { }
+  constructor(private itemListaService: ItemListaService, private readonly listaService: ListaService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService, private readonly router: Router, private readonly route: ActivatedRoute) { }
 
   async ngOnInit() {
     this.setExibirCampos()
@@ -170,19 +171,14 @@ export class ListaDeChecagemComponent implements OnInit {
     }
 
     try {
-      var response;
-      for (const row of rows) {
-        response = await this.itemListaService.delete(row.id);
-      }
-
-      if (response) {
-        this.alertService.success(`${rows.length} lista(s) excluída(s) com sucesso!`);
-      }
+      await this.exclusaoEmLote.excluir(
+        rows,
+        row => this.itemListaService.delete(row.id),
+        { singular: 'item', plural: 'itens' }
+      );
 
       this.grid?.clearSelection();
       await this.load();
-    } catch (e) {
-      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
     } finally {
       if (this.grid) {
         this.grid.deleting = false;

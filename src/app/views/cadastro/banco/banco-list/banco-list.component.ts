@@ -5,6 +5,7 @@ import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-gri
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { TipoCartao, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { BancoService } from 'src/app/core/services/banco.service';
@@ -18,7 +19,10 @@ import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/model
   styleUrls: ['./banco-list.component.scss'],
 })
 export class BancoListComponent implements OnInit {
+  /** Fonte: tudo o que veio da API. */
   bancos: BancoDto[] = [];
+  /** Projeção exibida no grid — nunca sobrescreve a fonte (ver FE-P0-10). */
+  bancosExibidos: BancoDto[] = [];
   tiposCartao: TipoCartao[] = [];
   tipoCartaoOpcoes: GridColumnOption[] = [];
   exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO };
@@ -31,8 +35,8 @@ export class BancoListComponent implements OnInit {
     { label: 'Inativo', value: 0, classe: TagStatus.Secondary }
   ];
 
-  statusLabel(value: boolean): string {
-    return value === true ? 'Ativo' : 'Inativo';
+  statusLabel(value: number): string {
+    return value === 1 ? 'Ativo' : 'Inativo';
   }
 
   breadcrumb = [{ label: 'Cadastros' }, { label: 'Bancos' }]
@@ -47,7 +51,7 @@ export class BancoListComponent implements OnInit {
   editing: BancoDto | null = null;
   @ViewChild('grid') grid?: DataGridComponent;
 
-  constructor(private tipoCartaoService: TipoCartaoService, private bancoService: BancoService, private readonly alertService: AlertService) { }
+  constructor(private tipoCartaoService: TipoCartaoService, private bancoService: BancoService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService) { }
 
   async ngOnInit() {
     await this.getTiposCartao();
@@ -126,7 +130,7 @@ export class BancoListComponent implements OnInit {
   applyFilters() {
     const term = this.q.trim().toLowerCase();
 
-    this.bancos = [...this.bancos]
+    this.bancosExibidos = [...this.bancos]
       .sort((a, b) => (a.nomeBanco ?? '').localeCompare(b.nomeBanco ?? ''))
       .filter(c => {
         if (!term) return true;
@@ -190,19 +194,14 @@ export class BancoListComponent implements OnInit {
     }
 
     try {
-      var response;
-      for (const row of rows) {
-        response = await this.bancoService.delete(row.id);
-      }
-
-      if (response) {
-        this.alertService.success(`${rows.length} banco(s) excluído(s) com sucesso!`);
-      }
+      await this.exclusaoEmLote.excluir(
+        rows,
+        row => this.bancoService.delete(row.id),
+        { singular: 'banco', plural: 'bancos' }
+      );
 
       this.grid?.clearSelection();
       await this.load();
-    } catch (e) {
-      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
     } finally {
       if (this.grid) {
         this.grid.deleting = false;

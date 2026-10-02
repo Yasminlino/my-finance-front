@@ -5,6 +5,7 @@ import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 @Component({
@@ -13,7 +14,10 @@ import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/model
   styleUrls: ['./categoria-list.component.scss']
 })
 export class CategoriaListComponent implements OnInit {
+  /** Fonte: tudo o que veio da API. */
   categorias: Category[] = [];
+  /** Projeção exibida no grid — é o que o applyFilters() preenche (ver FE-P0-03/FE-P0-10). */
+  categoriasExibidas: Category[] = [];
   exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO };
 
   naturezaOperacaoOptions: GridColumnOption[] = Object.entries(NaturezaOperacaoLabel).map(([value, label]) => ({
@@ -62,7 +66,6 @@ export class CategoriaListComponent implements OnInit {
     return value === 1 ? 'Ativo' : 'Inativo';
   }
 
-  categoria: Category[] = [];
   breadcrumb = [{ label: 'Cadastros' }, { label: 'Categorias' }]
 
   loading = false;
@@ -75,7 +78,7 @@ export class CategoriaListComponent implements OnInit {
   editing: Category | null = null;
   @ViewChild('grid') grid?: DataGridComponent;
 
-  constructor(private categoryService: CategoryService, private readonly alertService: AlertService) { }
+  constructor(private categoryService: CategoryService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService) { }
 
   async ngOnInit() {
     await this.load();
@@ -97,7 +100,7 @@ export class CategoriaListComponent implements OnInit {
   applyFilters() {
     const term = this.q.trim().toLowerCase();
 
-    this.categoria = [...this.categorias]
+    this.categoriasExibidas = [...this.categorias]
       .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
       .filter(c => {
         if (!term) return true;
@@ -163,19 +166,14 @@ export class CategoriaListComponent implements OnInit {
     }
 
     try {
-      var response;
-      for (const row of rows) {
-        response = await this.categoryService.delete(row.id);
-      }
-
-      if (response) {
-        this.alertService.success(`${rows.length} categoria(s) excluída(s) com sucesso!`);
-      }
+      await this.exclusaoEmLote.excluir(
+        rows,
+        row => this.categoryService.delete(row.id),
+        { singular: 'categoria', plural: 'categorias', feminino: true }
+      );
 
       this.grid?.clearSelection();
       await this.load();
-    } catch (e) {
-      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
     } finally {
       if (this.grid) {
         this.grid.deleting = false;

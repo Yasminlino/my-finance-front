@@ -53,6 +53,23 @@ export function formatYearMonth(date: Date): string {
   return date.getFullYear().toString() + "-" + (date.getMonth() + 1).toString().padStart(2, '0');
 }
 
+/**
+ * Soma meses a uma competência "YYYY-MM" normalizando a virada de ano.
+ * Ex.: addMonthsToYearMonth('2026-11', 3) -> '2027-02'
+ */
+export function addMonthsToYearMonth(yearMonth: string, months: number): string {
+  const [ano, mes] = yearMonth.split('-').map(Number);
+
+  if (!Number.isFinite(ano) || !Number.isFinite(mes)) {
+    throw new Error(`Competência inválida: "${yearMonth}". Esperado "YYYY-MM".`);
+  }
+
+  // Usa índice de mês base 0 para que o Date normalize ano e mês sozinho.
+  const data = new Date(ano, (mes - 1) + months, 1);
+
+  return formatYearMonth(data);
+}
+
 export function formatDateVencimento(baseMonth: string | Date, dataOperacao: any): Date {
 
   let ano: number;

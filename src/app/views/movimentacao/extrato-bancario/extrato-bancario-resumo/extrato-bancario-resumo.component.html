@@ -1,5 +1,4 @@
 <div class="container-xl py-3">
-  <p-toast></p-toast>
   <app-data-grid #grid [dataSource]="resumo" [breadcrumb]="breadcrumb" [columns]="gridColumns"
   (reload)="loadMonth($event)" [titulo]="'Resumo de Extratos Bancários'" [dateFilter]="dateFilter" [itemsButtom]="itemsButtom"
   [exibeCampos]="exibirCampos" [loading]="loading" (edit)="onEdit($event)">

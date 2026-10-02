@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import {GridColumn } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { TipoMovimentacaoDto } from 'src/app/core/models/tipo-movimentacao.model';
@@ -15,7 +16,10 @@ import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/model
 })
 export class TipoMovimentacaoListComponent implements OnInit {
 
+  /** Fonte: tudo o que veio da API. */
   tipoMovimentacoes: TipoMovimentacaoDto[] = [];
+  /** Projeção exibida no grid — nunca sobrescreve a fonte (ver FE-P0-10). */
+  tipoMovimentacoesExibidas: TipoMovimentacaoDto[] = [];
   exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO };
   gridColumns: GridColumn[] = []
   breadcrumb = [{ label: 'Cadastros' }, { label: 'Tipo movimentação' }]
@@ -27,7 +31,7 @@ export class TipoMovimentacaoListComponent implements OnInit {
   editing: TipoMovimentacaoDto | null = null;
   @ViewChild('grid') grid?: DataGridComponent;
 
-  constructor(private tipoMovimentacaoService: TipoMovimentacaoService, private readonly alertService: AlertService) { }
+  constructor(private tipoMovimentacaoService: TipoMovimentacaoService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService) { }
 
   async ngOnInit() {
     this.setGridColumns()
@@ -63,7 +67,7 @@ export class TipoMovimentacaoListComponent implements OnInit {
   applyFilters() {
     const term = this.q.trim().toLowerCase();
 
-    this.tipoMovimentacoes = [...this.tipoMovimentacoes]
+    this.tipoMovimentacoesExibidas = [...this.tipoMovimentacoes]
       .sort((a, b) => (a.nomeTipoMovimentacao ?? '').localeCompare(b.nomeTipoMovimentacao ?? ''))
       .filter(c => {
         if (!term) return true;
@@ -112,19 +116,14 @@ export class TipoMovimentacaoListComponent implements OnInit {
     }
 
     try {
-      var response;
-      for (const row of rows) {
-        response = await this.tipoMovimentacaoService.delete(row.id);
-      }
-
-      if (response) {
-        this.alertService.success(`${rows.length} Tipos excluído(s) com sucesso!`);
-      }
+      await this.exclusaoEmLote.excluir(
+        rows,
+        row => this.tipoMovimentacaoService.delete(row.id),
+        { singular: 'tipo de movimentação', plural: 'tipos de movimentação' }
+      );
 
       this.grid?.clearSelection();
       await this.load();
-    } catch (e) {
-      this.alertService.error(`'${rows.length}' itens deram erros ao deletar!`);
     } finally {
       if (this.grid) {
         this.grid.deleting = false;

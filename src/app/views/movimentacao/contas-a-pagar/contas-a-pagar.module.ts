@@ -7,7 +7,6 @@ import {  ModalAdicionarEmLoteComponent } from './components/modal-adicionar-em-
 import { ModalNovaContasAPagarComponent } from './components/modal-nova-contas-a-pagar/modal-nova-contas-a-pagar.component';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { ToastModule } from 'primeng/toast';
 
 
 @NgModule({
@@ -20,8 +19,7 @@ import { ToastModule } from 'primeng/toast';
     imports: [
     SharedModule,
     ContasAPagarRoutingModule,
-    DataGridComponent,
-    ToastModule
+    DataGridComponent
   ],
   exports: [
     ContasAPagarTotaisComponent

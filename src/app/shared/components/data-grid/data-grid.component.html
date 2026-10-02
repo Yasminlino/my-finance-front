@@ -319,18 +319,18 @@
 
                             <p-dropdown [options]="col.options" optionLabel="label" optionValue="value" appendTo="body"
                                 [(ngModel)]="product[col.field]" (ngModelChange)="onCellChange(product)"
-                                [styleClass]="'status-dropdown ' + getStatusClass(product[col.field])" class="w-full">
+                                [styleClass]="'status-dropdown'" class="w-full">
 
                                 <ng-template pTemplate="selectedItem" let-option>
                                     @if (option) {
-                                    <p-tag [severity]="$any(getSeverityStatus(option.value))"
+                                    <p-tag [severity]="getSeverityStatus(option.value)"
                                         class="d-flex justify-content-center fs-14" [value]="option.label">
                                     </p-tag>
                                     }
                                 </ng-template>
 
                                 <ng-template pTemplate="item" let-option>
-                                    <p-tag [severity]="$any(getSeverityStatus(option.value))"
+                                    <p-tag [severity]="getSeverityStatus(option.value)"
                                         class="d-flex justify-content-center fs-14" [value]="option.label">
                                     </p-tag>
                                 </ng-template>
@@ -363,7 +363,7 @@
                             </div>
                             }
                             @else if (col.field === 'status') {
-                            <p-tag [severity]="$any(getSeverityStatus(product[col.field]))"
+                            <p-tag [severity]="getSeverityStatus(product[col.field])"
                                 [class]="'d-flex justify-content-center fs-14 ' + (col.classe || '')"
                                 [value]="col.formatter ? col.formatter(product) : product[col.field]">
                             </p-tag>
