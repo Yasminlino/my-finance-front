@@ -471,7 +471,8 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
         const tipoLanc = linhaAtual.TipoLancamento || linhaAtual.tipoLancamento || linhaAtual.tipoMovimentacaoNome || 'Saída';
 
         // 3. Resolução inteligente de CategoriaId caso venha o nome ou ID
-        let resolvedCategoriaId = 0;
+        // Sem categoria = null (não 0): 0 não existe e a FK recusava a gravação com erro 500.
+        let resolvedCategoriaId: number | null = null;
         let resolvedCategoriaNome = '';
         const rawCatId = linhaAtual.CategoriaId ?? linhaAtual.categoriaId;
         const rawCatNome = linhaAtual.CategoriaNome ?? linhaAtual.categoriaNome;
@@ -487,7 +488,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
         }
 
         // 4. Resolução inteligente de TipoMovimentacaoId caso venha o nome ou ID
-        let resolvedTipoMovId = 0;
+        let resolvedTipoMovId: number | null = null;
         let resolvedTipoMovNome = '';
         const rawTipoMovId = linhaAtual.TipoMovimentacaoId ?? linhaAtual.tipoMovimentacaoId;
         const rawTipoMovNome = linhaAtual.TipoMovimentacaoNome ?? linhaAtual.tipoMovimentacaoNome;

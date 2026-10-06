@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } fro
 import { FormBuilder, Validators } from '@angular/forms';
 import { Category, CategoryService } from 'src/app/core/services/category.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 @Component({
   selector: 'app-categoria-form',
@@ -70,7 +71,7 @@ export class CategoriaFormComponent implements OnInit {
       this.alertService.success(`Categoria salva com sucesso!`)
       this.close(true);
     } catch (e) {
-      this.alertService.error(`Erro ao salvar categoria.`)
+      this.alertService.error(extrairMensagemErro(e, `Erro ao salvar categoria.`))
     } finally {
       this.saving = false;
     }

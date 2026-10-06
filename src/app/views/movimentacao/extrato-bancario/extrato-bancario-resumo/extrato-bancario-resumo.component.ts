@@ -5,6 +5,7 @@ import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid
 import { GridColumn} from 'src/app/shared/components/data-grid/data-grid.interface';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { Router } from '@angular/router';
 import { formatYearMonth, isoDateMinusHours, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
@@ -120,6 +121,22 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
   private setitemsButtom(): void {
     this.itemsButtom = [
+      // "Importar extrato" e "Adicionar item" eram botões da toolbar antiga e ficaram de fora
+      // na migração para a grid genérica (8d74acc); os modais continuavam no template.
+      {
+        label: 'Importar extrato',
+        icon: 'pi pi-file-import',
+        command: () => {
+          this.openImportModal();
+        }
+      },
+      {
+        label: 'Adicionar item',
+        icon: 'pi pi-plus',
+        command: () => {
+          this.openManualModal();
+        }
+      },
       {
         label: 'Importações Mensais',
         icon: 'pi pi-download',
@@ -324,17 +341,23 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
     try {
       this.importLoading = true;
-      await this.extratoItemService.importExtrato(this.file, {
+      const resultado = await this.extratoItemService.importExtrato(this.file, {
         id: Number(this.selectedBancoId),
         nomeBanco: this.selectedBancoNome,
         tipoCartaoId: this.selectedTipoContaId ? Number(this.selectedTipoContaId) : null,
       });
 
-      this.alertService.success('Extrato importado com sucesso!');
+      // A API informa criados / já importados / ignorados; reimportar não cria nada (idempotência).
+      const r: any = resultado;
+      const mensagem: string = r?.mensagem ?? r?.Mensagem ?? 'Extrato importado com sucesso!';
+      const criados: number = r?.quantidadeCriados ?? r?.QuantidadeCriados ?? 1;
+      if (criados > 0) this.alertService.success(mensagem);
+      else this.alertService.info(mensagem);
+
       this.showImportModal = false;
       await this.loadMonth();
-    } catch {
-      this.alertService.error('Falha ao importar arquivo.');
+    } catch (e) {
+      this.alertService.error(extrairMensagemErro(e, 'Falha ao importar arquivo.'));
     } finally {
       this.importLoading = false;
       input.value = '';

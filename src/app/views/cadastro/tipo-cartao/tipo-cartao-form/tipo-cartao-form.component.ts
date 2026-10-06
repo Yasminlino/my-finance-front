@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 @Component({
   selector: 'app-tipo-cartao-form',
@@ -54,8 +55,8 @@ export class TipoCartaoFormComponent implements OnInit {
 
       this.alertService.success(`Tipo cartão "${this.form.value.nomeTipoCartao!}" salvo com sucesso.`)
       this.close(true);
-    } catch {
-      this.alertService.success(`Erro ao salvar o Tipo cartão "${this.form.value.nomeTipoCartao!}".`)
+    } catch (e) {
+      this.alertService.error(extrairMensagemErro(e, `Erro ao salvar o Tipo cartão "${this.form.value.nomeTipoCartao!}".`))
     } finally {
       this.saving = false;
     }

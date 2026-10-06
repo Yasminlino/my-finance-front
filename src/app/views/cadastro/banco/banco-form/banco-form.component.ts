@@ -5,6 +5,7 @@ import { BancoService } from 'src/app/core/services/banco.service';
 import { TipoCartao } from 'src/app/core/services/tipo-cartao.service';
 import { formataDecimal, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
 
@@ -76,8 +77,8 @@ export class BancoFormComponent implements OnInit {
       }, 300);
 
       this.close(true);
-    } catch {
-      this.alertService.error(`Erro ao salvar Banco "${this.form.value.nomeBanco}".`);
+    } catch (e) {
+      this.alertService.error(extrairMensagemErro(e, `Erro ao salvar Banco "${this.form.value.nomeBanco}".`));
     } finally {
       this.saving = false;
     }
