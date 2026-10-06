@@ -5,6 +5,7 @@ import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-gri
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { TipoCartao, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
@@ -178,7 +179,7 @@ export class BancoListComponent implements OnInit {
       this.alertService.success('Banco deletada com sucesso!')
       await this.load();
     } catch (e) {
-      this.alertService.error('Falha ao deletar. Banco pode estar vinculada a transações.');
+      this.alertService.error(extrairMensagemErro(e, 'Falha ao deletar. Banco pode estar vinculada a transações.'));
     }
   }
 

@@ -7,6 +7,7 @@ import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-gri
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
@@ -207,7 +208,7 @@ async load() {
       this.alertService.success('Conta deletada com sucesso!')
       await this.load();
     } catch (e) {
-      this.alertService.error('Falha ao deletar. Conta pode estar vinculada a transações.');
+      this.alertService.error(extrairMensagemErro(e, 'Falha ao deletar. Conta pode estar vinculada a transações.'));
     }
   }
 

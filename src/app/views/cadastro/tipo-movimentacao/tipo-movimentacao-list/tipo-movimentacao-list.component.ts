@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import {GridColumn } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
@@ -100,7 +101,7 @@ export class TipoMovimentacaoListComponent implements OnInit {
       this.alertService.success('Tipo movimentação deletada com sucesso!')
       await this.load();
     } catch (e) {
-      this.alertService.error('Falha ao deletar. Tipo movimentação pode estar vinculada a transações.');
+      this.alertService.error(extrairMensagemErro(e, 'Falha ao deletar. Tipo movimentação pode estar vinculada a transações.'));
     }
   }
 

@@ -5,6 +5,7 @@ import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
@@ -150,7 +151,7 @@ export class CategoriaListComponent implements OnInit {
       this.alertService.success('Categoria deletada com sucesso!')
       await this.load();
     } catch (e) {
-      this.alertService.error('Falha ao deletar. Categoria pode estar vinculada a transações.');
+      this.alertService.error(extrairMensagemErro(e, 'Falha ao deletar. Categoria pode estar vinculada a transações.'));
     }
   }
 
