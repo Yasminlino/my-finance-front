@@ -66,8 +66,10 @@
       <div class="mb-3">
         <label class="form-label">Status</label>
         <select class="form-select" formControlName="status">
-          <option [ngValue]="'Pendente'">Pendente</option>
-          <option [ngValue]="'Ok'">Ok</option>
+          <!-- Mesmo domínio do CHECK de ItemLista.Status (DB-P1-03). -->
+          <option [ngValue]="'PENDENTE'">Pendente</option>
+          <option [ngValue]="'AGUARDANDO'">Aguardando</option>
+          <option [ngValue]="'OK'">Ok</option>
         </select>
       </div>
 

@@ -17,6 +17,7 @@ export class TipoCartaoFormComponent implements OnInit {
 
   form = this.fb.group({
     nomeTipoCartao: ['', [Validators.required, Validators.minLength(2)]],
+    ehCredito: [false],
     // ativo: [true], // descomente se existir no seu backend
   });
 
@@ -26,9 +27,18 @@ export class TipoCartaoFormComponent implements OnInit {
     if (this.item) {
       this.form.patchValue({
         nomeTipoCartao: this.item.nomeTipoCartao,
+        ehCredito: this.item.ehCredito ?? false,
         // ativo: this.item.ativo ?? true,
       });
+      return;
     }
+
+    // Na criação, sugere "crédito" pelo nome enquanto o usuário não mexer no checkbox.
+    this.form.controls.nomeTipoCartao.valueChanges.subscribe(nome => {
+      if (!this.form.controls.ehCredito.dirty) {
+        this.form.controls.ehCredito.setValue(/cr[eé]dito/i.test(nome ?? ''));
+      }
+    });
   }
 
   close(reload = false) {
@@ -47,6 +57,7 @@ export class TipoCartaoFormComponent implements OnInit {
       const payload = {
         id: this.item?.id,
         nomeTipoCartao: this.form.value.nomeTipoCartao!,
+        ehCredito: !!this.form.value.ehCredito,
         // ativo: this.form.value.ativo ?? true,
       };
 

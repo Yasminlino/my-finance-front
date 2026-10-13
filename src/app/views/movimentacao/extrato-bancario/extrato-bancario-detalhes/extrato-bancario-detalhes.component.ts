@@ -183,8 +183,9 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
       this.pessoasMov = pessoas ?? [];
 
       var bancoIdDisplay = this.bancoId ? await this.bancoService.getById(this.bancoId)?.then((banco) => banco?.nomeBanco) : 'Banco Desconhecido';
-      var tipoCartaoDisplay = this.tipoContaId ? tiposCartao.find(e => e.id == this.tipoContaId)?.nomeTipoCartao : 'Tipo de Cartão Desconhecido';
-      this.isCreditCard = tipoCartaoDisplay === "Cartão de crédito" ? true: false;
+      const tipoCartao = this.tipoContaId ? tiposCartao.find(e => e.id == this.tipoContaId) : undefined;
+      var tipoCartaoDisplay = tipoCartao?.nomeTipoCartao ?? 'Tipo de Cartão Desconhecido';
+      this.isCreditCard = tipoCartao?.ehCredito === true; // antes comparava o nome (DB-P1-07)
 
       var tituloBase = `${tipoCartaoDisplay} - ${bancoIdDisplay}`;
 

@@ -225,11 +225,11 @@
                             <button pButton type="button" icon="pi pi-folder-open" [title]="'Ative a linha para editar'"
                                 class="p-button-rounded p-button-text p-button-sm p-button-icon-only p-button-secondary"
                                 (click)="onViewClick(product, col)" aria-label="Editar"></button>
-                            }@if(exibeCampos?.buttonEditLine ){
+                            }@if(exibeCampos?.buttonEditLine && !isSomenteLeitura(product)){
                             <button pButton type="button" icon="pi pi-pencil" [title]="'Ative a linha para editar'"
                                 class="p-button-rounded p-button-text p-button-sm p-button-icon-only"
                                 (click)="onEditClick(product, col)" aria-label="Editar"></button>
-                            }@if(exibeCampos?.buttonDeleteLine && !isRowChanged(product)){
+                            }@if(exibeCampos?.buttonDeleteLine && !isRowChanged(product) && !isSomenteLeitura(product)){
 
                             <!-- Excluir -->
                             <button pButton type="button" icon="pi pi-trash" title="Excluir"

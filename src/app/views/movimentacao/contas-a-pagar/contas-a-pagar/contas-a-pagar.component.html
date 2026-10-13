@@ -17,7 +17,7 @@
   </app-modal-adicionar-em-lote>
 
   <app-modal-nova-contas-a-pagar *ngIf="showModalCreate" [dataOperacao]="dateFilter"
-    (closed)="showModalCreate=false; $event">
+    (closed)="showModalCreate=false; $event && loadMonth()">
   </app-modal-nova-contas-a-pagar>
 
 </div></div>

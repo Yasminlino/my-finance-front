@@ -4,12 +4,17 @@ import { ApiService } from './api.service';
 export type TipoCartaoDto = {
   id: number;
   nomeTipoCartao: string;
+  /** Lançamentos agrupados por fatura, não por data (DB-P1-07). */
+  ehCredito: boolean;
+  /** Padrão do sistema (Cartão de crédito, Conta corrente, Conta Poupança): não edita nem exclui. */
+  ehSistema: boolean;
   ativo?: boolean; // se existir no backend
 };
 
 export type TipoCartaoCreateUpdateDto = {
   id?: number;
   nomeTipoCartao: string;
+  ehCredito: boolean;
   ativo?: boolean;
 };
 

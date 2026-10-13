@@ -244,7 +244,16 @@ export class DataGridComponent {
    * A row is considered disabled when its dataKey value is present in the
    * `disabledRowIds` set provided by the host component.
    */
+  /** Linha marcada pelo componente pai como `somenteLeitura: true` (ex.: tipo de cartão padrão do sistema). */
+  isSomenteLeitura(row: any): boolean {
+    return row?.somenteLeitura === true;
+  }
+
   isRowDisabled(row: any): boolean {
+    if (this.isSomenteLeitura(row)) {
+      return true;
+    }
+
     if (!this.disabledRowIds || this.disabledRowIds.size === 0) {
       return false;
     }

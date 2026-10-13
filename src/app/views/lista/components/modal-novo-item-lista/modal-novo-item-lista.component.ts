@@ -30,7 +30,7 @@ export class ModalNovoItemListaComponent implements OnInit {
     quantidade: [1, [Validators.required, Validators.min(1)]],
     valor: [null as any | null], // opcional
     observacao: [''],
-    status: ['Pendente', [Validators.required]], // 'Pendente' | 'Comprado'
+    status: ['PENDENTE', [Validators.required]], // PENDENTE | AGUARDANDO | OK
     dataTarefa: [null as Date | null], // yyyy-mm-dd
     horarioTarefa: [null as Time | null], // HH:mm
   });
@@ -48,7 +48,7 @@ export class ModalNovoItemListaComponent implements OnInit {
         quantidade: this.item.quantidade,
         valor: this.item.valor != null ? formatCurrencyBR(this.item.valor, { simbolo: false }) : null,
         observacao: this.item.observacao,
-        status: this.item.status ?? 'Pendente',
+        status: this.item.status ?? 'PENDENTE',
         dataTarefa: this.item.dataTarefa ?? null,
         horarioTarefa: this.item.horarioTarefa ?? null,
       });

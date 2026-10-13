@@ -54,7 +54,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
   manualForm = {
     dataMovimentacao: isoDate(),
-    tipo: 'SAIDA', // ENTRADA | SAIDA
+    tipo: 'Saída', // Entrada | Saída — mesmo valor das opções do select e do CHECK (DB-P1-04)
     valor: '',
     bancoId: '',
     tipoCartaoId: '',
@@ -367,7 +367,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   openManualModal() {
     this.manualForm = {
       dataMovimentacao: isoDate(),
-      tipo: 'SAIDA',
+      tipo: 'Saída',
       valor: '',
       bancoId: '',
       tipoCartaoId: '',
@@ -414,18 +414,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   get isCreditoSelecionado() {
     if (!this.manualForm.tipoCartaoId) return false;
     const conta = this.tiposConta.find(t => String(t.id) === String(this.manualForm.tipoCartaoId));
-    if (!conta) return false;
-
-    const bool =
-      (conta as any).ehCredito ??
-      (conta as any).EhCredito ??
-      (conta as any).isCredito ??
-      (conta as any).IsCredito;
-
-    if (typeof bool === 'boolean') return bool;
-
-    const nome = String((conta as any).nomeTipoCartao ?? (conta as any).NomeTipoCartao ?? '');
-    return /cr[eé]dito/i.test(nome);
+    return conta?.ehCredito === true; // TipoCartao.EhCredito (DB-P1-07)
   }
 
   async saveManualItem() {

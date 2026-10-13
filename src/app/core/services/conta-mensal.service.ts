@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
 import { AgrupamentoContaMensal, ContaMensal, LinhaContaMensal } from '../models/conta-mensal.model';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { formatDateInput } from '../utils/mask';
 
 @Injectable({ providedIn: 'root' })
 export class ContaMensalService {
@@ -39,13 +40,21 @@ export class ContaMensalService {
     return this.api.get<ContaMensal[]>('/GetTransactionByDate/' + date);
   }
 
+  /**
+   * O vencimento é data de calendário na API (DB-P1-02): vai sempre como "YYYY-MM-DD".
+   * O form/grid entrega Date à meia-noite local; formatDateInput lê nos getters locais.
+   */
+  private comDataDeCalendario(payload: any): any {
+    return payload?.date ? { ...payload, date: formatDateInput(payload.date) } : payload;
+  }
+
   async createContaMensal(payload: any): Promise<any> {
-    return await this.api.post<any>('/CreateTransaction', payload);
+    return await this.api.post<any>('/CreateTransaction', this.comDataDeCalendario(payload));
   }
 
   async updateTransaction(payload: any): Promise<any> {
     try {
-      const res = await this.api.put<any>('/UpdateTransaction', payload);
+      const res = await this.api.put<any>('/UpdateTransaction', this.comDataDeCalendario(payload));
       return res;
     } catch (error) {
       console.error("Erro ao buscar contas mensais:", error);
