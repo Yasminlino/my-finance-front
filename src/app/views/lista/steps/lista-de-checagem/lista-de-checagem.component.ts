@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
@@ -59,12 +60,12 @@ export class ListaDeChecagemComponent implements OnInit {
         field: 'statusBoolean',
         header: 'STATUS',
         formatter: (row) => this.statusLabel(row.status),
-        type: 'checkbox', // Ou adicione no seu enum
+        type: GridColumnTypeEnum.Checkbox,
         width: '5%'
       },
-      { field: 'descricao', header: 'DESCRIÇÃO', type: 'text', width: "35%", classe: (row) => row.status == "OK" ? 'text-success' : 'text-danger' },
-      { field: 'quantidade', header: 'QUANTIDADE', type: 'number', width: "30%", classe: (row) => row.status == "OK" ? 'text-success' : 'text-danger' },
-      { field: 'actions', header: 'Ações', type: 'actions', functions: ['edit', 'delete'] },
+      { field: 'descricao', header: 'DESCRIÇÃO', type: GridColumnTypeEnum.Text, width: "35%", classe: (row) => row.status == "OK" ? 'text-success' : 'text-danger' },
+      { field: 'quantidade', header: 'QUANTIDADE', type: GridColumnTypeEnum.Number, width: "30%", classe: (row) => row.status == "OK" ? 'text-success' : 'text-danger' },
+      { field: 'actions', header: 'Ações', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
     ]
   }
 
@@ -160,29 +161,13 @@ export class ListaDeChecagemComponent implements OnInit {
   }
 
   async onDeleteSelected(rows: ItemListaDto[]) {
-    if (!rows.length) return;
+    const excluiu = await this.exclusaoEmLote.confirmarEExcluir(
+      this.grid,
+      rows,
+      row => this.itemListaService.delete(row.id),
+      { singular: 'item', plural: 'itens' }
+    );
 
-    const ok = window.confirm(`Excluir ${rows.length} lista(s) selecionada(s)?`);
-    if (!ok) {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-      return;
-    }
-
-    try {
-      await this.exclusaoEmLote.excluir(
-        rows,
-        row => this.itemListaService.delete(row.id),
-        { singular: 'item', plural: 'itens' }
-      );
-
-      this.grid?.clearSelection();
-      await this.load();
-    } finally {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-    }
+    if (excluiu) await this.load();
   }
 }

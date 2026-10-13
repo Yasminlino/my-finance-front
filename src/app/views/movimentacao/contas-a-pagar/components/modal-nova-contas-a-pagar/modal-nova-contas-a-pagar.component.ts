@@ -3,7 +3,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { CategoryService, Category } from 'src/app/core/services/category.service';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { formatDateVencimento } from 'src/app/core/utils/mask';
-import { parseMoneyBRToNumber } from 'src/app/core/utils/mask';
+import { parseCurrencyBR } from 'src/app/core/utils/mask';
 
 @Component({
   selector: 'app-modal-nova-contas-a-pagar',
@@ -51,7 +51,7 @@ export class ModalNovaContasAPagarComponent implements OnInit {
         date: formatDateVencimento(this.dataOperacao, this.form.value.dataOperacao!),
         name: this.form.value.nomeConta!,
         categoryid: Number(this.form.value.categoryid),
-        value: parseMoneyBRToNumber(this.form.value.valor),
+        value: parseCurrencyBR(this.form.value.valor),
         status: 'PENDENTE',
       };
       

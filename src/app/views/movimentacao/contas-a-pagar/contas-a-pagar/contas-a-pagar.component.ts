@@ -1,20 +1,19 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
-import { formatCurrencyBR, formatDateInput, formatYearMonth, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
+import { formatCurrencyBR, formatDateBR, formatDateInput, formatYearMonth } from 'src/app/core/utils/mask';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, TypeGrid, GridRowChange, GridColumnOption } from "src/app/shared/components/data-grid/data-grid.interface"
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
-import { formatDateVencimentoView } from 'src/app/core/utils/mask';
 import { CategoryService } from 'src/app/core/services/category.service';
-import { Category } from 'src/app/core/services/category.service';
 import { RowForm } from 'src/app/core/interfaces/conta-mensal.interface';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { MenuItem } from 'primeng/api';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
-import { TagStatus } from 'src/app/shared/enums/status.enum';
+import { STATUS_PAGAMENTO_OPTIONS } from 'src/app/shared/enums/status.enum';
+import { calcularTotaisSelecao, naturezaPorSubCategoria } from 'src/app/shared/utils/totais-selecao';
 import { EXIBIR_CAMPOS_MOVIMENTACOES, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 @Component({
@@ -36,12 +35,7 @@ export class ContasAPagarComponent implements OnInit {
   showModalForm = false;
   editing: LinhaContasMensais | null = null;
 
-  statusOptions: GridColumnOption[] = [
-    { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Danger },
-    { label: 'PAGO NO PRAZO', value: 'PAGO NO PRAZO', classe: TagStatus.Success },
-    { label: 'AGUARDANDO', value: 'AGUARDANDO', classe: TagStatus.Info },
-    { label: 'PAGO ATRASADO', value: 'PAGO ATRASADO', classe: TagStatus.Warning }
-  ];
+  statusOptions = STATUS_PAGAMENTO_OPTIONS;
 
   showModalAdd: boolean = false;
   deletingId: number | null = null;
@@ -153,7 +147,7 @@ export class ContasAPagarComponent implements OnInit {
         header: "Vencimento",
         type: GridColumnTypeEnum.Date,
         formatter: (row) =>
-          formatDateVencimentoView(row.date),
+          formatDateBR(row.date),
         width: '15%',
         editable: true
       },
@@ -214,31 +208,15 @@ export class ContasAPagarComponent implements OnInit {
     this.showModalForm = true;
   }
 
-  async onDeleteSelected(rows: Category[]) {
-    if (!rows.length) return;
+  async onDeleteSelected(rows: LinhaContasMensais[]) {
+    const excluiu = await this.exclusaoEmLote.confirmarEExcluir(
+      this.grid,
+      rows,
+      row => this.contaMensalService.deleteTransaction(row.id),
+      { singular: 'conta', plural: 'contas', feminino: true }
+    );
 
-    const ok = window.confirm(`Excluir ${rows.length} conta(s) selecionada(s)?`);
-    if (!ok) {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-      return;
-    }
-
-    try {
-      await this.exclusaoEmLote.excluir(
-        rows,
-        row => this.contaMensalService.deleteTransaction(row.id),
-        { singular: 'conta', plural: 'contas', feminino: true }
-      );
-
-      this.grid?.clearSelection();
-      await this.loadMonth();
-    } finally {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-    }
+    if (excluiu) await this.loadMonth();
   }
 
 
@@ -313,33 +291,11 @@ export class ContasAPagarComponent implements OnInit {
 
 
   onSelectionChange(selectedItems: LinhaContasMensais[]) {
-    let receita = 0;
-    let despesa = 0;
-
-    selectedItems.forEach((item) => {
-      const val = removeFormatCurrencyBR(item.value);
-      const sub = String(item.subCategoryName || '').toLowerCase();
-      if (sub === 'receita' || sub === 'receitas') receita += val;
-      if (sub === 'despesa' || sub === 'despesas') despesa += val;
-    });
-
-    this.selectedTotals = { receita, despesa, saldo: receita - despesa, count: selectedItems.length };
+    this.selectedTotals = calcularTotaisSelecao(
+      selectedItems,
+      item => item.value,
+      item => naturezaPorSubCategoria(item.subCategoryName)
+    );
   }
-
-
-  // get selectedTotals() {
-  //   let receita = 0;
-  //   let despesa = 0;
-
-  //   const selected = this.sortedRows.filter((r) => this.selectedIds.has(r.id));
-  //   selected.forEach((item) => {
-  //     const val = removeFormatCurrencyBR(item.value);
-  //     const sub = String(item.subCategory || '').toLowerCase();
-  //     if (sub === 'receita' || sub === 'receitas') receita += val;
-  //     if (sub === 'despesa' || sub === 'despesas') despesa += val;
-  //   });
-
-  //   return { receita, despesa, saldo: receita - despesa, count: selected.length };
-  // }
 
 }

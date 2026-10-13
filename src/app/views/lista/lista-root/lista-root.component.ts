@@ -2,6 +2,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
@@ -52,11 +53,11 @@ export class ListaRootComponent implements OnInit {
 
   private setGridColumns(): void {
     this.gridColumns = [
-      { field: 'nome', header: 'Nome', type: 'text', width: "40%" },
+      { field: 'nome', header: 'Nome', type: GridColumnTypeEnum.Text, width: "40%" },
       {
         field: 'tipoMovimentacao',
         header: 'TIPO',
-        type: 'select',
+        type: GridColumnTypeEnum.Select,
         options: [
           { label: 'Checklist', value: 1 },
           { label: 'Cronograma', value: 2 },
@@ -67,12 +68,12 @@ export class ListaRootComponent implements OnInit {
       {
         field: 'status',
         header: 'STATUS',
-        type: 'select',
+        type: GridColumnTypeEnum.Select,
         options: this.statusOptions,
         formatter: (row) => this.statusLabel(row.status),
         width: "20%"
       },
-      { field: 'actions', header: 'Ações', type: 'actions', functions: ['view', 'edit', 'delete'] },
+      { field: 'actions', header: 'Ações', type: GridColumnTypeEnum.Actions, functions: ['view', 'edit', 'delete'] },
     ]
   }
 
@@ -165,29 +166,13 @@ export class ListaRootComponent implements OnInit {
   }
 
   async onDeleteSelected(rows: ListaDto[]) {
-    if (!rows.length) return;
+    const excluiu = await this.exclusaoEmLote.confirmarEExcluir(
+      this.grid,
+      rows,
+      row => this.listaService.delete(row.id),
+      { singular: 'lista', plural: 'listas', feminino: true }
+    );
 
-    const ok = window.confirm(`Excluir ${rows.length} lista(s) selecionada(s)?`);
-    if (!ok) {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-      return;
-    }
-
-    try {
-      await this.exclusaoEmLote.excluir(
-        rows,
-        row => this.listaService.delete(row.id),
-        { singular: 'lista', plural: 'listas', feminino: true }
-      );
-
-      this.grid?.clearSelection();
-      await this.load();
-    } finally {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-    }
+    if (excluiu) await this.load();
   }
 }

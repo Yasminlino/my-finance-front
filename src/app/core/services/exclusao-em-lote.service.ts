@@ -18,6 +18,12 @@ export interface ResultadoExclusaoEmLote {
   falhas: number;
 }
 
+/** O que o serviço precisa do data-grid: liberar o botão e limpar a seleção. */
+export interface GridSelecionavel {
+  deleting: boolean;
+  clearSelection(): void;
+}
+
 /**
  * Exclusão item a item com contagem real de sucessos e falhas.
  *
@@ -26,11 +32,42 @@ export interface ResultadoExclusaoEmLote {
  *  - endpoint que devolve 204/vazio não emitia mensagem nenhuma apesar do sucesso;
  *  - falha no meio do lote abortava o resto e avisava que *todos* falharam.
  *
- * Ver FE-P0-08. A extração da base de CRUD (FE-P1-01) deve absorver este serviço.
+ * Ver FE-P0-08 e FE-P1-01.
  */
 @Injectable({ providedIn: 'root' })
 export class ExclusaoEmLoteService {
   constructor(private readonly alertService: AlertService) {}
+
+  /**
+   * Fluxo completo do (deleteSelected) do data-grid: confirma, exclui, limpa a seleção
+   * e sempre libera o `grid.deleting`. Devolve true quando a exclusão rodou — aí quem
+   * chama recarrega a tela.
+   */
+  async confirmarEExcluir<T>(
+    grid: GridSelecionavel | undefined,
+    rows: T[],
+    excluirItem: (row: T) => Promise<unknown>,
+    rotulo: RotuloEntidade
+  ): Promise<boolean> {
+    try {
+      if (!rows.length) {
+        return false;
+      }
+
+      const selecionado = this.concordar(rows.length, rotulo, 'selecionado', 'selecionada');
+      if (!window.confirm(`Excluir ${rows.length} ${this.substantivo(rows.length, rotulo)} ${selecionado}?`)) {
+        return false;
+      }
+
+      await this.excluir(rows, excluirItem, rotulo);
+      grid?.clearSelection();
+      return true;
+    } finally {
+      if (grid) {
+        grid.deleting = false;
+      }
+    }
+  }
 
   /**
    * Tenta excluir todas as linhas, sem abortar no primeiro erro, e informa o
@@ -105,10 +142,12 @@ export class ExclusaoEmLoteService {
   }
 
   private participio(quantidade: number, rotulo: RotuloEntidade): string {
-    if (rotulo.feminino) {
-      return quantidade === 1 ? 'excluída' : 'excluídas';
-    }
+    return this.concordar(quantidade, rotulo, 'excluído', 'excluída');
+  }
 
-    return quantidade === 1 ? 'excluído' : 'excluídos';
+  /** Flexiona um particípio regular ("excluído") em gênero e número. */
+  private concordar(quantidade: number, rotulo: RotuloEntidade, masculino: string, feminino: string): string {
+    const base = rotulo.feminino ? feminino : masculino;
+    return quantidade === 1 ? base : `${base}s`;
   }
 }

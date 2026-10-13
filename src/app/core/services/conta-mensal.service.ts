@@ -45,10 +45,7 @@ export class ContaMensalService {
 
   async updateTransaction(payload: any): Promise<any> {
     try {
-      const date = new Date(payload.date);
-      date.setHours(date.getHours() + 3);
-      payload.date = date.toISOString();
-      const res = await this.api.put<any>('/UpdateTransaction', payload);;
+      const res = await this.api.put<any>('/UpdateTransaction', payload);
       return res;
     } catch (error) {
       console.error("Erro ao buscar contas mensais:", error);

@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { addMonthsToYearMonth, formatCurrencyBR, formatDateBRView, formatDateInput, formatYearMonth, isoDateMinusHours, parseMoneyBRToNumber, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
+import { addMonthsToYearMonth, formatCurrencyBR, formatDateBR, formatDateInput, formatYearMonth, isoDate, parseCurrencyBR } from 'src/app/core/utils/mask';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, TypeGrid, GridRowChange, GridColumnOption } from "src/app/shared/components/data-grid/data-grid.interface"
 import { CategoryService } from 'src/app/core/services/category.service';
@@ -10,7 +10,8 @@ import { MenuItem } from 'primeng/api';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
-import { TagStatus } from 'src/app/shared/enums/status.enum';
+import { STATUS_PAGAMENTO_OPTIONS } from 'src/app/shared/enums/status.enum';
+import { calcularTotaisSelecao, naturezaPorTipoLancamento } from 'src/app/shared/utils/totais-selecao';
 import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
 import { PessoaMovimentacaoDto, PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
@@ -41,7 +42,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   showAddModal = false;
 
 
-  manualData = isoDateMinusHours();
+  manualData = isoDate();
   manualValor = '';
   manualTipoLancamento = 'Entrada';
   manualDescricao = '';
@@ -75,12 +76,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   editing: ExtratoItemDto | null = null;
   saving = false;
 
-  statusOptions: GridColumnOption[] = [
-    { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Danger },
-    { label: 'PAGO NO PRAZO', value: 'PAGO NO PRAZO', classe: TagStatus.Success },
-    { label: 'AGUARDANDO', value: 'AGUARDANDO', classe: TagStatus.Info },
-    { label: 'PAGO ATRASADO', value: 'PAGO ATRASADO', classe: TagStatus.Warning }
-  ];
+  statusOptions = STATUS_PAGAMENTO_OPTIONS;
 
 
   deletingId: number | null = null;
@@ -218,17 +214,11 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   }
 
   onSelectionChange(selectedItems: ExtratoItemDto[]) {
-    let receita = 0;
-    let despesa = 0;
-
-    selectedItems.forEach((item) => {
-      const val = removeFormatCurrencyBR(item.valor);
-      const sub = String(item.tipoLancamento || '').toLowerCase();
-      if (sub === 'entrada' || sub === 'entradas') receita += val;
-      if (sub === "saída" || sub === "saídas") despesa += val;
-    });
-
-    this.selectedTotals = { receita, despesa, saldo: receita - despesa, count: selectedItems.length };
+    this.selectedTotals = calcularTotaisSelecao(
+      selectedItems,
+      item => item.valor,
+      item => naturezaPorTipoLancamento(item.tipoLancamento)
+    );
   }
 
   searchPessoa = (text$: Observable<string>) =>
@@ -284,7 +274,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
         field: "dataMovimentacao",
         header: "DATA",
         type: GridColumnTypeEnum.Date,
-        formatter: (row) => formatDateBRView(row.dataMovimentacao),
+        formatter: (row) => formatDateBR(row.dataMovimentacao),
         width:  '15%',
         editable: true
       },
@@ -388,30 +378,14 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   }
 
   async onDeleteSelected(rows: ExtratoItemDto[]) {
-    if (!rows.length) return;
+    const excluiu = await this.exclusaoEmLote.confirmarEExcluir(
+      this.grid,
+      rows,
+      row => this.extratoItemService.delete(row.id),
+      { singular: 'lançamento', plural: 'lançamentos' }
+    );
 
-    const ok = window.confirm(`Excluir ${rows.length} lançamento(s) selecionado(s)?`);
-    if (!ok) {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-      return;
-    }
-
-    try {
-      await this.exclusaoEmLote.excluir(
-        rows,
-        row => this.extratoItemService.delete(row.id),
-        { singular: 'lançamento', plural: 'lançamentos' }
-      );
-
-      this.grid?.clearSelection();
-      await this.loadMonth();
-    } finally {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-    }
+    if (excluiu) await this.loadMonth();
   }
 
 
@@ -464,7 +438,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
         if (rawDate) {
           dataFormatada = typeof rawDate === 'string' 
             ? rawDate.split('T')[0] 
-            : new Date(rawDate).toISOString().split('T')[0];
+            : formatDateInput(rawDate); // Date à meia-noite local: getters locais, não toISOString (UTC)
         }
 
         // 2. Garante o TipoLancamento (obrigatório no backend)
@@ -625,7 +599,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
       // ✅ NÃO envie Id aqui
       const basePayload: any = {
         DataMovimentacao: this.manualData,
-        Valor: parseMoneyBRToNumber(this.manualValor),
+        Valor: parseCurrencyBR(this.manualValor),
         TipoLancamento: this.manualTipoLancamento,
 
         Descricao: this.manualDescricao || null,

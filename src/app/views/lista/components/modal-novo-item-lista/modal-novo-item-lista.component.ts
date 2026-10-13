@@ -4,7 +4,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 
 // Ajuste esses imports para o seu projeto
 import { ItemListaDto, ItemListaService } from 'src/app/core/services/item-lista.service';
-import { formatCurrencyMoney, formatMoneyBRFromAny, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
+import { formatCurrencyBR, parseCurrencyBR } from 'src/app/core/utils/mask';
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
 
@@ -46,7 +46,7 @@ export class ModalNovoItemListaComponent implements OnInit {
       this.form.patchValue({
         descricao: this.item.descricao,
         quantidade: this.item.quantidade,
-        valor: formatCurrencyMoney(String(this.item.valor)) ?? null,
+        valor: this.item.valor != null ? formatCurrencyBR(this.item.valor, { simbolo: false }) : null,
         observacao: this.item.observacao,
         status: this.item.status ?? 'Pendente',
         dataTarefa: this.item.dataTarefa ?? null,
@@ -67,7 +67,7 @@ export class ModalNovoItemListaComponent implements OnInit {
 
     this.saving = true;
     this.alert = { type: '', message: '' };
-    var valorFormatoDecimal = parseMoneyBRToNumber(String(this.form.value.valor))
+    const valorFormatoDecimal = parseCurrencyBR(this.form.value.valor);
 
     const payload = {
       id: this.item?.id ?? 0,

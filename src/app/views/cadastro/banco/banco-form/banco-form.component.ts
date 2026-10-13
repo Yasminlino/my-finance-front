@@ -3,7 +3,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { BancoDto } from 'src/app/core/interfaces/banco.interface';
 import { BancoService } from 'src/app/core/services/banco.service';
 import { TipoCartao } from 'src/app/core/services/tipo-cartao.service';
-import { formataDecimal, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
+import { formatCurrencyBR, parseCurrencyBR } from 'src/app/core/utils/mask';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
@@ -25,7 +25,7 @@ export class BancoFormComponent implements OnInit {
 
   form = this.fb.group({
     nomeBanco: ['', [Validators.required, Validators.minLength(2)]],
-    saldoInicial: [formataDecimal(0), [Validators.required]],
+    saldoInicial: [formatCurrencyBR(0, { simbolo: false }), [Validators.required]],
     ativo: [true, [Validators.required]],
     tipoCartaoId: [null as number | null, [Validators.required]], // ✅ novo
   });
@@ -36,7 +36,7 @@ export class BancoFormComponent implements OnInit {
     if (this.banco) {
       this.form.patchValue({
         nomeBanco: this.banco.nomeBanco,
-        saldoInicial: formataDecimal(this.banco.saldoInicial),
+        saldoInicial: formatCurrencyBR(this.banco.saldoInicial, { simbolo: false }),
         ativo: this.banco.ativo,
         tipoCartaoId: this.banco.tipoCartaoId ?? null,
       });
@@ -59,7 +59,7 @@ export class BancoFormComponent implements OnInit {
       const payload = {
         id: this.banco?.id || 0,
         nomeBanco: this.form.value.nomeBanco!,
-        saldoInicial: parseMoneyBRToNumber(this.form.value.saldoInicial!) ?? 0, // Evita erro do TS
+        saldoInicial: parseCurrencyBR(this.form.value.saldoInicial) ?? 0,
         tipoCartaoId: Number(this.form.value.tipoCartaoId), // ✅ novo
         ativo: !!this.form.value.ativo,
       };

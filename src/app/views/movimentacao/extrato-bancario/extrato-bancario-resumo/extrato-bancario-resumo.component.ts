@@ -8,7 +8,7 @@ import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { Router } from '@angular/router';
-import { formatYearMonth, isoDateMinusHours, parseMoneyBRToNumber } from 'src/app/core/utils/mask';
+import { formatYearMonth, isoDate, parseCurrencyBR } from 'src/app/core/utils/mask';
 import { BancoDto } from 'src/app/core/interfaces/banco.interface';
 import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { ExtratoBancarioItemService, ExtratoItemDto } from 'src/app/core/services/extrato-bancario-item.service';
@@ -53,7 +53,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   selectedTipoContaId = '';
 
   manualForm = {
-    dataMovimentacao: isoDateMinusHours(),
+    dataMovimentacao: isoDate(),
     tipo: 'SAIDA', // ENTRADA | SAIDA
     valor: '',
     bancoId: '',
@@ -366,7 +366,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
   openManualModal() {
     this.manualForm = {
-      dataMovimentacao: isoDateMinusHours(),
+      dataMovimentacao: isoDate(),
       tipo: 'SAIDA',
       valor: '',
       bancoId: '',
@@ -463,7 +463,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
       const payload = {
         extratoBancarioId: null,
         dataMovimentacao: this.manualForm.dataMovimentacao,
-        valor: parseMoneyBRToNumber(this.manualForm.valor),
+        valor: parseCurrencyBR(this.manualForm.valor),
         tipoLancamento: this.manualForm.tipo,
         bancoId: Number(this.manualForm.bancoId),
         tipoCartaoId: Number(this.manualForm.tipoCartaoId),

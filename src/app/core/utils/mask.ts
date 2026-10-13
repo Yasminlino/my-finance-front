@@ -1,20 +1,40 @@
-export function formatCurrencyBR(value: any): string {
-  // aceita "R$ 1.234,56", "1234,56", "1234.56", number...
-  const n = removeFormatCurrencyBR(value);
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
+/**
+ * Único formatador de moeda (FE-P1-03).
+ * Aceita number ou texto pt-BR ("R$ 1.234,56", "1.234,56"); vazio/inválido vira zero.
+ *  - padrão:            "R$ 1.234,56"
+ *  - { simbolo: false }: "1.234,56"
+ */
+export function formatCurrencyBR(value: any, opcoes: { simbolo?: boolean } = {}): string {
+  const n = parseCurrencyBR(value) ?? 0;
+  const simbolo = opcoes.simbolo ?? true;
+
+  return new Intl.NumberFormat(
+    'pt-BR',
+    simbolo
+      ? { style: 'currency', currency: 'BRL' }
+      : { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+  ).format(n);
 }
 
-export function removeFormatCurrencyBR(value: any): number {
-  if (value === null || value === undefined) return 0;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+/**
+ * Único parser de moeda (FE-P1-03): "R$ 1.234,56" | "1.234,56" | number -> number.
+ * Vazio ou inválido devolve null; quem precisa de número usa `?? 0`.
+ * Texto é sempre lido no formato pt-BR (ponto = milhar, vírgula = decimal).
+ */
+export function parseCurrencyBR(value: any): number | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
 
   const s = String(value)
-    .replace(/[R$\s]/g, '')
+    .replace(/R\$/g, '')
+    .replace(/\s/g, '')
     .replace(/\./g, '')
     .replace(',', '.');
 
+  if (!s) return null;
+
   const n = Number(s);
-  return Number.isFinite(n) ? n : 0;
+  return Number.isFinite(n) ? n : null;
 }
 
 export function formatDateInput(value: any): string {
@@ -29,25 +49,6 @@ export function formatDateInput(value: any): string {
   const dd = String(d.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 }
-export function formatCurrencyMoney(value: any): string {
-  const n = parseBRLToNumber(value);
-  return new Intl.NumberFormat('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(n);
-}
-
-function parseBRLToNumber(value: any): number {
-  if (value === null || value === undefined || value === '') return 0;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
-
-  let s = String(value).trim();
-  s = s.replace(/R\$\s?/g, '');
-  s = s.replace(/\./g, '').replace(/,/g, '.');
-  const n = Number(s);
-  return Number.isFinite(n) ? n : 0;
-}
-
 
 export function formatYearMonth(date: Date): string {
   return date.getFullYear().toString() + "-" + (date.getMonth() + 1).toString().padStart(2, '0');
@@ -93,19 +94,48 @@ export function formatDateVencimento(baseMonth: string | Date, dataOperacao: any
   return new Date(ano, mes, dia);
 }
 
-export function formatDateVencimentoView(dataOperacao: string): string {
-  var date = new Date(dataOperacao)
+/**
+ * Única formatação de data para exibição, dd/MM/yyyy (FE-P1-04).
+ *
+ * Regra de fuso:
+ *  - "YYYY-MM-DD" é data de calendário (DateOnly da API, ex.: DataMovimentacao do extrato):
+ *    lida literalmente. Passar por `new Date()` a trataria como meia-noite UTC e,
+ *    com getters locais, mostraria o dia anterior em BRT.
+ *  - Qualquer outro valor é um instante (timestamptz da API, ex.: Transaction.Date,
+ *    DataImportacao; ou Date) e é exibido no horário local.
+ */
+/**
+ * Converte texto da API em Date seguindo a mesma regra de fuso do formatDateBR:
+ * "YYYY-MM-DD" vira meia-noite LOCAL daquele dia (`new Date('YYYY-MM-DD')` daria
+ * meia-noite UTC, que em BRT é o dia anterior); o resto é instante e vai para `new Date()`.
+ */
+export function toDate(value: string): Date {
+  const dataCalendario = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (dataCalendario) {
+    const [, yyyy, mm, dd] = dataCalendario;
+    return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+  }
+
+  return new Date(value);
+}
+
+export function formatDateBR(value: string | Date | null | undefined): string {
+  if (!value) return '';
+
+  if (typeof value === 'string') {
+    const dataCalendario = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (dataCalendario) {
+      const [, yyyy, mm, dd] = dataCalendario;
+      return `${dd}/${mm}/${yyyy}`;
+    }
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   const dd = String(date.getDate()).padStart(2, '0');
-  return `${dd}/${mm}/${yyyy}`;
-}
-
-export function formatDateBRView(dataOperacao: string): string {
-  var date = new Date(dataOperacao)
-  const yyyy = date.getUTCFullYear();
-  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(date.getUTCDate()).padStart(2, '0');
   return `${dd}/${mm}/${yyyy}`;
 }
 
@@ -132,36 +162,7 @@ export function formatMoneyBRFromAny(inputValue: string): string {
   return `${intWithDots},${decPart}`;
 }
 
-/** Converte "1.234,56" -> 1234.56 (number) */
-export function parseMoneyBRToNumber(masked: string): number | null {
-  const v = (masked ?? '').trim();
-  if (!v) return null;
-
-  const normalized = v.replace(/\./g, '').replace(',', '.');
-  const n = Number(normalized);
-  return Number.isFinite(n) ? n : null;
-}
-
-
-export function formataDecimal(value: number) {
-  var valor = value
-  var valorFixed = valor.toFixed(2)
-  var valorconvertido = valorFixed.toString().replace('.', ',')
-  return valorconvertido
-}
-
-//retorna o dia de hoje formatado, soma com a quantidade de dias que quiser
-export function isoDateMinusHours(): string {
-  const d = new Date();
-  d.setHours(d.getHours() - 4);   // -4 horas
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;       // formato do input date
-}
-
-
-//retorna o dia de hoje formatado para busca no back, soma com a quantidade de dias que quiser
+//retorna o dia de hoje (data local) em YYYY-MM-DD, soma com a quantidade de dias que quiser
 export function isoDate(dias: number = 0): string {
   const date = new Date();
   date.setDate(date.getDate() + dias);
@@ -171,9 +172,4 @@ export function isoDate(dias: number = 0): string {
   const day = String(date.getDate()).padStart(2, '0');
 
   return `${year}-${month}-${day}`;
-}
-
-export function formatMoney(value: any) {
-  const n = Number(value) || 0;
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
 }

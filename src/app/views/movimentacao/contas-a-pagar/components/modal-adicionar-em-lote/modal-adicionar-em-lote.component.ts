@@ -7,7 +7,7 @@ import { Subscription } from 'rxjs';
 import { AccountDto, ContaService } from 'src/app/core/services/contas.service';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { ContaMensal } from 'src/app/core/models/conta-mensal.model';
-import { formatCurrencyBR, formatDateVencimento, removeFormatCurrencyBR } from 'src/app/core/utils/mask';
+import { formatCurrencyBR, formatDateVencimento, parseCurrencyBR } from 'src/app/core/utils/mask';
 import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
 @Component({
@@ -187,7 +187,7 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
         date: formatDateVencimento(this.month, "01"),
         name: acc.name,
         idAccount: acc.id,
-        value: removeFormatCurrencyBR(acc.value),
+        value: parseCurrencyBR(acc.value) ?? 0,
         status: 'PENDENTE',
         ehParcelado: acc.ehParcelado,
         parcelaAtual: acc.ehParcelado ? acc.parcelaAtual : null,

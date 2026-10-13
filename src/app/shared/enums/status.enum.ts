@@ -1,7 +1,4 @@
-export enum Status {
-    Ativo = 0,
-    Inativo = 1
-}
+import type { GridColumnOption } from '../components/data-grid/data-grid.interface';
 
 /**
  * Severities aceitas pelo [severity] do p-tag (PrimeNG 17).
@@ -18,3 +15,24 @@ export const TagStatus = {
 } as const;
 
 export type TagStatus = typeof TagStatus[keyof typeof TagStatus];
+
+/**
+ * Status ativo/inativo dos cadastros (Banco, Categoria, Conta).
+ * As telas derivam `status` do `ativo` da API como 1 = ativo, 0 = inativo.
+ */
+export const STATUS_ATIVO_OPTIONS: GridColumnOption[] = [
+    { label: 'Ativo', value: 1, classe: TagStatus.Success },
+    { label: 'Inativo', value: 0, classe: TagStatus.Secondary }
+];
+
+export function statusAtivoLabel(value: number): string {
+    return value === 1 ? 'Ativo' : 'Inativo';
+}
+
+/** Situação de pagamento dos lançamentos (Contas a Pagar e Extrato). */
+export const STATUS_PAGAMENTO_OPTIONS: GridColumnOption[] = [
+    { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Danger },
+    { label: 'PAGO NO PRAZO', value: 'PAGO NO PRAZO', classe: TagStatus.Success },
+    { label: 'AGUARDANDO', value: 'AGUARDANDO', classe: TagStatus.Info },
+    { label: 'PAGO ATRASADO', value: 'PAGO ATRASADO', classe: TagStatus.Warning }
+];

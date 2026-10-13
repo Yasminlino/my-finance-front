@@ -41,6 +41,7 @@ import {
 import { CurrencyInputDirective } from '../../directives/currency-input.directive';
 import { ExibirCamposConfig } from '../../models/utils/grid-config.constants';
 import { TagStatus } from '../../enums/status.enum';
+import { toDate } from 'src/app/core/utils/mask';
 
 
 @Component({
@@ -89,8 +90,9 @@ export class DataGridComponent {
       this.columns
         .filter(col => col.type === 'date')
         .forEach(col => {
+          // "YYYY-MM-DD" (DateOnly) vira meia-noite local, não UTC — ver toDate().
           if (item[col.field] && typeof item[col.field] === 'string') {
-            item[col.field] = new Date(item[col.field]);
+            item[col.field] = toDate(item[col.field]);
           }
         });
       return item;
@@ -419,7 +421,7 @@ export class DataGridComponent {
         const value = row[column.field];
 
         if (typeof value === 'string') {
-          row[column.field] = new Date(value);
+          row[column.field] = toDate(value);
         }
       });
   }

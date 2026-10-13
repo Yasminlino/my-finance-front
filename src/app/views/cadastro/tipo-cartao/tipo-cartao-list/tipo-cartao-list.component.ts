@@ -1,143 +1,36 @@
- import { Component, OnInit, ViewChild } from '@angular/core';
-import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
-import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { AlertService } from 'src/app/shared/components/alert.service';
-import { extrairMensagemErro } from 'src/app/core/utils/http-error';
-import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
+import { Component } from '@angular/core';
+import { GridColumn } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
-import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
-
+import { CadastroListBase } from 'src/app/shared/base/cadastro-list.base';
 
 @Component({
   selector: 'app-tipo-cartao-list',
   templateUrl: './tipo-cartao-list.component.html',
   styleUrls: ['./tipo-cartao-list.component.scss'],
 })
-export class TipoCartaoListComponent implements OnInit {
-  /** Fonte: tudo o que veio da API. */
-  tipoCartoes: TipoCartaoDto[] = [];
-  /** Projeção exibida no grid — nunca sobrescreve a fonte (ver FE-P0-10). */
-  tipoCartoesExibidos: TipoCartaoDto[] = [];
-  tipoCartaoOpcoes: GridColumnOption[] = [];
-  exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO };
-  gridColumns: GridColumn[] = []
-  breadcrumb = [{ label: 'Cadastros' }, { label: 'Tipo Cartão' }]
+export class TipoCartaoListComponent extends CadastroListBase<TipoCartaoDto> {
+  protected readonly rotulo = { singular: 'tipo de cartão', plural: 'tipos de cartão' };
 
-  loading = false;
-  q = '';
+  gridColumns: GridColumn[] = [
+    { field: 'nomeTipoCartao', header: 'NOME TIPO CARTÃO', type: GridColumnTypeEnum.Text, width: "90%" },
+    { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
+  ];
+  breadcrumb = [{ label: 'Cadastros' }, { label: 'Tipo Cartão' }];
 
-  showModalForm = false;
-  editing: TipoCartaoDto | null = null;
-  @ViewChild('grid') grid?: DataGridComponent;
-
-  constructor(private tipoCartaoService: TipoCartaoService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService) { }
-
-  async ngOnInit() {
-    await this.getTiposCartao();
-    this.setGridColumns()
-    await this.load();
+  constructor(private tipoCartaoService: TipoCartaoService) {
+    super();
   }
 
-  private async getTiposCartao(): Promise<void> {
-    const res = await this.tipoCartaoService.list();
-
-    this.tipoCartaoOpcoes = res.map(element => ({
-      label: element.nomeTipoCartao,
-      value: element.nomeTipoCartao
-    }));
-
+  protected async buscar(): Promise<TipoCartaoDto[]> {
+    return this.tipoCartaoService.list();
   }
 
-  private setGridColumns(): void {
-
-    this.gridColumns = [
-      { field: 'nomeTipoCartao', header: 'NOME TIPO CARTÃO', type: GridColumnTypeEnum.Text, width: "90%" },
-      { field: 'actions', header: 'AÇÕES', type: 'actions', functions: ['edit', 'delete'] },
-    ];
+  protected excluirRegistro(id: number) {
+    return this.tipoCartaoService.delete(id);
   }
 
-  async load() {
-    try {
-      this.loading = true;
-      const response = await this.tipoCartaoService.list();
-
-      this.tipoCartoes = response.map(item => ({
-        ...item
-      }));
-
-      this.applyFilters();
-    } catch (e: any) {
-      this.alertService.error(e?.message ?? 'Erro ao carregar Tipos de cartão.');
-    } finally {
-      this.loading = false;
-    }
-  }
-
-  applyFilters() {
-    const term = this.q.trim().toLowerCase();
-
-    this.tipoCartoesExibidos = [...this.tipoCartoes]
-      .sort((a, b) => (a.nomeTipoCartao ?? '').localeCompare(b.nomeTipoCartao ?? ''))
-      .filter(c => {
-        if (!term) return true;
-        return (c.nomeTipoCartao ?? '').toLowerCase().includes(term) || String(c.id).includes(term);
-      });
-  }
-
-  openCreate() {
-    this.editing = null;
-    this.showModalForm = true;
-  }
-
-  onEdit(tipoC: TipoCartaoDto) {
-    this.editing = tipoC;
-    this.showModalForm = true;
-  }
-
-  closeForm(reload?: boolean) {
-    this.showModalForm = false;
-    this.editing = null;
-    if (reload) this.load();
-  }
-
-  async onDelete(c: TipoCartaoDto) {
-    const ok = window.confirm(`Excluir o Tipo cartão "${c.nomeTipoCartao}"?`);
-    if (!ok) return;
-
-    try {
-      await this.tipoCartaoService.delete(c.id);
-      this.alertService.success('Tipo cartão deletada com sucesso!')
-      await this.load();
-    } catch (e) {
-      this.alertService.error(extrairMensagemErro(e, 'Falha ao deletar. Tipo cartão pode estar vinculada a transações.'));
-    }
-  }
-
-  async onDeleteSelected(rows: TipoCartaoDto[]) {
-    if (!rows.length) return;
-
-    const ok = window.confirm(`Excluir ${rows.length} Tipo cartão selecionado(s)?`);
-    if (!ok) {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-      return;
-    }
-
-    try {
-      await this.exclusaoEmLote.excluir(
-        rows,
-        row => this.tipoCartaoService.delete(row.id),
-        { singular: 'tipo de cartão', plural: 'tipos de cartão' }
-      );
-
-      this.grid?.clearSelection();
-      await this.load();
-    } finally {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-    }
+  protected nomeDe(tipo: TipoCartaoDto): string {
+    return tipo.nomeTipoCartao;
   }
 }

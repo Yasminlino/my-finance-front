@@ -1,64 +1,60 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { Component } from '@angular/core';
 import { AccountDto, ContaService, ContaVencimentoDto } from 'src/app/core/services/contas.service';
 import { Category, CategoryService } from 'src/app/core/services/category.service';
 import { formatCurrencyBR } from 'src/app/core/utils/mask';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
-import { TagStatus } from 'src/app/shared/enums/status.enum';
-import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { AlertService } from 'src/app/shared/components/alert.service';
-import { extrairMensagemErro } from 'src/app/core/utils/http-error';
-import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
+import { STATUS_ATIVO_OPTIONS, statusAtivoLabel } from 'src/app/shared/enums/status.enum';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
-import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
+import { CadastroListBase } from 'src/app/shared/base/cadastro-list.base';
 
-
+/** Conta com os campos derivados que o grid exibe. */
+type ContaLinha = AccountDto & {
+  /** Primeiro dia de vencimento como número, para ordenar a coluna (0 se não houver). */
+  diasVencimentoSort: number;
+  diasVencimentoString: string;
+};
 
 @Component({
   selector: 'app-conta-mensal-list',
   templateUrl: './conta-mensal-list.component.html',
   styleUrls: ['./conta-mensal-list.component.scss']
 })
-export class ContaMensalListComponent implements OnInit {
-  /** Fonte: tudo o que veio da API. */
-  contas: AccountDto[] = [];
-  /** Projeção exibida no grid — nunca sobrescreve a fonte (ver FE-P0-10). */
-  contasExibidas: AccountDto[] = [];
+export class ContaMensalListComponent extends CadastroListBase<ContaLinha> {
+  protected readonly rotulo = { singular: 'conta', plural: 'contas', feminino: true };
+
   categorias: Category[] = [];
   categoriasOptions: GridColumnOption[] = [];
-  exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO };
-  gridColumns: GridColumn[] = []
+  statusOptions = STATUS_ATIVO_OPTIONS;
+  gridColumns: GridColumn[] = [];
+  breadcrumb = [{ label: 'Cadastros' }, { label: 'Contas' }];
 
-  money(v: any) { return formatCurrencyBR(v); }
-
-  statusOptions: GridColumnOption[] = [
-    { label: 'Ativo', value: 1, classe: TagStatus.Success },
-    { label: 'Inativo', value: 0, classe: TagStatus.Secondary }
-  ];
-
-  statusLabel(value: number): string {
-    return value === 1 ? 'Ativo' : 'Inativo';
+  constructor(private categoryService: CategoryService, private contaService: ContaService) {
+    super();
   }
 
-  categoria: Category[] = [];
-  breadcrumb = [{ label: 'Cadastros' }, { label: 'Contas' }]
-
-  loading = false;
-  errorMsg = '';
-
-  q = '';
-  statusFilter: 'ALL' | 'Ativo' | 'Inativo' = 'ALL';
-
-  showModalForm = false;
-  editing: AccountDto | null = null;
-  @ViewChild('grid') grid?: DataGridComponent;
-
-  constructor(private categoryService: CategoryService, private contaService: ContaService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService) { }
-
-  async ngOnInit() {
+  protected override async antesDeCarregar(): Promise<void> {
     await this.getCategory();
-    this.setGridColumns()
-    await this.load();
+    this.setGridColumns();
+  }
+
+  protected async buscar(): Promise<ContaLinha[]> {
+    const response = await this.contaService.list();
+
+    return response.map(item => ({
+      ...item,
+      diasVencimentoSort: item.contaVencimentos && item.contaVencimentos.length > 0
+        ? Number(item.contaVencimentos[0].dia)
+        : 0,
+      diasVencimentoString: this.getDatas(item.contaVencimentos)
+    }));
+  }
+
+  protected excluirRegistro(id: number) {
+    return this.contaService.delete(id);
+  }
+
+  protected nomeDe(conta: ContaLinha): string {
+    return conta.name;
   }
 
   private async getCategory(): Promise<void> {
@@ -70,18 +66,16 @@ export class ContaMensalListComponent implements OnInit {
       label: element.name,
       value: element.name
     }));
-
   }
 
   private setGridColumns(): void {
-
     this.gridColumns = [
       { field: 'name', header: 'NOME', type: GridColumnTypeEnum.Text, width: "25%" },
       {
         field: "value",
         header: "VALOR",
         type: GridColumnTypeEnum.Money,
-        formatter: (row) => this.money(row.value),
+        formatter: (row) => formatCurrencyBR(row.value),
         width: '12%',
         editable: true
       },
@@ -110,132 +104,28 @@ export class ContaMensalListComponent implements OnInit {
       {
         field: 'status',
         header: 'STATUS',
-        type: 'select',
+        type: GridColumnTypeEnum.Select,
         options: this.statusOptions,
-        formatter: (row) => this.statusLabel(row.status),
+        formatter: (row) => statusAtivoLabel(row.status),
         width: "10%"
       },
-      { field: 'actions', header: 'AÇÕES', type: 'actions', functions: ['edit', 'delete'] },
+      { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
     ];
   }
 
-  formataParcela(conta: AccountDto): any {
+  formataParcela(conta: AccountDto): string {
     if (!conta.ehParcelado) {
-      return "-"
+      return "-";
     }
 
-    return conta.parcelaAtual + "/" + conta.quantidadeParcelas
+    return conta.parcelaAtual + "/" + conta.quantidadeParcelas;
   }
 
   getDatas(conta: ContaVencimentoDto[] | undefined): string {
-  if (!conta || conta.length === 0) {
-    return '-';
-  }
-
-  return conta.map(datas => datas.dia).join(', ');
-}
-
-async load() {
-  try {
-    this.loading = true;
-    const response = await this.contaService.list();
-    
-    this.contas = response.map(item => ({
-      ...item,
-      // Pega o primeiro dia como número para ordenação correta, ou 0 se vazio
-      diasVencimentoSort: item.contaVencimentos && item.contaVencimentos.length > 0 
-        ? Number(item.contaVencimentos[0].dia) 
-        : 0,
-      diasVencimentoString: this.getDatas(item.contaVencimentos)
-    }));
-
-    this.applyFilters();
-  } catch (e: any) {
-    this.alertService.error(e?.message ?? 'Erro ao carregar contas.')
-  } finally {
-    this.loading = false;
-  }
-}
-
-  applyFilters() {
-    const term = this.q.trim().toLowerCase();
-
-    this.contasExibidas = [...this.contas]
-      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
-      .filter(c => {
-        if (!term) return true;
-        return (c.name ?? '').toLowerCase().includes(term) || String(c.id).includes(term);
-      });
-  }
-
-  onSearchChange(value: string) {
-    this.q = value;
-    this.applyFilters();
-  }
-
-  onStatusChange(value: any) {
-    this.statusFilter = value;
-    this.applyFilters();
-  }
-
-  openCreate() {
-    this.editing = null;
-    this.showModalForm = true;
-  }
-
-  onEdit(conta: AccountDto) {
-    this.editing = conta;
-    this.showModalForm = true;
-  }
-
-  openEdit(acc: AccountDto) {
-    this.editing = acc;
-    this.showModalForm = true;
-  }
-
-  closeForm(reload?: boolean) {
-    this.showModalForm = false;
-    this.editing = null;
-    if (reload) this.load();
-  }
-
-  async onDelete(c: AccountDto) {
-    const ok = window.confirm(`Excluir a conta "${c.name}"?`);
-    if (!ok) return;
-
-    try {
-      await this.contaService.delete(c.id);
-      this.alertService.success('Conta deletada com sucesso!')
-      await this.load();
-    } catch (e) {
-      this.alertService.error(extrairMensagemErro(e, 'Falha ao deletar. Conta pode estar vinculada a transações.'));
-    }
-  }
-
-  async onDeleteSelected(rows: AccountDto[]) {
-    if (!rows.length) return;
-
-    const ok = window.confirm(`Excluir ${rows.length} conta(s) selecionada(s)?`);
-    if (!ok) {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-      return;
+    if (!conta || conta.length === 0) {
+      return '-';
     }
 
-    try {
-      await this.exclusaoEmLote.excluir(
-        rows,
-        row => this.contaService.delete(row.id),
-        { singular: 'conta', plural: 'contas', feminino: true }
-      );
-
-      this.grid?.clearSelection();
-      await this.load();
-    } finally {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-    }
+    return conta.map(datas => datas.dia).join(', ');
   }
 }

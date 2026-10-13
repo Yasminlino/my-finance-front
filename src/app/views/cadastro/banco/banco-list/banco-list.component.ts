@@ -1,63 +1,59 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
-import { Category } from 'src/app/core/services/category.service';
-import { formatCurrencyBR} from 'src/app/core/utils/mask';
+import { Component } from '@angular/core';
+import { formatCurrencyBR } from 'src/app/core/utils/mask';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
-import { TagStatus } from 'src/app/shared/enums/status.enum';
-import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { AlertService } from 'src/app/shared/components/alert.service';
-import { extrairMensagemErro } from 'src/app/core/utils/http-error';
-import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
+import { STATUS_ATIVO_OPTIONS, statusAtivoLabel } from 'src/app/shared/enums/status.enum';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { TipoCartao, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { BancoService } from 'src/app/core/services/banco.service';
 import { BancoDto } from 'src/app/core/interfaces/banco.interface';
-import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
+import { CadastroListBase } from 'src/app/shared/base/cadastro-list.base';
 
+/** Banco com os campos derivados que o grid exibe. */
+type BancoLinha = BancoDto & {
+  nomeTipoCartaoFormatado: string;
+  status: number;
+};
 
 @Component({
   selector: 'app-banco-list',
   templateUrl: './banco-list.component.html',
   styleUrls: ['./banco-list.component.scss'],
 })
-export class BancoListComponent implements OnInit {
-  /** Fonte: tudo o que veio da API. */
-  bancos: BancoDto[] = [];
-  /** Projeção exibida no grid — nunca sobrescreve a fonte (ver FE-P0-10). */
-  bancosExibidos: BancoDto[] = [];
+export class BancoListComponent extends CadastroListBase<BancoLinha> {
+  protected readonly rotulo = { singular: 'banco', plural: 'bancos' };
+
   tiposCartao: TipoCartao[] = [];
   tipoCartaoOpcoes: GridColumnOption[] = [];
-  exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO };
-  gridColumns: GridColumn[] = []
+  statusOptions = STATUS_ATIVO_OPTIONS;
+  gridColumns: GridColumn[] = [];
+  breadcrumb = [{ label: 'Cadastros' }, { label: 'Bancos' }];
 
-  money(v: any) { return formatCurrencyBR(v); }
-
-  statusOptions: GridColumnOption[] = [
-    { label: 'Ativo', value: 1, classe: TagStatus.Success },
-    { label: 'Inativo', value: 0, classe: TagStatus.Secondary }
-  ];
-
-  statusLabel(value: number): string {
-    return value === 1 ? 'Ativo' : 'Inativo';
+  constructor(private tipoCartaoService: TipoCartaoService, private bancoService: BancoService) {
+    super();
   }
 
-  breadcrumb = [{ label: 'Cadastros' }, { label: 'Bancos' }]
-
-  loading = false;
-  errorMsg = '';
-
-  q = '';
-  statusFilter: 'ALL' | 'Ativo' | 'Inativo' = 'ALL';
-
-  showModalForm = false;
-  editing: BancoDto | null = null;
-  @ViewChild('grid') grid?: DataGridComponent;
-
-  constructor(private tipoCartaoService: TipoCartaoService, private bancoService: BancoService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService) { }
-
-  async ngOnInit() {
+  protected override async antesDeCarregar(): Promise<void> {
     await this.getTiposCartao();
-    this.setGridColumns()
-    await this.load();
+    this.setGridColumns();
+  }
+
+  protected async buscar(): Promise<BancoLinha[]> {
+    const response = await this.bancoService.list();
+
+    return response.map(item => ({
+      ...item,
+      nomeTipoCartaoFormatado: item.tipoCartao?.nomeTipoCartao ||
+        this.tiposCartao.find(t => t.id === item.tipoCartaoId)?.nomeTipoCartao || '-',
+      status: item.ativo ? 1 : 0
+    }));
+  }
+
+  protected excluirRegistro(id: number) {
+    return this.bancoService.delete(id);
+  }
+
+  protected nomeDe(banco: BancoLinha): string {
+    return banco.nomeBanco;
   }
 
   private async getTiposCartao(): Promise<void> {
@@ -69,11 +65,9 @@ export class BancoListComponent implements OnInit {
       label: element.nomeTipoCartao,
       value: element.nomeTipoCartao
     }));
-
   }
 
   private setGridColumns(): void {
-
     this.gridColumns = [
       { field: 'nomeBanco', header: 'NOME BANCO', type: GridColumnTypeEnum.Text, width: "25%" },
       {
@@ -88,125 +82,19 @@ export class BancoListComponent implements OnInit {
         field: "saldoInicial",
         header: "SALDO INICIAL",
         type: GridColumnTypeEnum.Money,
-        formatter: (row) => this.money(row.saldoInicial),
+        formatter: (row) => formatCurrencyBR(row.saldoInicial),
         width: '20%',
         editable: true
       },
       {
         field: 'status',
         header: 'STATUS',
-        type: 'select',
+        type: GridColumnTypeEnum.Select,
         options: this.statusOptions,
-        formatter: (row) => this.statusLabel(row.status),
+        formatter: (row) => statusAtivoLabel(row.status),
         width: "20%"
       },
-      { field: 'actions', header: 'AÇÕES', type: 'actions', functions: ['edit', 'delete'] },
+      { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
     ];
-  }
-  getTipoCadastrado(row: TipoCartao) {
-    return row.nomeTipoCartao
-  }
-
-  async load() {
-    try {
-      this.loading = true;
-      const response = await this.bancoService.list();
-
-      this.bancos = response.map(item => ({
-        ...item,
-        
-        nomeTipoCartaoFormatado: item.tipoCartao?.nomeTipoCartao ||
-          this.tiposCartao.find(t => t.id === item.tipoCartaoId)?.nomeTipoCartao || '-',
-        status: item.ativo ? 1 : 0
-      }));
-
-      this.applyFilters();
-    } catch (e: any) {
-      this.alertService.error(e?.message ?? 'Erro ao carregar bancos.');
-    } finally {
-      this.loading = false;
-    }
-  }
-
-  applyFilters() {
-    const term = this.q.trim().toLowerCase();
-
-    this.bancosExibidos = [...this.bancos]
-      .sort((a, b) => (a.nomeBanco ?? '').localeCompare(b.nomeBanco ?? ''))
-      .filter(c => {
-        if (!term) return true;
-        return (c.nomeBanco ?? '').toLowerCase().includes(term) || String(c.id).includes(term);
-      });
-  }
-
-  onSearchChange(value: string) {
-    this.q = value;
-    this.applyFilters();
-  }
-
-  onStatusChange(value: any) {
-    this.statusFilter = value;
-    this.applyFilters();
-  }
-
-  openCreate() {
-    this.editing = null;
-    this.showModalForm = true;
-  }
-
-  onEdit(banco: BancoDto) {
-    this.editing = banco;
-    this.showModalForm = true;
-  }
-
-  openEdit(banco: BancoDto) {
-    this.editing = banco;
-    this.showModalForm = true;
-  }
-
-  closeForm(reload?: boolean) {
-    this.showModalForm = false;
-    this.editing = null;
-    if (reload) this.load();
-  }
-
-  async onDelete(c: BancoDto) {
-    const ok = window.confirm(`Excluir o banco "${c.nomeBanco}"?`);
-    if (!ok) return;
-
-    try {
-      await this.bancoService.delete(c.id);
-      this.alertService.success('Banco deletada com sucesso!')
-      await this.load();
-    } catch (e) {
-      this.alertService.error(extrairMensagemErro(e, 'Falha ao deletar. Banco pode estar vinculada a transações.'));
-    }
-  }
-
-  async onDeleteSelected(rows: BancoDto[]) {
-    if (!rows.length) return;
-
-    const ok = window.confirm(`Excluir ${rows.length} banco(s) selecionado(s)?`);
-    if (!ok) {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-      return;
-    }
-
-    try {
-      await this.exclusaoEmLote.excluir(
-        rows,
-        row => this.bancoService.delete(row.id),
-        { singular: 'banco', plural: 'bancos' }
-      );
-
-      this.grid?.clearSelection();
-      await this.load();
-    } finally {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-    }
   }
 }

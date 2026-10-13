@@ -7,5 +7,6 @@ export enum GridColumnTypeEnum {
   Money = 'money',
   Date = 'date',
   Bool = 'boolean',
-  Actions = 'actions'
+  Actions = 'actions',
+  Checkbox = 'checkbox'
 }

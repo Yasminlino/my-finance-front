@@ -1,6 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
 
 export interface ExtratoBancarioDto {
@@ -24,16 +22,9 @@ export interface ExtratoBancarioDto {
 export class ExtratoBancarioService {
   constructor(private api: ApiService) { }
 
-  listExtratos(monthFilter: string, bancoId?: number | null): Promise<ExtratoBancarioDto[]> {
+  /** O endpoint só filtra por mês; não existe filtro por banco no /GetExtratoBancario. */
+  listExtratos(monthFilter: string): Promise<ExtratoBancarioDto[]> {
     return this.api.get<ExtratoBancarioDto[]>('/GetExtratoBancario?month=' + monthFilter);
-  }
-
-  createExtratoManualItem(payload: any) {
-    return this.api.post('/CreateExtratoBancarioItem', payload);
-  }
-
-  updateExtratoItem(payload: any): Promise<any> {
-    return this.api.put('/UpdateExtratoBancarioItem', { ...payload});
   }
 
   deleteExtrato(id: number): Promise<any> {

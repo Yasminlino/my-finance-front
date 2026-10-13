@@ -1,16 +1,11 @@
 import { TagStatus } from "../../enums/status.enum";
+import { GridColumnTypeEnum } from "./enum/grid-column.enum";
 
-export type GridColumnType =
-  | 'text'
-  | 'text-area'
-  | 'select'
-  | 'multiselect'
-  | 'number'
-  | 'money'
-  | 'date'
-  | 'boolean'
-  | 'actions'
-  | 'checkbox';
+/**
+ * Fonte única dos tipos de coluna é o GridColumnTypeEnum (FE-P1-07).
+ * O tipo é a união dos valores do enum, então aceita tanto `GridColumnTypeEnum.Text` quanto `'text'`.
+ */
+export type GridColumnType = `${GridColumnTypeEnum}`;
 
 
 export interface GridColumn {

@@ -3,7 +3,7 @@ import { GridColumn} from 'src/app/shared/components/data-grid/data-grid.interfa
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { formatCurrencyBR, formatDateVencimentoView } from 'src/app/core/utils/mask';
+import { formatCurrencyBR, formatDateBR } from 'src/app/core/utils/mask';
 import { ExtratoBancarioDto, ExtratoBancarioService } from 'src/app/core/services/extrato-bancario.service';
 import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 
@@ -82,7 +82,7 @@ export class ModalImportacoesMensaisComponent implements OnInit {
 
       this.importacaoesMensais = response.map(item => ({
         ...item,
-        dataImportacao: formatDateVencimentoView(item.dataImportacao),
+        dataImportacao: formatDateBR(item.dataImportacao),
       }));
     } catch (e) {
       console.error(e);

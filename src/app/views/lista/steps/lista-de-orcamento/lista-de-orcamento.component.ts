@@ -84,7 +84,7 @@ export class ListaDeOrcamentoComponent implements OnInit {
         options: this.statusOptions,
         width: '17%'
       },
-      { field: 'actions', header: 'Ações', type: 'actions', functions: ['edit', 'delete'] },
+      { field: 'actions', header: 'Ações', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
     ]
   }
 
@@ -186,29 +186,13 @@ export class ListaDeOrcamentoComponent implements OnInit {
   }
 
   async onDeleteSelected(rows: ItemListaDto[]) {
-    if (!rows.length) return;
+    const excluiu = await this.exclusaoEmLote.confirmarEExcluir(
+      this.grid,
+      rows,
+      row => this.itemListaService.delete(row.id),
+      { singular: 'item', plural: 'itens' }
+    );
 
-    const ok = window.confirm(`Excluir ${rows.length} lista(s) selecionada(s)?`);
-    if (!ok) {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-      return;
-    }
-
-    try {
-      await this.exclusaoEmLote.excluir(
-        rows,
-        row => this.itemListaService.delete(row.id),
-        { singular: 'item', plural: 'itens' }
-      );
-
-      this.grid?.clearSelection();
-      await this.load();
-    } finally {
-      if (this.grid) {
-        this.grid.deleting = false;
-      }
-    }
+    if (excluiu) await this.load();
   }
 }

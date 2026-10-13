@@ -102,4 +102,72 @@ describe('ExclusaoEmLoteService', () => {
     expect(alertService.error).not.toHaveBeenCalled();
     expect(alertService.contrast).not.toHaveBeenCalled();
   });
+
+  describe('confirmarEExcluir (FE-P1-01)', () => {
+    let grid: { deleting: boolean; clearSelection: jasmine.Spy };
+
+    beforeEach(() => {
+      grid = { deleting: true, clearSelection: jasmine.createSpy('clearSelection') };
+    });
+
+    it('pergunta com o rótulo, exclui, limpa a seleção e libera o grid', async () => {
+      const confirm = spyOn(window, 'confirm').and.returnValue(true);
+      const excluirItem = jasmine.createSpy('excluirItem').and.returnValue(Promise.resolve());
+
+      const executou = await service.confirmarEExcluir(grid, rows, excluirItem, rotulo);
+
+      expect(executou).toBeTrue();
+      expect(confirm).toHaveBeenCalledWith('Excluir 3 contas selecionadas?');
+      expect(excluirItem).toHaveBeenCalledTimes(3);
+      expect(grid.clearSelection).toHaveBeenCalled();
+      expect(grid.deleting).toBeFalse();
+      expect(alertService.success).toHaveBeenCalledWith('3 contas excluídas com sucesso!');
+    });
+
+    it('concorda a pergunta no singular e no masculino', async () => {
+      const confirm = spyOn(window, 'confirm').and.returnValue(true);
+
+      await service.confirmarEExcluir(grid, [{ id: 1 }], () => Promise.resolve(), { singular: 'banco', plural: 'bancos' });
+
+      expect(confirm).toHaveBeenCalledWith('Excluir 1 banco selecionado?');
+    });
+
+    it('cancelado: não exclui, não limpa a seleção e libera o grid', async () => {
+      spyOn(window, 'confirm').and.returnValue(false);
+      const excluirItem = jasmine.createSpy('excluirItem');
+
+      const executou = await service.confirmarEExcluir(grid, rows, excluirItem, rotulo);
+
+      expect(executou).toBeFalse();
+      expect(excluirItem).not.toHaveBeenCalled();
+      expect(grid.clearSelection).not.toHaveBeenCalled();
+      expect(grid.deleting).toBeFalse();
+    });
+
+    it('lista vazia: nem pergunta e libera o grid', async () => {
+      const confirm = spyOn(window, 'confirm');
+
+      const executou = await service.confirmarEExcluir(grid, [], () => Promise.resolve(), rotulo);
+
+      expect(executou).toBeFalse();
+      expect(confirm).not.toHaveBeenCalled();
+      expect(grid.deleting).toBeFalse();
+    });
+
+    it('sucesso não emite erro genérico extra (bug do finally em Contas a Pagar)', async () => {
+      spyOn(window, 'confirm').and.returnValue(true);
+
+      await service.confirmarEExcluir(grid, rows, () => Promise.resolve(), rotulo);
+
+      expect(alertService.error).not.toHaveBeenCalled();
+    });
+
+    it('funciona sem grid', async () => {
+      spyOn(window, 'confirm').and.returnValue(true);
+
+      const executou = await service.confirmarEExcluir(undefined, rows, () => Promise.resolve(), rotulo);
+
+      expect(executou).toBeTrue();
+    });
+  });
 });

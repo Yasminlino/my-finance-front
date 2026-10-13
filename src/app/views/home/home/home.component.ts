@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ContaMensal } from 'src/app/core/models/conta-mensal.model';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
-import { formatDateInput, formatMoney, isoDate, isoDateMinusHours } from 'src/app/core/utils/mask';
+import { formatCurrencyBR, formatDateInput, isoDate } from 'src/app/core/utils/mask';
 import { CategoryService } from 'src/app/core/services/category.service';
 import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
 import { Route, Router } from '@angular/router';
@@ -125,13 +125,15 @@ export class HomeComponent implements OnInit {
 
   redirecionaContas(dataVencimento?: any) {
     const params: any = {
-      date: formatDateInput(dataVencimento) || isoDateMinusHours(),
+      date: formatDateInput(dataVencimento) || isoDate(),
     };
 
     this.router.navigate(['contas-a-pagar'], { queryParams: params });
   }
 
   money(v: any) {
-    return formatMoney(v);
+    // Os totais chegam como string de toFixed(2) ("60.00"); formatCurrencyBR lê texto em pt-BR
+    // (ponto = milhar) e mostraria R$ 6.000,00. Number() é o que o antigo formatMoney fazia.
+    return formatCurrencyBR(Number(v));
   }
 }
