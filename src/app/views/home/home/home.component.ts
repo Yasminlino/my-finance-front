@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ContaMensal } from 'src/app/core/models/conta-mensal.model';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { formatCurrencyBR, formatDateInput, isoDate } from 'src/app/core/utils/mask';
-import { CategoryService } from 'src/app/core/services/category.service';
+import { Category, CategoryService } from 'src/app/core/services/category.service';
 import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
 import { Route, Router } from '@angular/router';
 
@@ -25,33 +25,38 @@ export class HomeComponent implements OnInit {
 
   constructor(private readonly contaMensalService: ContaMensalService, private readonly categoryService: CategoryService, private readonly router: Router) { }
 
-  ngOnInit() {
+  // Categorias do usuário, buscadas uma vez. Antes era um GetCategoryById por conta, e a transação
+  // antiga sem categoria virava GetCategoryById/0 → 404, que interrompia a seção inteira.
+  private categorias = new Map<number, Category>();
+
+  async ngOnInit() {
+    const categorias = await this.categoryService.list();
+    this.categorias = new Map(categorias.map(c => [c.id, c]));
+
     this.buscaContasVencidas()
     this.buscaContasVencendoHoje()
     this.buscaContasVencendoAmanha()
   }
 
-  
+  /** Categoria e tipo da conta; sem categoria, mostra "Sem categoria". */
+  private classificar(conta: ContaMensal) {
+    const categoria = this.categorias.get(Number(conta.categoryId));
+    return {
+      categoria: categoria?.name || 'Sem categoria',
+      tipoConta: categoria ? NaturezaOperacaoLabel[categoria.naturezaOperacao] : 'Sem tipo'
+    };
+  }
+
   async buscaContasVencidas() {
     const hoje = isoDate();
     var contas = await this.contaMensalService.BuscaContasVencidas(hoje);
 
-    const resultado = [];
-
-    for (const conta of contas) {
-      if (Number(conta?.categoryId) != 0 || Number(conta?.categoryId)!= null ) {
-
-        const categoria = await this.categoryService.GetCategoryById(Number(conta.categoryId));
-
-        resultado.push({
-          descricao: conta.name,
-          valor: conta.value,
-          categoria: categoria?.name || 'Sem categoria',
-          tipoConta: NaturezaOperacaoLabel[categoria.naturezaOperacao],
-          dataVencimento: conta.date
-        });
-      }
-    }
+    const resultado = contas.map(conta => ({
+      descricao: conta.name,
+      valor: conta.value,
+      ...this.classificar(conta),
+      dataVencimento: conta.date
+    }));
 
     this.contasVencidas = resultado;
 
@@ -65,22 +70,13 @@ export class HomeComponent implements OnInit {
 
     var contas = await this.contaMensalService.GetTransactionByDate(hoje, true);
 
-    const resultado = [];
-
-    for (const conta of contas) {
-      var diaVencimento = new Date(conta.date).getDay
-      if ((conta.status === "PENDENTE" || conta.status === "AGUARDANDO") && diaVencimento == new Date().getDay && conta.categoryId != null && conta.categoryId != 0 ) {
-
-        const categoria = await this.categoryService.GetCategoryById(Number(conta.categoryId));
-
-        resultado.push({
-          descricao: conta.name,
-          valor: conta.value,
-          categoria: categoria?.name || 'Sem categoria',
-          tipoConta: NaturezaOperacaoLabel[categoria.naturezaOperacao]
-        });
-      }
-    }
+    const resultado = contas
+      .filter(conta => conta.status === "PENDENTE" || conta.status === "AGUARDANDO")
+      .map(conta => ({
+        descricao: conta.name,
+        valor: conta.value,
+        ...this.classificar(conta)
+      }));
 
     this.contasHoje = resultado;
 
@@ -99,22 +95,14 @@ export class HomeComponent implements OnInit {
     this.contasProximas.push(...contas)
     this.contasProximas.push(...contas2)
 
-    const resultado = [];
-
-    for (const conta of this.contasProximas) {
-      if ((conta.status === "PENDENTE" || conta.status === "AGUARDANDO" && conta.categoryId != null && conta.categoryId != 0)) {
-
-        const categoria = await this.categoryService.GetCategoryById(Number(conta.categoryId));
-
-        resultado.push({
-          descricao: conta.name,
-          valor: conta.value,
-          categoria: categoria?.name || 'Sem categoria',
-          tipoConta: NaturezaOperacaoLabel[categoria.naturezaOperacao],
-          dataVencimento: conta.date
-        });
-      }
-    }
+    const resultado = this.contasProximas
+      .filter(conta => conta.status === "PENDENTE" || conta.status === "AGUARDANDO")
+      .map(conta => ({
+        descricao: conta.name,
+        valor: conta.value,
+        ...this.classificar(conta),
+        dataVencimento: conta.date
+      }));
 
     this.proximasContas = resultado;
 

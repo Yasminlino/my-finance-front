@@ -20,7 +20,7 @@ export class ItemListaService {
     constructor(private api: ApiService) { }
 
     list(): Promise<ItemListaDto[]> {
-        return this.api.get<ItemListaDto[]>('/GetItemListas');
+        return this.api.get<ItemListaDto[]>('/GetItemLista');
     }
 
 
