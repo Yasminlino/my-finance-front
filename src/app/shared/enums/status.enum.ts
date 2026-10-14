@@ -36,3 +36,10 @@ export const STATUS_PAGAMENTO_OPTIONS: GridColumnOption[] = [
     { label: 'AGUARDANDO', value: 'AGUARDANDO', classe: TagStatus.Info },
     { label: 'PAGO ATRASADO', value: 'PAGO ATRASADO', classe: TagStatus.Warning }
 ];
+
+const STATUS_PAGOS = ['PAGO NO PRAZO', 'PAGO ATRASADO'];
+
+/** Conta já paga: em Contas a Pagar ela fica bloqueada para edição inline (FE-P2-04). */
+export function contaPaga(linha: { status?: string }): boolean {
+    return STATUS_PAGOS.includes(linha.status ?? '');
+}

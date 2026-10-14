@@ -19,10 +19,12 @@ export interface ResultadoExclusaoEmLote {
   falhas: number;
 }
 
-/** O que o serviço precisa do data-grid: liberar o botão e limpar a seleção. */
+/**
+ * O que o serviço precisa do data-grid: avisar que a exclusão terminou. O grid libera o botão e,
+ * se excluiu, limpa a seleção. Antes o serviço escrevia `grid.deleting` por fora (FE-P2-05).
+ */
 export interface GridSelecionavel {
-  deleting: boolean;
-  clearSelection(): void;
+  concluirExclusao(excluiu: boolean): void;
 }
 
 /**
@@ -40,9 +42,9 @@ export class ExclusaoEmLoteService {
   constructor(private readonly alertService: AlertService) {}
 
   /**
-   * Fluxo completo do (deleteSelected) do data-grid: confirma, exclui, limpa a seleção
-   * e sempre libera o `grid.deleting`. Emite true quando a exclusão rodou — aí quem
-   * chama recarrega a tela. Nada acontece antes do subscribe.
+   * Fluxo completo do (deleteSelected) do data-grid: confirma, exclui e sempre avisa o grid
+   * que terminou (ele libera o botão e, se excluiu, limpa a seleção). Emite true quando a
+   * exclusão rodou — aí quem chama recarrega a tela. Nada acontece antes do subscribe.
    */
   confirmarEExcluir<T>(
     grid: GridSelecionavel | undefined,
@@ -51,26 +53,24 @@ export class ExclusaoEmLoteService {
     rotulo: RotuloEntidade
   ): Observable<boolean> {
     return defer(() => {
+      let excluiu = false;
+      const concluir = finalize<boolean>(() => grid?.concluirExclusao(excluiu));
+
       if (!rows.length) {
-        return of(false);
+        return of(false).pipe(concluir);
       }
 
       const selecionado = this.concordar(rows.length, rotulo, 'selecionado', 'selecionada');
       if (!window.confirm(`Excluir ${rows.length} ${this.substantivo(rows.length, rotulo)} ${selecionado}?`)) {
-        return of(false);
+        return of(false).pipe(concluir);
       }
 
       return this.excluir(rows, excluirItem, rotulo).pipe(
-        tap(() => grid?.clearSelection()),
-        map(() => true)
+        tap(() => (excluiu = true)),
+        map(() => true),
+        concluir
       );
-    }).pipe(
-      finalize(() => {
-        if (grid) {
-          grid.deleting = false;
-        }
-      })
-    );
+    });
   }
 
   /**

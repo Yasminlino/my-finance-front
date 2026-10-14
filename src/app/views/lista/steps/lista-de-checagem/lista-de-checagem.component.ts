@@ -116,12 +116,15 @@ export class ListaDeChecagemComponent implements OnInit {
     this.applyFilters();
   }
 
-  toggleConcluido(item: ItemListaDto) {
-    const oldStatus = item.status;
-    item.status = item.status === 'OK' ? 'PENDENTE' : 'OK';
+  toggleConcluido(linha: ItemListaDto) {
+    const anteriores = this.itemListas;
+    const status = linha.status === 'OK' ? 'PENDENTE' : 'OK';
+    const item = { ...(anteriores.find(i => i.id === linha.id) ?? linha), status, statusBoolean: status === 'OK' };
 
+    // Array novo: o grid (OnPush) remonta a linha com o status e a cor novos (FE-P2-09).
+    this.itemListas = anteriores.map(i => (i.id === item.id ? item : i));
     this.itemListaService.atualizar(item).subscribe({
-      error: () => (item.status = oldStatus) // desfaz na tela
+      error: () => (this.itemListas = anteriores) // desfaz na tela, inclusive o checkbox
     });
   }
   openCreate() {

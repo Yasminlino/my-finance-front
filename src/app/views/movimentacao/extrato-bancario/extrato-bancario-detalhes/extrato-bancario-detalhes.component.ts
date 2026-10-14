@@ -409,18 +409,16 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
     const gravacoes = changes.map(change => {
       const dto = paraExtratoItemDto({ ...change.row, ...change.changes }, contexto);
       return this.extratoItemService.atualizar(dto).pipe(tap(() => {
-        // Atualiza a linha exibida sem esperar o recarregamento.
-        const index = this.extratoMensal.findIndex(item => item.id === dto.id);
-        if (index !== -1) {
-          this.extratoMensal[index] = {
-            ...this.extratoMensal[index],
-            ...change.changes,
-            categoriaId: dto.categoriaId,
-            categoriaNome: dto.categoriaNome,
-            tipoMovimentacaoId: dto.tipoMovimentacaoId,
-            tipoMovimentacaoNome: dto.tipoMovimentacaoNome
-          };
-        }
+        // Atualiza a linha exibida sem esperar o recarregamento. Array novo: o grid é OnPush e
+        // só remonta as linhas quando o [dataSource] muda de referência (FE-P2-09).
+        this.extratoMensal = this.extratoMensal.map(item => item.id !== dto.id ? item : {
+          ...item,
+          ...change.changes,
+          categoriaId: dto.categoriaId,
+          categoriaNome: dto.categoriaNome,
+          tipoMovimentacaoId: dto.tipoMovimentacaoId,
+          tipoMovimentacaoNome: dto.tipoMovimentacaoNome
+        });
       }));
     });
 

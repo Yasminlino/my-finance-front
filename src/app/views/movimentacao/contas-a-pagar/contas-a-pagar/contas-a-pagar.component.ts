@@ -11,7 +11,7 @@ import { MenuItem } from 'primeng/api';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
-import { STATUS_PAGAMENTO_OPTIONS } from 'src/app/shared/enums/status.enum';
+import { STATUS_PAGAMENTO_OPTIONS, contaPaga } from 'src/app/shared/enums/status.enum';
 import { calcularTotaisSelecao, naturezaPorSubCategoria } from 'src/app/shared/utils/totais-selecao';
 import { EXIBIR_CAMPOS_MOVIMENTACOES, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -41,6 +41,8 @@ export class ContasAPagarComponent implements OnInit {
   editing: LinhaContasMensais | null = null;
 
   statusOptions = STATUS_PAGAMENTO_OPTIONS;
+  /** Conta paga não é editada na grade (FE-P2-04); para corrigir, exclui e adiciona de novo. */
+  readonly contaPaga = contaPaga;
 
   showModalAdd: boolean = false;
   deletingId: number | null = null;

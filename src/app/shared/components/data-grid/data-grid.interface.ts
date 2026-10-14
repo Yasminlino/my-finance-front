@@ -37,6 +37,23 @@ export interface GridColumnOption {
 // Edita Modal:
 
 
+/**
+ * Valores de exibição de uma linha, calculados uma vez ao montar (ou ao editar) a linha, e não
+ * a cada ciclo de detecção de mudanças (FE-P2-09). Ficam em `linha.__dg`.
+ */
+export interface GridLinhaMeta {
+  /** O que a célula mostra: o formatter, o rótulo do select ou o próprio valor. */
+  texto: Record<string, any>;
+  /** Classe CSS de cada coluna (`col.classe`, que pode depender da linha). */
+  classe: Record<string, string>;
+  /** Severidade da tag de status. */
+  severidade: TagStatus;
+  /** Linha fora da seleção (somente leitura ou em `disabledRowIds`). */
+  desabilitada: boolean;
+  /** Linha que não entra na edição inline (predicado `bloquearLinha` da tela). */
+  bloqueada: boolean;
+}
+
 /** Alterações pendentes de uma linha editada inline. */
 export interface GridRowChange {
   /** Linha original (já atualizada com os novos valores). */

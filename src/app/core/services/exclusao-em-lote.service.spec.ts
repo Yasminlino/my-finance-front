@@ -105,10 +105,10 @@ describe('ExclusaoEmLoteService', () => {
   });
 
   describe('confirmarEExcluir (FE-P1-01)', () => {
-    let grid: { deleting: boolean; clearSelection: jasmine.Spy };
+    let grid: { concluirExclusao: jasmine.Spy };
 
     beforeEach(() => {
-      grid = { deleting: true, clearSelection: jasmine.createSpy('clearSelection') };
+      grid = { concluirExclusao: jasmine.createSpy('concluirExclusao') };
     });
 
     it('pergunta com o rótulo, exclui, limpa a seleção e libera o grid', async () => {
@@ -120,8 +120,7 @@ describe('ExclusaoEmLoteService', () => {
       expect(executou).toBeTrue();
       expect(confirm).toHaveBeenCalledWith('Excluir 3 contas selecionadas?');
       expect(excluirItem).toHaveBeenCalledTimes(3);
-      expect(grid.clearSelection).toHaveBeenCalled();
-      expect(grid.deleting).toBeFalse();
+      expect(grid.concluirExclusao).toHaveBeenCalledOnceWith(true);
       expect(alertService.success).toHaveBeenCalledWith('3 contas excluídas com sucesso!');
     });
 
@@ -141,8 +140,7 @@ describe('ExclusaoEmLoteService', () => {
 
       expect(executou).toBeFalse();
       expect(excluirItem).not.toHaveBeenCalled();
-      expect(grid.clearSelection).not.toHaveBeenCalled();
-      expect(grid.deleting).toBeFalse();
+      expect(grid.concluirExclusao).toHaveBeenCalledOnceWith(false);
     });
 
     it('lista vazia: nem pergunta e libera o grid', async () => {
@@ -152,7 +150,7 @@ describe('ExclusaoEmLoteService', () => {
 
       expect(executou).toBeFalse();
       expect(confirm).not.toHaveBeenCalled();
-      expect(grid.deleting).toBeFalse();
+      expect(grid.concluirExclusao).toHaveBeenCalledOnceWith(false);
     });
 
     it('sucesso não emite erro genérico extra (bug do finally em Contas a Pagar)', async () => {

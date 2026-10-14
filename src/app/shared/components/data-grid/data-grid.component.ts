@@ -1,8 +1,12 @@
 ﻿import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   EventEmitter,
   Input,
+  OnChanges,
   Output,
+  SimpleChanges,
   ViewChild
 } from '@angular/core';
 
@@ -30,7 +34,7 @@ import { ToggleButtonModule } from 'primeng/togglebutton';
 
 import { MenuItem } from 'primeng/api';
 
-import { GridColumn, GridColumnOption, GridColumnType, GridRowChange, TypeGrid } from './data-grid.interface';
+import { GridColumn, GridColumnOption, GridColumnType, GridLinhaMeta, GridRowChange, TypeGrid } from './data-grid.interface';
 
 import { CurrencyInputDirective } from '../../directives/currency-input.directive';
 import { ExibirCamposConfig } from '../../models/utils/grid-config.constants';
@@ -65,39 +69,24 @@ import { toDate } from 'src/app/core/utils/mask';
     ToggleButtonModule
   ],
   templateUrl: './data-grid.component.html',
-  styleUrl: './data-grid.component.scss'
+  styleUrl: './data-grid.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DataGridComponent {
+export class DataGridComponent implements OnChanges {
+
+  /**
+   * OnPush (FE-P2-09): o grid só redesenha quando muda um @Input ou quando há evento no próprio
+   * template. Os métodos públicos que as telas chamam via @ViewChild marcam a view com o cdr.
+   */
+  constructor(private readonly cdr: ChangeDetectorRef) {}
 
   // ---------------------------------------------------------------------------
   // Inputs
   // ---------------------------------------------------------------------------
 
   @Input() titulo = '';
-
-  private _dataSource: any[] = [];
-
-  @Input()
-  set dataSource(value: any[]) {
-    this._dataSource = (value ?? []).map(row => {
-      const item = { ...row };
-      this.columns
-        .filter(col => col.type === 'date')
-        .forEach(col => {
-          // "YYYY-MM-DD" (DateOnly) vira meia-noite local, não UTC — ver toDate().
-          if (item[col.field] && typeof item[col.field] === 'string') {
-            item[col.field] = toDate(item[col.field]);
-          }
-        });
-      return item;
-    });
-    this.updateTableRows();
-  }
-
-  get dataSource(): any[] {
-    return this._dataSource;
-  }
-
+  /** Linhas a exibir. As telas trocam o array (nunca o alteram no lugar) para o grid remontar. */
+  @Input() dataSource: any[] = [];
   @Input() columns: GridColumn[] = [];
   @Input() breadcrumb?: null | MenuItem[] = null;
   @Input() dataKey = 'id';
@@ -107,8 +96,12 @@ export class DataGridComponent {
   @Input() itemsButtom: MenuItem[] = [];
   @Input() statusOptions: GridColumnOption[] = [];
   @Input() exibeCampos: ExibirCamposConfig | null = null;
-  @Input() deleting = false;
   @Input() disabledRowIds?: Set<any>;
+  /**
+   * Regra de negócio de quem usa o grid: a linha que devolve true não entra na edição inline
+   * (ex.: conta paga em Contas a Pagar). Antes o grid fixava `status === 'PAGO'` (FE-P2-04).
+   */
+  @Input() bloquearLinha?: (linha: any) => boolean;
   @Input() localStorage?: String;
 
   // ---------------------------------------------------------------------------
@@ -152,6 +145,8 @@ export class DataGridComponent {
   editandoTabela = false;
 
   deletingId: number | null = null;
+  /** Exclusão em lote em andamento: liga ao emitir deleteSelected, desliga em concluirExclusao(). */
+  deleting = false;
 
   tableRows: any[] = [];
   selectedItems: any[] = [];
@@ -199,33 +194,68 @@ export class DataGridComponent {
   // Data source
   // ---------------------------------------------------------------------------
 
-  private updateTableRows(): void {
-    this.tableRows = (this._dataSource ?? []).map(row => {
-      const clone = { ...row };
+  /**
+   * Monta as linhas quando chegam dados, colunas ou o que muda a exibição — em qualquer ordem.
+   * Antes a conversão de data ficava no setter de `dataSource` e lia `this.columns`: só funcionava
+   * porque as telas passavam [dataSource] antes de [columns] (FE-P2-06).
+   */
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['dataSource'] || changes['columns'] || changes['statusOptions'] || changes['disabledRowIds'] || changes['bloquearLinha']) {
+      this.montarLinhas();
+    }
+  }
 
-      this.columns.forEach(column => {
-        if (typeof column.formatter !== 'function') {
-          return;
-        }
+  private montarLinhas(): void {
+    const colunasData = this.columns.filter(column => column.type === 'date');
 
-        try {
-          const formattedValue = column.formatter(row);
-
-          clone[`__dg_${column.field}`] =
-            formattedValue == null
-              ? ''
-              : String(formattedValue);
-
-        } catch {
-          clone[`__dg_${column.field}`] = '';
+    this.tableRows = (this.dataSource ?? []).map(row => {
+      const linha = { ...row };
+      colunasData.forEach(column => {
+        // "YYYY-MM-DD" (DateOnly) vira meia-noite local, não UTC — ver toDate().
+        if (linha[column.field] && typeof linha[column.field] === 'string') {
+          linha[column.field] = toDate(linha[column.field]);
         }
       });
-
-      return clone;
+      this.calcularExibicao(linha);
+      return linha;
     });
   }
 
-    rowKey(row: any): any {
+  /** Recalcula `linha.__dg` (ver GridLinhaMeta) e os campos `__dg_<campo>` da busca global. */
+  private calcularExibicao(linha: any): void {
+    const meta: GridLinhaMeta = {
+      texto: {},
+      classe: {},
+      severidade: this.getSeverityStatus(linha.status),
+      desabilitada: this.isRowDisabled(linha),
+      bloqueada: this.bloquearLinha?.(linha) === true
+    };
+
+    this.columns.forEach(column => {
+      if (column.type === 'actions') return;
+
+      if (typeof column.formatter === 'function') {
+        let formatado: any;
+        try {
+          formatado = column.formatter(linha);
+        } catch {
+          formatado = '';
+        }
+        meta.texto[column.field] = formatado;
+        linha[`__dg_${column.field}`] = formatado == null ? '' : String(formatado);
+      } else if (column.type === 'select') {
+        meta.texto[column.field] = this.getSelectLabel(column, linha[column.field]);
+      } else {
+        meta.texto[column.field] = linha[column.field];
+      }
+
+      meta.classe[column.field] = this.getColumnClass(column, linha);
+    });
+
+    linha.__dg = meta;
+  }
+
+  rowKey(row: any): any {
     return row?.[this.dataKey];
   }
 
@@ -384,13 +414,11 @@ export class DataGridComponent {
         return;
       }
 
-      if (this.isRowBlocked(row)) {
+      if (row.__dg?.bloqueada) {
         return;
       }
 
       editingRowKeys[key] = true;
-
-      this.prepareDateFields(row);
 
       if (!this.originalRows.has(key)) {
         this.originalRows.set(
@@ -403,6 +431,7 @@ export class DataGridComponent {
     if (this.dt) {
       this.dt.editingRowKeys = editingRowKeys;
     }
+    this.cdr.markForCheck();
   }
 
   private disableEditMode(): void {
@@ -411,22 +440,7 @@ export class DataGridComponent {
     if (this.dt) {
       this.dt.editingRowKeys = {};
     }
-  }
-
-  private isRowBlocked(row: any): boolean {
-    return row?.status === 'PAGO' || row?.bloqueado === true;
-  }
-
-  private prepareDateFields(row: any): void {
-    this.editableColumns()
-      .filter(column => column.type === 'date')
-      .forEach(column => {
-        const value = row[column.field];
-
-        if (typeof value === 'string') {
-          row[column.field] = toDate(value);
-        }
-      });
+    this.cdr.markForCheck();
   }
 
   private cloneRow(row: any): any {
@@ -489,6 +503,9 @@ export class DataGridComponent {
   }
 
   onCellChange(row: any): void {
+    // O ngModel já alterou a linha: o texto exibido acompanha o novo valor.
+    this.calcularExibicao(row);
+
     const key = this.rowKey(row);
 
     if (key === undefined) {
@@ -549,6 +566,7 @@ export class DataGridComponent {
           original[column.field]
         );
     });
+    this.calcularExibicao(row);
 
     this.pendingChanges.delete(key);
   }
@@ -574,6 +592,7 @@ export class DataGridComponent {
     if (this.dt) {
       this.dt.editingRowKeys = {};
     }
+    this.cdr.markForCheck();
   }
 
   cancelarTodasAlteracoes(): void {
@@ -612,15 +631,18 @@ export class DataGridComponent {
             original[column.field]
           );
       });
+      this.calcularExibicao(row);
     });
 
     this.pendingChanges.clear();
     this.originalRows.clear();
+    this.cdr.markForCheck();
   }
 
   public clearPendingChanges(): void {
     this.pendingChanges.clear();
     this.originalRows.clear();
+    this.cdr.markForCheck();
   }
 
   private cloneValue(value: any): any {
@@ -733,6 +755,19 @@ export class DataGridComponent {
     this.selectedItems = [];
 
     this.selectionChange.emit([]);
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Fim da exclusão em lote (chamado pelo ExclusaoEmLoteService): libera o botão e, se excluiu,
+   * limpa a seleção. Cancelada, a seleção fica como estava (FE-P2-05).
+   */
+  concluirExclusao(excluiu: boolean): void {
+    this.deleting = false;
+    if (excluiu) {
+      this.clearSelection();
+    }
+    this.cdr.markForCheck();
   }
 
   // ---------------------------------------------------------------------------

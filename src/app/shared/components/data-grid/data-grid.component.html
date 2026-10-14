@@ -44,7 +44,7 @@
                         <input pInputText type="text" (input)="dt.filterGlobal($any($event.target).value, 'contains')"
                             placeholder="Pesquisar..." />
                     </span>
-                    @if((selectedItems?.length ?? 0) > 0) {
+                    @if(selectedItems.length > 0) {
                     <span class="pl-2 align-self-center">
                         {{ selectedItems.length }} selecionado(s)
                     </span>
@@ -62,7 +62,7 @@
 
                         @if(exibeCampos?.buttonDeleteAll){
                         <p-button severity="danger" label="Delete" [outlined]="true" icon="pi pi-trash"
-                            (onClick)="onDeleteSelected()" [disabled]="!selectedItems?.length" [loading]="deleting" />
+                            (onClick)="onDeleteSelected()" [disabled]="!selectedItems.length" [loading]="deleting" />
                         }
                         @if(exibeCampos?.buttonLock){
                         <p-toggleButton [ngModel]="!editandoTabela" (onChange)="toggleEdicaoTabela()"
@@ -198,11 +198,12 @@
 
         <!---------------------------------------------------------------------- BODY ---------------------------------------------------------------------->
         <ng-template pTemplate="body" let-product let-editing="editing">
-            <tr [pEditableRow]="product" [ngClass]="isRowChanged(product) ? 'row-dirty' : ''"
-                [class.row-disabled]="isRowDisabled(product)">
+            <tr [pEditableRow]="product" [class.row-dirty]="editandoTabela && isRowChanged(product)"
+                [class.row-disabled]="product.__dg.desabilitada"
+                [class.row-bloqueada]="editandoTabela && product.__dg.bloqueada">
                 @if(exibeCampos?.selected){
                 <td style="width: 2rem">
-                    <p-tableCheckbox [value]="product" [disabled]="isRowDisabled(product)" />
+                    <p-tableCheckbox [value]="product" [disabled]="product.__dg.desabilitada" />
                 </td>
                 }
                 @for(col of columns; track col.field){
@@ -211,7 +212,7 @@
                 @case('checkbox'){
                 <td [style.width]="col.width" [style.min-width]="col.width" [style.max-width]="col.width"
                     class="text-center">
-                    <p-checkbox [(ngModel)]="product[col.field]" [binary]="true" [disabled]="isRowDisabled(product)"
+                    <p-checkbox [(ngModel)]="product[col.field]" [binary]="true" [disabled]="product.__dg.desabilitada"
                         (ngModelChange)="onCheckBoxClick(product)">
                     </p-checkbox>
                 </td>
@@ -229,7 +230,7 @@
                             <button pButton type="button" icon="pi pi-pencil" [title]="'Ative a linha para editar'"
                                 class="p-button-rounded p-button-text p-button-sm p-button-icon-only"
                                 (click)="onEditClick(product, col)" aria-label="Editar"></button>
-                            }@if(exibeCampos?.buttonDeleteLine && !isRowChanged(product) && !isSomenteLeitura(product)){
+                            }@if(exibeCampos?.buttonDeleteLine && !(editandoTabela && isRowChanged(product)) && !isSomenteLeitura(product)){
 
                             <!-- Excluir -->
                             <button pButton type="button" icon="pi pi-trash" title="Excluir"
@@ -238,7 +239,10 @@
                                 [loading]="deletingId === product.id"></button>
 
                             }
-                            @if(isRowChanged(product)){
+                            @if(editandoTabela && product.__dg.bloqueada){
+                            <i class="pi pi-lock text-secondary" title="Bloqueada para edição"></i>
+                            }
+                            @if(editandoTabela && isRowChanged(product)){
                             <button pButton type="button" icon="pi pi-undo" title="Reverter alterações"
                                 class="p-button-rounded p-button-text p-button-sm p-button-icon-only"
                                 (click)="revertRow(product)" aria-label="Reverter alterações">
@@ -363,19 +367,19 @@
                             </div>
                             }
                             @else if (col.field === 'status') {
-                            <p-tag [severity]="getSeverityStatus(product[col.field])"
-                                [class]="'d-flex justify-content-center fs-14 ' + (col.classe || '')"
-                                [value]="col.formatter ? col.formatter(product) : product[col.field]">
+                            <p-tag [severity]="product.__dg.severidade"
+                                [class]="'d-flex justify-content-center fs-14 ' + product.__dg.classe[col.field]"
+                                [value]="product.__dg.texto[col.field]">
                             </p-tag>
                             } @else if (col.type === 'select') {
                             <!-- Converte o ID numérico (ex: 7) no nome correspondente (ex: "Investimento") -->
-                            <span [class]="'fs-14 text-truncate-cell ' + (col.classe || '')"
-                                [title]="col.formatter ? col.formatter(product) : getSelectLabel(col, product[col.field])">
-                                {{ col.formatter ? col.formatter(product) : getSelectLabel(col, product[col.field]) }}
+                            <span [class]="'fs-14 text-truncate-cell ' + product.__dg.classe[col.field]"
+                                [title]="product.__dg.texto[col.field]">
+                                {{ product.__dg.texto[col.field] }}
                             </span>
                             } @else {
-                            <span [class]="'fs-14 text-truncate-cell ' + getColumnClass(col, product)">
-                                {{ col.formatter ? col.formatter(product) : product[col.field] }}
+                            <span [class]="'fs-14 text-truncate-cell ' + product.__dg.classe[col.field]">
+                                {{ product.__dg.texto[col.field] }}
                             </span>
                             }
                         </ng-template>
