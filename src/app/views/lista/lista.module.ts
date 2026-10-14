@@ -7,7 +7,6 @@ import { ListaDeOrcamentoComponent } from './steps/lista-de-orcamento/lista-de-o
 import { ModalNovaListaComponent } from './components/modal-nova-lista/modal-nova-lista.component';
 import { ListaRootComponent } from './lista-root/lista-root.component';
 import { ModalNovoItemListaComponent } from './components/modal-novo-item-lista/modal-novo-item-lista.component';
-import { ConfigStatusColorsComponent } from './components/config-status-colors/config-status-colors.component';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { ModalItemChecagemComponent } from './components/modal-item-checagem/modal-item-checagem.component';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
@@ -21,7 +20,7 @@ import { ContasAPagarModule } from '../movimentacao/contas-a-pagar/contas-a-paga
     ListaDeCronogramaComponent,
     ListaDeOrcamentoComponent,
     ModalNovoItemListaComponent,
-    ConfigStatusColorsComponent, ModalItemChecagemComponent,
+    ModalItemChecagemComponent,
   ],
   imports: [
     SharedModule,

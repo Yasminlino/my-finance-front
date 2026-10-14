@@ -6,7 +6,8 @@ import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancar
 import { NaturezaOperacao } from 'src/app/shared/enums/natureza-operacao.enum';
 import { Meses } from 'src/app/views/movimentacao/extrato-bancario/components/models/meses';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject } from 'rxjs';
+import { Subject, filter } from 'rxjs';
+import { FormControl, FormGroup } from '@angular/forms';
 import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
 
 function toNumber(v: any): number {
@@ -47,8 +48,13 @@ export class RelatorioGastosMensaisComponent implements OnInit {
   bancoSelecionado: string = '';
   categoriaSelecionada: string = '';
 
-  filtroMes: string = '';
-  filtroTipo: 'Todos' | 'Entrada' | 'Saída' = 'Todos';
+  /** Filtros da tela (FE-P2-10): o mês busca o extrato; o tipo só refiltra o que já veio. */
+  readonly filtros = new FormGroup({
+    mes: new FormControl('', { nonNullable: true }),
+    tipo: new FormControl<'Todos' | 'Entrada' | 'Saída'>('Todos', { nonNullable: true })
+  });
+  /** Itens do mês carregado, antes do filtro de tipo. */
+  private itensDoMes: any[] = [];
 
   
   perfilEmpresa = false
@@ -69,11 +75,12 @@ export class RelatorioGastosMensaisComponent implements OnInit {
   constructor(private extratoItemService: ExtratoBancarioItemService, private route: ActivatedRoute, private router: Router) { }
 
   ngOnInit() {
-    this.filtroMes = this.getMonthFilter() ?? '';
+    const mes = this.getMonthFilter() ?? '';
+    this.filtros.controls.mes.setValue(mes, { emitEvent: false });
 
     this.perfilEmpresa = localStorage.getItem('usuarioRole') == "Empresa"
 
-    if (!this.filtroMes) {
+    if (!mes) {
       console.error('Month filter is required in the URL query parameters');
       return;
     }
@@ -81,9 +88,19 @@ export class RelatorioGastosMensaisComponent implements OnInit {
     // Troca de mês: só a resposta do último mês pedido chega à tela (FE-P2-08).
     ultimaBusca(this.mes$, mes => this.extratoItemService.listarDoMes(mes), e => console.error('Erro ao carregar o extrato do mês', e))
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(items => this.aplicarFiltros(items));
+      .subscribe(items => {
+        this.itensDoMes = items;
+        this.aplicarFiltros();
+      });
 
-    this.mes$.next(this.filtroMes);
+    this.filtros.controls.mes.valueChanges
+      .pipe(filter(m => !!m), takeUntilDestroyed(this.destroyRef))
+      .subscribe(m => this.mes$.next(m));
+    this.filtros.controls.tipo.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.aplicarFiltros());
+
+    this.mes$.next(mes);
   }
 
   calculaRegraContabil() {
@@ -488,14 +505,16 @@ export class RelatorioGastosMensaisComponent implements OnInit {
     });
   }
 
-  aplicarFiltros(items: any[]) {
+  aplicarFiltros() {
+    const items = this.itensDoMes;
+    const tipo = this.filtros.controls.tipo.value;
 
     // 🔹 filtro por tipo
     let filtrados = items;
 
-    if (this.filtroTipo === 'Entrada') {
+    if (tipo === 'Entrada') {
       filtrados = items.filter(i => i.tipoLancamento === 'Entrada');
-    } else if (this.filtroTipo === 'Saída') {
+    } else if (tipo === 'Saída') {
       filtrados = items.filter(i => i.tipoLancamento === 'Saída');
     }
 
@@ -511,11 +530,6 @@ export class RelatorioGastosMensaisComponent implements OnInit {
       this.categoriaSelecionada,
       this.bancoSelecionado
     );
-  }
-
-  onFiltroChange() {
-    if (!this.filtroMes) return;
-    this.mes$.next(this.filtroMes);
   }
 
   back() { this.router.navigateByUrl('/extrato-bancario'); }

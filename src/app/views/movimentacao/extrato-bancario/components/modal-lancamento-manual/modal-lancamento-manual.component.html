@@ -1,0 +1,126 @@
+<div class="modal show d-block" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" style="margin-top:100px" role="document">
+    <form class="modal-content" [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+      <div class="modal-header">
+        <h5 class="modal-title">
+          Adicionar lançamento manual <span *ngIf="ehCredito">(Cartão de crédito)</span>
+        </h5>
+        <button type="button" class="btn-close" (click)="cancelar()" [disabled]="salvando"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-12 col-md-4">
+            <label class="form-label" for="lm-data">Data</label>
+            <input id="lm-data" type="date" class="form-control" formControlName="dataMovimentacao"
+              [class.is-invalid]="invalido('dataMovimentacao')" />
+            <div class="invalid-feedback">Informe a data.</div>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <label class="form-label" for="lm-tipo">Tipo lançamento</label>
+            <select id="lm-tipo" class="form-select" formControlName="tipoLancamento">
+              <option value="Entrada">Entrada</option>
+              <option value="Saída">Saída</option>
+            </select>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <label class="form-label" for="lm-valor">Valor</label>
+            <input id="lm-valor" type="text" inputmode="decimal" class="form-control" currencyInput
+              formControlName="valor" placeholder="0,00" [class.is-invalid]="invalido('valor')" />
+            <div class="invalid-feedback">Informe um valor maior que zero.</div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label" for="lm-banco">Banco</label>
+            <select id="lm-banco" class="form-select" formControlName="bancoId" [class.is-invalid]="invalido('bancoId')">
+              <option [ngValue]="null">Selecione...</option>
+              <option *ngFor="let b of bancos" [ngValue]="b.id">{{ b.nomeBanco }}</option>
+            </select>
+            <div class="invalid-feedback">Selecione o banco.</div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label" for="lm-tipo-conta">Tipo conta / cartão</label>
+            <input id="lm-tipo-conta" type="text" class="form-control" [value]="tipoCartao?.nomeTipoCartao ?? '—'" disabled />
+            <small class="text-muted">Definido pelo banco.</small>
+          </div>
+
+          <ng-container *ngIf="ehCredito">
+            <div class="col-12 col-md-4">
+              <label class="form-label" for="lm-fatura">Número da fatura</label>
+              <input id="lm-fatura" type="text" class="form-control" placeholder="Ex.: 2026-01" formControlName="numeroFatura"
+                [class.is-invalid]="invalido('numeroFatura')" />
+              <div class="invalid-feedback">Use o formato AAAA-MM.</div>
+            </div>
+
+            <div class="col-12 col-md-8 d-flex align-items-end">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="lm-parcelado" formControlName="parcelado" />
+                <label class="form-check-label" for="lm-parcelado">Compra parcelada</label>
+              </div>
+            </div>
+
+            <ng-container *ngIf="form.controls.parcelado.value">
+              <div class="col-12 col-md-4">
+                <label class="form-label" for="lm-total">Total de parcelas</label>
+                <input id="lm-total" type="number" min="2" class="form-control" formControlName="quantidadeParcelas"
+                  [class.is-invalid]="invalido('quantidadeParcelas')" />
+                <div class="invalid-feedback">No mínimo 2 parcelas.</div>
+              </div>
+
+              <div class="col-12 col-md-4">
+                <label class="form-label" for="lm-parcela">Parcela atual</label>
+                <input id="lm-parcela" type="number" min="1" class="form-control" formControlName="parcelaAtual"
+                  [class.is-invalid]="invalido('parcelaAtual') || parcelaForaDoTotal" />
+                <div class="invalid-feedback">
+                  {{ parcelaForaDoTotal ? 'A parcela atual não pode passar do total.' : 'A parcela começa em 1.' }}
+                </div>
+              </div>
+
+              <div class="col-12 col-md-4 d-flex align-items-end">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="lm-gerar" formControlName="gerarTodasParcelas" />
+                  <label class="form-check-label" for="lm-gerar">Gerar as parcelas seguintes</label>
+                </div>
+              </div>
+            </ng-container>
+          </ng-container>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label" for="lm-categoria">Categoria (opcional)</label>
+            <select id="lm-categoria" class="form-select" formControlName="categoriaId">
+              <option [ngValue]="null">Selecione...</option>
+              <option *ngFor="let c of categorias" [ngValue]="c.id">{{ c.name }}</option>
+            </select>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label" for="lm-pessoa">Pessoa / estabelecimento</label>
+            <input id="lm-pessoa" type="text" class="form-control text-uppercase" formControlName="pessoa"
+              [ngbTypeahead]="buscarPessoa" [inputFormatter]="nomePessoa" [resultFormatter]="nomePessoa" />
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label" for="lm-descricao">Descrição (opcional)</label>
+            <input id="lm-descricao" type="text" class="form-control" formControlName="descricao" />
+          </div>
+
+          <div class="col-12">
+            <label class="form-label" for="lm-observacao">Observação (opcional)</label>
+            <textarea id="lm-observacao" class="form-control" rows="3" formControlName="observacao"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancelar()" [disabled]="salvando">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="salvando">
+          {{ salvando ? 'Salvando...' : 'Salvar' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="modal-backdrop fade show"></div>

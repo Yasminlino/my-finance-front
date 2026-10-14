@@ -8,21 +8,22 @@ import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { Router } from '@angular/router';
-import { formatYearMonth, isoDate, parseCurrencyBR } from 'src/app/core/utils/mask';
+import { formatYearMonth } from 'src/app/core/utils/mask';
 import { TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
 import { ContaService } from 'src/app/core/services/contas.service';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { BancoService } from 'src/app/core/services/banco.service';
+import { PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
+import { PessoaMovimentacaoDto } from 'src/app/core/models/pessoa-movimentacao.model';
 import { MenuItem } from 'primeng/api';
 import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
 import { BancoDto } from 'src/app/core/models/banco.model';
 import { CategoriaDto } from 'src/app/core/models/categoria.model';
 import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
-import { paraExtratoItemDto } from 'src/app/core/models/extrato.mapper';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, finalize, forkJoin } from 'rxjs';
+import { Subject, forkJoin } from 'rxjs';
 import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
 
 
@@ -37,9 +38,10 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   categorias: CategoriaDto[] = [];
   tiposConta: TipoCartaoDto[] = [];
   bancos: BancoDto[] = [];
+  /** Para o autocomplete do lançamento manual. */
+  pessoas: PessoaMovimentacaoDto[] = [];
   extratos: ExtratoItemDto[] = [];
   resumo: any[] = [];
-  file: any;
   selectedMonth: any;
   itemsButtom: MenuItem[] = [];
 
@@ -52,30 +54,8 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   showModalImportacoesMensais = false;
   showModalConfigPessoas = false;
   showToolbar = false;
-  importLoading = false;
-  savingManual = false;
 
-  selectedBancoId = '';
-  selectedBancoNome = '';
-  selectedTipoContaId = '';
 
-  manualForm = {
-    dataMovimentacao: isoDate(),
-    tipo: 'Saída', // Entrada | Saída — mesmo valor das opções do select e do CHECK (DB-P1-04)
-    valor: '',
-    bancoId: '',
-    tipoCartaoId: '',
-    tipoCartaoNome: '',
-    pessoaTransacao: '',
-    categoriaId: '',
-    descricao: '',
-    observacao: '',
-
-    parcelado: false,
-    totalParcelas: '',
-    numeroParcela: '1',
-    grupoParcelamentoId: '',
-  };
 
   editing: CategoriaDto | null = null;
   @ViewChild('grid') grid?: DataGridComponent;
@@ -89,6 +69,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     private tipoCartaoService: TipoCartaoService,
     private categoryService: CategoryService,
     private bancoService: BancoService,
+    private readonly pessoaService: PessoaMovimentacaoService,
     private readonly alertService: AlertService
   ) { }
 
@@ -129,13 +110,15 @@ export class ExtratoBancarioResumoComponent implements OnInit {
       bancos: this.bancoService.listar(),
       tipos: this.tipoCartaoService.listar(),
       categorias: this.categoryService.listarAtivas(),
+      pessoas: this.pessoaService.listar(),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ bancos, tipos, categorias }) => {
+        next: ({ bancos, tipos, categorias, pessoas }) => {
           this.bancos = bancos ?? [];
           this.tiposConta = tipos ?? [];
           this.categorias = categorias ?? [];
+          this.pessoas = pessoas ?? [];
           this.resumo = this.buildResumo();
         },
         error: () => this.alertService.info('Falha ao carregar catálogos (bancos/tipos/categorias).')
@@ -151,14 +134,14 @@ export class ExtratoBancarioResumoComponent implements OnInit {
         label: 'Importar extrato',
         icon: 'pi pi-file-import',
         command: () => {
-          this.openImportModal();
+          this.showImportModal = true;
         }
       },
       {
         label: 'Adicionar item',
         icon: 'pi pi-plus',
         command: () => {
-          this.openManualModal();
+          this.showManualModal = true;
         }
       },
       {
@@ -310,186 +293,16 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     this.showToolbar = !this.showToolbar;
   }
 
-  openImportModal() {
-    this.selectedBancoId = '';
-    this.selectedBancoNome = '';
-    this.selectedTipoContaId = '';
-    this.showImportModal = true;
+  /** Fechou a importação (app-modal-importar-extrato): recarrega o mês se importou. */
+  onImportacaoFechada(importou: boolean) {
+    this.showImportModal = false;
+    if (importou) this.loadMonth();
   }
 
-  closeImportModal() {
-    if (!this.importLoading) this.showImportModal = false;
-  }
-
-  onBancoModalChange(value: string) {
-    this.selectedBancoId = value;
-
-    const banco = this.bancos.find(b => String(b.id) === String(value));
-    this.selectedBancoNome = banco?.nomeBanco ?? '';
-    this.selectedTipoContaId = banco?.tipoCartaoId ? String(banco.tipoCartaoId) : '';
-  }
-
-  onFileSelected(ev: Event) {
-    const input = ev.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-
-    this.file = file;
-  }
-
-  onSave(ev: Event) {
-    const input = ev.target as HTMLInputElement;
-
-    // Antes avisava e seguia para a importação sem arquivo.
-    if (!this.file) {
-      this.alertService.error('Nenhum arquivo selecionado.');
-      return;
-    }
-
-    if (!this.selectedBancoId) {
-      this.alertService.error('Informe o banco antes de continuar.');
-      input.value = '';
-      return;
-    }
-
-    this.importLoading = true;
-    this.extratoItemService.importar(this.file, {
-      id: Number(this.selectedBancoId),
-      nomeBanco: this.selectedBancoNome,
-      tipoCartaoId: this.selectedTipoContaId ? Number(this.selectedTipoContaId) : null,
-    })
-      .pipe(finalize(() => {
-        this.importLoading = false;
-        input.value = '';
-      }))
-      .subscribe({
-        next: resultado => {
-          // A API informa criados / já importados / ignorados; reimportar não cria nada (idempotência).
-          const r: any = resultado;
-          const mensagem: string = r?.mensagem ?? 'Extrato importado com sucesso!';
-          const criados: number = r?.quantidadeCriados ?? 1;
-          if (criados > 0) this.alertService.success(mensagem);
-          else this.alertService.info(mensagem);
-
-          this.showImportModal = false;
-          this.loadMonth();
-        },
-        error: e => this.alertService.error(extrairMensagemErro(e, 'Falha ao importar arquivo.'))
-      });
-  }
-
-  openManualModal() {
-    this.manualForm = {
-      dataMovimentacao: isoDate(),
-      tipo: 'Saída',
-      valor: '',
-      bancoId: '',
-      tipoCartaoId: '',
-      tipoCartaoNome: '',
-      pessoaTransacao: '',
-      categoriaId: '',
-      descricao: '',
-      observacao: '',
-      parcelado: false,
-      totalParcelas: '',
-      numeroParcela: '1',
-      grupoParcelamentoId: '',
-    };
-    this.showManualModal = true;
-  }
-
-  closeManualModal() {
-    if (!this.savingManual) this.showManualModal = false;
-  }
-
-  maskValueTyping(value: any) {
-    this.maskValueTyping(value);
-
-  }
-
-  setManual(key: keyof typeof this.manualForm, value: any) {
-    (this.manualForm as any)[key] = value;
-
-    // quando escolhe banco -> preenche tipoCartaoId automaticamente
-    if (key === 'bancoId') {
-      const banco = this.bancos.find(b => String(b.id) === String(value));
-      const tipoCartao = banco?.tipoCartao ?? '';
-      if (tipoCartao && typeof tipoCartao !== 'string') {
-        this.manualForm.tipoCartaoId = String(tipoCartao.id);
-        this.manualForm.tipoCartaoNome = tipoCartao.nomeTipoCartao;
-      } else {
-        this.manualForm.tipoCartaoId = '';
-        this.manualForm.tipoCartaoNome = '';
-      }
-
-    }
-  }
-
-  get isCreditoSelecionado() {
-    if (!this.manualForm.tipoCartaoId) return false;
-    const conta = this.tiposConta.find(t => String(t.id) === String(this.manualForm.tipoCartaoId));
-    return conta?.ehCredito === true; // TipoCartaoDto.EhCredito (DB-P1-07)
-  }
-
-  saveManualItem() {
-    console.log('this.manualForm', this.manualForm.pessoaTransacao);
-    if (!this.manualForm.bancoId) {
-      this.alertService.error('Selecione um banco.');
-      return;
-    }
-    if (!this.manualForm.tipoCartaoId) {
-      this.alertService.error('Tipo de conta/cartão não identificado. Verifique o banco.');
-      return;
-    }
-
-    const valor = parseCurrencyBR(this.manualForm.valor);
-    if (valor === null) {
-      this.alertService.error('Informe um valor válido.');
-      return;
-    }
-
-    if (this.isCreditoSelecionado && this.manualForm.parcelado) {
-      const total = Number(this.manualForm.totalParcelas);
-      const parc = Number(this.manualForm.numeroParcela);
-
-      if (!total || total < 2) {
-        this.alertService.error('Total de parcelas deve ser >= 2.');
-        return;
-      }
-      if (!parc || parc < 1 || parc > total) {
-        this.alertService.error('Número da parcela inválido.');
-        return;
-      }
-    }
-
-    // Mesmo mapeador do Extrato Detalhes, em camelCase (FE-P2-01).
-    const payload = paraExtratoItemDto({
-      dataMovimentacao: this.manualForm.dataMovimentacao,
-      valor,
-      tipoLancamento: this.manualForm.tipo,
-      bancoId: Number(this.manualForm.bancoId),
-      tipoCartaoId: Number(this.manualForm.tipoCartaoId),
-      nomePessoaTransacao: (this.manualForm.pessoaTransacao || '').trim() || null,
-      categoriaId: this.manualForm.categoriaId ? Number(this.manualForm.categoriaId) : null,
-      descricao: (this.manualForm.descricao || '').trim() || null,
-      observacao: (this.manualForm.observacao || '').trim() || null,
-
-      ehParcelado: this.isCreditoSelecionado ? !!this.manualForm.parcelado : false,
-      quantidadeParcelas: this.isCreditoSelecionado && this.manualForm.parcelado ? Number(this.manualForm.totalParcelas) : null,
-      parcelaAtual: this.isCreditoSelecionado && this.manualForm.parcelado ? Number(this.manualForm.numeroParcela) : null,
-    }, { categorias: this.categorias, tiposMovimentacao: [] });
-
-    this.savingManual = true;
-    this.extratoItemService.criar(payload)
-      .pipe(finalize(() => (this.savingManual = false)))
-      .subscribe({
-        next: () => {
-          this.alertService.success('Item manual adicionado com sucesso!');
-          this.showManualModal = false;
-          this.loadMonth();
-        },
-        error: e => this.alertService.error(extrairMensagemErro(e, 'Falha ao adicionar item manual.'))
-      });
+  /** Fechou o lançamento manual (app-modal-lancamento-manual): recarrega o mês se gravou. */
+  onLancamentoManualFechado(gravou: boolean) {
+    this.showManualModal = false;
+    if (gravou) this.loadMonth();
   }
 
   abrirConfigPessoas() {

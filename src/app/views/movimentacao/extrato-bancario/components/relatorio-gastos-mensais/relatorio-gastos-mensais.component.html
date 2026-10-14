@@ -12,15 +12,15 @@
           <button class="btn btn-outline-secondary" (click)="back()">Voltar</button>
         </div>
       </div>
-      <div class="row mb-3">
+      <div class="row mb-3" [formGroup]="filtros">
         <div class="col-md-4">
-          <label class="form-label">Mês</label>
-          <input type="month" class="form-control" [(ngModel)]="filtroMes" (change)="onFiltroChange()" />
+          <label class="form-label" for="rel-mes">Mês</label>
+          <input id="rel-mes" type="month" class="form-control" formControlName="mes" />
         </div>
 
         <div class="col-md-4">
-          <label class="form-label">Tipo</label>
-          <select class="form-select" [(ngModel)]="filtroTipo" (change)="onFiltroChange()">
+          <label class="form-label" for="rel-tipo">Tipo</label>
+          <select id="rel-tipo" class="form-select" formControlName="tipo">
             <option value="Todos">Todos</option>
             <option value="Entrada">Entrada</option>
             <option value="Saída">Saída</option>

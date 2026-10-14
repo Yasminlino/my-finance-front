@@ -1,7 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ContaService } from 'src/app/core/services/contas.service';
-import { formatCurrencyBR, parseCurrencyBR } from 'src/app/core/utils/mask';
 import { AlertService } from 'src/app/shared/components/alert.service'; // <-- Importe o AlertService
 import { CategoriaDto } from 'src/app/core/models/categoria.model';
 import { ContaDto } from 'src/app/core/models/conta.model';
@@ -25,7 +24,8 @@ export class ContaMensalFormComponent implements OnInit {
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
-    value: [formatCurrencyBR(0, { simbolo: false }), [Validators.required]],
+    // Número direto do currencyInput (FE-P2-10).
+    value: [0 as number | null, [Validators.required]],
     dataOperacao: [null as any, [Validators.required]],
     categoryid: [null as any, [Validators.required, Validators.min(1)]],
     status: [1, Validators.required],
@@ -50,7 +50,7 @@ export class ContaMensalFormComponent implements OnInit {
 
       this.form.patchValue({
         name: this.account.name,
-        value: formatCurrencyBR(this.account.value, { simbolo: false }),
+        value: this.account.value,
         dataOperacao: dias, 
         categoryid: this.account.categoryid,
         status: this.account.status,
@@ -116,7 +116,7 @@ export class ContaMensalFormComponent implements OnInit {
     const payload: Partial<ContaDto> = {
       id: this.account?.id,
       name: this.form.value.name!,
-      value: parseCurrencyBR(this.form.value.value) ?? 0,
+      value: this.form.value.value ?? 0,
       categoryid: Number(this.form.value.categoryid),
       status: Number(this.form.value.status),
       ehParcelado: Boolean(this.form.value.ehParcelado),

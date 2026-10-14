@@ -4,7 +4,6 @@ import { FormBuilder, Validators } from '@angular/forms';
 
 // Ajuste esses imports para o seu projeto
 import { ItemListaService } from 'src/app/core/services/item-lista.service';
-import { formatCurrencyBR, parseCurrencyBR } from 'src/app/core/utils/mask';
 import { ItemListaDto } from 'src/app/core/models/lista.model';
 import { finalize } from 'rxjs';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
@@ -31,7 +30,7 @@ export class ModalNovoItemListaComponent implements OnInit {
   form = this.fb.group({
     descricao: ['', [Validators.required, Validators.minLength(2)]],
     quantidade: [1, [Validators.required, Validators.min(1)]],
-    valor: [null as any | null], // opcional
+    valor: [null as number | null], // opcional; número direto do currencyInput (FE-P2-10)
     observacao: [''],
     status: ['PENDENTE', [Validators.required]], // PENDENTE | AGUARDANDO | OK
     dataTarefa: [null as Date | null], // yyyy-mm-dd
@@ -49,7 +48,7 @@ export class ModalNovoItemListaComponent implements OnInit {
       this.form.patchValue({
         descricao: this.item.descricao,
         quantidade: this.item.quantidade,
-        valor: this.item.valor != null ? formatCurrencyBR(this.item.valor, { simbolo: false }) : null,
+        valor: this.item.valor ?? null,
         observacao: this.item.observacao,
         status: this.item.status ?? 'PENDENTE',
         dataTarefa: this.item.dataTarefa ?? null,
@@ -70,7 +69,6 @@ export class ModalNovoItemListaComponent implements OnInit {
 
     this.saving = true;
     this.alert = { type: '', message: '' };
-    const valorFormatoDecimal = parseCurrencyBR(this.form.value.valor);
 
     const payload = {
       id: this.item?.id ?? 0,
@@ -78,7 +76,7 @@ export class ModalNovoItemListaComponent implements OnInit {
       descricao: this.form.value.descricao!,
       quantidade: Number(this.form.value.quantidade),
       status: this.form.value.status!,
-      valor: valorFormatoDecimal ?? undefined,
+      valor: this.form.value.valor ?? undefined,
       observacao: this.form.value.observacao!,
       dataTarefa: this.form.value.dataTarefa ?? undefined,
       horarioTarefa: this.form.value.horarioTarefa ?? undefined,

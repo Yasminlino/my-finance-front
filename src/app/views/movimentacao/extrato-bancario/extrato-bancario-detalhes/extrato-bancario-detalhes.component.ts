@@ -1,5 +1,5 @@
 import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
-import { addMonthsToYearMonth, formatCurrencyBR, formatDateBR, formatDateInput, formatYearMonth, isoDate, parseCurrencyBR } from 'src/app/core/utils/mask';
+import { formatCurrencyBR, formatDateBR, formatDateInput, formatYearMonth } from 'src/app/core/utils/mask';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, TypeGrid, GridRowChange, GridColumnOption } from "src/app/shared/components/data-grid/data-grid.interface"
 import { CategoryService } from 'src/app/core/services/category.service';
@@ -15,7 +15,7 @@ import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao
 import { PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
 import { TipoMovimentacaoDto } from 'src/app/core/models/tipo-movimentacao.model';
 import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
-import { debounceTime, distinctUntilChanged, map, Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { BancoService } from 'src/app/core/services/banco.service';
 import { EXIBIR_CAMPOS_MOVIMENTACOES, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
@@ -23,6 +23,7 @@ import { CategoriaDto } from 'src/app/core/models/categoria.model';
 import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
 import { ContextoExtrato, paraExtratoItemDto } from 'src/app/core/models/extrato.mapper';
 import { PessoaMovimentacaoDto } from 'src/app/core/models/pessoa-movimentacao.model';
+import { BancoDto } from 'src/app/core/models/banco.model';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, catchError, concat, finalize, forkJoin, of, tap, toArray } from 'rxjs';
@@ -48,24 +49,9 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
 
 
   showModalConfigPessoas = false;
+  /** Lançamento manual (app-modal-lancamento-manual, com o banco da tela fixo). */
   showAddModal = false;
-
-
-  manualData = isoDate();
-  manualValor = '';
-  manualTipoLancamento = 'Entrada';
-  manualDescricao = '';
-  manualPessoaNome = '';
-  manualPessoaId: number | null = null;
-  manualIdentificador = '';
-  manualCategoriaId = '';
-  manualObservacao = '';
-
-  manualParcelado = false;
-  manualQuantidadeParcelas = 2;
-  manualParcelaAtual = 1;
-  manualGerarTodasParcelas = true;
-  manualNumeroFatura = '';
+  bancosDoModal: BancoDto[] = [];
 
   categorias: CategoriaDto[] = [];
   tiposMovimentacao: TipoMovimentacaoDto[] = [];
@@ -83,7 +69,6 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   tipoContaId: number | null = null;
 
   editing: ExtratoItemDto | null = null;
-  saving = false;
 
   statusOptions = STATUS_PAGAMENTO_OPTIONS;
 
@@ -189,6 +174,8 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
         this.tiposConta = tiposCartao ?? [];
         this.tiposMovimentacao = tiposMov ?? [];
         this.pessoasMov = pessoas ?? [];
+        // O banco da tela, com o tipo de conta da rota quando a API não o traz.
+        this.bancosDoModal = banco ? [{ ...banco, tipoCartaoId: banco.tipoCartaoId ?? this.tipoContaId }] : [];
 
         const tipoCartao = this.tipoContaId ? this.tiposConta.find(e => e.id == this.tipoContaId) : undefined;
         this.isCreditCard = tipoCartao?.ehCredito === true; // antes comparava o nome (DB-P1-07)
@@ -217,27 +204,13 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
     );
   }
 
-  searchPessoa = (text$: Observable<string>) =>
-    text$.pipe(
-      debounceTime(150),
-      distinctUntilChanged(),
-      map((term) => {
-        const t = (term ?? '').trim().toLowerCase();
-        if (t.length < 1) return this.pessoasMov.slice(0, 10);
-
-        return this.pessoasMov
-          .filter(p => (p.nomePessoa ?? '').toLowerCase().includes(t))
-          .slice(0, 10);
-      })
-    );
-
   private setitemsButtom(): void {
     this.itemsButtom = [
       {
         label: 'Adicionar lançamento',
         icon: 'pi pi-plus',
         command: () => {
-          this.openAddModal();
+          this.showAddModal = true;
         }
       },
       {
@@ -349,7 +322,6 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
     this.mes$.next(this.selectedMonth);
   }
 
-  formatterPessoa = (p: PessoaMovimentacaoDto | null) => p?.nomePessoa ?? '';
 
 
   abrirConfigPessoas() {
@@ -433,109 +405,10 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
       error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao salvar as alterações. Tente novamente.'))
     });
   }
-    openAddModal() {
-    if (this.isCreditCard)
-      this.manualNumeroFatura = this.month
-    else
-      this.manualNumeroFatura = '';
 
-    this.manualData = `${this.month}-01`
-    this.manualTipoLancamento = "Saída"
-
-    this.manualValor = '';
-    this.manualDescricao = '';
-    this.manualPessoaNome = '';
-    this.manualPessoaId = null;
-    this.manualIdentificador = '';
-    this.manualCategoriaId = '';
-    this.manualObservacao = '';
-
-    this.manualParcelado = false;
-    this.manualQuantidadeParcelas = 2;
-    this.manualParcelaAtual = 1;
-    this.manualGerarTodasParcelas = true;
-
-    this.showAddModal = true;
+  /** Fechou o lançamento manual: recarrega o mês se gravou. */
+  onLancamentoManualFechado(gravou: boolean) {
+    this.showAddModal = false;
+    if (gravou) this.loadMonth();
   }
-
-  closeAddModal() {
-    if (!this.saving) this.showAddModal = false;
-  }
-
-  // -----------------------
-  // Salvar manual
-  // -----------------------
-  handleSaveManual() {
-    // validações
-    if (!this.manualData) {
-      this.alertService.error('Informe uma data válida.');
-      return;
-    }
-
-    const valor = parseCurrencyBR(this.manualValor);
-    if (valor === null) {
-      this.alertService.error('Informe um valor válido.');
-      return;
-    }
-
-    // O autocomplete devolve a pessoa (objeto) quando ela é escolhida, ou o texto digitado.
-    const pessoa = typeof this.manualPessoaNome === 'object' ? this.manualPessoaNome : null;
-
-    // Item novo: sem id. Mesmo mapeador da edição inline, em camelCase (FE-P2-01).
-    const basePayload = paraExtratoItemDto({
-      dataMovimentacao: this.manualData,
-      valor,
-      tipoLancamento: this.manualTipoLancamento,
-      descricao: this.manualDescricao || null,
-      observacao: this.manualObservacao || null,
-      pessoaMovimentacao: pessoa,
-      nomePessoaTransacao: pessoa ? null : this.manualPessoaNome,
-      pessoaMovimentacaoId: this.manualPessoaId,
-      identificador: this.manualIdentificador || null,
-      categoriaId: this.manualCategoriaId || null,
-      ehParcelado: this.manualParcelado ?? false,
-    }, this.contextoExtrato());
-
-    // O que criar: 1 item; ou, no cartão parcelado, todas as parcelas (cada uma na fatura do
-    // mês correspondente) ou só a parcela informada.
-    let itens: ExtratoItemDto[];
-    let mensagem: string;
-    if (!this.isCreditCard || !this.manualParcelado) {
-      itens = [basePayload];
-      mensagem = 'Lançamento adicionado com sucesso!';
-    } else {
-      const quantidadeParcelas = Math.max(2, Number(this.manualQuantidadeParcelas) || 2);
-      if (this.manualGerarTodasParcelas) {
-        itens = [];
-        for (let p = this.manualParcelaAtual; p <= quantidadeParcelas; p++) {
-          itens.push({
-            ...basePayload,
-            numeroFatura: addMonthsToYearMonth(this.month, p - this.manualParcelaAtual),
-            ehParcelado: true,
-            parcelaAtual: p,
-            quantidadeParcelas,
-          });
-        }
-        mensagem = `Parcelamento criado: ${itens.length} parcelas.`;
-      } else {
-        itens = [{ ...basePayload, ehParcelado: true, parcelaAtual: 1, quantidadeParcelas }];
-        mensagem = `Compra parcelada registrada (1/${quantidadeParcelas}).`;
-      }
-    }
-
-    this.saving = true;
-    // Uma por vez, na ordem; para no primeiro erro, como antes.
-    concat(...itens.map(item => this.extratoItemService.criar(item)))
-      .pipe(toArray(), finalize(() => (this.saving = false)))
-      .subscribe({
-        next: () => {
-          this.alertService.success(mensagem);
-          this.showAddModal = false;
-          this.loadMonth();
-        },
-        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao adicionar lançamento.'))
-      });
-  }
-
-
 }
