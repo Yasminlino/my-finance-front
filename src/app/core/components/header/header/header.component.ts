@@ -21,11 +21,11 @@ export class HeaderComponent {
 
   // Dados (ajuste as rotas para as suas do Angular)
   cadastrosItems: NavItem[] = [
-    { path: '/category', label: 'Categorias', icon: '🗂️' },
-    { path: '/account', label: 'Cadastro de Contas', icon: '💳' },
+    { path: '/categorias', label: 'Categorias', icon: '🗂️' },
+    { path: '/contas', label: 'Cadastro de Contas', icon: '💳' },
     { path: '/bancos', label: 'Banco', icon: '🏦' },
-    { path: '/tipo-cartao', label: 'Tipo Cartão', icon: '🪪' },
-    { path: '/tipo-movimentacao', label: 'Tipo Movimentação', icon: '🔁' },
+    { path: '/tipos-cartao', label: 'Tipo Cartão', icon: '🪪' },
+    { path: '/tipos-movimentacao', label: 'Tipo Movimentação', icon: '🔁' },
   ];
 
   movimentacoesItems: NavItem[] = [
@@ -35,7 +35,7 @@ export class HeaderComponent {
   ];
 
   listasItems: NavItem[] = [
-    { path: '/catalogos-listas', label: 'Listas', icon: '🛒' },
+    { path: '/listas', label: 'Listas', icon: '🛒' },
     // { path: '/item-lista', label: 'Item Lista', icon: '🧾' },
   ];
 

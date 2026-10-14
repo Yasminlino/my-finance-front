@@ -9,10 +9,10 @@ import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid
 
 @NgModule({
   declarations: [
-    CategoriaListComponent,
-    CategoriaFormComponent
+    CategoriaListComponent
   ],
   imports: [
+    CategoriaFormComponent,
     CommonModule,
     ReactiveFormsModule,
     CategoriaRoutingModule,

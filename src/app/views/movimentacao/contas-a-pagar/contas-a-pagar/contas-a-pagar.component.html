@@ -5,8 +5,8 @@
     (selectionChange)="onSelectionChange($event)" (deleteSelected)="onDeleteSelected($event)"
     [exibeCampos]="exibirCampos" (saveInline)="onSaveInline($event)" [itemsButtom]="itemsButtom" [localStorage]="'dataFiltroContaMensal'"
     (addBatch)="onOpenAddBatch()">
-    <app-contas-a-pagar-totais [receita]="selectedTotals.receita" [despesa]="selectedTotals.despesa"
-      [saldo]="selectedTotals.saldo" [count]="selectedTotals.count"></app-contas-a-pagar-totais>
+    <app-totais-selecao [receita]="selectedTotals.receita" [despesa]="selectedTotals.despesa"
+      [saldo]="selectedTotals.saldo" [count]="selectedTotals.count"></app-totais-selecao>
   </app-data-grid>
 
   <!-- Modal Form -->

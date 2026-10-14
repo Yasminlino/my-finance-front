@@ -1,5 +1,6 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CategoryService } from 'src/app/core/services/category.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
@@ -8,11 +9,14 @@ import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-categoria-form',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './categoria-form.component.html',
   styleUrls: ['./categoria-form.component.scss']
 })
 export class CategoriaFormComponent implements OnInit {
-  @Input() category: CategoriaDto | null = null;
+  /** Registro em edição; null = novo (mesmo nome nos 5 cadastros, FE-P2-12). */
+  @Input() registro: CategoriaDto | null = null;
   @Output() closed = new EventEmitter<boolean>();
 
   saving = false;
@@ -30,12 +34,12 @@ export class CategoriaFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.validaPerfilUsuario()
-    if (this.category) {
+    if (this.registro) {
       this.form.patchValue({
-        name: this.category.name,
-        subCategory: this.category.subCategory,
-        naturezaOperacao: this.category.naturezaOperacao,
-        status: this.category.status,
+        name: this.registro.name,
+        subCategory: this.registro.subCategory,
+        naturezaOperacao: this.registro.naturezaOperacao,
+        status: this.registro.status,
       });
     }
   }
@@ -62,7 +66,7 @@ export class CategoriaFormComponent implements OnInit {
     };
 
     this.saving = true;
-    (this.category ? this.categoryService.atualizar({ id: this.category.id, ...payload }) : this.categoryService.criar(payload))
+    (this.registro ? this.categoryService.atualizar({ id: this.registro.id, ...payload }) : this.categoryService.criar(payload))
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
         next: () => {

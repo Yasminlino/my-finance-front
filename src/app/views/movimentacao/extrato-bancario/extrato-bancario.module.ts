@@ -13,7 +13,7 @@ import { CommonModule } from '@angular/common';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { ModalLancamentoManualComponent } from './components/modal-lancamento-manual/modal-lancamento-manual.component';
 import { ModalImportarExtratoComponent } from './components/modal-importar-extrato/modal-importar-extrato.component';
-import { ContasAPagarModule } from '../contas-a-pagar/contas-a-pagar.module';
+import { TotaisSelecaoComponent } from 'src/app/shared/components/totais-selecao/totais-selecao.component';
 
 @NgModule({
   declarations: [
@@ -31,7 +31,7 @@ import { ContasAPagarModule } from '../contas-a-pagar/contas-a-pagar.module';
     DataGridComponent,
     ModalLancamentoManualComponent,
     ModalImportarExtratoComponent,
-    ContasAPagarModule
+    TotaisSelecaoComponent
   ]
 })
 export class ExtratoBancarioModule { }

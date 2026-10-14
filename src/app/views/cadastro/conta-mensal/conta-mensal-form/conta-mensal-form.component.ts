@@ -1,5 +1,7 @@
+import { CommonModule } from '@angular/common';
+import { CurrencyInputDirective } from 'src/app/shared/directives/currency-input.directive';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ContaService } from 'src/app/core/services/contas.service';
 import { AlertService } from 'src/app/shared/components/alert.service'; // <-- Importe o AlertService
 import { CategoriaDto } from 'src/app/core/models/categoria.model';
@@ -9,11 +11,14 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 @Component({
   selector: 'app-conta-mensal-form',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, CurrencyInputDirective],
   templateUrl: './conta-mensal-form.component.html',
   styleUrls: ['./conta-mensal-form.component.scss']
 })
 export class ContaMensalFormComponent implements OnInit {
-  @Input() account: ContaDto | null = null;
+  /** Registro em edição; null = novo (mesmo nome nos 5 cadastros, FE-P2-12). */
+  @Input() registro: ContaDto | null = null;
   @Input() categories: CategoriaDto[] = [];
   @Output() closed = new EventEmitter<boolean>(); // true => recarregar lista
   contaParcelada = false;
@@ -42,21 +47,21 @@ export class ContaMensalFormComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    if (this.account) {
-      const dias = this.account.contaVencimentos
+    if (this.registro) {
+      const dias = this.registro.contaVencimentos
         ?.map(v => v.dia)
         .sort((a, b) => a - b)
         .join(',');
 
       this.form.patchValue({
-        name: this.account.name,
-        value: this.account.value,
+        name: this.registro.name,
+        value: this.registro.value,
         dataOperacao: dias, 
-        categoryid: this.account.categoryid,
-        status: this.account.status,
-        ehParcelado: this.account.ehParcelado,
-        parcelaAtual: this.account.parcelaAtual,
-        quantidadeParcelas: this.account.quantidadeParcelas
+        categoryid: this.registro.categoryid,
+        status: this.registro.status,
+        ehParcelado: this.registro.ehParcelado,
+        parcelaAtual: this.registro.parcelaAtual,
+        quantidadeParcelas: this.registro.quantidadeParcelas
       });
     }
   }
@@ -114,7 +119,7 @@ export class ContaMensalFormComponent implements OnInit {
     const diasVencimento = String(this.form.value.dataOperacao).split(",").map(d => Number(d));
 
     const payload: Partial<ContaDto> = {
-      id: this.account?.id,
+      id: this.registro?.id,
       name: this.form.value.name!,
       value: this.form.value.value ?? 0,
       categoryid: Number(this.form.value.categoryid),
@@ -126,7 +131,7 @@ export class ContaMensalFormComponent implements OnInit {
     };
 
     this.saving = true;
-    (this.account ? this.contaService.atualizar(payload) : this.contaService.criar(payload))
+    (this.registro ? this.contaService.atualizar(payload) : this.contaService.criar(payload))
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
         next: () => {

@@ -4,7 +4,7 @@
     [loading]="loading" (edit)="onEdit($event)" (new)="openCreate()" (delete)="onDelete($event)" (deleteSelected)="onDeleteSelected($event)"></app-data-grid>
 
   <!-- Modal Form -->
-  <app-categoria-form *ngIf="showModalForm" [category]="editing" (closed)="closeForm($event)">
+  <app-categoria-form *ngIf="showModalForm" [registro]="editing" (closed)="closeForm($event)">
   </app-categoria-form>
 
 </div>

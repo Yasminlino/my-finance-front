@@ -78,18 +78,18 @@ export class ListaDeOrcamentoComponent implements OnInit {
       },
       {
         field: 'observacao',
-        header: 'OBS.',
+        header: 'OBSERVAÇÃO',
         type: GridColumnTypeEnum.TextArea,
         width: "25%"
       },
       {
         field: "status",
-        header: "Status",
+        header: "STATUS",
         type: GridColumnTypeEnum.Select,
         options: this.statusOptions,
         width: '17%'
       },
-      { field: 'actions', header: 'Ações', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
+      { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
     ]
   }
 

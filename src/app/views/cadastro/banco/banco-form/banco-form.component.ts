@@ -1,5 +1,7 @@
+import { CommonModule } from '@angular/common';
+import { CurrencyInputDirective } from 'src/app/shared/directives/currency-input.directive';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { BancoService } from 'src/app/core/services/banco.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
@@ -11,11 +13,14 @@ type AlertState = { type: 'success' | 'error' | ''; message: string };
 
 @Component({
   selector: 'app-banco-form',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, CurrencyInputDirective],
   templateUrl: './banco-form.component.html',
   styleUrls: ['./banco-form.component.scss'],
 })
 export class BancoFormComponent implements OnInit {
-  @Input() banco: BancoDto | null = null;
+  /** Registro em edição; null = novo (mesmo nome nos 5 cadastros, FE-P2-12). */
+  @Input() registro: BancoDto | null = null;
   @Input() tiposCartao: TipoCartaoDto[] = []; // ✅ novo
   @Output() closed = new EventEmitter<boolean>();
 
@@ -34,12 +39,12 @@ export class BancoFormComponent implements OnInit {
   constructor(private fb: FormBuilder, private bancoService: BancoService, private readonly alertService: AlertService) {}
 
   ngOnInit(): void {
-    if (this.banco) {
+    if (this.registro) {
       this.form.patchValue({
-        nomeBanco: this.banco.nomeBanco,
-        saldoInicial: this.banco.saldoInicial,
-        ativo: this.banco.ativo,
-        tipoCartaoId: this.banco.tipoCartaoId ?? null,
+        nomeBanco: this.registro.nomeBanco,
+        saldoInicial: this.registro.saldoInicial,
+        ativo: this.registro.ativo,
+        tipoCartaoId: this.registro.tipoCartaoId ?? null,
       });
     }
   }
@@ -55,7 +60,7 @@ export class BancoFormComponent implements OnInit {
     }
 
     const payload = {
-      id: this.banco?.id || 0,
+      id: this.registro?.id || 0,
       nomeBanco: this.form.value.nomeBanco!,
       saldoInicial: this.form.value.saldoInicial ?? 0,
       tipoCartaoId: Number(this.form.value.tipoCartaoId),
@@ -63,7 +68,7 @@ export class BancoFormComponent implements OnInit {
     };
 
     this.saving = true;
-    (this.banco ? this.bancoService.atualizar(payload) : this.bancoService.criar(payload))
+    (this.registro ? this.bancoService.atualizar(payload) : this.bancoService.criar(payload))
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
         next: () => {

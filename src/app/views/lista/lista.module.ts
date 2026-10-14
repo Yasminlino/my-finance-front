@@ -10,7 +10,7 @@ import { ModalNovoItemListaComponent } from './components/modal-novo-item-lista/
 import { SharedModule } from 'src/app/shared/shared.module';
 import { ModalItemChecagemComponent } from './components/modal-item-checagem/modal-item-checagem.component';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { ContasAPagarModule } from '../movimentacao/contas-a-pagar/contas-a-pagar.module';
+import { TotaisSelecaoComponent } from 'src/app/shared/components/totais-selecao/totais-selecao.component';
 
 @NgModule({
   declarations: [
@@ -26,7 +26,7 @@ import { ContasAPagarModule } from '../movimentacao/contas-a-pagar/contas-a-paga
     SharedModule,
     ListaRoutingModule,    
     DataGridComponent,
-    ContasAPagarModule
+    TotaisSelecaoComponent
   ]
 })
 export class ListaModule { }

@@ -1,5 +1,6 @@
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TipoMovimentacaoDto } from 'src/app/core/models/tipo-movimentacao.model';
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
@@ -8,11 +9,14 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 @Component({
   selector: 'app-tipo-movimentacao-form',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './tipo-movimentacao-form.component.html',
   styleUrls: ['./tipo-movimentacao-form.component.scss'],
 })
 export class TipoMovimentacaoFormComponent implements OnInit {
-  @Input() item: TipoMovimentacaoDto | null = null;
+  /** Registro em edição; null = novo (mesmo nome nos 5 cadastros, FE-P2-12). */
+  @Input() registro: TipoMovimentacaoDto | null = null;
   @Output() closed = new EventEmitter<boolean>(); // true => recarrega lista
 
   saving = false;
@@ -26,11 +30,11 @@ export class TipoMovimentacaoFormComponent implements OnInit {
   constructor(private fb: FormBuilder, private service: TipoMovimentacaoService, private readonly alertService: AlertService) {}
 
   ngOnInit(): void {
-    if (this.item) {
+    if (this.registro) {
       this.form.patchValue({
-        nomeTipoMovimentacao: this.item.nomeTipoMovimentacao,
-        descricao: this.item.descricao ?? '',
-        valorMeta: Number(this.item.valorMeta) || 0,
+        nomeTipoMovimentacao: this.registro.nomeTipoMovimentacao,
+        descricao: this.registro.descricao ?? '',
+        valorMeta: Number(this.registro.valorMeta) || 0,
       });
     }
   }
@@ -46,14 +50,14 @@ export class TipoMovimentacaoFormComponent implements OnInit {
     }
 
     const payload = {
-      id: this.item?.id,
+      id: this.registro?.id,
       nomeTipoMovimentacao: this.form.value.nomeTipoMovimentacao!,
       descricao: this.form.value.descricao ?? '',
       valorMeta: Number(this.form.value.valorMeta) || 0,
     };
 
     this.saving = true;
-    (this.item ? this.service.atualizar(payload) : this.service.criar(payload))
+    (this.registro ? this.service.atualizar(payload) : this.service.criar(payload))
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
         next: () => {

@@ -132,14 +132,14 @@ export class ContasAPagarComponent implements OnInit {
     this.gridColumns = [
       {
         field: "accountName",
-        header: "Conta",
+        header: "CONTA",
         type: GridColumnTypeEnum.Text,
         width: '15%',
         editable: false
       },
       {
         field: "categoryName",
-        header: "Categoria",
+        header: "CATEGORIA",
         type: GridColumnTypeEnum.Select,
         options: this.categorias,
         width: '12%',
@@ -147,21 +147,21 @@ export class ContasAPagarComponent implements OnInit {
       },
       {
         field: "parcelaAtual",
-        header: "Parcela",
+        header: "PARCELA",
         type: GridColumnTypeEnum.Number,
         width: '8.5%',
         editable: true
       },
       {
         field: "observacao",
-        header: "Observação",
+        header: "OBSERVAÇÃO",
         type: GridColumnTypeEnum.TextArea,
         width: '13%',
         editable: true
       },
       {
         field: "value",
-        header: "Valor",
+        header: "VALOR",
         type: GridColumnTypeEnum.Money,
         formatter: (row) => this.money(row.value),
         width: '12%',
@@ -169,7 +169,7 @@ export class ContasAPagarComponent implements OnInit {
       },
       {
         field: "date",
-        header: "Vencimento",
+        header: "VENCIMENTO",
         type: GridColumnTypeEnum.Date,
         formatter: (row) =>
           formatDateBR(row.date),
@@ -178,7 +178,7 @@ export class ContasAPagarComponent implements OnInit {
       },
       {
         field: "status",
-        header: "Status",
+        header: "STATUS",
         type: GridColumnTypeEnum.Select,
         options: this.statusOptions,
         width: '17%',
@@ -186,7 +186,7 @@ export class ContasAPagarComponent implements OnInit {
       },
       {
         field: 'actions',
-        header: 'Ações',
+        header: 'AÇÕES',
         type: GridColumnTypeEnum.Actions,
         functions: ['delete']
       }

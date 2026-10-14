@@ -6,7 +6,7 @@
   <!-- MODAL CREATE/EDIT -->
   <app-banco-form
     *ngIf="showModalForm"
-    [banco]="editing"
+    [registro]="editing"
     [tiposCartao]="tiposCartao"
     (closed)="closeForm($event)">
   </app-banco-form>

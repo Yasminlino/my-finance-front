@@ -1,22 +1,18 @@
-import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
 import { of } from 'rxjs';
 
 import { BancoFormComponent } from './banco-form.component';
 import { BancoService } from 'src/app/core/services/banco.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
-import { CurrencyInputDirective } from 'src/app/shared/directives/currency-input.directive';
 
 /** Saldo inicial com a máscara única (currencyInput): número no formulário, sem parse de texto (FE-P2-10). */
 describe('BancoFormComponent', () => {
   let fixture: ComponentFixture<BancoFormComponent>;
   let service: jasmine.SpyObj<BancoService>;
 
-  const abrir = (banco: any = null) => {
+  const abrir = (registro: any = null) => {
     fixture = TestBed.createComponent(BancoFormComponent);
-    fixture.componentInstance.banco = banco;
+    fixture.componentRef.setInput('registro', registro);
     fixture.detectChanges();
   };
   const saldo = () => (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[formControlName=saldoInicial]')!;
@@ -26,13 +22,11 @@ describe('BancoFormComponent', () => {
     service.criar.and.returnValue(of({}));
     service.atualizar.and.returnValue(of({}));
     TestBed.configureTestingModule({
-      declarations: [BancoFormComponent],
-      imports: [CommonModule, ReactiveFormsModule, CurrencyInputDirective],
+      imports: [BancoFormComponent],
       providers: [
         { provide: BancoService, useValue: service },
         { provide: AlertService, useValue: jasmine.createSpyObj('AlertService', ['success', 'error']) }
-      ],
-      schemas: [NO_ERRORS_SCHEMA]
+      ]
     });
   });
 

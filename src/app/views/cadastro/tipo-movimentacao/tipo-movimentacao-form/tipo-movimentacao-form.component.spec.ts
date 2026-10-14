@@ -1,21 +1,40 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 
 import { TipoMovimentacaoFormComponent } from './tipo-movimentacao-form.component';
+import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
+import { AlertService } from 'src/app/shared/components/alert.service';
 
+/** Formulário de tipo de movimentação: standalone e recebe o registro em edição por [registro] (FE-P2-11/12). */
 describe('TipoMovimentacaoFormComponent', () => {
-  let component: TipoMovimentacaoFormComponent;
   let fixture: ComponentFixture<TipoMovimentacaoFormComponent>;
+  let service: jasmine.SpyObj<TipoMovimentacaoService>;
 
   beforeEach(() => {
+    service = jasmine.createSpyObj<TipoMovimentacaoService>('TipoMovimentacaoService', ['criar', 'atualizar']);
+    service.atualizar.and.returnValue(of({}));
     TestBed.configureTestingModule({
-      declarations: [TipoMovimentacaoFormComponent]
+      imports: [TipoMovimentacaoFormComponent],
+      providers: [
+        { provide: TipoMovimentacaoService, useValue: service },
+        { provide: AlertService, useValue: jasmine.createSpyObj('AlertService', ['success', 'error']) }
+      ]
     });
     fixture = TestBed.createComponent(TipoMovimentacaoFormComponent);
-    component = fixture.componentInstance;
+    fixture.componentRef.setInput('registro', { id: 10, nomeTipoMovimentacao: 'Açougue', descricao: 'compra de carnes', valorMeta: 400 });
     fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('na edição preenche o formulário com o registro', () => {
+    expect(fixture.componentInstance.form.value.nomeTipoMovimentacao).toBe('Açougue');
+    expect(fixture.componentInstance.form.value.valorMeta).toBe(400);
+  });
+
+  it('salva atualizando o registro', () => {
+    fixture.componentInstance.form.patchValue({ descricao: 'carnes' });
+
+    fixture.componentInstance.save();
+
+    expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ id: 10, descricao: 'carnes' }));
   });
 });

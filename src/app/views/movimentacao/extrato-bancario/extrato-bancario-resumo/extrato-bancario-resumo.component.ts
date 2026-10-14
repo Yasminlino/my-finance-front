@@ -216,7 +216,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
       month: this.selectedMonth,
     };
 
-    this.router.navigate(['extrato-bancario/RelatorioGastosMensais'], { queryParams: params });
+    this.router.navigate(['extrato-bancario/relatorio'], { queryParams: params });
   }
 
   loadMonth(dataSelecionada?: Date) {
@@ -317,7 +317,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
       tipoContaId: row.tipoCartaoId,
     };
 
-    this.router.navigate(['extrato-bancario/ExtratoBancarioDetalhe'], { queryParams: params });
+    this.router.navigate(['extrato-bancario/detalhes'], { queryParams: params });
   }
 }
 

@@ -7,20 +7,18 @@ import { TipoMovimentacaoFormComponent } from './tipo-movimentacao-form/tipo-mov
 import { TipoMovimentacaoRoutingModule } from './tipo-movimentacao-routing.module';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { ChartsModule } from 'src/app/core/components/charts/charts.module';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [
-    TipoMovimentacaoListComponent,
-    TipoMovimentacaoFormComponent
+    TipoMovimentacaoListComponent
   ],
   imports: [
+    TipoMovimentacaoFormComponent,
     SharedModule,
     CommonModule,
     ReactiveFormsModule,
     DataGridComponent,
-    ChartsModule,
     NgbModule,
     TipoMovimentacaoRoutingModule
   ]

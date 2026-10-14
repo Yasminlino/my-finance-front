@@ -70,7 +70,7 @@ export class ListaDeChecagemComponent implements OnInit {
       },
       { field: 'descricao', header: 'DESCRIÇÃO', type: GridColumnTypeEnum.Text, width: "35%", classe: (row) => row.status == "OK" ? 'text-success' : 'text-danger' },
       { field: 'quantidade', header: 'QUANTIDADE', type: GridColumnTypeEnum.Number, width: "30%", classe: (row) => row.status == "OK" ? 'text-success' : 'text-danger' },
-      { field: 'actions', header: 'Ações', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
+      { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
     ]
   }
 

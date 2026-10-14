@@ -58,7 +58,7 @@ export class ListaRootComponent implements OnInit {
 
   private setGridColumns(): void {
     this.gridColumns = [
-      { field: 'nome', header: 'Nome', type: GridColumnTypeEnum.Text, width: "40%" },
+      { field: 'nome', header: 'NOME', type: GridColumnTypeEnum.Text, width: "40%" },
       {
         field: 'tipoMovimentacao',
         header: 'TIPO',
@@ -78,7 +78,7 @@ export class ListaRootComponent implements OnInit {
         formatter: (row) => this.statusLabel(row.status),
         width: "20%"
       },
-      { field: 'actions', header: 'Ações', type: GridColumnTypeEnum.Actions, functions: ['view', 'edit', 'delete'] },
+      { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['view', 'edit', 'delete'] },
     ]
   }
 
@@ -135,14 +135,13 @@ export class ListaRootComponent implements OnInit {
   abrirItemLista(item: ListaDto) {
     if (!item.tipoMovimentacao) return;
     if (item.tipoMovimentacao === 1) {
-      this.router.navigate([`/catalogos-listas/${item.id}/checagem`]);
+      this.router.navigate([`/listas/${item.id}/checagem`]);
     } else if (item.tipoMovimentacao === 2) {
-      window.open(`/#/catalogos-listas/${item.id}/cronograma`, '_blank');
+      window.open(`/#/listas/${item.id}/cronograma`, '_blank');
     } else if (item.tipoMovimentacao === 3) {
-      this.router.navigate([`/catalogos-listas/${item.id}/orcamento`]);
-    } else {
-      window.open(`/catalogos-listas/${item.id}`, '_blank');
+      this.router.navigate([`/listas/${item.id}/orcamento`]);
     }
+    // Outros tipos não têm tela. Antes abria "/catalogos-listas/:id" sem o "#", que saía do app.
 
   }
 

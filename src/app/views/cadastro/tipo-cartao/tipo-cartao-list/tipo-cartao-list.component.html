@@ -5,7 +5,7 @@
     (deleteSelected)="onDeleteSelected($event)"></app-data-grid>
 
   <!-- MODAL CREATE/EDIT -->
-  <app-tipo-cartao-form *ngIf="showModalForm" [item]="editing" (closed)="closeForm($event)">
+  <app-tipo-cartao-form *ngIf="showModalForm" [registro]="editing" (closed)="closeForm($event)">
   </app-tipo-cartao-form>
 
 </div>

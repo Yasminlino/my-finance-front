@@ -2,6 +2,7 @@ import { inject, NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { LayoutComponent } from './layout/layout/layout.component';
+import { ROTAS_ANTIGAS } from './rotas-antigas';
 
 const routes: Routes = [
   {
@@ -15,18 +16,20 @@ const routes: Routes = [
     component: LayoutComponent,
     canActivate: [() => inject(AuthGuard).canActivate()],
     children: [
+      // Endereços antigos primeiro: redirecionam para as rotas em português (FE-P2-12).
+      ...ROTAS_ANTIGAS,
       {
         path: 'home',
         loadChildren: () =>
           import('./views/home/home.module').then(m => m.HomeModule),
       },
       {
-        path: 'category',
+        path: 'categorias',
         loadChildren: () =>
           import('./views/cadastro/categoria/categoria.module').then(m => m.CategoriaModule),
       },
       {
-        path: 'account',
+        path: 'contas',
         loadChildren: () =>
           import('./views/cadastro/conta-mensal/conta-mensal.module').then(m => m.CadastroContaMensalModule),
       },
@@ -36,12 +39,12 @@ const routes: Routes = [
           import('./views/cadastro/banco/banco.module').then(m => m.BancoModule),
       },
       {
-        path: 'tipo-cartao',
+        path: 'tipos-cartao',
         loadChildren: () =>
           import('./views/cadastro/tipo-cartao/tipo-cartao.module').then(m => m.TipoCartaoModule),
       },
       {
-        path: 'tipo-movimentacao',
+        path: 'tipos-movimentacao',
         loadChildren: () =>
           import('./views/cadastro/tipo-movimentacao/tipo-movimentacao.module').then(m => m.TipoMovimentacaoModule),
       },
@@ -56,7 +59,7 @@ const routes: Routes = [
           import('./views/movimentacao/extrato-bancario/extrato-bancario.module').then(m => m.ExtratoBancarioModule),
       },
       {
-        path: 'catalogos-listas',
+        path: 'listas',
         loadChildren: () =>
           import('./views/lista/lista.module').then(m => m.ListaModule),
       },

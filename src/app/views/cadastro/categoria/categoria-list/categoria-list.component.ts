@@ -24,10 +24,10 @@ export class CategoriaListComponent extends CadastroListBase<CategoriaDto> {
   statusOptions = STATUS_ATIVO_OPTIONS;
 
   gridColumns: GridColumn[] = [
-    { field: 'name', header: 'Nome', type: GridColumnTypeEnum.Text, width: "30%" },
+    { field: 'name', header: 'NOME', type: GridColumnTypeEnum.Text, width: "30%" },
     {
       field: 'subCategory',
-      header: 'Tipo Categoria',
+      header: 'TIPO CATEGORIA',
       type: GridColumnTypeEnum.Select,
       options: [
         { label: 'Despesa', value: 'Despesa' },
@@ -38,7 +38,7 @@ export class CategoriaListComponent extends CadastroListBase<CategoriaDto> {
     },
     {
       field: 'naturezaOperacao',
-      header: 'Natureza da Operação',
+      header: 'NATUREZA DA OPERAÇÃO',
       type: GridColumnTypeEnum.Select,
       options: this.naturezaOperacaoOptions,
       formatter: (row) => NaturezaOperacaoLabel[row.naturezaOperacao] ?? row.naturezaOperacao,
@@ -46,13 +46,13 @@ export class CategoriaListComponent extends CadastroListBase<CategoriaDto> {
     },
     {
       field: 'status',
-      header: 'Status',
+      header: 'STATUS',
       type: GridColumnTypeEnum.Select,
       options: this.statusOptions,
       formatter: (row) => statusAtivoLabel(row.status),
       width: "20%"
     },
-    { field: 'actions', header: 'Ações', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
+    { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
   ];
 
   breadcrumb = [{ label: 'Cadastros' }, { label: 'Categorias' }];

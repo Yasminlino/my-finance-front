@@ -3,8 +3,8 @@
         [exibeCampos]="exibirCampos" [loading]="loading" (edit)="onEdit($event)" (new)="openCreate()"  (selectionChange)="onSelectionChange($event)"
         (delete)="onDelete($event)" (deleteSelected)="onDeleteSelected($event)">
 
-        <app-contas-a-pagar-totais [receita]="selectedTotals.receita" [despesa]="selectedTotals.despesa"
-            [saldo]="selectedTotals.saldo" [count]="selectedTotals.count"></app-contas-a-pagar-totais>
+        <app-totais-selecao [receita]="selectedTotals.receita" [despesa]="selectedTotals.despesa"
+            [saldo]="selectedTotals.saldo" [count]="selectedTotals.count"></app-totais-selecao>
 
     </app-data-grid>
     <!-- Criar Item -->

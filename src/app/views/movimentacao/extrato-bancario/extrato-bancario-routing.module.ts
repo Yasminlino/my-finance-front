@@ -6,8 +6,8 @@ import { RelatorioGastosMensaisComponent } from './components/relatorio-gastos-m
 
 const routes: Routes = [
   { path: '', component: ExtratoBancarioResumoComponent },
-  { path: 'ExtratoBancarioDetalhe', component: ExtratoBancarioDetalhesComponent },
-  { path: 'RelatorioGastosMensais', component: RelatorioGastosMensaisComponent },
+  { path: 'detalhes', component: ExtratoBancarioDetalhesComponent },
+  { path: 'relatorio', component: RelatorioGastosMensaisComponent },
 ];
 
 @NgModule({

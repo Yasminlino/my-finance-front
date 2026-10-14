@@ -2,8 +2,8 @@
   <app-data-grid #grid [dataSource]="extratoMensal" [breadcrumb]="breadcrumb" [columns]="gridColumns" (saveInline)="onSaveInline($event)"
     (reload)="loadMonth()" [titulo]="titulo" [dateFilter]="dateFilter" [localStorage]="'dataFiltroDetalheExtrato'" (selectionChange)="onSelectionChange($event)" (delete)="onDelete($event)" (deleteSelected)="onDeleteSelected($event)"
     [itemsButtom]="itemsButtom" [exibeCampos]="exibirCampos" [loading]="loading">
-    <app-contas-a-pagar-totais [receita]="selectedTotals.receita" [despesa]="selectedTotals.despesa"
-      [saldo]="selectedTotals.saldo" [count]="selectedTotals.count"></app-contas-a-pagar-totais>
+    <app-totais-selecao [receita]="selectedTotals.receita" [despesa]="selectedTotals.despesa"
+      [saldo]="selectedTotals.saldo" [count]="selectedTotals.count"></app-totais-selecao>
 
     <!-- LANÇAMENTO MANUAL (banco da tela fixo) -->
     <app-modal-lancamento-manual *ngIf="showAddModal" [mes]="month" [bancos]="bancosDoModal" [bancoFixoId]="bancoId"

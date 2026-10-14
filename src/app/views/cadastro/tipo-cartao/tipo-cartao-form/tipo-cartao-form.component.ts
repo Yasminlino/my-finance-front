@@ -1,5 +1,6 @@
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
@@ -8,11 +9,14 @@ import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-tipo-cartao-form',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './tipo-cartao-form.component.html',
   styleUrls: ['./tipo-cartao-form.component.scss'],
 })
 export class TipoCartaoFormComponent implements OnInit {
-  @Input() item: TipoCartaoDto | null = null;   // editar
+  /** Registro em edição; null = novo (mesmo nome nos 5 cadastros, FE-P2-12). */
+  @Input() registro: TipoCartaoDto | null = null;   // editar
   @Output() closed = new EventEmitter<boolean>(); // true => recarregar
 
   saving = false;
@@ -26,11 +30,11 @@ export class TipoCartaoFormComponent implements OnInit {
   constructor(private fb: FormBuilder, private service: TipoCartaoService, private readonly alertService: AlertService) {}
 
   ngOnInit(): void {
-    if (this.item) {
+    if (this.registro) {
       this.form.patchValue({
-        nomeTipoCartao: this.item.nomeTipoCartao,
-        ehCredito: this.item.ehCredito ?? false,
-        // ativo: this.item.ativo ?? true,
+        nomeTipoCartao: this.registro.nomeTipoCartao,
+        ehCredito: this.registro.ehCredito ?? false,
+        // ativo: this.registro.ativo ?? true,
       });
       return;
     }
@@ -54,13 +58,13 @@ export class TipoCartaoFormComponent implements OnInit {
     }
 
     const payload = {
-      id: this.item?.id,
+      id: this.registro?.id,
       nomeTipoCartao: this.form.value.nomeTipoCartao!,
       ehCredito: !!this.form.value.ehCredito,
     };
 
     this.saving = true;
-    (this.item ? this.service.atualizar(payload) : this.service.criar(payload))
+    (this.registro ? this.service.atualizar(payload) : this.service.criar(payload))
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
         next: () => {
