@@ -1,42 +1,31 @@
-<div class="modal show d-block" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-md" style="margin-top:100px" role="document">
-    <form class="modal-content" [formGroup]="form" (ngSubmit)="salvar()" novalidate>
-      <div class="modal-header">
-        <h5 class="modal-title">Importar extrato</h5>
-        <button type="button" class="btn-close" (click)="cancelar()" [disabled]="importando"></button>
-      </div>
+<p-dialog header="Importar extrato" [visible]="true" [modal]="true" [closable]="!importando" [draggable]="false"
+  [style]="{ width: '32rem' }" [breakpoints]="{ '576px': '95vw' }" (visibleChange)="cancelar()">
+  <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="salvar()" novalidate>
+    <div class="flex flex-column gap-2">
+      <label for="ie-banco">Banco</label>
+      <p-dropdown inputId="ie-banco" formControlName="bancoId" [options]="bancos" optionLabel="nomeBanco"
+        optionValue="id" placeholder="Selecione..." appendTo="body" styleClass="w-full"
+        [class.ng-dirty]="invalido('bancoId')" />
+      <small class="p-error" *ngIf="invalido('bancoId')">Selecione o banco.</small>
+    </div>
 
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label" for="ie-banco">Banco</label>
-          <select id="ie-banco" class="form-select" formControlName="bancoId" [class.is-invalid]="invalido('bancoId')">
-            <option [ngValue]="null">Selecione...</option>
-            <option *ngFor="let b of bancos" [ngValue]="b.id">{{ b.nomeBanco }}</option>
-          </select>
-          <div class="invalid-feedback">Selecione o banco.</div>
-        </div>
+    <div class="flex flex-column gap-2">
+      <label for="ie-tipo-conta">Tipo conta (automático)</label>
+      <input pInputText id="ie-tipo-conta" type="text" [value]="tipoCartao?.nomeTipoCartao ?? '—'" disabled />
+      <small class="text-color-secondary">O tipo de conta é definido pelo banco selecionado.</small>
+    </div>
 
-        <div class="mb-3">
-          <label class="form-label" for="ie-tipo-conta">Tipo conta (automático)</label>
-          <input id="ie-tipo-conta" type="text" class="form-control" [value]="tipoCartao?.nomeTipoCartao ?? '—'" disabled />
-          <small class="text-muted">O tipo de conta é definido pelo banco selecionado.</small>
-        </div>
+    <div class="flex flex-column gap-2">
+      <label for="ie-arquivo">Arquivo</label>
+      <input pInputText id="ie-arquivo" type="file" accept=".ofx,.csv,.xls,.xlsx,.txt,.pdf"
+        (change)="onArquivo($event)" [disabled]="importando" [class.ng-dirty]="invalido('arquivo')"
+        [class.ng-invalid]="invalido('arquivo')" />
+      <small class="p-error" *ngIf="invalido('arquivo')">Selecione o arquivo.</small>
+    </div>
+  </form>
 
-        <div class="mb-2">
-          <label class="form-label" for="ie-arquivo">Arquivo</label>
-          <input id="ie-arquivo" type="file" class="form-control" accept=".ofx,.csv,.xls,.xlsx,.txt,.pdf"
-            (change)="onArquivo($event)" [disabled]="importando" [class.is-invalid]="invalido('arquivo')" />
-          <div class="invalid-feedback">Selecione o arquivo.</div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="cancelar()" [disabled]="importando">Cancelar</button>
-        <button type="submit" class="btn btn-primary" [disabled]="importando">
-          {{ importando ? 'Importando...' : 'Importar' }}
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-<div class="modal-backdrop fade show"></div>
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" [disabled]="importando" (onClick)="cancelar()" />
+    <p-button label="Importar" icon="pi pi-upload" [loading]="importando" (onClick)="salvar()" />
+  </ng-template>
+</p-dialog>

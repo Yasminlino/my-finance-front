@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { Dialog } from 'primeng/dialog';
 import { of } from 'rxjs';
 
 import { ContaMensalFormComponent } from './conta-mensal-form.component';
@@ -25,6 +28,7 @@ describe('ContaMensalFormComponent', () => {
     TestBed.configureTestingModule({
       imports: [ContaMensalFormComponent],
       providers: [
+        provideNoopAnimations(),
         { provide: ContaService, useValue: service },
         { provide: AlertService, useValue: jasmine.createSpyObj('AlertService', ['success', 'error']) }
       ]
@@ -45,5 +49,16 @@ describe('ContaMensalFormComponent', () => {
     fixture.componentInstance.save();
 
     expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ value: 15.5 }));
+  });
+
+  it('abre num p-dialog com o título e o X fecha sem recarregar (FE-P2-07)', () => {
+    const fechado = jasmine.createSpy('closed');
+    abrir(conta);
+    fixture.componentInstance.closed.subscribe(fechado);
+    const dialogo = fixture.debugElement.query(By.directive(Dialog));
+
+    expect(dialogo.componentInstance.header).toBe('Editar Conta');
+    dialogo.componentInstance.close(new Event('click'));
+    expect(fechado).toHaveBeenCalledOnceWith(false);
   });
 });

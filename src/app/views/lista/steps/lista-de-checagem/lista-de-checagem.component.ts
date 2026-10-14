@@ -68,8 +68,8 @@ export class ListaDeChecagemComponent implements OnInit {
         type: GridColumnTypeEnum.Checkbox,
         width: '5%'
       },
-      { field: 'descricao', header: 'DESCRIÇÃO', type: GridColumnTypeEnum.Text, width: "35%", classe: (row) => row.status == "OK" ? 'text-success' : 'text-danger' },
-      { field: 'quantidade', header: 'QUANTIDADE', type: GridColumnTypeEnum.Number, width: "30%", classe: (row) => row.status == "OK" ? 'text-success' : 'text-danger' },
+      { field: 'descricao', header: 'DESCRIÇÃO', type: GridColumnTypeEnum.Text, width: "35%", classe: (row) => row.status == "OK" ? 'text-green-600' : 'text-red-500' },
+      { field: 'quantidade', header: 'QUANTIDADE', type: GridColumnTypeEnum.Number, width: "30%", classe: (row) => row.status == "OK" ? 'text-green-600' : 'text-red-500' },
       { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
     ]
   }

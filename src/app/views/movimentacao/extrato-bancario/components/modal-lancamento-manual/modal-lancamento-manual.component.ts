@@ -1,8 +1,14 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { NgbTypeaheadModule } from '@ng-bootstrap/ng-bootstrap';
-import { Observable, concat, debounceTime, distinctUntilChanged, finalize, map, toArray } from 'rxjs';
+import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
+import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { CheckboxModule } from 'primeng/checkbox';
+import { concat, finalize, toArray } from 'rxjs';
 
 import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
@@ -29,7 +35,10 @@ function parcelaDentroDoTotal(grupo: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-modal-lancamento-manual',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgbTypeaheadModule, CurrencyInputDirective],
+  imports: [
+    CommonModule, ReactiveFormsModule, AutoCompleteModule, CurrencyInputDirective,
+    DialogModule, DropdownModule, InputTextModule, InputTextareaModule, CheckboxModule, ButtonModule
+  ],
   templateUrl: './modal-lancamento-manual.component.html'
 })
 export class ModalLancamentoManualComponent implements OnInit {
@@ -98,19 +107,14 @@ export class ModalLancamentoManualComponent implements OnInit {
     return this.form.hasError('parcelaForaDoTotal') && this.form.controls.parcelaAtual.touched;
   }
 
-  buscarPessoa = (texto$: Observable<string>) =>
-    texto$.pipe(
-      debounceTime(150),
-      distinctUntilChanged(),
-      map(termo => {
-        const t = (termo ?? '').trim().toLowerCase();
-        const lista = t ? this.pessoas.filter(p => (p.nomePessoa ?? '').toLowerCase().includes(t)) : this.pessoas;
-        return lista.slice(0, 10);
-      })
-    );
+  sugestoesPessoa: PessoaMovimentacaoDto[] = [];
 
-  nomePessoa = (pessoa: PessoaMovimentacaoDto | string | null) =>
-    typeof pessoa === 'string' ? pessoa : pessoa?.nomePessoa ?? '';
+  /** Sugestões do p-autoComplete: até 10 pessoas cujo nome contém o texto. Nome fora da lista também vale. */
+  buscarPessoa(evento: AutoCompleteCompleteEvent): void {
+    const t = (evento.query ?? '').trim().toLowerCase();
+    const lista = t ? this.pessoas.filter(p => (p.nomePessoa ?? '').toLowerCase().includes(t)) : this.pessoas;
+    this.sugestoesPessoa = lista.slice(0, 10);
+  }
 
   cancelar(): void {
     if (!this.salvando) this.fechado.emit(false);

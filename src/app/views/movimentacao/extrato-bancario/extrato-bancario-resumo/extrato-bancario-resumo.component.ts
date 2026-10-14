@@ -192,7 +192,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
         type: GridColumnTypeEnum.Text,
         width: "25%",
         formatter: (row: any) => this.formatarMoeda(row.totalEntrada),
-        classe: 'text-success fw-bold'
+        classe: 'text-green-600 font-bold'
       },
       {
         field: 'totalSaida',
@@ -200,7 +200,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
         type: GridColumnTypeEnum.Text,
         width: "25%",
         formatter: (row: any) => this.formatarMoeda(row.totalSaida),
-        classe: 'text-danger fw-bold'
+        classe: 'text-red-500 font-bold'
       },
       { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions },
     ];

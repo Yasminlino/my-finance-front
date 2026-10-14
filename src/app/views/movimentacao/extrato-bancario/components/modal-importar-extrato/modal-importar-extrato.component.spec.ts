@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { Dialog } from 'primeng/dialog';
 import { of, throwError } from 'rxjs';
 
 import { ModalImportarExtratoComponent } from './modal-importar-extrato.component';
@@ -25,6 +28,7 @@ describe('ModalImportarExtratoComponent', () => {
     alertas = jasmine.createSpyObj<AlertService>('AlertService', ['success', 'info', 'error']);
     TestBed.configureTestingModule({
       providers: [
+        provideNoopAnimations(),
         { provide: ExtratoBancarioItemService, useValue: itens },
         { provide: AlertService, useValue: alertas }
       ]
@@ -87,5 +91,22 @@ describe('ModalImportarExtratoComponent', () => {
     expect(alertas.error).toHaveBeenCalledWith('Arquivo inválido.');
     expect(fechado).not.toHaveBeenCalled();
     expect(modal.importando).toBeFalse();
+  });
+
+  it('abre num p-dialog; o X fecha sem gravar e some enquanto grava (FE-P2-07)', () => {
+    const fechado = jasmine.createSpy('fechado');
+    fixture.detectChanges();
+    modal.fechado.subscribe(fechado);
+    const dialogo = fixture.debugElement.query(By.directive(Dialog));
+
+    expect(dialogo.componentInstance.header).toBe('Importar extrato');
+    expect(dialogo.componentInstance.closable).toBeTrue();
+    modal.importando = true;
+    fixture.detectChanges();
+    expect(dialogo.componentInstance.closable).toBeFalse();
+
+    modal.importando = false;
+    dialogo.componentInstance.close(new Event('click'));
+    expect(fechado).toHaveBeenCalledOnceWith(false);
   });
 });

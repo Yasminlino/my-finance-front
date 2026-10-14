@@ -5,13 +5,13 @@ import { ListaDto } from 'src/app/core/models/lista.model';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 import { finalize } from 'rxjs';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
+import { OPCOES_ATIVO } from 'src/app/shared/utils/opcoes-status';
 
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
 @Component({
   selector: 'app-modal-nova-lista',
   templateUrl: './modal-nova-lista.component.html',
-  styleUrls: ['./modal-nova-lista.component.scss'],
 })
 export class ModalNovaListaComponent implements OnInit {
   @Input() lista: ListaDto | null = null;
@@ -22,11 +22,17 @@ export class ModalNovaListaComponent implements OnInit {
   alert: AlertState = { type: '', message: '' };
 
   saving = false;
+  readonly opcoesStatus = OPCOES_ATIVO;
+  /** Cronograma (2) fica fora da criação, como antes. */
+  readonly opcoesTipo = [
+    { label: 'Checklist', value: 1 },
+    { label: 'Orçamento', value: 3 },
+  ];
 
   form = this.fb.group({
     nome: ['', [Validators.required, Validators.minLength(2)]],
     status: [true, [Validators.required]],
-    tipoMovimentacao: [null as number | null, [Validators.required]], // ✅ novo
+    tipoMovimentacao: [null as number | null, [Validators.required]],
   });
 
   constructor(private fb: FormBuilder, private listaService: ListaService) {}
@@ -39,6 +45,12 @@ export class ModalNovaListaComponent implements OnInit {
         tipoMovimentacao: this.lista.tipoMovimentacao ?? null,
       });
     }
+  }
+
+  /** Campo tocado e inválido: borda vermelha (ng-dirty) e mensagem. */
+  erro(campo: keyof typeof this.form.controls): boolean {
+    const controle = this.form.controls[campo];
+    return controle.touched && controle.invalid;
   }
 
   close(reload = false) {

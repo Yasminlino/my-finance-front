@@ -10,8 +10,7 @@ const naoVazio = Validators.pattern(/\S/);
 
 @Component({
   selector: 'app-modal-item-checagem',
-  templateUrl: './modal-item-checagem.component.html',
-  styleUrls: ['./modal-item-checagem.component.scss']
+  templateUrl: './modal-item-checagem.component.html'
 })
 export class ModalItemChecagemComponent implements OnInit {
 

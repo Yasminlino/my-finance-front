@@ -8,32 +8,33 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { BancoDto } from 'src/app/core/models/banco.model';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 import { finalize } from 'rxjs';
-
-type AlertState = { type: 'success' | 'error' | ''; message: string };
+import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
+import { OPCOES_ATIVO } from 'src/app/shared/utils/opcoes-status';
 
 @Component({
   selector: 'app-banco-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CurrencyInputDirective],
-  templateUrl: './banco-form.component.html',
-  styleUrls: ['./banco-form.component.scss'],
+  imports: [CommonModule, ReactiveFormsModule, CurrencyInputDirective, DialogModule, DropdownModule, InputTextModule, ButtonModule],
+  templateUrl: './banco-form.component.html'
 })
 export class BancoFormComponent implements OnInit {
   /** Registro em edição; null = novo (mesmo nome nos 5 cadastros, FE-P2-12). */
   @Input() registro: BancoDto | null = null;
-  @Input() tiposCartao: TipoCartaoDto[] = []; // ✅ novo
+  @Input() tiposCartao: TipoCartaoDto[] = [];
   @Output() closed = new EventEmitter<boolean>();
 
-  alert: AlertState = { type: '', message: '' };
-
   saving = false;
+  readonly opcoesStatus = OPCOES_ATIVO;
 
   form = this.fb.group({
     nomeBanco: ['', [Validators.required, Validators.minLength(2)]],
     // Número direto do currencyInput (FE-P2-10).
     saldoInicial: [0 as number | null, [Validators.required]],
     ativo: [true, [Validators.required]],
-    tipoCartaoId: [null as number | null, [Validators.required]], // ✅ novo
+    tipoCartaoId: [null as number | null, [Validators.required]],
   });
 
   constructor(private fb: FormBuilder, private bancoService: BancoService, private readonly alertService: AlertService) {}
@@ -47,6 +48,12 @@ export class BancoFormComponent implements OnInit {
         tipoCartaoId: this.registro.tipoCartaoId ?? null,
       });
     }
+  }
+
+  /** Campo tocado e inválido: borda vermelha (ng-dirty) e mensagem. */
+  erro(campo: keyof typeof this.form.controls): boolean {
+    const controle = this.form.controls[campo];
+    return controle.touched && controle.invalid;
   }
 
   close(reload = false) {

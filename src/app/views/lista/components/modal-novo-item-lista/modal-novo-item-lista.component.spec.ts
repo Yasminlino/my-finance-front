@@ -1,12 +1,12 @@
-import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { Dialog } from 'primeng/dialog';
 import { of } from 'rxjs';
 
 import { ModalNovoItemListaComponent } from './modal-novo-item-lista.component';
 import { ItemListaService } from 'src/app/core/services/item-lista.service';
-import { CurrencyInputDirective } from 'src/app/shared/directives/currency-input.directive';
+import { SharedModule } from 'src/app/shared/shared.module';
 
 /** Valor do item (opcional) com a máscara única (currencyInput): número no formulário (FE-P2-10). */
 describe('ModalNovoItemListaComponent', () => {
@@ -27,9 +27,8 @@ describe('ModalNovoItemListaComponent', () => {
     service.atualizar.and.returnValue(of({}));
     TestBed.configureTestingModule({
       declarations: [ModalNovoItemListaComponent],
-      imports: [CommonModule, ReactiveFormsModule, CurrencyInputDirective],
-      providers: [{ provide: ItemListaService, useValue: service }],
-      schemas: [NO_ERRORS_SCHEMA]
+      imports: [SharedModule],
+      providers: [provideNoopAnimations(), { provide: ItemListaService, useValue: service }]
     });
   });
 
@@ -49,5 +48,16 @@ describe('ModalNovoItemListaComponent', () => {
     fixture.componentInstance.form.patchValue({ valor: null });
     fixture.componentInstance.save();
     expect(service.criar.calls.mostRecent().args[0].valor).toBeUndefined();
+  });
+
+  it('abre num p-dialog e o X fecha sem recarregar (FE-P2-07)', () => {
+    abrir();
+    const fechado = jasmine.createSpy('closed');
+    fixture.componentInstance.closed.subscribe(fechado);
+    const dialogo = fixture.debugElement.query(By.directive(Dialog));
+
+    expect(dialogo.componentInstance.header).toBe('Novo Item');
+    dialogo.componentInstance.close(new Event('click'));
+    expect(fechado).toHaveBeenCalledOnceWith(false);
   });
 });

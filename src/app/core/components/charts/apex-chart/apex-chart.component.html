@@ -1,10 +1,10 @@
 <ng-container *ngIf="useCard; else bare">
-  <div class="card" [class]="cardClass">
-    <div class="card-header" *ngIf="titleText">
-      <h3 class="card-title m-0">{{ titleText }}</h3>
+  <div class="surface-card border-round h-full" [ngClass]="cardClass">
+    <div class="px-3 py-2 border-bottom-1 surface-border" *ngIf="titleText">
+      <h3 class="text-lg font-semibold m-0">{{ titleText }}</h3>
     </div>
 
-    <div class="card-body chart-scroll">
+    <div class="p-3 chart-scroll">
       <apx-chart
         [series]="merged.series"
         [chart]="merged.chart"

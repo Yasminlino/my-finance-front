@@ -1,7 +1,9 @@
-import { Component, HostListener, Input } from '@angular/core';
+import { Component, Input } from '@angular/core';
+import { MenuItem } from 'primeng/api';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 
+/** icon: classe do PrimeIcons ("pi pi-..."). */
 type NavItem = { path: string; label: string; icon?: string };
 
 @Component({
@@ -12,65 +14,43 @@ type NavItem = { path: string; label: string; icon?: string };
 export class HeaderComponent {
   @Input() brand = 'My Finance';
 
-  // estados UI
-  isMenuOpen = false;
-  isUserOpen = false;
-  usuario = localStorage.getItem('usuarioNome') ?? 'Admin'
+  usuario = localStorage.getItem('usuarioNome') ?? 'Admin';
 
-  openDropdownKey: 'cadastros' | 'movimentacoes' | 'listas' | null = null;
-
-  // Dados (ajuste as rotas para as suas do Angular)
   cadastrosItems: NavItem[] = [
-    { path: '/categorias', label: 'Categorias', icon: '🗂️' },
-    { path: '/contas', label: 'Cadastro de Contas', icon: '💳' },
-    { path: '/bancos', label: 'Banco', icon: '🏦' },
-    { path: '/tipos-cartao', label: 'Tipo Cartão', icon: '🪪' },
-    { path: '/tipos-movimentacao', label: 'Tipo Movimentação', icon: '🔁' },
+    { path: '/categorias', label: 'Categorias', icon: 'pi pi-tags' },
+    { path: '/contas', label: 'Cadastro de Contas', icon: 'pi pi-credit-card' },
+    { path: '/bancos', label: 'Banco', icon: 'pi pi-building' },
+    { path: '/tipos-cartao', label: 'Tipo Cartão', icon: 'pi pi-id-card' },
+    { path: '/tipos-movimentacao', label: 'Tipo Movimentação', icon: 'pi pi-sync' },
   ];
 
   movimentacoesItems: NavItem[] = [
-    { path: '/contas-a-pagar', label: 'Contas a Pagar', icon: '💸' },
-    // { path: '/movimentacao-diaria', label: 'Movimentação Diária', icon: '📋' },
-    { path: '/extrato-bancario', label: 'Extrato Bancário', icon: '📈' },
+    { path: '/contas-a-pagar', label: 'Contas a Pagar', icon: 'pi pi-money-bill' },
+    // { path: '/movimentacao-diaria', label: 'Movimentação Diária', icon: 'pi pi-calendar' },
+    { path: '/extrato-bancario', label: 'Extrato Bancário', icon: 'pi pi-chart-line' },
   ];
 
   listasItems: NavItem[] = [
-    { path: '/listas', label: 'Listas', icon: '🛒' },
-    // { path: '/item-lista', label: 'Item Lista', icon: '🧾' },
+    { path: '/listas', label: 'Listas', icon: 'pi pi-shopping-cart' },
+    // { path: '/item-lista', label: 'Item Lista', icon: 'pi pi-list' },
+  ];
+
+  /** Menu do p-menubar; submenus e o modo mobile vêm do PrimeNG (FE-P2-07). */
+  readonly menu: MenuItem[] = [
+    { label: 'Página Inicial', icon: 'pi pi-home', routerLink: '/home', routerLinkActiveOptions: { exact: true } },
+    { label: 'Cadastros', icon: 'pi pi-folder', items: this.itensDoMenu(this.cadastrosItems) },
+    { label: 'Movimentações', icon: 'pi pi-wallet', items: this.itensDoMenu(this.movimentacoesItems) },
+    { label: 'Listas', icon: 'pi pi-list', items: this.itensDoMenu(this.listasItems) },
   ];
 
   constructor(private router: Router, public auth: AuthService) {}
 
-  // Fecha menus ao navegar
-  onAnyNavClick() {
-    this.isMenuOpen = false;
-    this.isUserOpen = false;
-    this.openDropdownKey = null;
-  }
-
-  toggleMenu() {
-    this.isMenuOpen = !this.isMenuOpen;
-  }
-
-  toggleDropdown(key: 'cadastros' | 'movimentacoes' | 'listas') {
-    this.openDropdownKey = this.openDropdownKey === key ? null : key;
-  }
-
-  toggleUser() {
-    this.isUserOpen = !this.isUserOpen;
-  }
-
   logout() {
     this.auth.logout();
-    this.onAnyNavClick();
     this.router.navigate(['/login'], { replaceUrl: true });
   }
 
-  // clique fora: fecha dropdowns
-  @HostListener('document:mousedown', ['$event'])
-  onDocClick(evt: MouseEvent) {
-    const target = evt.target as HTMLElement;
-    if (!target.closest('.js-dropdown')) this.openDropdownKey = null;
-    if (!target.closest('.js-user-dropdown')) this.isUserOpen = false;
+  private itensDoMenu(itens: NavItem[]): MenuItem[] {
+    return itens.map(item => ({ label: item.label, icon: item.icon, routerLink: item.path }));
   }
 }

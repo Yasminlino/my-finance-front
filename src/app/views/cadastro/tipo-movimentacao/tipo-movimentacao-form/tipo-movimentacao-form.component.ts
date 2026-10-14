@@ -6,13 +6,15 @@ import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { finalize } from 'rxjs';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-tipo-movimentacao-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './tipo-movimentacao-form.component.html',
-  styleUrls: ['./tipo-movimentacao-form.component.scss'],
+  imports: [CommonModule, ReactiveFormsModule, DialogModule, InputTextModule, ButtonModule],
+  templateUrl: './tipo-movimentacao-form.component.html'
 })
 export class TipoMovimentacaoFormComponent implements OnInit {
   /** Registro em edição; null = novo (mesmo nome nos 5 cadastros, FE-P2-12). */
@@ -37,6 +39,12 @@ export class TipoMovimentacaoFormComponent implements OnInit {
         valorMeta: Number(this.registro.valorMeta) || 0,
       });
     }
+  }
+
+  /** Campo tocado e inválido: borda vermelha (ng-dirty) e mensagem. */
+  erro(campo: keyof typeof this.form.controls): boolean {
+    const controle = this.form.controls[campo];
+    return controle.touched && controle.invalid;
   }
 
   close(reload = false) {

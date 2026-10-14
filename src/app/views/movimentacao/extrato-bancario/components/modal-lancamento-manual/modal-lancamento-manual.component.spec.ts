@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { Dialog } from 'primeng/dialog';
 import { of, throwError } from 'rxjs';
 
 import { ModalLancamentoManualComponent } from './modal-lancamento-manual.component';
@@ -37,6 +40,7 @@ describe('ModalLancamentoManualComponent', () => {
     alertas = jasmine.createSpyObj<AlertService>('AlertService', ['success', 'error']);
     TestBed.configureTestingModule({
       providers: [
+        provideNoopAnimations(),
         { provide: ExtratoBancarioItemService, useValue: itens },
         { provide: AlertService, useValue: alertas }
       ]
@@ -131,6 +135,49 @@ describe('ModalLancamentoManualComponent', () => {
     expect(modal.salvando).toBeFalse();
   });
 
+  describe('pessoa em p-autoComplete (FE-P2-07)', () => {
+    const pessoas = [
+      { id: 7, nomePessoa: 'MERCADO CENTRAL', categoriaId: null, tipoMovimentacaoId: null },
+      { id: 8, nomePessoa: 'POSTO BOA VIAGEM', categoriaId: null, tipoMovimentacaoId: null }
+    ];
+
+    it('o campo é um p-autoComplete', () => {
+      entradas({ bancoFixoId: 5, pessoas });
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('p-autocomplete')).not.toBeNull();
+    });
+
+    it('sugere as pessoas cujo nome contém o texto digitado', () => {
+      entradas({ bancoFixoId: 5, pessoas });
+
+      modal.buscarPessoa({ originalEvent: new Event('input'), query: ' merc ' });
+
+      expect(modal.sugestoesPessoa.map(p => p.id)).toEqual([7]);
+    });
+
+    it('pessoa escolhida da lista grava o id', () => {
+      entradas({ bancoFixoId: 5, pessoas });
+      preencher({ valor: 10, pessoa: pessoas[1] });
+
+      modal.salvar();
+
+      const dto = itens.criar.calls.mostRecent().args[0];
+      expect(dto.pessoaMovimentacaoId).toBe(8);
+      expect(dto.nomePessoaTransacao).toBe('POSTO BOA VIAGEM');
+    });
+
+    it('nome digitado fora da lista continua valendo', () => {
+      entradas({ bancoFixoId: 5, pessoas });
+      preencher({ valor: 10, pessoa: 'padaria nova' });
+
+      modal.salvar();
+
+      const dto = itens.criar.calls.mostRecent().args[0];
+      expect(dto.pessoaMovimentacaoId).toBeNull();
+      expect(dto.nomePessoaTransacao).toBe('PADARIA NOVA');
+    });
+  });
+
   it('cancelar fecha sem gravar', () => {
     const fechado = jasmine.createSpy('fechado');
     entradas({});
@@ -138,6 +185,23 @@ describe('ModalLancamentoManualComponent', () => {
 
     modal.cancelar();
 
+    expect(fechado).toHaveBeenCalledOnceWith(false);
+  });
+
+  it('abre num p-dialog; o X fecha sem gravar e some enquanto grava (FE-P2-07)', () => {
+    const fechado = jasmine.createSpy('fechado');
+    entradas({});
+    modal.fechado.subscribe(fechado);
+    const dialogo = fixture.debugElement.query(By.directive(Dialog));
+
+    expect(dialogo.componentInstance.header).toBe('Adicionar lançamento manual');
+    expect(dialogo.componentInstance.closable).toBeTrue();
+    modal.salvando = true;
+    fixture.detectChanges();
+    expect(dialogo.componentInstance.closable).toBeFalse();
+
+    modal.salvando = false;
+    dialogo.componentInstance.close(new Event('click'));
     expect(fechado).toHaveBeenCalledOnceWith(false);
   });
 });

@@ -1,10 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { By } from '@angular/platform-browser';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { Dialog } from 'primeng/dialog';
 import { of, throwError } from 'rxjs';
 
 import { ModalItemChecagemComponent } from './modal-item-checagem.component';
 import { ItemListaService } from 'src/app/core/services/item-lista.service';
+import { SharedModule } from 'src/app/shared/shared.module';
 
 /**
  * Item de checagem em formulário Reactive (FE-P2-10). Antes o checkbox comparava status 'Ok' com o
@@ -30,8 +32,8 @@ describe('ModalItemChecagemComponent', () => {
     service.atualizar.and.returnValue(of({}));
     TestBed.configureTestingModule({
       declarations: [ModalItemChecagemComponent],
-      imports: [CommonModule, ReactiveFormsModule],
-      providers: [{ provide: ItemListaService, useValue: service }]
+      imports: [SharedModule],
+      providers: [provideNoopAnimations(), { provide: ItemListaService, useValue: service }]
     });
   });
 
@@ -81,5 +83,16 @@ describe('ModalItemChecagemComponent', () => {
 
     expect(texto()).toContain('Lista não encontrada!');
     expect(fechado).not.toHaveBeenCalled();
+  });
+
+  it('abre num p-dialog e o X fecha sem recarregar (FE-P2-07)', () => {
+    abrir();
+    const fechado = jasmine.createSpy('closed');
+    fixture.componentInstance.closed.subscribe(fechado);
+    const dialogo = fixture.debugElement.query(By.directive(Dialog));
+
+    expect(dialogo.componentInstance.header).toBe('Novo Item de Checagem');
+    dialogo.componentInstance.close(new Event('click'));
+    expect(fechado).toHaveBeenCalledOnceWith(false);
   });
 });

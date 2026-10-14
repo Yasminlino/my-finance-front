@@ -1,91 +1,62 @@
-<div class="modal-backdrop fade show" (click)="close(false)"></div>
+<p-dialog [header]="registro ? 'Editar Conta' : 'Nova Conta'" [visible]="true" [modal]="true"
+  [dismissableMask]="true" [draggable]="false" [style]="{ width: '36rem' }" [breakpoints]="{ '576px': '95vw' }"
+  (visibleChange)="close(false)">
+  <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
+    <div class="flex flex-column gap-2">
+      <label for="conta-nome">Descrição <span class="text-red-500">*</span></label>
+      <input pInputText id="conta-nome" formControlName="name" placeholder="Preencha o nome da conta..."
+        [class.ng-dirty]="erro('name')" />
+      <small class="p-error" *ngIf="erro('name')">Informe um nome válido.</small>
+    </div>
 
-<!-- Modal -->
-<div class="modal modal-blur fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="modal-title">{{ registro ? 'Editar Conta' : 'Nova Conta' }}</h3>
-        <button type="button" class="btn-close" (click)="close(false)" aria-label="Fechar"></button>
+    <div class="flex flex-column gap-2">
+      <label for="conta-valor">Valor</label>
+      <input pInputText id="conta-valor" type="text" inputmode="decimal" formControlName="value" currencyInput
+        placeholder="0,00" [class.ng-dirty]="erro('value')" />
+      <small class="p-error" *ngIf="erro('value')">Informe um valor.</small>
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label for="conta-dias">Dias Vencimentos</label>
+      <input pInputText id="conta-dias" type="text" formControlName="dataOperacao" placeholder="Ex: 5, 20"
+        (input)="onInputChange(($any($event.target)).value)" (blur)="onDiasChange(($any($event.target)).value)"
+        [class.ng-dirty]="erro('value')" />
+      <small class="p-error" *ngIf="erro('value')">Informe ao menos um dia de vencimento.</small>
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label for="conta-categoria">Categoria <span class="text-red-500">*</span></label>
+      <p-dropdown inputId="conta-categoria" formControlName="categoryid" [options]="categories" optionLabel="name"
+        optionValue="id" placeholder="Selecione..." appendTo="body" styleClass="w-full"
+        [class.ng-dirty]="erro('categoryid')" />
+      <small class="p-error" *ngIf="erro('categoryid')">Selecione uma categoria.</small>
+    </div>
+
+    <div class="flex align-items-center gap-2">
+      <p-checkbox inputId="conta-parcelada" formControlName="ehParcelado" [binary]="true" />
+      <label for="conta-parcelada">Conta parcelada</label>
+    </div>
+
+    <div class="grid" *ngIf="form.get('ehParcelado')?.value">
+      <div class="col-6 flex flex-column gap-2">
+        <label for="conta-total-parcelas">Total de parcelas</label>
+        <input pInputText id="conta-total-parcelas" type="number" min="2" formControlName="quantidadeParcelas" />
       </div>
-
-      <div class="modal-body" [formGroup]="form">
-        <div class="mb-3">
-          <label class="form-label">Descrição <strong style="color: red">*</strong></label>
-          <input class="form-control" formControlName="name" placeholder="Preencha o nome da conta..."
-            [class.is-invalid]="form.controls.name.touched && form.controls.name.invalid" />
-          <div class="invalid-feedback" *ngIf="form.controls.name.touched && form.controls.name.invalid">
-            Informe um nome válido.
-          </div>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Valor</label>
-          <input class="form-control" type="text" inputmode="decimal" formControlName="value" currencyInput placeholder="0,00" 
-            [class.is-invalid]="form.controls.value.touched && form.controls.value.invalid" />
-
-          <div class="invalid-feedback" *ngIf="form.controls.value.touched && form.controls.value.invalid">
-            Informe um valor.
-          </div>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Dias Vencimentos</label>
-          <input type="text" class="form-control" formControlName="dataOperacao" placeholder="Ex: 5, 20"
-            (input)="onInputChange(($any($event.target)).value)" (blur)="onDiasChange(($any($event.target)).value)"
-            [class.is-invalid]="form.controls.value.touched && form.controls.value.invalid" />
-          <div class="invalid-feedback" *ngIf="form.controls.value.touched && form.controls.value.invalid">
-            Informe ao menos um dia de vencimento.
-          </div>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Categoria <strong style="color: red">*</strong></label>
-          <select class="form-select" formControlName="categoryid" aria-placeholder="Selecione..."
-            [class.is-invalid]="form.controls.categoryid.touched && form.controls.categoryid.invalid">
-            <option [ngValue]="null">Selecione...</option>
-            <option *ngFor="let c of categories" [ngValue]="c.id">{{ c.name }}</option>
-          </select>
-          <div class="invalid-feedback" *ngIf="form.controls.categoryid.touched && form.controls.categoryid.invalid">
-            Selecione uma categoria.
-          </div>
-        </div>
-        <div class="mb-3">
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" formControlName="ehParcelado" id="parceladoCheck" />
-            <label class="form-check-label" for="parceladoCheck">Conta parcelada</label>
-          </div>
-        </div>
-
-        <div class="row" *ngIf="form.get('ehParcelado')?.value">
-          <div class="mb-3 col-6">
-            <label class="form-label">Total de parcelas</label>
-            <input type="number" min="2" class="form-control" formControlName="quantidadeParcelas" />
-          </div>
-          <div class="mb-3 col-6">
-            <label class="form-label">Parcela atual</label>
-            <input type="number" min="1" class="form-control" formControlName="parcelaAtual" />
-          </div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Status</label>
-          <select class="form-select" formControlName="status"
-            [class.is-invalid]="form.controls.status.touched && form.controls.status.invalid">
-            <option [ngValue]="0">Inativo</option>
-            <option [ngValue]="1">Ativo</option>
-          </select>
-          <div class="invalid-feedback" *ngIf="form.controls.status.touched && form.controls.status.invalid">
-            Selecione uma categoria.
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" (click)="close(false)">Cancelar</button>
-        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving ">
-          {{ saving ? 'Salvando...' : 'Salvar' }}
-        </button>
+      <div class="col-6 flex flex-column gap-2">
+        <label for="conta-parcela-atual">Parcela atual</label>
+        <input pInputText id="conta-parcela-atual" type="number" min="1" formControlName="parcelaAtual" />
       </div>
     </div>
-  </div>
-</div>
+
+    <div class="flex flex-column gap-2">
+      <label for="conta-status">Status</label>
+      <p-dropdown inputId="conta-status" formControlName="status" [options]="opcoesStatus" appendTo="body"
+        styleClass="w-full" />
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
+    <p-button label="Salvar" icon="pi pi-check" [loading]="saving" (onClick)="save()" />
+  </ng-template>
+</p-dialog>

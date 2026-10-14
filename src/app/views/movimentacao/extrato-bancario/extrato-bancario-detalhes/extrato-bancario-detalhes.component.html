@@ -1,16 +1,20 @@
-<div class="container-xl py-3">
+<div class="pagina">
   <app-data-grid #grid [dataSource]="extratoMensal" [breadcrumb]="breadcrumb" [columns]="gridColumns" (saveInline)="onSaveInline($event)"
     (reload)="loadMonth()" [titulo]="titulo" [dateFilter]="dateFilter" [localStorage]="'dataFiltroDetalheExtrato'" (selectionChange)="onSelectionChange($event)" (delete)="onDelete($event)" (deleteSelected)="onDeleteSelected($event)"
     [itemsButtom]="itemsButtom" [exibeCampos]="exibirCampos" [loading]="loading">
     <app-totais-selecao [receita]="selectedTotals.receita" [despesa]="selectedTotals.despesa"
       [saldo]="selectedTotals.saldo" [count]="selectedTotals.count"></app-totais-selecao>
+  </app-data-grid>
 
-    <!-- LANÇAMENTO MANUAL (banco da tela fixo) -->
-    <app-modal-lancamento-manual *ngIf="showAddModal" [mes]="month" [bancos]="bancosDoModal" [bancoFixoId]="bancoId"
-      [tiposCartao]="tiposConta" [categorias]="categorias" [tiposMovimentacao]="tiposMovimentacao" [pessoas]="pessoasMov"
-      (fechado)="onLancamentoManualFechado($event)">
-    </app-modal-lancamento-manual>
+  <!-- Modais fora do grid: dentro dele herdavam os estilos do grid (o template não fechava o app-data-grid). -->
 
-    <app-modal-configuracao-vinculo-pessoa *ngIf="showModalConfigPessoas"
-      (closed)="showModalConfigPessoas = false; $event">
-    </app-modal-configuracao-vinculo-pessoa>
+  <!-- LANÇAMENTO MANUAL (banco da tela fixo) -->
+  <app-modal-lancamento-manual *ngIf="showAddModal" [mes]="month" [bancos]="bancosDoModal" [bancoFixoId]="bancoId"
+    [tiposCartao]="tiposConta" [categorias]="categorias" [tiposMovimentacao]="tiposMovimentacao" [pessoas]="pessoasMov"
+    (fechado)="onLancamentoManualFechado($event)">
+  </app-modal-lancamento-manual>
+
+  <app-modal-configuracao-vinculo-pessoa *ngIf="showModalConfigPessoas"
+    (closed)="showModalConfigPessoas = false; $event">
+  </app-modal-configuracao-vinculo-pessoa>
+</div>

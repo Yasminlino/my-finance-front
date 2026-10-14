@@ -1,55 +1,28 @@
-<!-- Backdrop -->
-<div class="modal-backdrop-custom" (click)="close(false)"></div>
-
-<!-- Modal -->
-<div class="modal-custom" role="dialog" aria-modal="true">
-    <div class="modal-card card">
-        <div class="card-header">
-            <h3 class="card-title m-0">{{ lista ? 'Editar Lista' : 'Nova Lista' }}</h3>
-            <button type="button" class="btn-close" (click)="close(false)" aria-label="Fechar"></button>
-        </div>
-
-        <div class="card-body" [formGroup]="form">
-            <div class="mb-3">
-                <label class="form-label">Nome Lista</label>
-                <input class="form-control" formControlName="nome"
-                    [class.is-invalid]="form.controls.nome.touched && form.controls.nome.invalid" />
-                <div class="invalid-feedback" *ngIf="form.controls.nome.touched && form.controls.nome.invalid">
-                    Informe um nome válido.
-                </div>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Tipo Lista</label>
-
-                <select class="form-select" formControlName="tipoMovimentacao"
-                    [class.is-invalid]="form.controls.tipoMovimentacao.touched && form.controls.tipoMovimentacao.invalid">
-
-                    <option [ngValue]="null">Selecione...</option>
-                    <option [ngValue]="1">Checklist</option>
-                    <!-- <option [ngValue]="2">Cronograma</option> -->
-                    <option [ngValue]="3">Orçamento</option>
-                </select>
-
-                <div class="invalid-feedback"
-                    *ngIf="form.controls.tipoMovimentacao.touched && form.controls.tipoMovimentacao.invalid">
-                    Selecione um tipo de Lista.
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Status</label>
-                <select class="form-select" formControlName="status">
-                    <option [ngValue]="true">Ativo</option>
-                    <option [ngValue]="false">Inativo</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="card-footer d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-outline-secondary" (click)="close(false)">Cancelar</button>
-            <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving">
-                {{ saving ? 'Salvando...' : 'Salvar' }}
-            </button>
-        </div>
+<p-dialog [header]="lista ? 'Editar Lista' : 'Nova Lista'" [visible]="true" [modal]="true" [dismissableMask]="true"
+  [draggable]="false" [style]="{ width: '32rem' }" [breakpoints]="{ '576px': '95vw' }" (visibleChange)="close(false)">
+  <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
+    <div class="flex flex-column gap-2">
+      <label for="lista-nome">Nome Lista</label>
+      <input pInputText id="lista-nome" formControlName="nome" [class.ng-dirty]="erro('nome')" />
+      <small class="p-error" *ngIf="erro('nome')">Informe um nome válido.</small>
     </div>
-</div>
+
+    <div class="flex flex-column gap-2">
+      <label for="lista-tipo">Tipo Lista</label>
+      <p-dropdown inputId="lista-tipo" formControlName="tipoMovimentacao" [options]="opcoesTipo"
+        placeholder="Selecione..." appendTo="body" styleClass="w-full" [class.ng-dirty]="erro('tipoMovimentacao')" />
+      <small class="p-error" *ngIf="erro('tipoMovimentacao')">Selecione um tipo de Lista.</small>
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label for="lista-status">Status</label>
+      <p-dropdown inputId="lista-status" formControlName="status" [options]="opcoesStatus" appendTo="body"
+        styleClass="w-full" />
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
+    <p-button label="Salvar" icon="pi pi-check" [loading]="saving" (onClick)="save()" />
+  </ng-template>
+</p-dialog>

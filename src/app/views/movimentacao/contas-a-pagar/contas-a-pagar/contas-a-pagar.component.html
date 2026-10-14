@@ -1,4 +1,4 @@
- <div class="container-xl mt-3"><div class="container-xl py-3">
+<div class="pagina">
   <app-data-grid #grid [titulo]="titulo" [dataSource]="contasMensais" [breadcrumb]="breadcrumb" [columns]="gridColumns"
     [tipoTabela]="tipoTabela" [dateFilter]="dateFilter" [loading]="loading" (edit)="onEdit($event)"
     (delete)="onDelete($event)" (new)="onOpenCreate()" (reload)="loadMonth()" [statusOptions]="statusOptions" [bloquearLinha]="contaPaga"
@@ -20,4 +20,4 @@
     (closed)="showModalCreate=false; $event && loadMonth()">
   </app-modal-nova-contas-a-pagar>
 
-</div></div>
+</div>

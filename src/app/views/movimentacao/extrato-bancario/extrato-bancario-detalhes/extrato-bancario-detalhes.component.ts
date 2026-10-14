@@ -294,7 +294,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
         header: "VALOR",
         type: GridColumnTypeEnum.Money,
         formatter: (row) => this.money(row.valor),
-        classe: (row) => row.tipoLancamento == "Saída" ? 'text-danger fw-bold' : 'text-success fw-bold',
+        classe: (row) => row.tipoLancamento == "Saída" ? 'text-red-500 font-bold' : 'text-green-600 font-bold',
         width: '10%',
         editable: true
       },

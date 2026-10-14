@@ -1,24 +1,11 @@
-<!-- Backdrop -->
-<div class="modal-backdrop-custom" (click)="close(false)"></div>
+<p-dialog header="Importações realizadas" [visible]="true" [modal]="true" [dismissableMask]="true" [draggable]="false"
+  [style]="{ width: '50vw' }" [breakpoints]="{ '768px': '90vw' }" (visibleChange)="close(false)">
+  <app-data-grid #grid [dataSource]="importacaoesMensais" [columns]="gridColumns" [exibeCampos]="exibirCampos"
+    [loading]="loading" (delete)="deleteRow($event)">
+  </app-data-grid>
 
-<!-- Modal -->
-<div class="modal-custom" role="dialog" aria-modal="true">
-    <div class="modal-card card modal-adicionar-em-lote">
-
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h3 class="card-title m-0">Importações realizadas</h3>
-            <button type="button" class="btn-close" (click)="close(false)" aria-label="Fechar"></button>
-        </div>
-
-        <div class="card-body mb-4 p-0">
-            <app-data-grid #grid [dataSource]="importacaoesMensais" [columns]="gridColumns" [exibeCampos]="exibirCampos" [loading]="loading" (delete)="deleteRow($event)"  >
-            </app-data-grid>
-        </div>
-
-        <div class="card-footer d-flex justify-content-end gap-2">
-            <button class="btn btn-outline-secondary" (click)="close(false)">Fechar</button>
-            <button class="btn btn-primary" (click)="close(true)">Concluir</button>
-        </div>
-
-    </div>
-</div>
+  <ng-template pTemplate="footer">
+    <p-button label="Fechar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
+    <p-button label="Concluir" icon="pi pi-check" (onClick)="close(true)" />
+  </ng-template>
+</p-dialog>

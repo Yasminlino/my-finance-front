@@ -14,7 +14,6 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 @Component({
   selector: 'app-modal-importacoes-mensais',
   templateUrl: './modal-importacoes-mensais.component.html',
-  styleUrls: ['./modal-importacoes-mensais.component.scss'],
 })
 export class ModalImportacoesMensaisComponent implements OnInit {
   @Input() monthFilter!: string; // pode ser '2026-01-01' ou Date

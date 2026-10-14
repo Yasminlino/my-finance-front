@@ -8,7 +8,6 @@ import { SharedModule } from 'src/app/shared/shared.module';
 import { ModalImportacoesMensaisComponent } from './components/modal-importacoes-mensais/modal-importacoes-mensais.component';
 import { RelatorioGastosMensaisComponent } from './components/relatorio-gastos-mensais/relatorio-gastos-mensais.component';
 import { ChartsModule } from 'src/app/core/components/charts/charts.module';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { ModalLancamentoManualComponent } from './components/modal-lancamento-manual/modal-lancamento-manual.component';
@@ -27,7 +26,6 @@ import { TotaisSelecaoComponent } from 'src/app/shared/components/totais-selecao
     SharedModule,
     ExtratoBancarioRoutingModule,
     ChartsModule,
-    NgbModule,
     DataGridComponent,
     ModalLancamentoManualComponent,
     ModalImportarExtratoComponent,

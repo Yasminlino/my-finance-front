@@ -28,11 +28,11 @@ describe('TotaisSelecaoComponent', () => {
 
   it('saldo negativo em vermelho, positivo em verde; singular para um item', () => {
     mostrar({ saldo: -1, count: 1 });
-    const saldo = (fixture.nativeElement as HTMLElement).querySelectorAll('.fs-4')[2];
-    expect(saldo.classList).toContain('text-danger');
+    const saldo = (fixture.nativeElement as HTMLElement).querySelectorAll('.text-xl')[2];
+    expect(saldo.classList).toContain('text-red-500');
     expect(texto()).toContain('1 item selecionado(s)');
 
     mostrar({ saldo: 5 });
-    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.fs-4')[2].classList).toContain('text-success');
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.text-xl')[2].classList).toContain('text-green-600');
   });
 });

@@ -1,5 +1,9 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 
@@ -20,7 +24,7 @@ type ResultadoImportacao = { quantidadeCriados?: number; mensagem?: string } | n
 @Component({
   selector: 'app-modal-importar-extrato',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, DialogModule, DropdownModule, InputTextModule, ButtonModule],
   templateUrl: './modal-importar-extrato.component.html'
 })
 export class ModalImportarExtratoComponent {

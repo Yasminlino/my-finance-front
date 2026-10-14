@@ -7,6 +7,15 @@ import { CurrencyInputDirective } from './directives/currency-input.directive';
 import { CalendarComponent } from '../core/components/calendar/calendar.component';
 
 import { TableModule } from 'primeng/table';
+import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ButtonModule } from 'primeng/button';
+
+/** Kit de formulário do PrimeNG para os componentes declarados em módulo (FE-P2-07). */
+const KIT_PRIMENG = [DialogModule, DropdownModule, InputTextModule, InputTextareaModule, CheckboxModule, ButtonModule];
 
 @NgModule({
   declarations: [
@@ -27,7 +36,8 @@ import { TableModule } from 'primeng/table';
     RouterModule,
     CurrencyInputDirective,
     CalendarComponent,
-    TableModule
+    TableModule,
+    ...KIT_PRIMENG
   ]
 })
 export class SharedModule {}

@@ -8,7 +8,6 @@ import { ContaMensalListComponent } from './conta-mensal-list/conta-mensal-list.
 import { CommonModule } from '@angular/common';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { SharedModule } from 'src/app/shared/shared.module';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [
@@ -21,7 +20,6 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     ReactiveFormsModule,
     ContaMensalRoutingModule,
     DataGridComponent,
-    NgbModule
   ]
 })
 export class CadastroContaMensalModule { }

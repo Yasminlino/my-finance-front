@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { Dialog } from 'primeng/dialog';
 import { of } from 'rxjs';
 
 import { TipoCartaoFormComponent } from './tipo-cartao-form.component';
@@ -16,6 +19,7 @@ describe('TipoCartaoFormComponent', () => {
     TestBed.configureTestingModule({
       imports: [TipoCartaoFormComponent],
       providers: [
+        provideNoopAnimations(),
         { provide: TipoCartaoService, useValue: service },
         { provide: AlertService, useValue: jasmine.createSpyObj('AlertService', ['success', 'error']) }
       ]
@@ -36,5 +40,15 @@ describe('TipoCartaoFormComponent', () => {
     fixture.componentInstance.save();
 
     expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ id: 4, ehCredito: true }));
+  });
+
+  it('abre num p-dialog com o título e o X fecha sem recarregar (FE-P2-07)', () => {
+    const fechado = jasmine.createSpy('closed');
+    fixture.componentInstance.closed.subscribe(fechado);
+    const dialogo = fixture.debugElement.query(By.directive(Dialog));
+
+    expect(dialogo.componentInstance.header).toBe('Editar Tipo Cartão');
+    dialogo.componentInstance.close(new Event('click'));
+    expect(fechado).toHaveBeenCalledOnceWith(false);
   });
 });

@@ -1,55 +1,29 @@
-<div class="modal-backdrop fade show"></div>
+<p-dialog [header]="isEdit ? 'Editar Item' : 'Novo Item de Checagem'" [visible]="true" [modal]="true"
+  [draggable]="false" [style]="{ width: '32rem' }" [breakpoints]="{ '576px': '95vw' }" (visibleChange)="fechar()">
+  <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="salvar()" novalidate>
+    <div *ngIf="errorMsg" class="p-3 border-round bg-red-50 text-red-700">{{ errorMsg }}</div>
 
-<div class="modal d-block">
-  <div class="modal-dialog modal-dialog-centered">
-    <form class="modal-content" [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+    <div class="flex flex-column gap-2">
+      <label for="ic-descricao">Descrição</label>
+      <input pInputText id="ic-descricao" formControlName="descricao" [class.ng-dirty]="invalido('descricao')" />
+      <small class="p-error" *ngIf="invalido('descricao')">Informe a descrição.</small>
+    </div>
 
-      <div class="modal-header">
-        <h5 class="modal-title">
-          {{ isEdit ? 'Editar Item' : 'Novo Item de Checagem' }}
-        </h5>
+    <div class="flex flex-column gap-2">
+      <label for="ic-quantidade">Quantidade</label>
+      <input pInputText id="ic-quantidade" type="number" min="1" formControlName="quantidade"
+        [class.ng-dirty]="invalido('quantidade')" />
+      <small class="p-error" *ngIf="invalido('quantidade')">A quantidade mínima é 1.</small>
+    </div>
 
-        <button type="button" class="btn-close" (click)="fechar()"></button>
-      </div>
+    <div class="flex align-items-center gap-2">
+      <p-checkbox inputId="ic-concluido" formControlName="concluido" [binary]="true" />
+      <label for="ic-concluido">Concluído</label>
+    </div>
+  </form>
 
-      <div class="modal-body">
-
-        <div *ngIf="errorMsg" class="alert alert-danger">
-          {{ errorMsg }}
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label" for="ic-descricao">Descrição</label>
-          <input id="ic-descricao" class="form-control" formControlName="descricao"
-                 [class.is-invalid]="invalido('descricao')">
-          <div class="invalid-feedback">Informe a descrição.</div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="ic-quantidade">Quantidade</label>
-          <input id="ic-quantidade" class="form-control" type="number" min="1" formControlName="quantidade"
-                 [class.is-invalid]="invalido('quantidade')">
-          <div class="invalid-feedback">A quantidade mínima é 1.</div>
-        </div>
-
-        <div class="form-check">
-          <input id="ic-concluido" type="checkbox" class="form-check-input" formControlName="concluido">
-          <label class="form-check-label" for="ic-concluido">
-            Concluído
-          </label>
-        </div>
-
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" (click)="fechar()">
-          Cancelar
-        </button>
-
-        <button type="submit" class="btn btn-primary" [disabled]="loading">
-          {{ loading ? 'Salvando...' : 'Salvar' }}
-        </button>
-      </div>
-
-    </form>
-  </div>
-</div>
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="fechar()" />
+    <p-button label="Salvar" icon="pi pi-check" [loading]="loading" (onClick)="salvar()" />
+  </ng-template>
+</p-dialog>

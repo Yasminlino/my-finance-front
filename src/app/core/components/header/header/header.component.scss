@@ -1,44 +1,63 @@
-/* Tabler já resolve quase tudo. Aqui só ajusta clique em button nav-link */
 :host {
   display: block;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
-button.nav-link {
-  cursor: pointer;
+.topo {
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--surface-border);
 }
 
-.dropdown-menu.show {
-  display: block;
+:host ::ng-deep .topo-menubar {
+  max-width: 1320px;
+  margin: 0 auto;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: .5rem 1rem;
 }
 
-/* Normaliza o alinhamento do dropdown (ícone + texto) */
-.dropdown-item {
+.marca {
   display: flex;
   align-items: center;
   gap: .5rem;
+  margin-right: 1rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-color);
+  text-decoration: none;
 }
 
-.dropdown-item-icon {
-  width: 24px;
-  /* força todos os ícones terem a mesma largura */
-  display: inline-flex;
+.usuario {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  flex: 0 0 24px;
-  line-height: 1;
+  gap: .5rem;
+  color: var(--text-color);
 }
 
-.dropdown-item-label {
-  flex: 1;
+.usuario-nome {
+  line-height: 1.1;
+
+  small {
+    color: var(--text-color-secondary);
+  }
 }
 
-.dropdown-menu.show {
-  position: absolute;
-  top: 100%;
+@media (max-width: 960px) {
+  .usuario-nome {
+    display: none;
+  }
 }
 
-@media (max-width: 765px) {
-  .dropdown-menu.show {
-    display: contents;
+/* Submenu com largura para o rótulo não quebrar ("Tipo Movimentação"). */
+:host ::ng-deep .topo-menubar .p-submenu-list {
+  min-width: 14rem;
+}
+
+@media print {
+  :host {
+    display: none;
   }
 }

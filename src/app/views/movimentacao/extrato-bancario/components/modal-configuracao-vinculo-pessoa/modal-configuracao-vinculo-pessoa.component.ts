@@ -18,7 +18,6 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 @Component({
   selector: 'app-modal-configuracao-vinculo-pessoa',
   templateUrl: './modal-configuracao-vinculo-pessoa.component.html',
-  styleUrls: ['./modal-configuracao-vinculo-pessoa.component.scss'],
 })
 export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
 

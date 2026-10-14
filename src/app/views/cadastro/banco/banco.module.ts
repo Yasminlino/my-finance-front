@@ -7,7 +7,6 @@ import { BancoFormComponent } from './banco-form/banco-form.component';
 import { BancoListComponent } from './banco-list/banco-list.component';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [
@@ -20,7 +19,6 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     ReactiveFormsModule,
     DataGridComponent,
     BancoRoutingModule,
-    NgbModule
   ]
 })
 export class BancoModule { }

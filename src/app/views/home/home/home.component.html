@@ -1,147 +1,107 @@
-<div class="page-wrapper">
-  <div class="page-body">
-    <div class="container-xl">
+<div class="pagina">
 
-      <div class="row g-3 mb-3">
-        <!-- CARD: TOTAL A PAGAR -->
-        <div class="col-md-6 col-lg-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-body text-center">
-              <div class="text-muted">Total Vencido</div>
-              <div class="display-6 text-danger fw-bold">
-                 {{ money(totalVencido) }}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-
-          <div class="card shadow-sm h-100">
-            <div class="card-body text-center">
-              <div class="text-muted">Total a pagar hoje</div>
-              <div class="display-6 text-warning fw-bold">
-                 {{ money(totalHoje) }}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-body text-center">
-              <div class="text-muted">Total a pagar próximos 2 dias</div>
-              <div class="display-6 text-info fw-bold">
-                 {{ money(totalProximas) }}
-              </div>              
-            </div>
-          </div>
-        </div>
+  <div class="grid">
+    <!-- TOTAIS -->
+    <div class="col-12 md:col-6 lg:col-4">
+      <div class="surface-card border-round shadow-1 h-full p-3 text-center">
+        <div class="text-color-secondary">Total Vencido</div>
+        <div class="text-3xl text-red-500 font-bold">{{ money(totalVencido) }}</div>
       </div>
-
-      <div class="row g-3">
-
-        <!-- CARD: CONTAS VENCENDO HOJE -->
-        <div class="col-md-6 col-lg-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-header d-flex justify-content-between">
-              <h3 class="card-title text-danger m-0">Contas vencidas</h3>
-            </div>
-
-            <div class="card-body">
-
-              <div class="d-flex justify-content-between mb-2" *ngFor="let conta of contasVencidas">
-                <div class="w-200">
-                  <div class="fw-semibold">{{ conta.tipoConta }} • {{ conta.descricao }}</div>
-                  <small class="text-muted">
-                    {{ conta.categoria }} •
-                    Vence em {{ conta.dataVencimento | date:'dd/MM/yyyy' }}
-                  </small>
-
-                </div>
-
-                <div class="fw-bold text-end w-10">
-                   {{ money(conta.valor) }}
-                </div>
-                <button class="btn btn-outline-secundary w-5 h-5" (click)="redirecionaContas(conta.dataVencimento)">💸</button>
-              </div>
-
-              <div *ngIf="contasVencidas.length == 0" class="text-muted text-center">
-                Nenhuma conta vencida 🎉
-              </div>
-
-            </div>
-            <!-- <div class="card-footer">
-               {{ money(totalHoje) }}
-            </div> -->
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-header d-flex justify-content-between">
-              <h3 class="card-title text-warning m-0">Vencendo hoje</h3>
-              <button class="btn" (click)="redirecionaContas()">💸</button>
-            </div>
-
-            <div class="card-body">
-
-              <div class="d-flex justify-content-between mb-2" *ngFor="let conta of contasHoje">
-                <div>
-                  <div class="fw-semibold">{{ conta.tipoConta}} • {{conta.descricao }}</div>
-                  <small class="text-muted">
-                    {{ conta.categoria }}
-                  </small>
-                </div>
-
-                <div class="text-danger fw-bold">
-                   {{ money(conta.valor) }}
-                </div>
-              </div>
-
-              <div *ngIf="contasHoje.length == 0" class="text-muted text-center">
-                Nenhuma conta hoje 🎉
-              </div>
-
-            </div>
-            <!-- <div class="card-footer">
-               {{ money(totalHoje) }}
-            </div> -->
-          </div>
-        </div>
-
-
-        <!-- CARD: CONTAS FUTURAS -->
-        <div class="col-md-6 col-lg-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-header">
-              <h3 class="card-title text-info m-0">Próximos vencimentos</h3>
-            </div>
-
-            <div class="card-body">
-
-              <div class="d-flex justify-content-between mb-2" *ngFor="let conta of proximasContas">
-                <div>
-                  <div class="fw-semibold">{{ conta.tipoConta }} • {{ conta.descricao }}</div>
-                  <small class="text-muted">
-                    {{ conta.categoria }} •
-                    Vence em {{ conta.dataVencimento | date:'dd/MM/yyyy' }}
-                  </small>
-
-                </div>
-
-                <div class="fw-bold">
-                   {{ money(conta.valor) }}
-                </div>
-              </div>
-              
-            <div *ngIf="proximasContas.length == 0" class="text-muted text-center">
-              Nenhuma conta para os próximos 2 dias 🎉
-            </div>
-
-            </div>
-          </div>
-        </div>
-
+    </div>
+    <div class="col-12 md:col-6 lg:col-4">
+      <div class="surface-card border-round shadow-1 h-full p-3 text-center">
+        <div class="text-color-secondary">Total a pagar hoje</div>
+        <div class="text-3xl text-orange-500 font-bold">{{ money(totalHoje) }}</div>
       </div>
-
+    </div>
+    <div class="col-12 md:col-6 lg:col-4">
+      <div class="surface-card border-round shadow-1 h-full p-3 text-center">
+        <div class="text-color-secondary">Total a pagar próximos 2 dias</div>
+        <div class="text-3xl text-cyan-600 font-bold">{{ money(totalProximas) }}</div>
+      </div>
     </div>
   </div>
+
+  <div class="grid">
+    <!-- CONTAS VENCIDAS -->
+    <div class="col-12 md:col-6 lg:col-4">
+      <div class="surface-card border-round shadow-1 h-full">
+        <div class="flex justify-content-between align-items-center px-3 py-2 border-bottom-1 surface-border">
+          <h3 class="text-lg font-semibold text-red-500 m-0">Contas vencidas</h3>
+        </div>
+
+        <div class="p-3">
+          <div class="flex justify-content-between align-items-start gap-2 mb-2" *ngFor="let conta of contasVencidas">
+            <div class="flex-1">
+              <div class="font-semibold">{{ conta.tipoConta }} • {{ conta.descricao }}</div>
+              <small class="text-color-secondary">
+                {{ conta.categoria }} • Vence em {{ conta.dataVencimento | date:'dd/MM/yyyy' }}
+              </small>
+            </div>
+
+            <div class="font-bold text-right white-space-nowrap">{{ money(conta.valor) }}</div>
+            <p-button icon="pi pi-money-bill" severity="secondary" [text]="true" [rounded]="true" size="small"
+              pTooltip="Ver em Contas a Pagar" (onClick)="redirecionaContas(conta.dataVencimento)" />
+          </div>
+
+          <div *ngIf="contasVencidas.length == 0" class="text-color-secondary text-center">
+            <i class="pi pi-check-circle mr-1"></i>Nenhuma conta vencida
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VENCENDO HOJE -->
+    <div class="col-12 md:col-6 lg:col-4">
+      <div class="surface-card border-round shadow-1 h-full">
+        <div class="flex justify-content-between align-items-center px-3 py-2 border-bottom-1 surface-border">
+          <h3 class="text-lg font-semibold text-orange-500 m-0">Vencendo hoje</h3>
+          <p-button icon="pi pi-money-bill" severity="secondary" [text]="true" [rounded]="true" size="small"
+            pTooltip="Ver em Contas a Pagar" (onClick)="redirecionaContas()" />
+        </div>
+
+        <div class="p-3">
+          <div class="flex justify-content-between gap-2 mb-2" *ngFor="let conta of contasHoje">
+            <div>
+              <div class="font-semibold">{{ conta.tipoConta }} • {{ conta.descricao }}</div>
+              <small class="text-color-secondary">{{ conta.categoria }}</small>
+            </div>
+
+            <div class="text-red-500 font-bold white-space-nowrap">{{ money(conta.valor) }}</div>
+          </div>
+
+          <div *ngIf="contasHoje.length == 0" class="text-color-secondary text-center">
+            <i class="pi pi-check-circle mr-1"></i>Nenhuma conta hoje
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRÓXIMOS VENCIMENTOS -->
+    <div class="col-12 md:col-6 lg:col-4">
+      <div class="surface-card border-round shadow-1 h-full">
+        <div class="flex justify-content-between align-items-center px-3 py-2 border-bottom-1 surface-border">
+          <h3 class="text-lg font-semibold text-cyan-600 m-0">Próximos vencimentos</h3>
+        </div>
+
+        <div class="p-3">
+          <div class="flex justify-content-between gap-2 mb-2" *ngFor="let conta of proximasContas">
+            <div>
+              <div class="font-semibold">{{ conta.tipoConta }} • {{ conta.descricao }}</div>
+              <small class="text-color-secondary">
+                {{ conta.categoria }} • Vence em {{ conta.dataVencimento | date:'dd/MM/yyyy' }}
+              </small>
+            </div>
+
+            <div class="font-bold white-space-nowrap">{{ money(conta.valor) }}</div>
+          </div>
+
+          <div *ngIf="proximasContas.length == 0" class="text-color-secondary text-center">
+            <i class="pi pi-check-circle mr-1"></i>Nenhuma conta para os próximos 2 dias
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>

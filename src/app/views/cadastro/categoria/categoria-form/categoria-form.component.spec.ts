@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { Dialog } from 'primeng/dialog';
 import { of } from 'rxjs';
 
 import { CategoriaFormComponent } from './categoria-form.component';
@@ -17,6 +20,7 @@ describe('CategoriaFormComponent', () => {
     TestBed.configureTestingModule({
       imports: [CategoriaFormComponent],
       providers: [
+        provideNoopAnimations(),
         { provide: CategoryService, useValue: service },
         { provide: AlertService, useValue: jasmine.createSpyObj('AlertService', ['success', 'error']) }
       ]
@@ -37,5 +41,15 @@ describe('CategoriaFormComponent', () => {
     fixture.componentInstance.save();
 
     expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ id: 29, name: 'Mercado' }));
+  });
+
+  it('abre num p-dialog com o título e o X fecha sem recarregar (FE-P2-07)', () => {
+    const fechado = jasmine.createSpy('closed');
+    fixture.componentInstance.closed.subscribe(fechado);
+    const dialogo = fixture.debugElement.query(By.directive(Dialog));
+
+    expect(dialogo.componentInstance.header).toBe('Editar Categoria');
+    dialogo.componentInstance.close(new Event('click'));
+    expect(fechado).toHaveBeenCalledOnceWith(false);
   });
 });

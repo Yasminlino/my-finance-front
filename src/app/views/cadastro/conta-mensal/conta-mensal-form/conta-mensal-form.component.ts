@@ -8,13 +8,18 @@ import { CategoriaDto } from 'src/app/core/models/categoria.model';
 import { ContaDto } from 'src/app/core/models/conta.model';
 import { finalize } from 'rxjs';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
+import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ButtonModule } from 'primeng/button';
+import { OPCOES_STATUS_NUMERICO } from 'src/app/shared/utils/opcoes-status';
 
 @Component({
   selector: 'app-conta-mensal-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CurrencyInputDirective],
-  templateUrl: './conta-mensal-form.component.html',
-  styleUrls: ['./conta-mensal-form.component.scss']
+  imports: [CommonModule, ReactiveFormsModule, CurrencyInputDirective, DialogModule, DropdownModule, InputTextModule, CheckboxModule, ButtonModule],
+  templateUrl: './conta-mensal-form.component.html'
 })
 export class ContaMensalFormComponent implements OnInit {
   /** Registro em edição; null = novo (mesmo nome nos 5 cadastros, FE-P2-12). */
@@ -26,6 +31,7 @@ export class ContaMensalFormComponent implements OnInit {
   quantidadeParcelas = 2;
 
   saving = false;
+  readonly opcoesStatus = OPCOES_STATUS_NUMERICO;
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -104,6 +110,12 @@ export class ContaMensalFormComponent implements OnInit {
       a = a.slice(0, -1);
       this.form.patchValue({ dataOperacao: a });
     }
+  }
+
+  /** Campo tocado e inválido: borda vermelha (ng-dirty) e mensagem. */
+  erro(campo: keyof typeof this.form.controls): boolean {
+    const controle = this.form.controls[campo];
+    return controle.touched && controle.invalid;
   }
 
   close(reload = false) {

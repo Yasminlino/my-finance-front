@@ -116,12 +116,6 @@ export class ListaRootComponent implements OnInit {
     this.applyFilters();
   }
 
-  badgeClass(status: boolean) {
-    if (status === true) return 'badge bg-success';
-    if (status === false) return 'badge bg-secondary';
-    return 'badge bg-muted';
-  }
-
   openCreate() {
     this.editing = null;
     this.showModalCreate = true;

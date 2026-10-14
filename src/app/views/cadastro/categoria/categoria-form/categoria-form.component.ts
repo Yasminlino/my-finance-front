@@ -6,13 +6,17 @@ import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { CategoriaDto } from 'src/app/core/models/categoria.model';
 import { finalize } from 'rxjs';
+import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
+import { OPCOES_STATUS_NUMERICO } from 'src/app/shared/utils/opcoes-status';
 
 @Component({
   selector: 'app-categoria-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './categoria-form.component.html',
-  styleUrls: ['./categoria-form.component.scss']
+  imports: [CommonModule, ReactiveFormsModule, DialogModule, DropdownModule, InputTextModule, ButtonModule],
+  templateUrl: './categoria-form.component.html'
 })
 export class CategoriaFormComponent implements OnInit {
   /** Registro em edição; null = novo (mesmo nome nos 5 cadastros, FE-P2-12). */
@@ -20,6 +24,19 @@ export class CategoriaFormComponent implements OnInit {
   @Output() closed = new EventEmitter<boolean>();
 
   saving = false;
+  readonly opcoesStatus = OPCOES_STATUS_NUMERICO;
+
+  readonly opcoesTipo = [
+    { label: 'Receita', value: 'Receita' },
+    { label: 'Despesa', value: 'Despesa' },
+  ];
+
+  /** Natureza do gasto: pessoa física (1-3) ou empresa (4-5). */
+  get opcoesNatureza() {
+    return this.perfilEmpresa
+      ? [{ label: 'Pessoal', value: 4 }, { label: 'Empresa', value: 5 }]
+      : [{ label: 'Essencial', value: 1 }, { label: 'Estilo de Vida/ Lazer', value: 2 }, { label: 'Reserva/ Investimento', value: 3 }];
+  }
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -48,6 +65,12 @@ export class CategoriaFormComponent implements OnInit {
     this.perfilEmpresa = localStorage.getItem('usuarioRole') == "Empresa"
   }
   
+  /** Campo tocado e inválido: borda vermelha (ng-dirty) e mensagem. */
+  erro(campo: keyof typeof this.form.controls): boolean {
+    const controle = this.form.controls[campo];
+    return controle.touched && controle.invalid;
+  }
+
   close(reload = false) {
     this.closed.emit(reload);
   }

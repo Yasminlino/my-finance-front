@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { Dialog } from 'primeng/dialog';
 import { of } from 'rxjs';
 
 import { TipoMovimentacaoFormComponent } from './tipo-movimentacao-form.component';
@@ -16,6 +19,7 @@ describe('TipoMovimentacaoFormComponent', () => {
     TestBed.configureTestingModule({
       imports: [TipoMovimentacaoFormComponent],
       providers: [
+        provideNoopAnimations(),
         { provide: TipoMovimentacaoService, useValue: service },
         { provide: AlertService, useValue: jasmine.createSpyObj('AlertService', ['success', 'error']) }
       ]
@@ -36,5 +40,15 @@ describe('TipoMovimentacaoFormComponent', () => {
     fixture.componentInstance.save();
 
     expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ id: 10, descricao: 'carnes' }));
+  });
+
+  it('abre num p-dialog com o título e o X fecha sem recarregar (FE-P2-07)', () => {
+    const fechado = jasmine.createSpy('closed');
+    fixture.componentInstance.closed.subscribe(fechado);
+    const dialogo = fixture.debugElement.query(By.directive(Dialog));
+
+    expect(dialogo.componentInstance.header).toBe('Editar Tipo de Movimentação');
+    dialogo.componentInstance.close(new Event('click'));
+    expect(fechado).toHaveBeenCalledOnceWith(false);
   });
 });

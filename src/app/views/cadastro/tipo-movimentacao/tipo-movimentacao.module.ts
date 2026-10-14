@@ -7,7 +7,6 @@ import { TipoMovimentacaoFormComponent } from './tipo-movimentacao-form/tipo-mov
 import { TipoMovimentacaoRoutingModule } from './tipo-movimentacao-routing.module';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [
@@ -19,7 +18,6 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     CommonModule,
     ReactiveFormsModule,
     DataGridComponent,
-    NgbModule,
     TipoMovimentacaoRoutingModule
   ]
 })

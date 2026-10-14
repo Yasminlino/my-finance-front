@@ -9,8 +9,7 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 @Component({
   selector: 'app-modal-nova-contas-a-pagar',
-  templateUrl: './modal-nova-contas-a-pagar.component.html',
-  styleUrls: ['./modal-nova-contas-a-pagar.component.scss']
+  templateUrl: './modal-nova-contas-a-pagar.component.html'
 })
 export class ModalNovaContasAPagarComponent implements OnInit {
   @Output() closed = new EventEmitter<boolean>();
@@ -33,7 +32,11 @@ export class ModalNovaContasAPagarComponent implements OnInit {
     this.categoryService.listarAtivas().subscribe(categorias => (this.categorias = categorias));
   }
 
-  
+  /** Campo tocado e inválido: borda vermelha (ng-dirty) e mensagem. */
+  erro(campo: keyof typeof this.form.controls): boolean {
+    const controle = this.form.controls[campo];
+    return controle.touched && controle.invalid;
+  }
 
   close(reload = false) {
     this.closed.emit(reload);

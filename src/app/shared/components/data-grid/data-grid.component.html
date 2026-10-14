@@ -1,6 +1,6 @@
 ﻿<p-toolbar styleClass="mb-2 mt-2">
     <ng-template pTemplate="left">
-        <div class="d-flex flex-column w-100 gap-1">
+        <div class="flex flex-column w-full gap-1">
             @if(breadcrumb !== null){
             <p-breadcrumb class="max-w-full" [model]="breadcrumb" [home]="home" />
             }
@@ -17,7 +17,7 @@
     <ng-template pTemplate="right">
         @if(exibeCampos?.filterMonth){
         <p-calendar [(ngModel)]="dateFilter" view="month" (onSelect)="onLoadMonth($event)" dateFormat="MM 'de' yy"
-            class="p-03 mt-2 mt-md-0" [iconDisplay]="'input'" [showIcon]="true" [readonlyInput]="true" />
+            class="p-03 mt-2 md:mt-0" [iconDisplay]="'input'" [showIcon]="true" [readonlyInput]="true" />
         }
     </ng-template>
 </p-toolbar>
@@ -37,7 +37,7 @@
         <!---------------------------------------------------------------------- SEÇÃO DOS BOTÕES ---------------------------------------------------------------------->
         <ng-template pTemplate="caption">
             <!-- Adicionado 'flex-wrap gap-2' aqui para permitir a quebra de linha -->
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="flex align-items-center justify-content-between flex-wrap gap-2">
                 <div>
                     <span class="p-input-icon-left">
                         <i class="pi pi-search"></i>
@@ -51,10 +51,10 @@
                     }
 
                 </div>
-                <div class="d-flex flex-column gap-2 buttons-actions">
+                <div class="flex flex-column gap-2 buttons-actions">
 
                     <!-- AÃ§Ãµes principais -->
-                    <div class="d-flex align-items-center flex-wrap gap-2">
+                    <div class="flex align-items-center flex-wrap gap-2">
                         @if(exibeCampos?.buttonNew){
                         <p-button severity="success" label="Novo" [outlined]="true" icon="pi pi-plus"
                             (onClick)="openNew()" />
@@ -96,7 +96,7 @@
                 @if(exibeCampos?.sortable && col.type !== 'checkbox') {
                 <th [pSortableColumn]="col.field" style="text-align: center;" [style.width]="col.width"
                     [style.min-width]="col.width" [style.max-width]="col.width">
-                    <div class="flex items-center gap-1">
+                    <div class="flex align-items-center gap-1">
                         {{ col.header }}
                         <p-sortIcon [field]="col.field"></p-sortIcon>
                     </div>
@@ -104,14 +104,14 @@
                 } @else {
                 @if(col.type == 'checkbox') {
                 <th [style.width]="col.width" [style.min-width]="col.width" [style.max-width]="col.width">
-                    <div class="flex items-center gap-1">
+                    <div class="flex align-items-center gap-1">
                         {{ col.header }}
                     </div>
                 </th>
                 } @else{
                 <th [pSortableColumn]="col.field" [style.width]="col.width" [style.min-width]="col.width"
                     [style.max-width]="col.width">
-                    <div class="flex items-center gap-1">
+                    <div class="flex align-items-center gap-1">
                         {{ col.header }}
                     </div>
                 </th>
@@ -121,7 +121,7 @@
                 @else {
                 <th [pSortableColumn]="col.field" [style.width]="col.width" [style.min-width]="col.width"
                     [style.max-width]="col.width">
-                    <div class="flex actions-center gap-1 ">
+                    <div class="flex actions-center gap-1">
                         {{ col.header }}
                     </div>
                 </th>
@@ -240,7 +240,7 @@
 
                             }
                             @if(editandoTabela && product.__dg.bloqueada){
-                            <i class="pi pi-lock text-secondary" title="Bloqueada para edição"></i>
+                            <i class="pi pi-lock text-color-secondary" title="Bloqueada para edição"></i>
                             }
                             @if(editandoTabela && isRowChanged(product)){
                             <button pButton type="button" icon="pi pi-undo" title="Reverter alterações"
@@ -266,7 +266,7 @@
                         }}</span> }
                     @case('date') { <span class="fs-14">{{ product[col.field] | date:'dd/MM/yyyy':'UTC' }}</span> }
                     @case('text-area') {
-                    <div class="d-flex align-items-center gap-1" style="min-width: 0;">
+                    <div class="flex align-items-center gap-1" style="min-width: 0;">
                         <span class="text-area-preview fs-14" [title]="product[col.field]">
                             {{ product[col.field] || '-' }}
                         </span>
@@ -328,14 +328,14 @@
                                 <ng-template pTemplate="selectedItem" let-option>
                                     @if (option) {
                                     <p-tag [severity]="getSeverityStatus(option.value)"
-                                        class="d-flex justify-content-center fs-14" [value]="option.label">
+                                        class="flex justify-content-center fs-14" [value]="option.label">
                                     </p-tag>
                                     }
                                 </ng-template>
 
                                 <ng-template pTemplate="item" let-option>
                                     <p-tag [severity]="getSeverityStatus(option.value)"
-                                        class="d-flex justify-content-center fs-14" [value]="option.label">
+                                        class="flex justify-content-center fs-14" [value]="option.label">
                                     </p-tag>
                                 </ng-template>
 
@@ -356,7 +356,7 @@
                             @if(col.type === 'text-area') {
                             <!-- Mantém o comportamento de text-area preview se houver -->
                             <div
-                                [class]="'d-flex align-items-center justify-content-between gap-1 fs-14 ' + (col.classe || '')">
+                                [class]="'flex align-items-center justify-content-between gap-1 fs-14 ' + (col.classe || '')">
                                 <span class="text-area-preview fs-14 text-truncate-cell" [title]="product[col.field]">
                                     {{ product[col.field] || '-' }}
                                 </span>
@@ -368,7 +368,7 @@
                             }
                             @else if (col.field === 'status') {
                             <p-tag [severity]="product.__dg.severidade"
-                                [class]="'d-flex justify-content-center fs-14 ' + product.__dg.classe[col.field]"
+                                [class]="'flex justify-content-center fs-14 ' + product.__dg.classe[col.field]"
                                 [value]="product.__dg.texto[col.field]">
                             </p-tag>
                             } @else if (col.type === 'select') {
@@ -393,7 +393,7 @@
         <ng-template pTemplate="emptymessage">
             <tr>
                 <td [attr.colspan]="(exibeCampos?.selected ? 1 : 0) + columns.length"
-                    class="semRegistros text-center text-secondary py-4 ">
+                    class="semRegistros text-center text-color-secondary py-4">
                     Nenhum registro encontrado.
                 </td>
             </tr>
@@ -401,7 +401,7 @@
         <ng-template pTemplate="loadingbody">
             <tr>
                 <td [attr.colspan]="(exibeCampos?.selected ? 1 : 0) + columns.length" class="text-center py-4">
-                    <div class="dg-loading-spinner d-flex justify-content-center align-items-center">
+                    <div class="dg-loading-spinner flex justify-content-center align-items-center">
                         <p-progressSpinner ariaLabel="loading" />
                     </div>
                 </td>
@@ -449,7 +449,7 @@
 
 
 @if(exibeCampos?.buttonSaveCancel){
-<p-toolbar styleClass="mb-2 mt-2 mb-4 d-flex justify-content-end">
+<p-toolbar styleClass="mt-2 mb-4 flex justify-content-end">
     <ng-template pTemplate="right">
         <p-button label="Cancelar" icon="pi pi-times" class="mr-2" [outlined]="true" [disabled]="pendingCount === 0"
             (onClick)="cancelarTodasAlteracoes()" />

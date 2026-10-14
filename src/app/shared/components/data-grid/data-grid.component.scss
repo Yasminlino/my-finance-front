@@ -92,33 +92,35 @@ textarea,
 }
 
 //padroniza font-size
+// Com :host as regras ficam no grid; sem :host ficam só as de painéis anexados ao body.
+// Antes vazavam para os formulários PrimeNG do app inteiro (FE-P2-07).
 .fs-14,
-::ng-deep .p-button,
+:host ::ng-deep .p-button,
 ::ng-deep .p-dropdown-item,
-::ng-deep .p-dropdown-label,
-::ng-deep .p-menuitem-text,
+:host ::ng-deep .p-dropdown-label,
+:host ::ng-deep .p-menuitem-text,
 ::ng-deep .p-multiselect-item>span,
-::ng-deep .p-multiselect-label,
-::ng-deep .p-paginator,
-::ng-deep .p-calendar input,
-::ng-deep .p-inputnumber input,
-::ng-deep .ng-pristine {
+:host ::ng-deep .p-multiselect-label,
+:host ::ng-deep .p-paginator,
+:host ::ng-deep .p-calendar input,
+:host ::ng-deep .p-inputnumber input,
+:host ::ng-deep .ng-pristine {
     font-size: 14px !important;
 }
 
 
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th .p-multiselect,
-::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th>input {
+:host ::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th .p-multiselect,
+:host ::ng-deep .p-datatable .p-datatable-thead tr.dg-filter-row>th>input {
     width: 100% !important;
 }
 
-::ng-deep .p-multiselect-trigger {
+:host ::ng-deep .p-multiselect-trigger {
     width: 1rem;
     padding-right: 1rem;
 }
 
 //Remove padding desnecessário
-::ng-deep .p-multiselect-clearable .p-multiselect-label-container {
+:host ::ng-deep .p-multiselect-clearable .p-multiselect-label-container {
     padding: 0 !important;
 }
 
@@ -127,18 +129,18 @@ textarea,
     padding: 0.3rem 0.3rem !important;
 }
 
-::ng-deep .p-input-icon-right>.p-icon-wrapper {
+:host ::ng-deep .p-input-icon-right>.p-icon-wrapper {
     width: 0.7rem;
 }
 
-::ng-deep td>.p-element>.p-inputtext,
-::ng-deep td>.p-element>.p-inputtext-sm,
-::ng-deep .p-calendar>input {
+:host ::ng-deep td>.p-element>.p-inputtext,
+:host ::ng-deep td>.p-element>.p-inputtext-sm,
+:host ::ng-deep .p-calendar>input {
     padding: 0.5rem 0.5rem !important;
 }
 
-::ng-deep .p-calendar>input,
-::ng-deep .p-dropdown-label {
+:host ::ng-deep .p-calendar>input,
+:host ::ng-deep .p-dropdown-label {
     padding: 0.375rem 0.375rem !important;
 }
 
@@ -158,9 +160,9 @@ textarea,
 }
 
 //alinhamento dropdown edição
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-dropdown,
-::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-dropdown-label,
-::ng-deep .p-dropdown {
+:host ::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-dropdown,
+:host ::ng-deep .p-datatable .p-datatable-tbody tr.row-editing>td .p-dropdown-label,
+:host ::ng-deep .p-dropdown {
     width: 100% !important;
 }
 
@@ -173,7 +175,7 @@ textarea,
 }
 
 
-::ng-deep .p-checkbox-box {
+:host ::ng-deep .p-checkbox-box {
     width: 16px !important;
     height: 16px !important;
     align-items: center;
@@ -286,20 +288,20 @@ textarea,
     align-items: center;
 }
 
-//modal - text area --------------------
+//modal - text area (só nos diálogos do próprio grid) ----
 
-::ng-deep .p-dialog-content {
+:host ::ng-deep .p-dialog-content {
     padding-top: 4px;
     padding-bottom: 1rem;
 }
 
-::ng-deep .p-dialog-footer {
+:host ::ng-deep .p-dialog-footer {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
 }
 
-::ng-deep .p-inputtextarea {
+:host ::ng-deep .p-inputtextarea {
     height: 3vw;
 }
 
@@ -378,7 +380,7 @@ textarea,
     height: 2.5rem;
 }
 
-::ng-deep .p-input-icon-left > .p-inputtext {
+:host ::ng-deep .p-input-icon-left > .p-inputtext {
     height: 2rem;
     margin-top: 0.5rem;
 }
@@ -540,7 +542,7 @@ textarea,
             justify-content: space-between;
         }
 
-        .p-datatable-header .d-flex.flex-column.gap-2 {
+        .p-datatable-header .flex.flex-column.gap-2 {
             width: 100%;
         }
 
@@ -567,13 +569,13 @@ textarea,
         /* Impede que o título 'Contas a Pagar' quebre letras individualmente */
     }
 
-    .p-datatable-header .d-flex.align-items-center.justify-content-between {
+    .p-datatable-header .flex.align-items-center.justify-content-between {
         flex-direction: column !important;
         align-items: stretch !important;
         gap: 0.75rem !important;
     }
 
-    .p-datatable-header .d-flex.align-items-center.justify-content-between>div {
+    .p-datatable-header .flex.align-items-center.justify-content-between>div {
         width: 100% !important;
     }
 

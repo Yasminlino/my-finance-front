@@ -16,7 +16,6 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 @Component({
   selector: 'app-modal-adicionar-em-lote',
   templateUrl: './modal-adicionar-em-lote.component.html',
-  styleUrls: ['./modal-adicionar-em-lote.component.scss'],
 })
 export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
   @Input() month!: string; // pode ser '2026-01-01' ou Date

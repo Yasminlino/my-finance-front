@@ -1,60 +1,63 @@
+/* Estilos globais. O kit de UI é PrimeNG + PrimeFlex + PrimeIcons (FE-P2-07). */
 
-.modal-backdrop-custom {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, .4);
-  z-index: 1040;
+/* Base do tema Lara: os tamanhos do PrimeNG são em rem e foram pensados para 14px. */
+html {
+  font-size: 14px;
 }
 
-/* container da modal */
-.modal-custom {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  z-index: 1050;
+/* Reset mínimo (antes vinha do Tabler/Bootstrap). */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-/* card com altura máxima e layout em coluna */
-.modal-card {
-  width: min(1100px, 100%);
-  max-height: calc(80vh - 32px);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  /* importante p/ o body scroll não “vazar” */
+body {
+  margin: 0;
+  background: var(--surface-ground);
+  color: var(--text-color);
+  font-family: var(--font-family);
+  line-height: 1.5;
 }
 
-/* header e footer ficam fixos */
-.modal-card .card-header,
-.modal-card .card-footer {
-  flex: 0 0 auto;
-  display: flex;
-  justify-content: space-between;
+/* Campos herdam a tipografia do body, como no reboot do Bootstrap: sem isso o input fica mais
+   baixo que o p-dropdown (cujo rótulo é um span e herda o line-height). */
+input, button, select, optgroup, textarea {
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
 }
 
-/* body é o que rola */
-.modal-body-scroll {
-  flex: 1 1 auto;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
-/* You can add global styles to this file, and also import other style files */
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  padding: 1rem !important;
+a {
+  color: var(--primary-color);
 }
+
+img {
+  vertical-align: middle;
+}
+
 ol, ul {
   padding-left: 0;
-  margin-bottom:0;
+  margin-bottom: 0;
 }
 
-// @media (min-width: 1400px) {
-//     .container, .container-lg, .container-md, .container-sm, .container-xl, .container-xxl {
-//         max-width: 1140px;
-//     }
-// }
+/* Rodapé dos p-dialog: botões à direita com espaço entre eles (antes vinha, vazado, do SCSS do data-grid). */
+.p-dialog .p-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: .5rem;
+}
+
+/* Área de conteúdo das telas (antes container-xl do Tabler). */
+.pagina {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 1rem;
+}

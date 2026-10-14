@@ -1,47 +1,22 @@
-<div class="modal-backdrop fade show" (click)="close(false)"></div>
-
-<!-- Modal -->
-<div class="modal modal-blur fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-      <h3 class="modal-title m-0">{{ registro ? 'Editar Tipo de Movimentação' : 'Novo Tipo de Movimentação' }}</h3>
-      <button type="button" class="btn-close" (click)="close(false)" aria-label="Fechar"></button>
+<p-dialog [header]="registro ? 'Editar Tipo de Movimentação' : 'Novo Tipo de Movimentação'" [visible]="true"
+  [modal]="true" [dismissableMask]="true" [draggable]="false" [style]="{ width: '32rem' }"
+  [breakpoints]="{ '576px': '95vw' }" (visibleChange)="close(false)">
+  <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
+    <div class="flex flex-column gap-2">
+      <label for="tipo-mov-nome">Tipo Movimentação <span class="text-red-500">*</span></label>
+      <input pInputText id="tipo-mov-nome" formControlName="nomeTipoMovimentacao"
+        [class.ng-dirty]="erro('nomeTipoMovimentacao')" />
+      <small class="p-error" *ngIf="erro('nomeTipoMovimentacao')">Informe um nome válido.</small>
     </div>
 
-    <div class="modal-body" [formGroup]="form">
-      <div class="mb-3">
-        <label class="form-label">Tipo Movimentação <strong style="color: red;">*</strong></label>
-        <input class="form-control"
-               formControlName="nomeTipoMovimentacao"
-               [class.is-invalid]="form.controls.nomeTipoMovimentacao.touched && form.controls.nomeTipoMovimentacao.invalid" />
-        <div class="invalid-feedback" *ngIf="form.controls.nomeTipoMovimentacao.touched && form.controls.nomeTipoMovimentacao.invalid">
-          Informe um nome válido.
-        </div>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Descrição</label>
-        <input class="form-control" formControlName="descricao" />
-      </div>
-
-      <!-- <div class="mb-3">
-        <label class="form-label">Valor Meta</label>
-        <input class="form-control"
-               type="number"
-               formControlName="valorMeta"
-               [class.is-invalid]="form.controls.valorMeta.touched && form.controls.valorMeta.invalid" />
-        <div class="invalid-feedback" *ngIf="form.controls.valorMeta.touched && form.controls.valorMeta.invalid">
-          Informe um valor meta.
-        </div>
-      </div> -->
+    <div class="flex flex-column gap-2">
+      <label for="tipo-mov-descricao">Descrição</label>
+      <input pInputText id="tipo-mov-descricao" formControlName="descricao" />
     </div>
+  </form>
 
-    <div class="modal-footer">
-      <button type="button" class="btn btn-outline-secondary" (click)="close(false)">Cancelar</button>
-      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving">
-        {{ saving ? 'Salvando...' : 'Salvar' }}
-      </button>
-    </div>
-  </div>
-</div>
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
+    <p-button label="Salvar" icon="pi pi-check" [loading]="saving" (onClick)="save()" />
+  </ng-template>
+</p-dialog>

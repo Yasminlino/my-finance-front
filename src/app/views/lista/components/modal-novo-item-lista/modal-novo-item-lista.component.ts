@@ -13,7 +13,6 @@ type AlertState = { type: 'success' | 'error' | ''; message: string };
 @Component({
   selector: 'app-modal-novo-item-lista',
   templateUrl: './modal-novo-item-lista.component.html',
-  styleUrls: ['./modal-novo-item-lista.component.scss'],
 })
 export class ModalNovoItemListaComponent implements OnInit {
   @Input() listaId!: number;
@@ -26,6 +25,12 @@ export class ModalNovoItemListaComponent implements OnInit {
 
   alert: AlertState = { type: '', message: '' };
   saving = false;
+  /** Mesmo domínio do CHECK de ItemLista.Status (DB-P1-03). */
+  readonly opcoesStatus = [
+    { label: 'Pendente', value: 'PENDENTE' },
+    { label: 'Aguardando', value: 'AGUARDANDO' },
+    { label: 'Ok', value: 'OK' },
+  ];
 
   form = this.fb.group({
     descricao: ['', [Validators.required, Validators.minLength(2)]],
@@ -55,6 +60,12 @@ export class ModalNovoItemListaComponent implements OnInit {
         horarioTarefa: this.item.horarioTarefa ?? null,
       });
     }
+  }
+
+  /** Campo tocado e inválido: borda vermelha (ng-dirty) e mensagem. */
+  erro(campo: keyof typeof this.form.controls): boolean {
+    const controle = this.form.controls[campo];
+    return controle.touched && controle.invalid;
   }
 
   close(reload = false) {

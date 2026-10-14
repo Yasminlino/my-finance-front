@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 
 import { HomeRoutingModule } from './home-routing.module';
 import { HomeComponent } from './home/home.component';
-import { HeaderComponent } from 'src/app/core/components/header/header/header.component';
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 
 
 @NgModule({
@@ -12,7 +13,9 @@ import { HeaderComponent } from 'src/app/core/components/header/header/header.co
   ],
   imports: [
     CommonModule,
-    HomeRoutingModule
+    HomeRoutingModule,
+    ButtonModule,
+    TooltipModule
   ]
 })
 export class HomeModule { }

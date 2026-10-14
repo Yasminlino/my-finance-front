@@ -1,58 +1,35 @@
-<!-- Backdrop -->
-<div class="modal-backdrop-custom" (click)="close(false)"></div>
-
-<!-- Modal -->
-<div class="modal-custom" role="dialog" aria-modal="true">
-    <div class="modal-card card">
-        <div class="card-header">
-            <h3 class="card-title m-0">Adicionar nova conta</h3>
-            <button type="button" class="btn-close" (click)="close(false)" aria-label="Fechar"></button>
-        </div>
-
-        <div class="card-body" [formGroup]="form">
-            <div class="mb-3">
-                <label class="form-label">Nome conta</label>
-                <input class="form-control" formControlName="nomeConta"
-                    [class.is-invalid]="form.controls.nomeConta.touched && form.controls.nomeConta.invalid" />
-                <div class="invalid-feedback"
-                    *ngIf="form.controls.nomeConta.touched && form.controls.nomeConta.invalid">
-                    Informe um nome válido.
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Valor</label>
-                <input class="form-control" type="text" inputmode="decimal" formControlName="valor" currencyInput placeholder="0,00"
-                    [class.is-invalid]="form.controls.valor.touched && form.controls.valor.invalid" />
-                <div class="invalid-feedback" *ngIf="form.controls.valor.touched && form.controls.valor.invalid">
-                    Informe um valor.
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Dia Vencimento</label>
-                <input class="form-control" formControlName="dataOperacao" maxlength="2" placeholder="Ex: 10" />
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Categoria</label>
-                <select class="form-select" formControlName="categoryid"
-                    [class.is-invalid]="form.controls.categoryid.touched && form.controls.categoryid.invalid">
-                    <option [ngValue]="null">Selecione...</option>
-                    <option *ngFor="let c of categorias" [ngValue]="c.id">{{ c.name }}</option>
-                </select>
-                <div class="invalid-feedback"
-                    *ngIf="form.controls.categoryid.touched && form.controls.categoryid.invalid">
-                    Selecione uma categoria.
-                </div>
-            </div>
-        </div>
-
-        <div class="card-footer d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-outline-secondary" (click)="close(false)">Cancelar</button>
-            <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving">
-                {{ saving ? 'Salvando...' : 'Salvar' }}
-            </button>
-        </div>
+<p-dialog header="Adicionar nova conta" [visible]="true" [modal]="true" [dismissableMask]="true" [draggable]="false"
+  [style]="{ width: '32rem' }" [breakpoints]="{ '576px': '95vw' }" (visibleChange)="close(false)">
+  <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
+    <div class="flex flex-column gap-2">
+      <label for="cp-nome">Nome conta</label>
+      <input pInputText id="cp-nome" formControlName="nomeConta" [class.ng-dirty]="erro('nomeConta')" />
+      <small class="p-error" *ngIf="erro('nomeConta')">Informe um nome válido.</small>
     </div>
-</div>
+
+    <div class="flex flex-column gap-2">
+      <label for="cp-valor">Valor</label>
+      <input pInputText id="cp-valor" type="text" inputmode="decimal" formControlName="valor" currencyInput
+        placeholder="0,00" [class.ng-dirty]="erro('valor')" />
+      <small class="p-error" *ngIf="erro('valor')">Informe um valor.</small>
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label for="cp-dia">Dia Vencimento</label>
+      <input pInputText id="cp-dia" formControlName="dataOperacao" maxlength="2" placeholder="Ex: 10" />
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label for="cp-categoria">Categoria</label>
+      <p-dropdown inputId="cp-categoria" formControlName="categoryid" [options]="categorias" optionLabel="name"
+        optionValue="id" placeholder="Selecione..." appendTo="body" styleClass="w-full"
+        [class.ng-dirty]="erro('categoryid')" />
+      <small class="p-error" *ngIf="erro('categoryid')">Selecione uma categoria.</small>
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
+    <p-button label="Salvar" icon="pi pi-check" [loading]="saving" (onClick)="save()" />
+  </ng-template>
+</p-dialog>

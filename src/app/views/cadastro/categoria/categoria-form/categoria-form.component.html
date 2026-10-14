@@ -1,71 +1,36 @@
-<!-- Backdrop -->
-<div class="modal-backdrop fade show" (click)="close(false)"></div>
-
-<!-- Modal -->
-<div class="modal modal-blur fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">{{ registro ? 'Editar Categoria' : 'Nova Categoria' }}</h5>
-        <button type="button" class="btn-close" aria-label="Fechar" (click)="close(false)"></button>
-      </div>
-
-      <div class="modal-body" [formGroup]="form">
-        <div class="mb-3">
-          <label class="form-label">Nome categoria <strong style="color: red">*</strong></label>
-          <input class="form-control" type="text" formControlName="name" placeholder="Preencha o nome da categoria."
-            [class.is-invalid]="form.controls.name.touched && form.controls.name.invalid" />
-          <div class="invalid-feedback" *ngIf="form.controls.name.touched && form.controls.name.invalid">
-            Informe um nome válido.
-          </div>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Tipo Categoria <strong style="color: red">*</strong></label>
-          <select class="form-select" formControlName="subCategory"
-            [class.is-invalid]="form.controls.subCategory.touched && form.controls.subCategory.invalid">
-            <option value="">Selecione...</option>
-            <option value="Receita">Receita</option>
-            <option value="Despesa">Despesa</option>
-          </select>
-          <div class="invalid-feedback" *ngIf="form.controls.subCategory.touched && form.controls.subCategory.invalid">
-            Selecione um tipo categoria.
-          </div>
-        </div>
-
-        <div class="mb-3" *ngIf="perfilEmpresa ?? form.get('subCategory')?.value != 'Receita'">
-          <label class="form-label">Natureza do gasto</label>
-          <select class="form-select" formControlName="naturezaOperacao">
-            <option *ngIf="!perfilEmpresa" [ngValue]="1">Essencial</option><!-- 50% -->
-            <option *ngIf="!perfilEmpresa" [ngValue]="2">Estilo de Vida/ Lazer</option><!-- 50% -->
-            <option *ngIf="!perfilEmpresa" [ngValue]="3">Reserva/ Investimento</option><!-- 50% -->
-            <option *ngIf="perfilEmpresa" [ngValue]="4">Pessoal</option><!-- 50% -->
-            <option *ngIf="perfilEmpresa" [ngValue]="5">Empresa</option><!-- 50% -->
-          </select>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Status</label>
-          <select class="form-select" formControlName="status"
-            [class.is-invalid]="form.controls.status.touched && form.controls.status.invalid">
-            <option [ngValue]="0">Inativo</option>
-            <option [ngValue]="1">Ativo</option>
-          </select>
-          <div class="invalid-feedback" *ngIf="form.controls.status.touched && form.controls.status.invalid">
-            Selecione uma categoria.
-          </div>
-        </div>
-
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" (click)="close(false)">
-          Cancelar
-        </button>
-        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving">
-          {{ saving ? 'Salvando...' : 'Salvar' }}
-        </button>
-      </div>
+<p-dialog [header]="registro ? 'Editar Categoria' : 'Nova Categoria'" [visible]="true" [modal]="true"
+  [dismissableMask]="true" [draggable]="false" [style]="{ width: '32rem' }" [breakpoints]="{ '576px': '95vw' }"
+  (visibleChange)="close(false)">
+  <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
+    <div class="flex flex-column gap-2">
+      <label for="categoria-nome">Nome categoria <span class="text-red-500">*</span></label>
+      <input pInputText id="categoria-nome" formControlName="name" placeholder="Preencha o nome da categoria."
+        [class.ng-dirty]="erro('name')" />
+      <small class="p-error" *ngIf="erro('name')">Informe um nome válido.</small>
     </div>
-  </div>
-</div>
+
+    <div class="flex flex-column gap-2">
+      <label for="categoria-tipo">Tipo Categoria <span class="text-red-500">*</span></label>
+      <p-dropdown inputId="categoria-tipo" formControlName="subCategory" [options]="opcoesTipo"
+        placeholder="Selecione..." appendTo="body" styleClass="w-full" [class.ng-dirty]="erro('subCategory')" />
+      <small class="p-error" *ngIf="erro('subCategory')">Selecione um tipo categoria.</small>
+    </div>
+
+    <div class="flex flex-column gap-2" *ngIf="perfilEmpresa ?? form.get('subCategory')?.value != 'Receita'">
+      <label for="categoria-natureza">Natureza do gasto</label>
+      <p-dropdown inputId="categoria-natureza" formControlName="naturezaOperacao" [options]="opcoesNatureza"
+        appendTo="body" styleClass="w-full" />
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label for="categoria-status">Status</label>
+      <p-dropdown inputId="categoria-status" formControlName="status" [options]="opcoesStatus" appendTo="body"
+        styleClass="w-full" />
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
+    <p-button label="Salvar" icon="pi pi-check" [loading]="saving" (onClick)="save()" />
+  </ng-template>
+</p-dialog>

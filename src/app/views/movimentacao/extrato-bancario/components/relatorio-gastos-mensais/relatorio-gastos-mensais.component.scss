@@ -15,7 +15,13 @@
     gap: 2px;
 }
 
-.cards-metodo .card{
+.cards-metodo .cartao-metodo{
+    background: var(--surface-card);
+    border-radius: 4px;
+    /* Antes vinha do .card do Tabler: rótulo, valor e tendência empilhados. */
+    flex-direction: column;
+    word-wrap: break-word;
+    min-width: 0;
     display: flex;
     justify-content: space-between;
     padding: 5px;
@@ -23,6 +29,6 @@
     max-width: 120px;
 }
 
-.card-saida{
+.cartao-saida{
     color: rgb(255, 109, 109);
 }
