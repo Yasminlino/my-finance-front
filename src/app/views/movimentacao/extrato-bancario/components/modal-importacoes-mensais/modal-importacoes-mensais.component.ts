@@ -1,11 +1,14 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
-import { GridColumn} from 'src/app/shared/components/data-grid/data-grid.interface';
+import { GridColumn } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { formatCurrencyBR, formatDateBR } from 'src/app/core/utils/mask';
-import { ExtratoBancarioDto, ExtratoBancarioService } from 'src/app/core/services/extrato-bancario.service';
+import { ExtratoBancarioService } from 'src/app/core/services/extrato-bancario.service';
 import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
+import { ExtratoBancarioDto } from 'src/app/core/models/extrato.model';
+import { finalize } from 'rxjs';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 
 @Component({
@@ -39,10 +42,10 @@ export class ModalImportacoesMensaisComponent implements OnInit {
   ) { }
 
 
-  async ngOnInit() {
+  ngOnInit() {
     this.setGridColumns()
     this.setExibirCampos()
-    await this.load();
+    this.load();
   }
 
   private setExibirCampos(): void {
@@ -74,24 +77,21 @@ export class ModalImportacoesMensaisComponent implements OnInit {
   }
 
 
-  private async load() {
+  private load() {
     this.loading = true;
-    try {
-
-      var response = await this.extratobancarioService.listExtratos(this.monthFilter)
-
-      this.importacaoesMensais = response.map(item => ({
-        ...item,
-        dataImportacao: formatDateBR(item.dataImportacao),
-      }));
-    } catch (e) {
-      console.error(e);
-      this.alertService.error('Erro ao carregar contas cadastradas')
-    } finally {
-      this.loading = false;
-    }
+    this.extratobancarioService.listarDoMes(this.monthFilter)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: extratos => {
+          this.importacaoesMensais = extratos.map(item => ({
+            ...item,
+            dataImportacao: formatDateBR(item.dataImportacao),
+          }));
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar as importações do mês.'))
+      });
   }
-  async deleteRow(r: ExtratoBancarioDto) {
+  deleteRow(r: ExtratoBancarioDto) {
     if (r.id < 0) {
       this.importacaoesMensais = this.importacaoesMensais.filter(x => x.id !== r.id);
       return;
@@ -99,14 +99,14 @@ export class ModalImportacoesMensaisComponent implements OnInit {
 
     if (!confirm(`Excluir "${r.nomeArquivoOrigem}"?`)) return;
 
-    try {
-      await this.extratobancarioService.deleteExtrato(r.id);
-      this.importacaoesMensais = this.importacaoesMensais.filter(x => x.id !== r.id);
-      this.alertService.success('Registro excluído com sucesso');
-    } catch (e: any) {
-      this.alertService.error(e?.error?.message ?? 'Erro ao excluir registro');
-    } finally {
-      this.deletingId = null;
-    }
+    this.extratobancarioService.excluir(r.id)
+      .pipe(finalize(() => (this.deletingId = null)))
+      .subscribe({
+        next: () => {
+          this.importacaoesMensais = this.importacaoesMensais.filter(x => x.id !== r.id);
+          this.alertService.success('Registro excluído com sucesso');
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao excluir registro'))
+      });
   }
 }

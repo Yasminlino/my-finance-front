@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Observable, catchError, concatMap, defaultIfEmpty, defer, finalize, from, last, map, of, tap, toArray } from 'rxjs';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from '../utils/http-error';
 
@@ -40,67 +41,68 @@ export class ExclusaoEmLoteService {
 
   /**
    * Fluxo completo do (deleteSelected) do data-grid: confirma, exclui, limpa a seleção
-   * e sempre libera o `grid.deleting`. Devolve true quando a exclusão rodou — aí quem
-   * chama recarrega a tela.
+   * e sempre libera o `grid.deleting`. Emite true quando a exclusão rodou — aí quem
+   * chama recarrega a tela. Nada acontece antes do subscribe.
    */
-  async confirmarEExcluir<T>(
+  confirmarEExcluir<T>(
     grid: GridSelecionavel | undefined,
     rows: T[],
-    excluirItem: (row: T) => Promise<unknown>,
+    excluirItem: (row: T) => Observable<unknown>,
     rotulo: RotuloEntidade
-  ): Promise<boolean> {
-    try {
+  ): Observable<boolean> {
+    return defer(() => {
       if (!rows.length) {
-        return false;
+        return of(false);
       }
 
       const selecionado = this.concordar(rows.length, rotulo, 'selecionado', 'selecionada');
       if (!window.confirm(`Excluir ${rows.length} ${this.substantivo(rows.length, rotulo)} ${selecionado}?`)) {
-        return false;
+        return of(false);
       }
 
-      await this.excluir(rows, excluirItem, rotulo);
-      grid?.clearSelection();
-      return true;
-    } finally {
-      if (grid) {
-        grid.deleting = false;
-      }
-    }
+      return this.excluir(rows, excluirItem, rotulo).pipe(
+        tap(() => grid?.clearSelection()),
+        map(() => true)
+      );
+    }).pipe(
+      finalize(() => {
+        if (grid) {
+          grid.deleting = false;
+        }
+      })
+    );
   }
 
   /**
-   * Tenta excluir todas as linhas, sem abortar no primeiro erro, e informa o
-   * resultado efetivo via AlertService. Não lança: o resultado volta no retorno.
+   * Exclui as linhas uma por vez, sem abortar no primeiro erro, e informa o resultado
+   * efetivo via AlertService. Não falha: o resultado volta na emissão.
    */
-  async excluir<T>(
+  excluir<T>(
     rows: T[],
-    excluirItem: (row: T) => Promise<unknown>,
+    excluirItem: (row: T) => Observable<unknown>,
     rotulo: RotuloEntidade
-  ): Promise<ResultadoExclusaoEmLote> {
-    const resultado: ResultadoExclusaoEmLote = {
-      total: rows.length,
-      excluidos: 0,
-      falhas: 0
-    };
-
-    let primeiroErro: unknown = null;
-
-    for (const row of rows) {
-      try {
-        await excluirItem(row);
-        resultado.excluidos++;
-      } catch (e) {
-        resultado.falhas++;
-        if (primeiroErro === null) {
-          primeiroErro = e;
-        }
-      }
-    }
-
-    this.informar(resultado, rotulo, primeiroErro);
-
-    return resultado;
+  ): Observable<ResultadoExclusaoEmLote> {
+    return from(rows).pipe(
+      concatMap(row => excluirItem(row).pipe(
+        // 204 do HttpClient emite null; um Observable que só completa também conta como sucesso.
+        defaultIfEmpty(null),
+        last(),
+        map(() => ({ ok: true as const })),
+        catchError(erro => of({ ok: false as const, erro }))
+      )),
+      toArray(),
+      map(tentativas => {
+        const falhas = tentativas.filter(t => !t.ok);
+        const resultado: ResultadoExclusaoEmLote = {
+          total: rows.length,
+          excluidos: tentativas.length - falhas.length,
+          falhas: falhas.length
+        };
+        const primeiroErro = falhas.length ? (falhas[0] as { erro: unknown }).erro : null;
+        this.informar(resultado, rotulo, primeiroErro);
+        return resultado;
+      })
+    );
   }
 
   private informar(

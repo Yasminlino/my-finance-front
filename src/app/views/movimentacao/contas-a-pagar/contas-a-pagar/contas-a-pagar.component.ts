@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import { formatCurrencyBR, formatDateBR, formatDateInput, formatYearMonth } from 'src/app/core/utils/mask';
@@ -6,7 +6,6 @@ import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid
 import { GridColumn, TypeGrid, GridRowChange, GridColumnOption } from "src/app/shared/components/data-grid/data-grid.interface"
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { CategoryService } from 'src/app/core/services/category.service';
-import { RowForm } from 'src/app/core/interfaces/conta-mensal.interface';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { MenuItem } from 'primeng/api';
 import { AlertService } from 'src/app/shared/components/alert.service';
@@ -15,6 +14,9 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { STATUS_PAGAMENTO_OPTIONS } from 'src/app/shared/enums/status.enum';
 import { calcularTotaisSelecao, naturezaPorSubCategoria } from 'src/app/shared/utils/totais-selecao';
 import { EXIBIR_CAMPOS_MOVIMENTACOES, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, concat, finalize, toArray } from 'rxjs';
+import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
 
 @Component({
   selector: 'app-contas-a-pagar',
@@ -23,6 +25,9 @@ import { EXIBIR_CAMPOS_MOVIMENTACOES, ExibirCamposConfig } from 'src/app/shared/
 })
 export class ContasAPagarComponent implements OnInit {
   @ViewChild('grid') grid?: DataGridComponent;
+  private readonly destroyRef = inject(DestroyRef);
+  /** Mês pedido ("YYYY-MM"); a carga segue sempre o último. */
+  private readonly mes$ = new Subject<string>();
   breadcrumb = [] = [{ label: 'Cadastros' }, { label: 'Contas Mensais' }]
   titulo = 'Contas a Pagar'
   tipoTabela = TypeGrid.editaLinha
@@ -47,7 +52,6 @@ export class ContasAPagarComponent implements OnInit {
 
   showModalCreate: boolean = false;
 
-  rowForms = new Map<number, RowForm>();
 
   categoriaOptions: string[] = [];
 
@@ -62,12 +66,31 @@ export class ContasAPagarComponent implements OnInit {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   }
 
-  async ngOnInit() {
-    await this.getCategory();
-    this.setGridColumns();
+  ngOnInit() {
     this.setitemsButtom();
 
-    await this.loadMonth();
+    // Troca de mês: só a resposta do último mês pedido chega à tela (FE-P2-08).
+    ultimaBusca(this.mes$, mes => this.contaMensalService.listarDoMes(mes, false), e => {
+      this.loading = false;
+      this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar as contas do mês.'));
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(contas => {
+        this.contasMensais = contas;
+        this.loading = false;
+      });
+
+    this.categoryService.listarAtivas()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: categorias => {
+          this.categorias = categorias.map(c => ({ label: c.name, value: c.name }));
+          this.setGridColumns();
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar as categorias.'))
+      });
+
+    this.loadMonth();
   }
 
   private setitemsButtom(): void {
@@ -169,36 +192,20 @@ export class ContasAPagarComponent implements OnInit {
   }
 
 
-  private async getCategory(): Promise<void> {
-    const res = await this.categoryService.buscarCategoriasAtivas();
 
-    this.categorias = res.map(element => ({
-      label: element.name,
-      value: element.name
-    }));
-  }
 
-  async loadMonth(dataSelecionada?: Date) {
-    try {
-      this.loading = true;
-
-      if (dataSelecionada) {
-        this.dateFilter = dataSelecionada;
-        localStorage.setItem('dataFiltroContaMensal', dataSelecionada.toISOString());
-      } else {
-        const ultimoMesSelecionado = localStorage.getItem('dataFiltroContaMensal');
-        this.dateFilter = ultimoMesSelecionado ? new Date(ultimoMesSelecionado) : new Date();
-      }
-
-      const mesFormatado = formatYearMonth(this.dateFilter);
-      this.selectedMonth = mesFormatado
-      this.contasMensais = await this.contaMensalService.BuscarContasMensais(mesFormatado, false);
-      console.log(this.contasMensais)
-    } catch (e) {
-      this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar as contas do mês.'));
-    } finally {
-      this.loading = false;
+  loadMonth(dataSelecionada?: Date) {
+    if (dataSelecionada) {
+      this.dateFilter = dataSelecionada;
+      localStorage.setItem('dataFiltroContaMensal', dataSelecionada.toISOString());
+    } else {
+      const ultimoMesSelecionado = localStorage.getItem('dataFiltroContaMensal');
+      this.dateFilter = ultimoMesSelecionado ? new Date(ultimoMesSelecionado) : new Date();
     }
+
+    this.selectedMonth = formatYearMonth(this.dateFilter);
+    this.loading = true;
+    this.mes$.next(this.selectedMonth);
   }
 
 
@@ -208,75 +215,51 @@ export class ContasAPagarComponent implements OnInit {
     this.showModalForm = true;
   }
 
-  async onDeleteSelected(rows: LinhaContasMensais[]) {
-    const excluiu = await this.exclusaoEmLote.confirmarEExcluir(
-      this.grid,
-      rows,
-      row => this.contaMensalService.deleteTransaction(row.id),
-      { singular: 'conta', plural: 'contas', feminino: true }
-    );
-
-    if (excluiu) await this.loadMonth();
+  onDeleteSelected(rows: LinhaContasMensais[]) {
+    this.exclusaoEmLote
+      .confirmarEExcluir(this.grid, rows, row => this.contaMensalService.excluir(row.id), { singular: 'conta', plural: 'contas', feminino: true })
+      .subscribe(excluiu => {
+        if (excluiu) this.loadMonth();
+      });
   }
 
 
 
-  async onDelete(row: LinhaContasMensais) {
+  onDelete(row: LinhaContasMensais) {
     const ok = window.confirm(`Excluir a conta '${row.name}'?`);
     if (!ok) return;
 
-    // Define o ID que está sendo deletado (ativa o loading na linha correspondente)
+    // Loading na linha até a API responder.
     this.deletingId = row.id;
-
-    try {
-      const response = await this.contaMensalService.deleteTransaction(row.id);
-
-      if (response) {
-        this.alertService.success(`Conta '${row.name}' deletada com sucesso!`);
-      }
-
-      await this.loadMonth();
-    } catch (e: any) {
-      this.alertService.error(extrairMensagemErro(e, `Falha ao excluir a conta '${row.name}'.`));
-    } finally {
-      // 🔹 O loading só some aqui, quando a API termina (com sucesso ou erro)
-      this.deletingId = null;
-    }
+    this.contaMensalService.excluir(row.id)
+      .pipe(finalize(() => (this.deletingId = null)))
+      .subscribe({
+        next: () => {
+          this.alertService.success(`Conta '${row.name}' excluída com sucesso!`);
+          this.loadMonth();
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, `Falha ao excluir a conta '${row.name}'.`))
+      });
   }
 
-  // 1. Obtenha a referência do seu componente data-grid no HTML do pai
-  // Substitua 'AppDataGridComponent' pelo nome real da classe do seu componente de grid
-
-
   /** Salva em lote as alterações feitas via edição inline ("Salvar tudo"). */
-  async onSaveInline(changes: GridRowChange[]) {
+  onSaveInline(changes: GridRowChange[]) {
     if (!changes.length) {
       return;
     }
 
-    try {
-      var response;
-      for (const change of changes) {
-        const updatedPayload = {
-          ...change.row,
-          ...change.changes
-        };
-        response = await this.contaMensalService.updateTransaction(updatedPayload);
-      }
-
-      if (response) {
-        this.alertService.success(`${changes.length} alteração(ões) salva(s) com sucesso!`)
-      }
-
-      this.grid?.clearSelection();
-      await this.loadMonth();
-
-      this.grid?.finishInlineSave();
-
-
-    } catch (e) {
-      this.alertService.error('Erro ao salvar as alterações. Tente novamente.')
-    }
+    // Uma por vez, na ordem; para no primeiro erro, como antes.
+    concat(...changes.map(change => this.contaMensalService.atualizar({ ...change.row, ...change.changes })))
+      .pipe(toArray())
+      .subscribe({
+        next: () => {
+          this.alertService.success(`${changes.length} alteração(ões) salva(s) com sucesso!`);
+          this.grid?.clearSelection();
+          this.loadMonth();
+          this.grid?.finishInlineSave();
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao salvar as alterações. Tente novamente.'))
+      });
   }
 
   onOpenAddBatch() {

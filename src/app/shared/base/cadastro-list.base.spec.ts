@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { firstValueFrom, of, throwError } from 'rxjs';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ExclusaoEmLoteService, RotuloEntidade } from 'src/app/core/services/exclusao-em-lote.service';
 import { CadastroListBase } from './cadastro-list.base';
@@ -11,9 +12,9 @@ class ItemListTesteComponent extends CadastroListBase<Item> {
   protected readonly rotulo: RotuloEntidade = { singular: 'categoria', plural: 'categorias', feminino: true };
 
   dados: Item[] = [];
-  buscarSpy = jasmine.createSpy('buscar').and.callFake(() => Promise.resolve(this.dados));
-  excluirSpy = jasmine.createSpy('excluir').and.returnValue(Promise.resolve());
-  antesSpy = jasmine.createSpy('antesDeCarregar').and.returnValue(Promise.resolve());
+  buscarSpy = jasmine.createSpy('buscar').and.callFake(() => of(this.dados));
+  excluirSpy = jasmine.createSpy('excluir').and.returnValue(of(null));
+  antesSpy = jasmine.createSpy('antesDeCarregar').and.returnValue(of(null));
 
   protected buscar() { return this.buscarSpy(); }
   protected excluirRegistro(id: number) { return this.excluirSpy(id); }
@@ -58,7 +59,7 @@ describe('CadastroListBase (FE-P1-02)', () => {
   });
 
   it('falha de carga avisa com a mensagem da API e libera o loading', async () => {
-    tela.buscarSpy.and.returnValue(Promise.reject({ error: { message: 'API fora' } }));
+    tela.buscarSpy.and.returnValue(throwError(() => ({ error: { message: 'API fora' } })));
 
     await tela.load();
 
@@ -67,7 +68,7 @@ describe('CadastroListBase (FE-P1-02)', () => {
   });
 
   it('falha de carga sem mensagem usa o rótulo', async () => {
-    tela.buscarSpy.and.returnValue(Promise.reject(null));
+    tela.buscarSpy.and.returnValue(throwError(() => null));
 
     await tela.load();
 
@@ -112,7 +113,7 @@ describe('CadastroListBase (FE-P1-02)', () => {
 
   it('onDelete com erro mostra a mensagem da API', async () => {
     spyOn(window, 'confirm').and.returnValue(true);
-    tela.excluirSpy.and.returnValue(Promise.reject({ error: { message: 'Possui vínculos' } }));
+    tela.excluirSpy.and.returnValue(throwError(() => ({ error: { message: 'Possui vínculos' } })));
 
     await tela.onDelete({ id: 7, nome: 'Lazer' });
 
@@ -121,7 +122,7 @@ describe('CadastroListBase (FE-P1-02)', () => {
 
   it('onDelete com erro sem mensagem usa o rótulo', async () => {
     spyOn(window, 'confirm').and.returnValue(true);
-    tela.excluirSpy.and.returnValue(Promise.reject(null));
+    tela.excluirSpy.and.returnValue(throwError(() => null));
 
     await tela.onDelete({ id: 7, nome: 'Lazer' });
 
@@ -129,11 +130,11 @@ describe('CadastroListBase (FE-P1-02)', () => {
   });
 
   it('onDeleteSelected delega ao serviço e recarrega só se excluiu', async () => {
-    exclusao.confirmarEExcluir.and.returnValue(Promise.resolve(false));
+    exclusao.confirmarEExcluir.and.returnValue(of(false));
     await tela.onDeleteSelected([tela.dados[0]]);
     expect(tela.buscarSpy).not.toHaveBeenCalled();
 
-    exclusao.confirmarEExcluir.and.returnValue(Promise.resolve(true));
+    exclusao.confirmarEExcluir.and.returnValue(of(true));
     await tela.onDeleteSelected([tela.dados[0]]);
     expect(tela.buscarSpy).toHaveBeenCalled();
 
@@ -141,7 +142,7 @@ describe('CadastroListBase (FE-P1-02)', () => {
     expect(rows).toEqual([tela.dados[0]]);
     expect(rotulo.plural).toBe('categorias');
 
-    await excluirItem(tela.dados[0]);
+    await firstValueFrom(excluirItem(tela.dados[0]));
     expect(tela.excluirSpy).toHaveBeenCalledWith(2);
   });
 });

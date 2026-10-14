@@ -14,7 +14,16 @@ export function extrairMensagemErro(erro: unknown, fallback: string): string {
 
   const e = erro as any;
 
-  const corpo = e?.error;
+  let corpo = e?.error;
+
+  // Pedida com responseType 'text' (ApiService.postTexto), a resposta de erro JSON chega como string.
+  if (typeof corpo === 'string' && corpo.trim().startsWith('{')) {
+    try {
+      corpo = JSON.parse(corpo);
+    } catch {
+      // Não era JSON: segue como texto puro.
+    }
+  }
 
   // Corpo do erro como texto puro (ex.: Unauthorized("Usuário não autorizado!")).
   if (typeof corpo === 'string' && corpo.trim()) {

@@ -1,34 +1,30 @@
 import { Injectable } from '@angular/core';
+import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
-
-export type ListaDto = {
-    id: number;
-    nome: string;
-    tipoMovimentacao: number;
-    status: boolean;
-};
+import { ListaDto } from '../models/lista.model';
 
 @Injectable({ providedIn: 'root' })
 export class ListaService {
     constructor(private api: ApiService) { }
 
-    list(): Promise<ListaDto[]> {
-        return this.api.get<any>('/GetListas').then((r) => r?.data ?? r ?? []);
+    listar(): Observable<ListaDto[]> {
+        return this.api.get<ListaDto[]>('/GetListas').pipe(map(r => r ?? []));
     }
 
-    GetListaById(id: number): Promise<ListaDto> {
+    obterPorId(id: number): Observable<ListaDto> {
         return this.api.get<ListaDto>('/GetListaById', id);
     }
 
-    create(payload: Partial<ListaDto>): Promise<any> {
-        return this.api.post('/CreateLista', payload);
+    /** A API responde texto ("Lista criada com sucesso!"), não JSON. */
+    criar(dto: Partial<ListaDto>): Observable<string> {
+        return this.api.postTexto('/CreateLista', dto);
     }
 
-    update(payload: Partial<ListaDto>): Promise<any> {
-        return this.api.put('/UpdateLista', { ...payload });
+    atualizar(dto: Partial<ListaDto>): Observable<unknown> {
+        return this.api.put('/UpdateLista', dto);
     }
 
-    delete(id: number): Promise<any> {
+    excluir(id: number): Observable<unknown> {
         return this.api.delete('/DeleteLista', id);
     }
 }

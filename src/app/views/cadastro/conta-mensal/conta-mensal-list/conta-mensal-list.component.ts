@@ -1,14 +1,17 @@
 import { Component } from '@angular/core';
-import { AccountDto, ContaService, ContaVencimentoDto } from 'src/app/core/services/contas.service';
-import { Category, CategoryService } from 'src/app/core/services/category.service';
+import { ContaService } from 'src/app/core/services/contas.service';
+import { CategoryService } from 'src/app/core/services/category.service';
 import { formatCurrencyBR } from 'src/app/core/utils/mask';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { STATUS_ATIVO_OPTIONS, statusAtivoLabel } from 'src/app/shared/enums/status.enum';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { CadastroListBase } from 'src/app/shared/base/cadastro-list.base';
+import { CategoriaDto } from 'src/app/core/models/categoria.model';
+import { ContaDto, ContaVencimentoDto } from 'src/app/core/models/conta.model';
+import { Observable, map, tap } from 'rxjs';
 
 /** Conta com os campos derivados que o grid exibe. */
-type ContaLinha = AccountDto & {
+type ContaLinha = ContaDto & {
   /** Primeiro dia de vencimento como número, para ordenar a coluna (0 se não houver). */
   diasVencimentoSort: number;
   diasVencimentoString: string;
@@ -22,7 +25,7 @@ type ContaLinha = AccountDto & {
 export class ContaMensalListComponent extends CadastroListBase<ContaLinha> {
   protected readonly rotulo = { singular: 'conta', plural: 'contas', feminino: true };
 
-  categorias: Category[] = [];
+  categorias: CategoriaDto[] = [];
   categoriasOptions: GridColumnOption[] = [];
   statusOptions = STATUS_ATIVO_OPTIONS;
   gridColumns: GridColumn[] = [];
@@ -32,40 +35,30 @@ export class ContaMensalListComponent extends CadastroListBase<ContaLinha> {
     super();
   }
 
-  protected override async antesDeCarregar(): Promise<void> {
-    await this.getCategory();
-    this.setGridColumns();
+  protected override antesDeCarregar(): Observable<unknown> {
+    return this.categoryService.listarAtivas().pipe(tap(categorias => {
+      this.categorias = categorias;
+      this.categoriasOptions = categorias.map(categoria => ({ label: categoria.name, value: categoria.name }));
+      this.setGridColumns();
+    }));
   }
 
-  protected async buscar(): Promise<ContaLinha[]> {
-    const response = await this.contaService.list();
-
-    return response.map(item => ({
+  protected buscar(): Observable<ContaLinha[]> {
+    return this.contaService.listar().pipe(map(contas => contas.map(item => ({
       ...item,
       diasVencimentoSort: item.contaVencimentos && item.contaVencimentos.length > 0
         ? Number(item.contaVencimentos[0].dia)
         : 0,
       diasVencimentoString: this.getDatas(item.contaVencimentos)
-    }));
+    }))));
   }
 
   protected excluirRegistro(id: number) {
-    return this.contaService.delete(id);
+    return this.contaService.excluir(id);
   }
 
   protected nomeDe(conta: ContaLinha): string {
     return conta.name;
-  }
-
-  private async getCategory(): Promise<void> {
-    const res = await this.categoryService.buscarCategoriasAtivas();
-
-    this.categorias = res;
-
-    this.categoriasOptions = res.map(element => ({
-      label: element.name,
-      value: element.name
-    }));
   }
 
   private setGridColumns(): void {
@@ -113,7 +106,7 @@ export class ContaMensalListComponent extends CadastroListBase<ContaLinha> {
     ];
   }
 
-  formataParcela(conta: AccountDto): string {
+  formataParcela(conta: ContaDto): string {
     if (!conta.ehParcelado) {
       return "-";
     }

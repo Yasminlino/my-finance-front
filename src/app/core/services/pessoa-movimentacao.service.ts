@@ -1,44 +1,29 @@
 import { Injectable } from '@angular/core';
+import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
-import { TipoMovimentacaoDto } from '../models/tipo-movimentacao.model';
-import { Category } from './category.service';
-
-export type PessoaMovimentacaoDto = {
-    id: number;
-    nomePessoa: string;
-    categoriaId: number | null;
-    categoriaName: string | null;
-    tipoMovimentacaoId: number | null;
-    tipoMovimentacaoName: string | null;
-    mesAtualizacao?: string | null;
-    categoria?: Category | null;
-    tipoMovimentacao?: TipoMovimentacaoDto | null;
-};
-
-export type PessoaMovimentacaoCreateDto = Omit<PessoaMovimentacaoDto, 'id'>;
+import { PessoaMovimentacaoDto } from '../models/pessoa-movimentacao.model';
 
 @Injectable({ providedIn: 'root' })
 export class PessoaMovimentacaoService {
     constructor(private api: ApiService) { }
 
-
-    list(): Promise<PessoaMovimentacaoDto[]> {
-        return this.api.get<any>('/GetPessoaMovimentacao').then((r) => r?.data ?? r ?? []);
+    listar(): Observable<PessoaMovimentacaoDto[]> {
+        return this.api.get<PessoaMovimentacaoDto[]>('/GetPessoaMovimentacao').pipe(map(r => r ?? []));
     }
 
-    GetPessoaMovimentacaoById(id: number): Promise<PessoaMovimentacaoDto> {
+    obterPorId(id: number): Observable<PessoaMovimentacaoDto> {
         return this.api.get<PessoaMovimentacaoDto>('/GetPessoaMovimentacaoById', id);
     }
 
-    create(payload: Partial<PessoaMovimentacaoDto>): Promise<any> {
-        return this.api.post('/CreatePessoaMovimentacao', payload);
+    criar(dto: Partial<PessoaMovimentacaoDto>): Observable<unknown> {
+        return this.api.post('/CreatePessoaMovimentacao', dto);
     }
 
-    update(id: number, payload: Partial<PessoaMovimentacaoDto>): Promise<any> {
-        return this.api.put('/UpdatePessoaMovimentacao', { ...payload });
+    atualizar(dto: Partial<PessoaMovimentacaoDto>): Observable<unknown> {
+        return this.api.put('/UpdatePessoaMovimentacao', dto);
     }
 
-    delete(id: number): Promise<any> {
+    excluir(id: number): Observable<unknown> {
         return this.api.delete('/DeletePessoaMovimentacao', id);
     }
 }

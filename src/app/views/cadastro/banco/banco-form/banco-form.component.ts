@@ -1,11 +1,12 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { BancoDto } from 'src/app/core/interfaces/banco.interface';
 import { BancoService } from 'src/app/core/services/banco.service';
-import { TipoCartao } from 'src/app/core/services/tipo-cartao.service';
 import { formatCurrencyBR, parseCurrencyBR } from 'src/app/core/utils/mask';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
+import { BancoDto } from 'src/app/core/models/banco.model';
+import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
+import { finalize } from 'rxjs';
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
 
@@ -16,7 +17,7 @@ type AlertState = { type: 'success' | 'error' | ''; message: string };
 })
 export class BancoFormComponent implements OnInit {
   @Input() banco: BancoDto | null = null;
-  @Input() tiposCartao: TipoCartao[] = []; // ✅ novo
+  @Input() tiposCartao: TipoCartaoDto[] = []; // ✅ novo
   @Output() closed = new EventEmitter<boolean>();
 
   alert: AlertState = { type: '', message: '' };
@@ -47,40 +48,29 @@ export class BancoFormComponent implements OnInit {
     this.closed.emit(reload);
   }
 
-  async save() {
+  save() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    try {
-      this.saving = true;
+    const payload = {
+      id: this.banco?.id || 0,
+      nomeBanco: this.form.value.nomeBanco!,
+      saldoInicial: parseCurrencyBR(this.form.value.saldoInicial) ?? 0,
+      tipoCartaoId: Number(this.form.value.tipoCartaoId),
+      ativo: !!this.form.value.ativo,
+    };
 
-      const payload = {
-        id: this.banco?.id || 0,
-        nomeBanco: this.form.value.nomeBanco!,
-        saldoInicial: parseCurrencyBR(this.form.value.saldoInicial) ?? 0,
-        tipoCartaoId: Number(this.form.value.tipoCartaoId), // ✅ novo
-        ativo: !!this.form.value.ativo,
-      };
-
-      if (this.banco){
-        await this.bancoService.update(payload)
-      } 
-      else{
-        await  this.bancoService.create(payload)
-      } 
-      
-      this.alertService.success(`Banco "${this.form.value.nomeBanco!}" com sucesso!`);      
-      setTimeout(() => {
-        this.close(true);
-      }, 300);
-
-      this.close(true);
-    } catch (e) {
-      this.alertService.error(extrairMensagemErro(e, `Erro ao salvar Banco "${this.form.value.nomeBanco}".`));
-    } finally {
-      this.saving = false;
-    }
+    this.saving = true;
+    (this.banco ? this.bancoService.atualizar(payload) : this.bancoService.criar(payload))
+      .pipe(finalize(() => (this.saving = false)))
+      .subscribe({
+        next: () => {
+          this.alertService.success(`Banco "${payload.nomeBanco}" salvo com sucesso!`);
+          this.close(true);
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, `Erro ao salvar Banco "${payload.nomeBanco}".`))
+      });
   }
 }

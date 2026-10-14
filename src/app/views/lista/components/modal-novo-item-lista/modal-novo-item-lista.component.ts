@@ -3,8 +3,11 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 
 // Ajuste esses imports para o seu projeto
-import { ItemListaDto, ItemListaService } from 'src/app/core/services/item-lista.service';
+import { ItemListaService } from 'src/app/core/services/item-lista.service';
 import { formatCurrencyBR, parseCurrencyBR } from 'src/app/core/utils/mask';
+import { ItemListaDto } from 'src/app/core/models/lista.model';
+import { finalize } from 'rxjs';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
 
@@ -59,7 +62,7 @@ export class ModalNovoItemListaComponent implements OnInit {
     this.closed.emit(reload);
   }
 
-  async save() {
+  save() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -81,28 +84,13 @@ export class ModalNovoItemListaComponent implements OnInit {
       horarioTarefa: this.form.value.horarioTarefa ?? undefined,
     };
 
-    try {
-      if (this.item) {
-        await this.itemListaService.update(payload).then(() => {
-          this.alert = { type: 'success', message: 'Item atualizado com sucesso!' };
-        }).catch(() => {
-          this.alert = { type: 'error', message: 'Erro ao atualizar item.' };
-        });
-      } else {
-        await this.itemListaService.create(payload).then(() => {
-          this.alert = { type: 'success', message: 'Item criado com sucesso!' };
-        }).catch(() => {
-          this.alert = { type: 'error', message: 'Erro ao criar item.' };
-        });     
-      }
-
-      this.close(true); // ✅ só fecha se salvou
-    } catch (e) {
-      console.error(e);
-      this.alert = { type: 'error', message: 'Erro ao salvar item.' };
-    } finally {
-      this.saving = false;
-    }
+    // Fecha só se salvou; antes o erro era engolido pelo .catch e o modal fechava igual.
+    (this.item ? this.itemListaService.atualizar(payload) : this.itemListaService.criar(payload))
+      .pipe(finalize(() => (this.saving = false)))
+      .subscribe({
+        next: () => this.close(true),
+        error: e => (this.alert = { type: 'error', message: extrairMensagemErro(e, 'Erro ao salvar item.') })
+      });
   }
 
 }

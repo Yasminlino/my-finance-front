@@ -1,7 +1,10 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { ListaDto, ListaService } from 'src/app/core/services/lista.service';
-import { TipoCartao } from 'src/app/core/services/tipo-cartao.service';
+import { ListaService } from 'src/app/core/services/lista.service';
+import { ListaDto } from 'src/app/core/models/lista.model';
+import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
+import { finalize } from 'rxjs';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
@@ -12,7 +15,7 @@ type AlertState = { type: 'success' | 'error' | ''; message: string };
 })
 export class ModalNovaListaComponent implements OnInit {
   @Input() lista: ListaDto | null = null;
-  @Input() tiposCartao: TipoCartao[] = []; 
+  @Input() tiposCartao: TipoCartaoDto[] = []; 
   @Output() closed = new EventEmitter<boolean>();
 
   
@@ -42,38 +45,26 @@ export class ModalNovaListaComponent implements OnInit {
     this.closed.emit(reload);
   }
 
-  async save() {
+  save() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    try {
-      this.saving = true;
+    const payload = {
+      id: this.lista?.id || 0,
+      nome: this.form.value.nome!,
+      tipoMovimentacao: Number(this.form.value.tipoMovimentacao),
+      status: !!this.form.value.status,
+    };
 
-      const payload = {
-        id: this.lista?.id || 0,
-        nome: this.form.value.nome!,
-        tipoMovimentacao: Number(this.form.value.tipoMovimentacao), 
-        status: !!this.form.value.status,
-      };
-
-      if (this.lista) await this.listaService.update(payload);
-      else {await this.listaService.create(payload)
-        .then(async (res) => {
-          this.alert = { type: 'success', message: 'Conta criada com sucesso!' };
-        })
-        .catch(() => { 
-          this.alert = { type: 'error', message: 'Erro ao criar lista.' };
-        });
-
-      }
-
-      this.close(true);
-    } catch {
-      alert('Erro ao salvar lista.');
-    } finally {
-      this.saving = false;
-    }
+    this.saving = true;
+    // Fecha só se salvou; antes o erro do create era engolido e o modal fechava igual.
+    (this.lista ? this.listaService.atualizar(payload) : this.listaService.criar(payload))
+      .pipe(finalize(() => (this.saving = false)))
+      .subscribe({
+        next: () => this.close(true),
+        error: e => alert(extrairMensagemErro(e, 'Erro ao salvar lista.'))
+      });
   }
 }

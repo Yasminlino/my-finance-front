@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { TipoMovimentacaoDto } from '../models/tipo-movimentacao.model';
 
@@ -6,19 +7,19 @@ import { TipoMovimentacaoDto } from '../models/tipo-movimentacao.model';
 export class TipoMovimentacaoService {
   constructor(private api: ApiService) {}
 
-  list(): Promise<TipoMovimentacaoDto[]> {
+  listar(): Observable<TipoMovimentacaoDto[]> {
     return this.api.get<TipoMovimentacaoDto[]>('/GetTipoMovimentacao');
   }
 
-  create(dto: Partial<TipoMovimentacaoDto>): Promise<any> {
-    return this.api.post<any>('/CreateTipoMovimentacao', dto);
+  criar(dto: Partial<TipoMovimentacaoDto>): Observable<unknown> {
+    return this.api.post('/CreateTipoMovimentacao', dto);
   }
 
-  update(dto: Partial<TipoMovimentacaoDto>): Promise<any> {
-    return this.api.put<any>('/UpdateTipoMovimentacao', dto);
+  atualizar(dto: Partial<TipoMovimentacaoDto>): Observable<unknown> {
+    return this.api.put('/UpdateTipoMovimentacao', dto);
   }
 
-  delete(id: number): Promise<any> {
-    return this.api.delete<any>('/DeleteTipoMovimentacao', id);
+  excluir(id: number): Observable<unknown> {
+    return this.api.delete('/DeleteTipoMovimentacao', id);
   }
 }

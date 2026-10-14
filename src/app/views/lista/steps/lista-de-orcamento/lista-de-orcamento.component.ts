@@ -1,16 +1,20 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { ListaService } from 'src/app/core/services/lista.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ItemListaDto, ItemListaService } from 'src/app/core/services/item-lista.service';
+import { ItemListaService } from 'src/app/core/services/item-lista.service';
 import { TipoLista } from 'src/app/shared/enums/tipo-lista.enum';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { formatCurrencyBR } from 'src/app/core/utils/mask';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
+import { ItemListaDto } from 'src/app/core/models/lista.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize, forkJoin } from 'rxjs';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 
 
@@ -21,6 +25,7 @@ import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/model
 })
 export class ListaDeOrcamentoComponent implements OnInit {
   @ViewChild('grid') grid?: DataGridComponent;
+  private readonly destroyRef = inject(DestroyRef);
 
   itensLista: ItemListaDto[] = [];
   
@@ -54,9 +59,9 @@ export class ListaDeOrcamentoComponent implements OnInit {
 
   constructor(private itemListaService: ItemListaService, private listaService: ListaService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService, private readonly router: Router, private readonly route: ActivatedRoute) { }
 
-  async ngOnInit() {
-    await this.load();
+  ngOnInit() {
     this.setGridColumns();
+    this.load();
   }
 
   money(v: any) { return formatCurrencyBR(v); }
@@ -88,21 +93,21 @@ export class ListaDeOrcamentoComponent implements OnInit {
     ]
   }
 
-  async load() {
-    try {
-      this.loading = true;
-      this.listaId = Number(this.route.snapshot.paramMap.get('id'));
-      this.itensLista = await this.itemListaService.GetItemListaById(Number(this.listaId));      
-      this.lista = [...this.itensLista]; 
-      const listaObj = await this.listaService.GetListaById(this.listaId);
-      this.titulo = listaObj?.nome ?? 'Orçamento';
-      console.log('Listas carregadas:', this.itensLista);
-      this.applyFilters();
-    } catch (e: any) {
-      this.alertService.error(e?.message ?? 'Erro ao carregar listas.');
-    } finally {
-      this.loading = false;
-    }
+  load() {
+    this.listaId = Number(this.route.snapshot.paramMap.get('id'));
+
+    this.loading = true;
+    forkJoin({ itens: this.itemListaService.listarDaLista(this.listaId), lista: this.listaService.obterPorId(this.listaId) })
+      .pipe(finalize(() => (this.loading = false)), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ itens, lista }) => {
+          this.itensLista = itens;
+          this.lista = [...itens];
+          this.titulo = lista?.nome ?? 'Orçamento';
+          this.applyFilters();
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar os itens do orçamento.'))
+      });
   }
 
   calculaTotal() {
@@ -172,27 +177,24 @@ export class ListaDeOrcamentoComponent implements OnInit {
     if (reload) this.load();
   }
 
-  async onDelete(c: ItemListaDto) {
-    const ok = window.confirm(`Excluir a lista "${c.descricao}"?`);
+  onDelete(c: ItemListaDto) {
+    const ok = window.confirm(`Excluir o item "${c.descricao}"?`);
     if (!ok) return;
 
-    try {
-      await this.itemListaService.delete(c.id);
-      this.alertService.success('Lista deletada com sucesso!')
-      await this.load();
-    } catch (e) {
-      this.alertService.error('Falha ao deletar. Lista pode estar vinculada a transações.');
-    }
+    this.itemListaService.excluir(c.id).subscribe({
+      next: () => {
+        this.alertService.success('Item excluído com sucesso!');
+        this.load();
+      },
+      error: e => this.alertService.error(extrairMensagemErro(e, 'Falha ao excluir o item.'))
+    });
   }
 
-  async onDeleteSelected(rows: ItemListaDto[]) {
-    const excluiu = await this.exclusaoEmLote.confirmarEExcluir(
-      this.grid,
-      rows,
-      row => this.itemListaService.delete(row.id),
-      { singular: 'item', plural: 'itens' }
-    );
-
-    if (excluiu) await this.load();
+  onDeleteSelected(rows: ItemListaDto[]) {
+    this.exclusaoEmLote
+      .confirmarEExcluir(this.grid, rows, row => this.itemListaService.excluir(row.id), { singular: 'item', plural: 'itens' })
+      .subscribe(excluiu => {
+        if (excluiu) this.load();
+      });
   }
 }

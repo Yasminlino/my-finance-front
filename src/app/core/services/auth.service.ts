@@ -1,5 +1,5 @@
-// src/app/core/services/auth.service.ts
 import { Injectable } from '@angular/core';
+import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 
 type AuthResponse = { token: any, usuario: any };
@@ -8,30 +8,27 @@ type AuthResponse = { token: any, usuario: any };
 export class AuthService {
   constructor(private api: ApiService) {}
 
-  async authenticate(username: string, password: string, remember: boolean): Promise<boolean> {
-    const payload = { login: username, senha: password };
+  /** Autentica e guarda a sessão; emite true quando a API devolve um token. */
+  autenticar(usuario: string, senha: string, lembrar: boolean): Observable<boolean> {
+    return this.api.post<AuthResponse>('/Autenticar', { login: usuario, senha })
+      .pipe(map(resposta => this.guardarSessao(resposta, lembrar)));
+  }
 
-    const response = await this.api.post<AuthResponse>('/Autenticar', payload);    
+  private guardarSessao(response: AuthResponse | null, remember: boolean): boolean {
+    if (!response?.token?.token) return false;
 
-    if (response?.token?.token) {
-      localStorage.setItem('authToken', response.token?.token);
-      localStorage.setItem('expiraToken',response.token.dataExpiracao?.toString() ?? '');
-      localStorage.setItem('usuarioRole', response?.usuario.role ?? '');
-      localStorage.setItem('usuarioNome', response?.usuario.nomeUsuario ?? '');
+    localStorage.setItem('authToken', response.token.token);
+    localStorage.setItem('expiraToken', response.token.dataExpiracao?.toString() ?? '');
+    localStorage.setItem('usuarioRole', response.usuario?.role ?? '');
+    localStorage.setItem('usuarioNome', response.usuario?.nomeUsuario ?? '');
 
-      if (remember) {
-        localStorage.setItem('remember', '1');
-        // localStorage.setItem('lastUser', username);
-      } else {
-        localStorage.removeItem('remember');
-        localStorage.removeItem('lastUser');
-      }
-
-      // se você tiver estado global depois, aqui é o lugar de setar
-      return true;
+    if (remember) {
+      localStorage.setItem('remember', '1');
+    } else {
+      localStorage.removeItem('remember');
+      localStorage.removeItem('lastUser');
     }
-
-    return false;
+    return true;
   }
 
   /**

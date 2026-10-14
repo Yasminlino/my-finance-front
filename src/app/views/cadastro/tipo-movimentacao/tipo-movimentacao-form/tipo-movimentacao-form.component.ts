@@ -3,6 +3,8 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { TipoMovimentacaoDto } from 'src/app/core/models/tipo-movimentacao.model';
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { finalize } from 'rxjs';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 @Component({
   selector: 'app-tipo-movimentacao-form',
@@ -37,31 +39,29 @@ export class TipoMovimentacaoFormComponent implements OnInit {
     this.closed.emit(reload);
   }
 
-  async save() {
+  save() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    try {
-      this.saving = true;
+    const payload = {
+      id: this.item?.id,
+      nomeTipoMovimentacao: this.form.value.nomeTipoMovimentacao!,
+      descricao: this.form.value.descricao ?? '',
+      valorMeta: Number(this.form.value.valorMeta) || 0,
+    };
 
-      const payload = {
-        id: this.item?.id,
-        nomeTipoMovimentacao: this.form.value.nomeTipoMovimentacao!,
-        descricao: this.form.value.descricao ?? '',
-        valorMeta: Number(this.form.value.valorMeta) || 0,
-      };
-
-      if (this.item) await this.service.update(payload);
-      else await this.service.create(payload);
-
-      this.alertService.success(`Tipo Movimentação "${this.form.value.nomeTipoMovimentacao!}" salvo com sucesso.`)
-      this.close(true);
-    } catch {
-      this.alertService.success(`Erro ao salvar o Tipo Movimentação  "${this.form.value.nomeTipoMovimentacao!}".`)
-    } finally {
-      this.saving = false;
-    }
+    this.saving = true;
+    (this.item ? this.service.atualizar(payload) : this.service.criar(payload))
+      .pipe(finalize(() => (this.saving = false)))
+      .subscribe({
+        next: () => {
+          this.alertService.success(`Tipo Movimentação "${payload.nomeTipoMovimentacao}" salvo com sucesso.`);
+          this.close(true);
+        },
+        // Antes o erro aparecia num alerta de sucesso.
+        error: e => this.alertService.error(extrairMensagemErro(e, `Erro ao salvar o Tipo Movimentação "${payload.nomeTipoMovimentacao}".`))
+      });
   }
 }

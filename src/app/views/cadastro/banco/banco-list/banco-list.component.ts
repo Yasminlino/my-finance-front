@@ -3,10 +3,12 @@ import { formatCurrencyBR } from 'src/app/core/utils/mask';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { STATUS_ATIVO_OPTIONS, statusAtivoLabel } from 'src/app/shared/enums/status.enum';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
-import { TipoCartao, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
+import { TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { BancoService } from 'src/app/core/services/banco.service';
-import { BancoDto } from 'src/app/core/interfaces/banco.interface';
 import { CadastroListBase } from 'src/app/shared/base/cadastro-list.base';
+import { BancoDto } from 'src/app/core/models/banco.model';
+import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
+import { Observable, map, tap } from 'rxjs';
 
 /** Banco com os campos derivados que o grid exibe. */
 type BancoLinha = BancoDto & {
@@ -22,7 +24,7 @@ type BancoLinha = BancoDto & {
 export class BancoListComponent extends CadastroListBase<BancoLinha> {
   protected readonly rotulo = { singular: 'banco', plural: 'bancos' };
 
-  tiposCartao: TipoCartao[] = [];
+  tiposCartao: TipoCartaoDto[] = [];
   tipoCartaoOpcoes: GridColumnOption[] = [];
   statusOptions = STATUS_ATIVO_OPTIONS;
   gridColumns: GridColumn[] = [];
@@ -32,39 +34,29 @@ export class BancoListComponent extends CadastroListBase<BancoLinha> {
     super();
   }
 
-  protected override async antesDeCarregar(): Promise<void> {
-    await this.getTiposCartao();
-    this.setGridColumns();
+  protected override antesDeCarregar(): Observable<unknown> {
+    return this.tipoCartaoService.listar().pipe(tap(tipos => {
+      this.tiposCartao = tipos;
+      this.tipoCartaoOpcoes = tipos.map(tipo => ({ label: tipo.nomeTipoCartao, value: tipo.nomeTipoCartao }));
+      this.setGridColumns();
+    }));
   }
 
-  protected async buscar(): Promise<BancoLinha[]> {
-    const response = await this.bancoService.list();
-
-    return response.map(item => ({
+  protected buscar(): Observable<BancoLinha[]> {
+    return this.bancoService.listar().pipe(map(bancos => bancos.map(item => ({
       ...item,
       nomeTipoCartaoFormatado: item.tipoCartao?.nomeTipoCartao ||
         this.tiposCartao.find(t => t.id === item.tipoCartaoId)?.nomeTipoCartao || '-',
       status: item.ativo ? 1 : 0
-    }));
+    }))));
   }
 
   protected excluirRegistro(id: number) {
-    return this.bancoService.delete(id);
+    return this.bancoService.excluir(id);
   }
 
   protected nomeDe(banco: BancoLinha): string {
     return banco.nomeBanco;
-  }
-
-  private async getTiposCartao(): Promise<void> {
-    const res = await this.tipoCartaoService.list();
-
-    this.tiposCartao = res;
-
-    this.tipoCartaoOpcoes = res.map(element => ({
-      label: element.nomeTipoCartao,
-      value: element.nomeTipoCartao
-    }));
   }
 
   private setGridColumns(): void {

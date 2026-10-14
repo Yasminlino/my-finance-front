@@ -1,33 +1,19 @@
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { ExtratoBancarioDto } from '../models/extrato.model';
 
-export interface ExtratoBancarioDto {
-  id: number;              // ou string | number se tiver manual
-  dataImportacao: string;
-  dataInicioPeriodo: string;
-  dataFimPeriodo: string;
-  
-  bancoId: number;
-    bancoNome: string;
-  tipoCartaoId: number;
-  nomeArquivoOrigem: string;
-
-  quantidadeLancamentos: number;
-
-  valorTotal: number;
-  situacao: string;
-}
-
+/** Cabeçalhos das importações de extrato. */
 @Injectable({ providedIn: 'root' })
 export class ExtratoBancarioService {
   constructor(private api: ApiService) { }
 
-  /** O endpoint só filtra por mês; não existe filtro por banco no /GetExtratoBancario. */
-  listExtratos(monthFilter: string): Promise<ExtratoBancarioDto[]> {
-    return this.api.get<ExtratoBancarioDto[]>('/GetExtratoBancario?month=' + monthFilter);
+  /** O endpoint só filtra por mês ("YYYY-MM"); não existe filtro por banco. */
+  listarDoMes(mes: string): Observable<ExtratoBancarioDto[]> {
+    return this.api.get<ExtratoBancarioDto[]>('/GetExtratoBancario', undefined, { params: { month: mes } });
   }
 
-  deleteExtrato(id: number): Promise<any> {
+  excluir(id: number): Observable<unknown> {
     return this.api.delete('/DeleteExtratoBancario', id);
   }
 }

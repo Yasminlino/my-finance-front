@@ -1,69 +1,46 @@
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { AgrupamentoContaMensal, ContaMensal, LinhaContaMensal } from '../models/conta-mensal.model';
-import { AlertService } from 'src/app/shared/components/alert.service';
+import { ContaMensal, LinhaContasMensais } from '../models/conta-mensal.model';
 import { formatDateInput } from '../utils/mask';
 
+/** Contas do mês (Transactions na API). */
 @Injectable({ providedIn: 'root' })
 export class ContaMensalService {
-  constructor(private api: ApiService, private alertService: AlertService) { }
+  constructor(private api: ApiService) { }
 
-  getGroupingByMonth(yyyymm: string, pesquisaDataCompleta: boolean = false): Promise<any[]> {
-    // ajuste endpoint/params conforme seu backend
-    return this.api.get<any[]>(`/GetTransactionGroupingByDate/${yyyymm}/${pesquisaDataCompleta}`);
+  /** Contas do mês ("YYYY-MM") ou de um dia exato ("YYYY-MM-DD" com diaExato), com conta e categoria. */
+  listarDoMes(periodo: string, diaExato = false): Observable<LinhaContasMensais[]> {
+    return this.api.get<LinhaContasMensais[]>(`/BuscarContasMensais/${periodo}/${diaExato}`);
   }
 
-  async BuscarContasMensais(yyyymm: string, pesquisaDataCompleta: boolean = false): Promise<any[]> {
-    try {
-      const res = await this.api.get<any[]>(`/BuscarContasMensais/${yyyymm}/${pesquisaDataCompleta}`);
-      return res;
-    } catch (error) {
-      // Trate o erro conforme a sua necessidade (ex: logar ou relançar)
-      console.error("Erro ao buscar contas mensais:", error);
-      // this.alertService.error(error.error.message)
-      throw error;
-    }
+  /** Lançamentos do mês ou de um dia exato, sem os dados da conta. */
+  listarPorData(periodo: string, diaExato = false): Observable<ContaMensal[]> {
+    return this.api.get<ContaMensal[]>(`/GetTransactionByDate/${periodo}/${diaExato}`);
   }
 
-  GetTransactionByDate(yyyymm: string, pesquisaDataCompleta: boolean = false): Promise<ContaMensal[]> {
-    // ajuste endpoint/params conforme seu backend
-    return this.api.get<ContaMensal[]>(`/GetTransactionByDate/${yyyymm}/${pesquisaDataCompleta}`);
-  }
-
-  BuscaContasVencidas(yyyymm: string): Promise<ContaMensal[]> {
-    // ajuste endpoint/params conforme seu backend
-    return this.api.get<ContaMensal[]>(`/GetContaVencida/${yyyymm}`);
-  }
-
-  GetTransactionByDate2(date: Date): Promise<ContaMensal[]> {
-    // ajuste endpoint/params conforme seu backend
-    return this.api.get<ContaMensal[]>('/GetTransactionByDate/' + date);
+  /** Em aberto com vencimento antes de `dia` ("YYYY-MM-DD"). */
+  listarVencidas(dia: string): Observable<ContaMensal[]> {
+    return this.api.get<ContaMensal[]>(`/GetContaVencida/${dia}`);
   }
 
   /**
    * O vencimento é data de calendário na API (DB-P1-02): vai sempre como "YYYY-MM-DD".
    * O form/grid entrega Date à meia-noite local; formatDateInput lê nos getters locais.
    */
-  private comDataDeCalendario(payload: any): any {
-    return payload?.date ? { ...payload, date: formatDateInput(payload.date) } : payload;
+  private comDataDeCalendario(dto: any): any {
+    return dto?.date ? { ...dto, date: formatDateInput(dto.date) } : dto;
   }
 
-  async createContaMensal(payload: any): Promise<any> {
-    return await this.api.post<any>('/CreateTransaction', this.comDataDeCalendario(payload));
+  criar(dto: any): Observable<unknown> {
+    return this.api.post('/CreateTransaction', this.comDataDeCalendario(dto));
   }
 
-  async updateTransaction(payload: any): Promise<any> {
-    try {
-      const res = await this.api.put<any>('/UpdateTransaction', this.comDataDeCalendario(payload));
-      return res;
-    } catch (error) {
-      console.error("Erro ao buscar contas mensais:", error);
-      throw error;
-    }
-
+  atualizar(dto: any): Observable<unknown> {
+    return this.api.put('/UpdateTransaction', this.comDataDeCalendario(dto));
   }
 
-  deleteTransaction(id: number): Promise<any> {
-    return this.api.delete<any>('/DeleteTransaction', id);
+  excluir(id: number): Observable<unknown> {
+    return this.api.delete('/DeleteTransaction', id);
   }
 }

@@ -1,4 +1,6 @@
-import { Directive, OnInit, ViewChild, inject } from '@angular/core';
+import { DestroyRef, Directive, OnInit, ViewChild, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable, finalize, of, switchMap } from 'rxjs';
 import { ExclusaoEmLoteService, RotuloEntidade } from 'src/app/core/services/exclusao-em-lote.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { AlertService } from 'src/app/shared/components/alert.service';
@@ -18,6 +20,7 @@ import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/model
 export abstract class CadastroListBase<T extends { id: number }> implements OnInit {
   protected readonly alertService = inject(AlertService);
   protected readonly exclusaoEmLote = inject(ExclusaoEmLoteService);
+  private readonly destroyRef = inject(DestroyRef);
 
   /** Fonte: tudo o que veio da API. */
   registros: T[] = [];
@@ -34,31 +37,37 @@ export abstract class CadastroListBase<T extends { id: number }> implements OnIn
   protected abstract readonly rotulo: RotuloEntidade;
 
   /** Linhas prontas para o grid (já com os campos derivados que a tela exibe). */
-  protected abstract buscar(): Promise<T[]>;
+  protected abstract buscar(): Observable<T[]>;
 
-  protected abstract excluirRegistro(id: number): Promise<unknown>;
+  protected abstract excluirRegistro(id: number): Observable<unknown>;
 
   /** Nome exibido do registro: ordena o grid e aparece no confirm da exclusão. */
   protected abstract nomeDe(registro: T): string;
 
   /** Catálogos e colunas que dependem deles; roda uma vez, antes da primeira carga. */
-  protected async antesDeCarregar(): Promise<void> {}
-
-  async ngOnInit() {
-    await this.antesDeCarregar();
-    await this.load();
+  protected antesDeCarregar(): Observable<unknown> {
+    return of(null);
   }
 
-  async load() {
-    try {
-      this.loading = true;
-      this.registros = await this.buscar();
-      this.applyFilters();
-    } catch (e) {
-      this.alertService.error(extrairMensagemErro(e, `Erro ao carregar ${this.rotulo.plural}.`));
-    } finally {
-      this.loading = false;
-    }
+  ngOnInit() {
+    this.carregar(this.antesDeCarregar().pipe(switchMap(() => this.buscar())));
+  }
+
+  load() {
+    this.carregar(this.buscar());
+  }
+
+  private carregar(registros$: Observable<T[]>) {
+    this.loading = true;
+    registros$
+      .pipe(finalize(() => (this.loading = false)), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: registros => {
+          this.registros = registros;
+          this.applyFilters();
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, `Erro ao carregar ${this.rotulo.plural}.`))
+      });
   }
 
   applyFilters() {
@@ -82,33 +91,33 @@ export abstract class CadastroListBase<T extends { id: number }> implements OnIn
     if (reload) this.load();
   }
 
-  async onDelete(registro: T) {
+  onDelete(registro: T) {
     const { singular, feminino } = this.rotulo;
     const ok = window.confirm(`Excluir ${feminino ? 'a' : 'o'} ${singular} "${this.nomeDe(registro)}"?`);
     if (!ok) return;
 
     const entidade = singular.charAt(0).toUpperCase() + singular.slice(1);
 
-    try {
-      await this.excluirRegistro(registro.id);
-      this.alertService.success(`${entidade} ${feminino ? 'excluída' : 'excluído'} com sucesso!`);
-      await this.load();
-    } catch (e) {
-      this.alertService.error(extrairMensagemErro(
-        e,
-        `Falha ao excluir. ${entidade} pode estar ${feminino ? 'vinculada' : 'vinculado'} a outros registros.`
-      ));
-    }
+    this.excluirRegistro(registro.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.alertService.success(`${entidade} ${feminino ? 'excluída' : 'excluído'} com sucesso!`);
+          this.load();
+        },
+        error: e => this.alertService.error(extrairMensagemErro(
+          e,
+          `Falha ao excluir. ${entidade} pode estar ${feminino ? 'vinculada' : 'vinculado'} a outros registros.`
+        ))
+      });
   }
 
-  async onDeleteSelected(rows: T[]) {
-    const excluiu = await this.exclusaoEmLote.confirmarEExcluir(
-      this.grid,
-      rows,
-      row => this.excluirRegistro(row.id),
-      this.rotulo
-    );
-
-    if (excluiu) await this.load();
+  onDeleteSelected(rows: T[]) {
+    this.exclusaoEmLote
+      .confirmarEExcluir(this.grid, rows, row => this.excluirRegistro(row.id), this.rotulo)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(excluiu => {
+        if (excluiu) this.load();
+      });
   }
 }

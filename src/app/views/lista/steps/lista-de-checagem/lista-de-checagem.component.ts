@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
@@ -6,9 +6,13 @@ import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ItemListaService, ItemListaDto } from 'src/app/core/services/item-lista.service';
+import { ItemListaService } from 'src/app/core/services/item-lista.service';
 import { ListaService } from 'src/app/core/services/lista.service';
 import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
+import { ItemListaDto } from 'src/app/core/models/lista.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize, forkJoin } from 'rxjs';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 @Component({
   selector: 'app-lista-de-checagem',
@@ -25,7 +29,7 @@ export class ListaDeChecagemComponent implements OnInit {
     { label: 'OK', value: 'OK', classe: TagStatus.Success },
     { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Warning }
   ];
-  listaId: string | null = null;
+  listaId: number = 0;
 
   statusLabel(value: string): boolean {
     return value === 'OK' ? true : false;
@@ -45,13 +49,14 @@ export class ListaDeChecagemComponent implements OnInit {
 
   editing: ItemListaDto | null = null;
   @ViewChild('grid') grid?: DataGridComponent;
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(private itemListaService: ItemListaService, private readonly listaService: ListaService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService, private readonly router: Router, private readonly route: ActivatedRoute) { }
 
-  async ngOnInit() {
+  ngOnInit() {
     this.setExibirCampos()
     this.setGridColumns();
-    await this.load();
+    this.load();
   }
 
   private setGridColumns(): void {
@@ -79,22 +84,20 @@ export class ListaDeChecagemComponent implements OnInit {
     }
   }
 
-  async load() {
-    try {
-      this.loading = true;
-      this.listaId = this.route.snapshot.paramMap.get('id')
-      this.itemListas = (await this.itemListaService.GetItemListaById(Number(this.listaId))).map(i => ({
-        ...i,
-        statusBoolean: i.status === 'OK'
-      }));
-      this.titulo = (await this.listaService.GetListaById(Number(this.listaId))).nome
-      console.log('Listas carregadas:', this.itemListas);
-      this.applyFilters();
-    } catch (e: any) {
-      this.alertService.error(e?.message ?? 'Erro ao carregar listas.')
-    } finally {
-      this.loading = false;
-    }
+  load() {
+    this.listaId = Number(this.route.snapshot.paramMap.get('id'));
+
+    this.loading = true;
+    forkJoin({ itens: this.itemListaService.listarDaLista(this.listaId), lista: this.listaService.obterPorId(this.listaId) })
+      .pipe(finalize(() => (this.loading = false)), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ itens, lista }) => {
+          this.itemListas = itens.map(i => ({ ...i, statusBoolean: i.status === 'OK' }));
+          this.titulo = lista.nome;
+          this.applyFilters();
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar os itens da lista.'))
+      });
   }
 
   applyFilters() {
@@ -113,17 +116,13 @@ export class ListaDeChecagemComponent implements OnInit {
     this.applyFilters();
   }
 
-  async toggleConcluido(item: ItemListaDto) {
+  toggleConcluido(item: ItemListaDto) {
     const oldStatus = item.status;
-    const novoStatus = item.status === 'OK' ? 'PENDENTE' : 'OK';
+    item.status = item.status === 'OK' ? 'PENDENTE' : 'OK';
 
-    item.status = novoStatus;
-
-    try {
-      await this.itemListaService.update(item);
-    } catch {
-      item.status = oldStatus; // rollback
-    }
+    this.itemListaService.atualizar(item).subscribe({
+      error: () => (item.status = oldStatus) // desfaz na tela
+    });
   }
   openCreate() {
     this.editing = null;
@@ -147,27 +146,24 @@ export class ListaDeChecagemComponent implements OnInit {
     if (reload) this.load();
   }
 
-  async onDelete(c: ItemListaDto) {
-    const ok = window.confirm(`Excluir a lista "${c.descricao}"?`);
+  onDelete(c: ItemListaDto) {
+    const ok = window.confirm(`Excluir o item "${c.descricao}"?`);
     if (!ok) return;
 
-    try {
-      await this.itemListaService.delete(c.id);
-      this.alertService.success('Lista deletada com sucesso!')
-      await this.load();
-    } catch (e) {
-      this.alertService.error('Falha ao deletar. Lista pode estar vinculada a transações.');
-    }
+    this.itemListaService.excluir(c.id).subscribe({
+      next: () => {
+        this.alertService.success('Item excluído com sucesso!');
+        this.load();
+      },
+      error: e => this.alertService.error(extrairMensagemErro(e, 'Falha ao excluir o item.'))
+    });
   }
 
-  async onDeleteSelected(rows: ItemListaDto[]) {
-    const excluiu = await this.exclusaoEmLote.confirmarEExcluir(
-      this.grid,
-      rows,
-      row => this.itemListaService.delete(row.id),
-      { singular: 'item', plural: 'itens' }
-    );
-
-    if (excluiu) await this.load();
+  onDeleteSelected(rows: ItemListaDto[]) {
+    this.exclusaoEmLote
+      .confirmarEExcluir(this.grid, rows, row => this.itemListaService.excluir(row.id), { singular: 'item', plural: 'itens' })
+      .subscribe(excluiu => {
+        if (excluiu) this.load();
+      });
   }
 }

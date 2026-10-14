@@ -1,8 +1,10 @@
 import { Component } from '@angular/core';
 import { GridColumn } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
-import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
+import { TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { CadastroListBase } from 'src/app/shared/base/cadastro-list.base';
+import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
+import { Observable, map } from 'rxjs';
 
 /** Tipos do sistema vêm somente leitura: o grid esconde editar/excluir e a seleção. */
 type TipoCartaoLinha = TipoCartaoDto & { somenteLeitura: boolean };
@@ -27,13 +29,12 @@ export class TipoCartaoListComponent extends CadastroListBase<TipoCartaoLinha> {
     super();
   }
 
-  protected async buscar(): Promise<TipoCartaoLinha[]> {
-    const tipos = await this.tipoCartaoService.list();
-    return tipos.map(t => ({ ...t, somenteLeitura: t.ehSistema }));
+  protected buscar(): Observable<TipoCartaoLinha[]> {
+    return this.tipoCartaoService.listar().pipe(map(tipos => tipos.map(t => ({ ...t, somenteLeitura: t.ehSistema }))));
   }
 
   protected excluirRegistro(id: number) {
-    return this.tipoCartaoService.delete(id);
+    return this.tipoCartaoService.excluir(id);
   }
 
   protected nomeDe(tipo: TipoCartaoLinha): string {

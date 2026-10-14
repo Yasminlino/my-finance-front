@@ -1,20 +1,20 @@
-import { Injectable, Injector } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { Router } from '@angular/router';
-import { AuthService } from './Auth.service';
 
+/** Valores aceitos em query string; null/undefined não entram na URL. */
+export type QueryParams = Record<string, string | number | boolean | null | undefined>;
+
+/**
+ * Acesso HTTP à API. Devolve Observable, o padrão do HttpClient (FE-P2-08): a tela decide
+ * quando assinar e pode cancelar (switchMap na troca de mês). Token e 401 ficam no authInterceptor.
+ */
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private baseUrl = environment.apiBaseUrl;
 
-  // Usamos o Injector para evitar dependência circular (AuthService costuma injetar ApiService)
-  constructor(
-    private http: HttpClient,
-    private router: Router,
-    private injector: Injector
-  ) {}
+  constructor(private http: HttpClient) {}
 
   private buildUrl(url: string, id?: number) {
     const base = this.baseUrl.replace(/\/+$/, '');
@@ -22,33 +22,33 @@ export class ApiService {
     return `${base}${path}${id != null ? `/${id}` : ''}`;
   }
 
-  private async handleRequest<T>(requestPromise: Promise<T>): Promise<T> {
-    try {
-      return await requestPromise;
-    } catch (error: any) {
-      if (error instanceof HttpErrorResponse && error.status === 401) {
-        // Resolve o AuthService de forma tardia para evitar dependência circular
-        const authService = this.injector.get(AuthService);
-        authService.logout();
-        this.router.navigate(['/login']);
-      }
-      throw error;
+  private toParams(params?: QueryParams): HttpParams | undefined {
+    if (!params) return undefined;
+    let httpParams = new HttpParams();
+    for (const [chave, valor] of Object.entries(params)) {
+      if (valor !== null && valor !== undefined) httpParams = httpParams.set(chave, String(valor));
     }
+    return httpParams;
   }
 
-  get<T>(url: string, id?: number): Promise<T> {
-    return this.handleRequest(firstValueFrom(this.http.get<T>(this.buildUrl(url, id))));
+  get<T>(url: string, id?: number, options?: { params?: QueryParams }): Observable<T> {
+    return this.http.get<T>(this.buildUrl(url, id), { params: this.toParams(options?.params) });
   }
 
-  post<T>(url: string, body: any): Promise<T> {
-    return this.handleRequest(firstValueFrom(this.http.post<T>(this.buildUrl(url), body)));
+  post<T>(url: string, body: unknown): Observable<T> {
+    return this.http.post<T>(this.buildUrl(url), body);
   }
 
-  put<T>(url: string, body: any): Promise<T> {
-    return this.handleRequest(firstValueFrom(this.http.put<T>(this.buildUrl(url), body)));
+  /** POST cuja resposta é texto puro (ex.: Ok("Lista criada com sucesso!")); como JSON, o HttpClient falharia no 200. */
+  postTexto(url: string, body: unknown): Observable<string> {
+    return this.http.post(this.buildUrl(url), body, { responseType: 'text' });
   }
 
-  delete<T>(url: string, id: number): Promise<T> {
-    return this.handleRequest(firstValueFrom(this.http.delete<T>(this.buildUrl(url, id))));
+  put<T>(url: string, body: unknown): Observable<T> {
+    return this.http.put<T>(this.buildUrl(url), body);
+  }
+
+  delete<T>(url: string, id: number): Observable<T> {
+    return this.http.delete<T>(this.buildUrl(url, id));
   }
 }

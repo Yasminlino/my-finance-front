@@ -1,48 +1,29 @@
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-
-export type AccountDto = {
-  id: number;
-  name: string;
-  value: number;
-  dataOperacao?: number[]; // usado no envio
-  categoryid: number;
-  status: number;
-  ehParcelado: boolean;
-  parcelaAtual: number;
-  quantidadeParcelas: number;
-
-  contaVencimentos?: ContaVencimentoDto[]; 
-};
-
-export type ContaVencimentoDto = {
-  id: number;
-  contaId: number;
-  dia: number;
-  diasVencimentoString: string;
-};
+import { ContaDto } from '../models/conta.model';
 
 @Injectable({ providedIn: 'root' })
 export class ContaService {
   constructor(private api: ApiService) {}
 
-  list(): Promise<AccountDto[]> {
-    return this.api.get<AccountDto[]>('/GetAccounts'); // ajuste endpoint
-  }
-  
-  buscarContasAtivas(): Promise<AccountDto[]> {
-    return this.api.get<AccountDto[]>('/GetContasAtivas'); // ajuste endpoint
+  listar(): Observable<ContaDto[]> {
+    return this.api.get<ContaDto[]>('/GetAccounts');
   }
 
-  create(payload: Partial<AccountDto>): Promise<any> {
-    return this.api.post('/CreateAccount', payload); // ajuste endpoint
+  listarAtivas(): Observable<ContaDto[]> {
+    return this.api.get<ContaDto[]>('/GetContasAtivas');
   }
 
-  update(payload: Partial<AccountDto>): Promise<any> {
-    return this.api.put('/UpdateAccount', { ...payload }); // ajuste endpoint
+  criar(dto: Partial<ContaDto>): Observable<unknown> {
+    return this.api.post('/CreateAccount', dto);
   }
 
-  delete(id: number): Promise<any> {
+  atualizar(dto: Partial<ContaDto>): Observable<unknown> {
+    return this.api.put('/UpdateAccount', dto);
+  }
+
+  excluir(id: number): Observable<unknown> {
     return this.api.delete('/DeleteAccount', id);
   }
 }

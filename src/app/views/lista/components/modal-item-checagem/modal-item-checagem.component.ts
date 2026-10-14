@@ -1,5 +1,8 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { ItemListaService, ItemListaDto } from 'src/app/core/services/item-lista.service';
+import { ItemListaService } from 'src/app/core/services/item-lista.service';
+import { ItemListaDto } from 'src/app/core/models/lista.model';
+import { finalize } from 'rxjs';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
 
@@ -41,7 +44,7 @@ export class ModalItemChecagemComponent implements OnInit {
     this.closed.emit(reload);
   }
 
-  async salvar() {
+  salvar() {
     if (!this.form.descricao?.trim()) {
       this.errorMsg = 'Informe a descrição.';
       return;
@@ -51,30 +54,15 @@ export class ModalItemChecagemComponent implements OnInit {
       return;
     }
 
-    try {
-      this.loading = true;
-      this.errorMsg = '';
-
-      if (this.isEdit) {
-        await this.service.update(this.form);
-      } else {
-        await this.service.create({
-          ...this.form,
-          listaId: this.listaId
-        }).then(() => {
-          this.alert = { type: 'success', message: 'Item criado com sucesso!' };
-        }).catch((e) => {
-          this.alert = { type: 'error', message: e?.message ?? 'Erro ao criar item.' };
-        });
-      }
-
-      this.fechar(true);
-
-    } catch (e: any) {
-      this.errorMsg = e?.message ?? 'Erro ao salvar.';
-    } finally {
-      this.loading = false;
-    }
+    this.loading = true;
+    this.errorMsg = '';
+    // Fecha só se salvou; antes o erro do create era engolido e o modal fechava igual.
+    (this.isEdit ? this.service.atualizar(this.form) : this.service.criar({ ...this.form, listaId: this.listaId }))
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: () => this.fechar(true),
+        error: e => (this.errorMsg = extrairMensagemErro(e, 'Erro ao salvar.'))
+      });
   }
 
   toggleStatus() {

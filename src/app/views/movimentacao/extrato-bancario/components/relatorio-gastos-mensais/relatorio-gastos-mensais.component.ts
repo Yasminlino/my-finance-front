@@ -1,10 +1,13 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, DestroyRef, Input, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApexChartOptions } from 'src/app/core/components/charts/apex-chart/apex-chart.component';
 import { createGastosBarLikeImageChart } from 'src/app/core/components/charts/gastos-bar-like-image.chart';
 import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
 import { NaturezaOperacao } from 'src/app/shared/enums/natureza-operacao.enum';
 import { Meses } from 'src/app/views/movimentacao/extrato-bancario/components/models/meses';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject } from 'rxjs';
+import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
 
 function toNumber(v: any): number {
   // se vier string "123.45" ou number, converte para number
@@ -19,6 +22,8 @@ function toNumber(v: any): number {
   styleUrls: ['./relatorio-gastos-mensais.component.scss']
 })
 export class RelatorioGastosMensaisComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly mes$ = new Subject<string>();
   extratoItemsSaida: any[] = [];
   extratoItemsEntrada: any[] = [];
   meses = Meses;
@@ -63,9 +68,9 @@ export class RelatorioGastosMensaisComponent implements OnInit {
 
   constructor(private extratoItemService: ExtratoBancarioItemService, private route: ActivatedRoute, private router: Router) { }
 
-  async ngOnInit() {
+  ngOnInit() {
     this.filtroMes = this.getMonthFilter() ?? '';
-    
+
     this.perfilEmpresa = localStorage.getItem('usuarioRole') == "Empresa"
 
     if (!this.filtroMes) {
@@ -73,13 +78,12 @@ export class RelatorioGastosMensaisComponent implements OnInit {
       return;
     }
 
-    const items = await this.extratoItemService.listExtratos(this.filtroMes);
-    this.aplicarFiltros(items);
+    // Troca de mês: só a resposta do último mês pedido chega à tela (FE-P2-08).
+    ultimaBusca(this.mes$, mes => this.extratoItemService.listarDoMes(mes), e => console.error('Erro ao carregar o extrato do mês', e))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(items => this.aplicarFiltros(items));
 
-    this.calculaRegraContabil();
-    this.calculaDadosPorBanco();
-    this.calculaDadosPorCategoria('');
-    this.calcularDadosPorTipoMovimentacao('');
+    this.mes$.next(this.filtroMes);
   }
 
   calculaRegraContabil() {
@@ -511,10 +515,7 @@ export class RelatorioGastosMensaisComponent implements OnInit {
 
   onFiltroChange() {
     if (!this.filtroMes) return;
-
-    this.extratoItemService.listExtratos(this.filtroMes).then(items => {
-      this.aplicarFiltros(items);
-    });
+    this.mes$.next(this.filtroMes);
   }
 
   back() { this.router.navigateByUrl('/extrato-bancario'); }

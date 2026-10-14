@@ -1,31 +1,29 @@
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { BancoCreateUpdateDto, BancoDto } from '../interfaces/banco.interface';
+import { BancoCreateUpdateDto, BancoDto } from '../models/banco.model';
 
 @Injectable({ providedIn: 'root' })
 export class BancoService {
   constructor(private api: ApiService) { }
 
-  list(): Promise<BancoDto[]> {
-    // ajuste a rota conforme seu backend
+  listar(): Observable<BancoDto[]> {
     return this.api.get<BancoDto[]>('/GetBancos');
   }
 
-  getById(id: number): Promise<BancoDto> {
+  obterPorId(id: number): Observable<BancoDto> {
     return this.api.get<BancoDto>('/GetBancoById', id);
   }
 
-
-  delete(id: number): Promise<any> {
-    // ajuste a rota conforme seu backend
-    return this.api.delete('/DeleteBanco', id);
-  }
-
-  create(dto: BancoCreateUpdateDto): Promise<any> {
+  criar(dto: BancoCreateUpdateDto): Observable<unknown> {
     return this.api.post('/CreateBanco', dto);
   }
 
-  update(dto: BancoCreateUpdateDto): Promise<any> {
+  atualizar(dto: BancoCreateUpdateDto): Observable<unknown> {
     return this.api.put('/UpdateBanco', dto);
+  }
+
+  excluir(id: number): Observable<unknown> {
+    return this.api.delete('/DeleteBanco', id);
   }
 }

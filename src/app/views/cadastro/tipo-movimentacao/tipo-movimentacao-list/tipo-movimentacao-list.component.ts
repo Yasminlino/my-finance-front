@@ -4,6 +4,7 @@ import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/gri
 import { TipoMovimentacaoDto } from 'src/app/core/models/tipo-movimentacao.model';
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
 import { CadastroListBase } from 'src/app/shared/base/cadastro-list.base';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-tipo-movimentacao-list',
@@ -24,12 +25,12 @@ export class TipoMovimentacaoListComponent extends CadastroListBase<TipoMoviment
     super();
   }
 
-  protected buscar(): Promise<TipoMovimentacaoDto[]> {
-    return this.tipoMovimentacaoService.list();
+  protected buscar(): Observable<TipoMovimentacaoDto[]> {
+    return this.tipoMovimentacaoService.listar();
   }
 
   protected excluirRegistro(id: number) {
-    return this.tipoMovimentacaoService.delete(id);
+    return this.tipoMovimentacaoService.excluir(id);
   }
 
   protected nomeDe(tipo: TipoMovimentacaoDto): string {

@@ -1,8 +1,10 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
+import { TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
+import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-tipo-cartao-form',
@@ -45,31 +47,27 @@ export class TipoCartaoFormComponent implements OnInit {
     this.closed.emit(reload);
   }
 
-  async save() {
+  save() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    try {
-      this.saving = true;
+    const payload = {
+      id: this.item?.id,
+      nomeTipoCartao: this.form.value.nomeTipoCartao!,
+      ehCredito: !!this.form.value.ehCredito,
+    };
 
-      const payload = {
-        id: this.item?.id,
-        nomeTipoCartao: this.form.value.nomeTipoCartao!,
-        ehCredito: !!this.form.value.ehCredito,
-        // ativo: this.form.value.ativo ?? true,
-      };
-
-      if (this.item) await this.service.update(payload);
-      else await this.service.create(payload);
-
-      this.alertService.success(`Tipo cartão "${this.form.value.nomeTipoCartao!}" salvo com sucesso.`)
-      this.close(true);
-    } catch (e) {
-      this.alertService.error(extrairMensagemErro(e, `Erro ao salvar o Tipo cartão "${this.form.value.nomeTipoCartao!}".`))
-    } finally {
-      this.saving = false;
-    }
+    this.saving = true;
+    (this.item ? this.service.atualizar(payload) : this.service.criar(payload))
+      .pipe(finalize(() => (this.saving = false)))
+      .subscribe({
+        next: () => {
+          this.alertService.success(`Tipo cartão "${payload.nomeTipoCartao}" salvo com sucesso.`);
+          this.close(true);
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, `Erro ao salvar o Tipo cartão "${payload.nomeTipoCartao}".`))
+      });
   }
 }

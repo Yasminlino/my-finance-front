@@ -1,22 +1,29 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { Category, CategoryService } from 'src/app/core/services/category.service';
+import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
+import { CategoryService } from 'src/app/core/services/category.service';
 import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { GridColumn} from 'src/app/shared/components/data-grid/data-grid.interface';
+import { GridColumn } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { Router } from '@angular/router';
 import { formatYearMonth, isoDate, parseCurrencyBR } from 'src/app/core/utils/mask';
-import { BancoDto } from 'src/app/core/interfaces/banco.interface';
-import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
-import { ExtratoBancarioItemService, ExtratoItemDto } from 'src/app/core/services/extrato-bancario-item.service';
+import { TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
+import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
 import { ContaService } from 'src/app/core/services/contas.service';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { BancoService } from 'src/app/core/services/banco.service';
 import { MenuItem } from 'primeng/api';
 import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
+import { BancoDto } from 'src/app/core/models/banco.model';
+import { CategoriaDto } from 'src/app/core/models/categoria.model';
+import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
+import { paraExtratoItemDto } from 'src/app/core/models/extrato.mapper';
+import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, finalize, forkJoin } from 'rxjs';
+import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
 
 
 @Component({
@@ -27,7 +34,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   exibirCampos: ExibirCamposConfig | null = null;
   dateFilter: Date | undefined
   gridColumns: GridColumn[] = [];
-  categorias: Category[] = [];
+  categorias: CategoriaDto[] = [];
   tiposConta: TipoCartaoDto[] = [];
   bancos: BancoDto[] = [];
   extratos: ExtratoItemDto[] = [];
@@ -70,8 +77,11 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     grupoParcelamentoId: '',
   };
 
-  editing: Category | null = null;
+  editing: CategoriaDto | null = null;
   @ViewChild('grid') grid?: DataGridComponent;
+  private readonly destroyRef = inject(DestroyRef);
+  /** Mês pedido ("YYYY-MM"); a carga segue sempre o último. */
+  private readonly mes$ = new Subject<string>();
 
   constructor(
     private router: Router,
@@ -82,13 +92,25 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     private readonly alertService: AlertService
   ) { }
 
-  async ngOnInit() {
+  ngOnInit() {
     this.setExibirCampos()
     this.setitemsButtom();
     this.setGridColumns()
-    await this.carregarDados()
-    this.resumo = this.buildResumo()
-    await this.loadMonth();
+
+    // Troca de mês: só a resposta do último mês pedido chega à tela (FE-P2-08).
+    ultimaBusca(this.mes$, mes => this.extratoItemService.listarDoMes(mes), e => {
+      this.loading = false;
+      this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar o extrato do mês.'));
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(itens => {
+        this.extratos = Array.isArray(itens) ? itens : [];
+        this.loading = false;
+        this.resumo = this.buildResumo();
+      });
+
+    this.carregarDados();
+    this.loadMonth();
   }
 
   private setExibirCampos(): void {
@@ -102,20 +124,22 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     }
   }
 
-  async carregarDados() {
-    try {
-      const [bancos, tipos, cats] = await Promise.all([
-        this.bancoService.list(),
-        this.tipoCartaoService.list(),
-        this.categoryService.buscarCategoriasAtivas(),
-      ]);
-
-      this.bancos = bancos ?? [];
-      this.tiposConta = tipos ?? [];
-      this.categorias = cats ?? [];
-    } catch (e: any) {
-      this.alertService.info('Falha ao carregar catálogos (bancos/tipos/categorias).');
-    }
+  carregarDados() {
+    forkJoin({
+      bancos: this.bancoService.listar(),
+      tipos: this.tipoCartaoService.listar(),
+      categorias: this.categoryService.listarAtivas(),
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ bancos, tipos, categorias }) => {
+          this.bancos = bancos ?? [];
+          this.tiposConta = tipos ?? [];
+          this.categorias = categorias ?? [];
+          this.resumo = this.buildResumo();
+        },
+        error: () => this.alertService.info('Falha ao carregar catálogos (bancos/tipos/categorias).')
+      });
   }
 
 
@@ -206,37 +230,24 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
   abrirRelatorioMensal() {
     const params: any = {
-      month: this.dateFilter,
+      month: this.selectedMonth,
     };
 
     this.router.navigate(['extrato-bancario/RelatorioGastosMensais'], { queryParams: params });
   }
 
-  async loadMonth(dataSelecionada?: Date) {
-    try {
-      this.loading = true;
-
-      if (dataSelecionada) {
-        this.dateFilter = dataSelecionada;
-        localStorage.setItem('dataFiltroResumo', dataSelecionada.toISOString());
-      } else {
-        const ultimoMesSelecionado = localStorage.getItem('dataFiltroResumo');
-        this.dateFilter = ultimoMesSelecionado ? new Date(ultimoMesSelecionado) : new Date();
-      }
-
-      const mesFormatado = formatYearMonth(this.dateFilter);
-      this.selectedMonth = mesFormatado
-
-      // a API já recebe monthFilter e opcional bancoId
-      const rows = await this.extratoItemService.listExtratos(this.selectedMonth);
-      this.extratos = Array.isArray(rows) ? rows : [];
-
-    } catch {
-      // Trata o erro
-    } finally {
-      this.loading = false;
-      this.resumo = this.buildResumo();
+  loadMonth(dataSelecionada?: Date) {
+    if (dataSelecionada) {
+      this.dateFilter = dataSelecionada;
+      localStorage.setItem('dataFiltroResumo', dataSelecionada.toISOString());
+    } else {
+      const ultimoMesSelecionado = localStorage.getItem('dataFiltroResumo');
+      this.dateFilter = ultimoMesSelecionado ? new Date(ultimoMesSelecionado) : new Date();
     }
+
+    this.selectedMonth = formatYearMonth(this.dateFilter);
+    this.loading = true;
+    this.mes$.next(this.selectedMonth);
   }
 
   private buildResumo(): any[] {
@@ -318,20 +329,22 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     this.selectedTipoContaId = banco?.tipoCartaoId ? String(banco.tipoCartaoId) : '';
   }
 
-  async onFileSelected(ev: Event) {
+  onFileSelected(ev: Event) {
     const input = ev.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
 
     this.file = file;
-
   }
 
-  async onSave(ev: Event) {
-    if (!this.file)
-      this.alertService.error('Nenhum arquivo selecionado.');
-
+  onSave(ev: Event) {
     const input = ev.target as HTMLInputElement;
+
+    // Antes avisava e seguia para a importação sem arquivo.
+    if (!this.file) {
+      this.alertService.error('Nenhum arquivo selecionado.');
+      return;
+    }
 
     if (!this.selectedBancoId) {
       this.alertService.error('Informe o banco antes de continuar.');
@@ -339,29 +352,30 @@ export class ExtratoBancarioResumoComponent implements OnInit {
       return;
     }
 
-    try {
-      this.importLoading = true;
-      const resultado = await this.extratoItemService.importExtrato(this.file, {
-        id: Number(this.selectedBancoId),
-        nomeBanco: this.selectedBancoNome,
-        tipoCartaoId: this.selectedTipoContaId ? Number(this.selectedTipoContaId) : null,
+    this.importLoading = true;
+    this.extratoItemService.importar(this.file, {
+      id: Number(this.selectedBancoId),
+      nomeBanco: this.selectedBancoNome,
+      tipoCartaoId: this.selectedTipoContaId ? Number(this.selectedTipoContaId) : null,
+    })
+      .pipe(finalize(() => {
+        this.importLoading = false;
+        input.value = '';
+      }))
+      .subscribe({
+        next: resultado => {
+          // A API informa criados / já importados / ignorados; reimportar não cria nada (idempotência).
+          const r: any = resultado;
+          const mensagem: string = r?.mensagem ?? 'Extrato importado com sucesso!';
+          const criados: number = r?.quantidadeCriados ?? 1;
+          if (criados > 0) this.alertService.success(mensagem);
+          else this.alertService.info(mensagem);
+
+          this.showImportModal = false;
+          this.loadMonth();
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Falha ao importar arquivo.'))
       });
-
-      // A API informa criados / já importados / ignorados; reimportar não cria nada (idempotência).
-      const r: any = resultado;
-      const mensagem: string = r?.mensagem ?? r?.Mensagem ?? 'Extrato importado com sucesso!';
-      const criados: number = r?.quantidadeCriados ?? r?.QuantidadeCriados ?? 1;
-      if (criados > 0) this.alertService.success(mensagem);
-      else this.alertService.info(mensagem);
-
-      this.showImportModal = false;
-      await this.loadMonth();
-    } catch (e) {
-      this.alertService.error(extrairMensagemErro(e, 'Falha ao importar arquivo.'));
-    } finally {
-      this.importLoading = false;
-      input.value = '';
-    }
   }
 
   openManualModal() {
@@ -414,10 +428,10 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   get isCreditoSelecionado() {
     if (!this.manualForm.tipoCartaoId) return false;
     const conta = this.tiposConta.find(t => String(t.id) === String(this.manualForm.tipoCartaoId));
-    return conta?.ehCredito === true; // TipoCartao.EhCredito (DB-P1-07)
+    return conta?.ehCredito === true; // TipoCartaoDto.EhCredito (DB-P1-07)
   }
 
-  async saveManualItem() {
+  saveManualItem() {
     console.log('this.manualForm', this.manualForm.pessoaTransacao);
     if (!this.manualForm.bancoId) {
       this.alertService.error('Selecione um banco.');
@@ -428,7 +442,8 @@ export class ExtratoBancarioResumoComponent implements OnInit {
       return;
     }
 
-    if (!this.manualForm.valor) {
+    const valor = parseCurrencyBR(this.manualForm.valor);
+    if (valor === null) {
       this.alertService.error('Informe um valor válido.');
       return;
     }
@@ -447,38 +462,34 @@ export class ExtratoBancarioResumoComponent implements OnInit {
       }
     }
 
-    try {
-      this.savingManual = true;
-      const payload = {
-        extratoBancarioId: null,
-        dataMovimentacao: this.manualForm.dataMovimentacao,
-        valor: parseCurrencyBR(this.manualForm.valor),
-        tipoLancamento: this.manualForm.tipo,
-        bancoId: Number(this.manualForm.bancoId),
-        tipoCartaoId: Number(this.manualForm.tipoCartaoId),
-        nomePessoaTransacao: (this.manualForm.pessoaTransacao || '').trim() || null,
-        categoriaId: this.manualForm.categoriaId ? Number(this.manualForm.categoriaId) : null,
-        descricao: (this.manualForm.descricao || '').trim() || null,
-        observacao: (this.manualForm.observacao || '').trim() || null,
+    // Mesmo mapeador do Extrato Detalhes, em camelCase (FE-P2-01).
+    const payload = paraExtratoItemDto({
+      dataMovimentacao: this.manualForm.dataMovimentacao,
+      valor,
+      tipoLancamento: this.manualForm.tipo,
+      bancoId: Number(this.manualForm.bancoId),
+      tipoCartaoId: Number(this.manualForm.tipoCartaoId),
+      nomePessoaTransacao: (this.manualForm.pessoaTransacao || '').trim() || null,
+      categoriaId: this.manualForm.categoriaId ? Number(this.manualForm.categoriaId) : null,
+      descricao: (this.manualForm.descricao || '').trim() || null,
+      observacao: (this.manualForm.observacao || '').trim() || null,
 
-        ehParcelado: this.isCreditoSelecionado ? !!this.manualForm.parcelado : false,
-        quantidadeParcelas: this.isCreditoSelecionado && this.manualForm.parcelado ? Number(this.manualForm.totalParcelas) : null,
-        parcelaAtual: this.isCreditoSelecionado && this.manualForm.parcelado ? Number(this.manualForm.numeroParcela) : null,
-        grupoParcelamentoId: this.isCreditoSelecionado && this.manualForm.parcelado && this.manualForm.grupoParcelamentoId?.trim()
-          ? this.manualForm.grupoParcelamentoId.trim()
-          : null,
-      };
+      ehParcelado: this.isCreditoSelecionado ? !!this.manualForm.parcelado : false,
+      quantidadeParcelas: this.isCreditoSelecionado && this.manualForm.parcelado ? Number(this.manualForm.totalParcelas) : null,
+      parcelaAtual: this.isCreditoSelecionado && this.manualForm.parcelado ? Number(this.manualForm.numeroParcela) : null,
+    }, { categorias: this.categorias, tiposMovimentacao: [] });
 
-      await this.extratoItemService.createExtratoManualItem(payload);
-
-      this.alertService.success('Item manual adicionado com sucesso!');
-      this.showManualModal = false;
-      await this.loadMonth();
-    } catch (e: any) {
-      this.alertService.error(e?.error?.message || 'Falha ao adicionar item manual.');
-    } finally {
-      this.savingManual = false;
-    }
+    this.savingManual = true;
+    this.extratoItemService.criar(payload)
+      .pipe(finalize(() => (this.savingManual = false)))
+      .subscribe({
+        next: () => {
+          this.alertService.success('Item manual adicionado com sucesso!');
+          this.showManualModal = false;
+          this.loadMonth();
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Falha ao adicionar item manual.'))
+      });
   }
 
   abrirConfigPessoas() {

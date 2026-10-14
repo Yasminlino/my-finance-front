@@ -1,9 +1,12 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { AccountDto, ContaService } from 'src/app/core/services/contas.service';
-import { Category } from 'src/app/core/services/category.service';
+import { ContaService } from 'src/app/core/services/contas.service';
 import { formatCurrencyBR, parseCurrencyBR } from 'src/app/core/utils/mask';
 import { AlertService } from 'src/app/shared/components/alert.service'; // <-- Importe o AlertService
+import { CategoriaDto } from 'src/app/core/models/categoria.model';
+import { ContaDto } from 'src/app/core/models/conta.model';
+import { finalize } from 'rxjs';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 @Component({
   selector: 'app-conta-mensal-form',
@@ -11,8 +14,8 @@ import { AlertService } from 'src/app/shared/components/alert.service'; // <-- I
   styleUrls: ['./conta-mensal-form.component.scss']
 })
 export class ContaMensalFormComponent implements OnInit {
-  @Input() account: AccountDto | null = null;
-  @Input() categories: Category[] = [];
+  @Input() account: ContaDto | null = null;
+  @Input() categories: CategoriaDto[] = [];
   @Output() closed = new EventEmitter<boolean>(); // true => recarregar lista
   contaParcelada = false;
   parcelaAtual = 2;
@@ -102,44 +105,35 @@ export class ContaMensalFormComponent implements OnInit {
     this.closed.emit(reload);
   }
 
-  async save() {
+  save() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    try {
-      this.saving = true;
+    const diasVencimento = String(this.form.value.dataOperacao).split(",").map(d => Number(d));
 
-      var diasVencimento = String(this.form.value.dataOperacao).split(",").map(d => Number(d))
+    const payload: Partial<ContaDto> = {
+      id: this.account?.id,
+      name: this.form.value.name!,
+      value: parseCurrencyBR(this.form.value.value) ?? 0,
+      categoryid: Number(this.form.value.categoryid),
+      status: Number(this.form.value.status),
+      ehParcelado: Boolean(this.form.value.ehParcelado),
+      parcelaAtual: Number(this.form.value.parcelaAtual),
+      quantidadeParcelas: Number(this.form.value.quantidadeParcelas),
+      dataOperacao: diasVencimento,
+    };
 
-      const payload: Partial<AccountDto> = {
-        id: this.account?.id,
-        name: this.form.value.name!,
-        value: parseCurrencyBR(this.form.value.value) ?? 0,
-        categoryid: Number(this.form.value.categoryid),
-        status: Number(this.form.value.status),
-        ehParcelado: Boolean(this.form.value.ehParcelado),
-        parcelaAtual: Number(this.form.value.parcelaAtual),
-        quantidadeParcelas: Number(this.form.value.quantidadeParcelas),
-        dataOperacao: diasVencimento,
-      };
-
-      if (this.account) {
-        await this.contaService.update(payload);
-      } else {
-        await this.contaService.create(payload);
-      }
-
-      this.alertService.success('Conta salva com sucesso!');      
-      setTimeout(() => {
-        this.close(true);
-      }, 300);
-
-    } catch {
-      this.alertService.error('Erro ao salvar conta.');
-    } finally {
-      this.saving = false;
-    }
+    this.saving = true;
+    (this.account ? this.contaService.atualizar(payload) : this.contaService.criar(payload))
+      .pipe(finalize(() => (this.saving = false)))
+      .subscribe({
+        next: () => {
+          this.alertService.success('Conta salva com sucesso!');
+          this.close(true);
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao salvar conta.'))
+      });
   }
 }

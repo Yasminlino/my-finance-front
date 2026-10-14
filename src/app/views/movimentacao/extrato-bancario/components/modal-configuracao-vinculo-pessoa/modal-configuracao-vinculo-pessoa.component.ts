@@ -4,12 +4,15 @@ import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { formatCurrencyBR} from 'src/app/core/utils/mask';
-import { ExtratoBancarioDto } from 'src/app/core/services/extrato-bancario.service';
-import { PessoaMovimentacaoDto, PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
+import { PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
 import { CategoryService } from 'src/app/core/services/category.service';
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
 import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
 import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
+import { ExtratoBancarioDto } from 'src/app/core/models/extrato.model';
+import { PessoaMovimentacaoDto } from 'src/app/core/models/pessoa-movimentacao.model';
+import { concat, finalize, forkJoin, toArray } from 'rxjs';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 
 @Component({
@@ -48,12 +51,19 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   ) { }
 
 
-  async ngOnInit() {
-    await this.getCategorias();
-    await this.getMovimentacoes();
-    this.setGridColumns()
+  ngOnInit() {
     this.setExibirCampos()
-    await this.load();
+    // As colunas usam as opções de categoria e tipo; só monta depois de carregá-las.
+    forkJoin({ categorias: this.categoriaService.listarAtivas(), tipos: this.tipoMovService.listar() })
+      .subscribe({
+        next: ({ categorias, tipos }) => {
+          this.categorias = categorias.map(c => ({ label: c.name, value: c.id }));
+          this.movimentacoes = tipos.map(t => ({ label: t.nomeTipoMovimentacao || '', value: t.id }));
+          this.setGridColumns();
+          this.load();
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar categorias e tipos de movimentação.'))
+      });
   }
 
   private setExibirCampos(): void {
@@ -107,9 +117,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
         id: tempId,
         nomePessoa: '',
         categoriaId: null,
-        tipoMovimentacaoId: null,
-        categoriaName: '-',
-        tipoMovimentacaoName: '-'    // Necessário para o grid exibir o select corretamente
+        tipoMovimentacaoId: null
       },
       ...this.pessoaMovimentacao,
     ];
@@ -122,91 +130,67 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   close(saved = false) {
     this.closed.emit(saved);
   }
-  async onSaveAll() {
+  onSaveAll() {
     this.grid?.onSaveAll();
   }
 
-  async onSaveInline(changes: GridRowChange[]) {
+  onSaveInline(changes: GridRowChange[]) {
     if (!changes.length) {
       this.close(true);
       return;
     }
 
-    try {
-      for (const change of changes) {
-        // Mapeia os valores selecionados para garantir que pegamos os IDs corretos
-        const catSelecionada = this.categorias.find(c => c.label === change.changes['categoriaName'] || c.value === change.changes['categoriaId']);
-        const movSelecionada = this.movimentacoes.find(m => m.label === change.changes['tipoMovimentacaoName'] || m.value === change.changes['tipoMovimentacaoId']);
+    const gravacoes = changes.map(change => {
+      // Mapeia os valores selecionados para garantir que pegamos os IDs corretos.
+      const catSelecionada = this.categorias.find(c => c.label === change.changes['categoriaName'] || c.value === change.changes['categoriaId']);
+      const movSelecionada = this.movimentacoes.find(m => m.label === change.changes['tipoMovimentacaoName'] || m.value === change.changes['tipoMovimentacaoId']);
 
-        const payload = {
-          nomePessoa: (change.changes['nomePessoa'] ?? change.row.nomePessoa ?? '').trim(),
-          categoriaId: catSelecionada ? catSelecionada.value : (change.changes['categoriaId'] ?? change.row.categoriaId ?? null),
-          tipoMovimentacaoId: movSelecionada ? movSelecionada.value : (change.changes['tipoMovimentacaoId'] ?? change.row.tipoMovimentacaoId ?? null),
-          mesAtualizacao: this.monthFilter ?? null,
-        };
+      const payload = {
+        nomePessoa: (change.changes['nomePessoa'] ?? change.row.nomePessoa ?? '').trim(),
+        categoriaId: catSelecionada ? catSelecionada.value : (change.changes['categoriaId'] ?? change.row.categoriaId ?? null),
+        tipoMovimentacaoId: movSelecionada ? movSelecionada.value : (change.changes['tipoMovimentacaoId'] ?? change.row.tipoMovimentacaoId ?? null),
+        mesAtualizacao: this.monthFilter ?? null,
+      };
 
-        if (change.row.id < 0) {
-          // ID negativo significa que a linha é nova -> Chamar criação
-          await this.pessoaService.create({ // Ajuste o nome do método caso seja insert/save no seu service
-            ...payload
-          });
-        } else {
-          // ID positivo -> Atualização normal
-          await this.pessoaService.update(change.row.id, {
-            id: change.row.id,
-            ...payload
-          });
-        }
-      }
+      // Id negativo é linha nova (criada pelo addRow).
+      return change.row.id < 0
+        ? this.pessoaService.criar(payload)
+        : this.pessoaService.atualizar({ id: change.row.id, ...payload });
+    });
 
-      this.alertService.success(`${changes.length} alteração(ões) salva(s) com sucesso!`);
-      this.grid?.clearSelection();
-      await this.load();
-      this.grid?.finishInlineSave();
-      this.close(true);
-
-    } catch (e) {
-      console.error(e);
-      this.alertService.error('Erro ao salvar as alterações. Tente novamente.');
-    }
+    // Uma por vez, na ordem; para no primeiro erro, como antes.
+    concat(...gravacoes).pipe(toArray()).subscribe({
+      next: () => {
+        this.alertService.success(`${changes.length} alteração(ões) salva(s) com sucesso!`);
+        this.grid?.clearSelection();
+        this.load();
+        this.grid?.finishInlineSave();
+        this.close(true);
+      },
+      error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao salvar as alterações. Tente novamente.'))
+    });
   }
 
-  private async getCategorias(): Promise<void> {
-    const res = await this.categoriaService.buscarCategoriasAtivas();
 
-    this.categorias = res.map(element => ({
-      label: element.name,
-      value: element.id
-    }));
-  }
 
-  private async getMovimentacoes(): Promise<void> {
-    const res = await this.tipoMovService.list();
 
-    this.movimentacoes = res.map(element => ({
-      label: element.nomeTipoMovimentacao || '',
-      value: element.id
-    }));
-  }
 
-  private async load() {
+  private load() {
     this.loading = true;
-    try {
-
-      var response = await this.pessoaService.list()
-      this.pessoaMovimentacao = response.map(item => ({
-        ...item,
-        categoriaName: item.categoria?.name ?? '-',
-        tipoMovimentacaoName: item.tipoMovimentacao?.nomeTipoMovimentacao ?? '-',
-      }));
-    } catch (e) {
-      console.error(e);
-      this.alertService.error('Erro ao carregar contas cadastradas')
-    } finally {
-      this.loading = false;
-    }
+    this.pessoaService.listar()
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: pessoas => {
+          this.pessoaMovimentacao = pessoas.map(item => ({
+            ...item,
+            categoriaName: item.categoria?.name ?? '-',
+            tipoMovimentacaoName: item.tipoMovimentacao?.nomeTipoMovimentacao ?? '-',
+          }));
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar as pessoas.'))
+      });
   }
-  async deleteRow(r: ExtratoBancarioDto) {
+  deleteRow(r: ExtratoBancarioDto) {
     if (r.id < 0) {
       this.pessoaMovimentacao = this.pessoaMovimentacao.filter(x => x.id !== r.id);
       return;
@@ -214,14 +198,14 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
 
     if (!confirm(`Excluir cadastro?`)) return;
 
-    try {
-      await this.pessoaService.delete(r.id);
-      this.pessoaMovimentacao = this.pessoaMovimentacao.filter(x => x.id !== r.id);
-      this.alertService.success('Registro excluído com sucesso');
-    } catch (e: any) {
-      this.alertService.error(e?.error?.message ?? 'Erro ao excluir registro');
-    } finally {
-      this.deletingId = null;
-    }
+    this.pessoaService.excluir(r.id)
+      .pipe(finalize(() => (this.deletingId = null)))
+      .subscribe({
+        next: () => {
+          this.pessoaMovimentacao = this.pessoaMovimentacao.filter(x => x.id !== r.id);
+          this.alertService.success('Registro excluído com sucesso');
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao excluir registro'))
+      });
   }
 }

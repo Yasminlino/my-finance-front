@@ -1,14 +1,18 @@
 
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
-import { ListaDto, ListaService } from 'src/app/core/services/lista.service';
+import { ListaService } from 'src/app/core/services/lista.service';
 import { Router } from '@angular/router';
 import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
+import { ListaDto } from 'src/app/core/models/lista.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 @Component({
   selector: 'app-lista-root',
@@ -43,12 +47,13 @@ export class ListaRootComponent implements OnInit {
 
   editing: ListaDto | null = null;
   @ViewChild('grid') grid?: DataGridComponent;
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(private listaService: ListaService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService, private readonly router: Router) { }
 
-  async ngOnInit() {
+  ngOnInit() {
     this.setGridColumns();
-    await this.load();
+    this.load();
   }
 
   private setGridColumns(): void {
@@ -77,17 +82,17 @@ export class ListaRootComponent implements OnInit {
     ]
   }
 
-  async load() {
-    try {
-      this.loading = true;
-      this.listas = await this.listaService.list();
-      console.log('Listas carregadas:', this.listas);
-      this.applyFilters();
-    } catch (e: any) {
-      this.alertService.error(e?.message ?? 'Erro ao carregar listas.')
-    } finally {
-      this.loading = false;
-    }
+  load() {
+    this.loading = true;
+    this.listaService.listar()
+      .pipe(finalize(() => (this.loading = false)), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: listas => {
+          this.listas = listas;
+          this.applyFilters();
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar listas.'))
+      });
   }
 
   applyFilters() {
@@ -152,27 +157,24 @@ export class ListaRootComponent implements OnInit {
     if (reload) this.load();
   }
 
-  async onDelete(c: ListaDto) {
+  onDelete(c: ListaDto) {
     const ok = window.confirm(`Excluir a lista "${c.nome}"?`);
     if (!ok) return;
 
-    try {
-      await this.listaService.delete(c.id);
-      this.alertService.success('Lista deletada com sucesso!')
-      await this.load();
-    } catch (e) {
-      this.alertService.error('Falha ao deletar. Lista pode estar vinculada a transações.');
-    }
+    this.listaService.excluir(c.id).subscribe({
+      next: () => {
+        this.alertService.success('Lista excluída com sucesso!');
+        this.load();
+      },
+      error: e => this.alertService.error(extrairMensagemErro(e, 'Falha ao excluir. A lista pode ter itens vinculados.'))
+    });
   }
 
-  async onDeleteSelected(rows: ListaDto[]) {
-    const excluiu = await this.exclusaoEmLote.confirmarEExcluir(
-      this.grid,
-      rows,
-      row => this.listaService.delete(row.id),
-      { singular: 'lista', plural: 'listas', feminino: true }
-    );
-
-    if (excluiu) await this.load();
+  onDeleteSelected(rows: ListaDto[]) {
+    this.exclusaoEmLote
+      .confirmarEExcluir(this.grid, rows, row => this.listaService.excluir(row.id), { singular: 'lista', plural: 'listas', feminino: true })
+      .subscribe(excluiu => {
+        if (excluiu) this.load();
+      });
   }
 }

@@ -1,9 +1,12 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { CategoryService, Category } from 'src/app/core/services/category.service';
+import { CategoryService } from 'src/app/core/services/category.service';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { formatDateVencimento } from 'src/app/core/utils/mask';
 import { parseCurrencyBR } from 'src/app/core/utils/mask';
+import { CategoriaDto } from 'src/app/core/models/categoria.model';
+import { finalize } from 'rxjs';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 @Component({
   selector: 'app-modal-nova-contas-a-pagar',
@@ -15,7 +18,7 @@ export class ModalNovaContasAPagarComponent implements OnInit {
   @Input() dataOperacao = null as any;
 
   saving = false;
-  categorias: Category[] = [];
+  categorias: CategoriaDto[] = [];
 
 
   form = this.fb.group({
@@ -27,8 +30,8 @@ export class ModalNovaContasAPagarComponent implements OnInit {
 
   constructor(private fb: FormBuilder, private contaMensalService: ContaMensalService, private categoryService: CategoryService) {}
 
-  async ngOnInit() {
-    this.categorias = await this.categoryService.buscarCategoriasAtivas();
+  ngOnInit() {
+    this.categoryService.listarAtivas().subscribe(categorias => (this.categorias = categorias));
   }
 
   
@@ -37,31 +40,26 @@ export class ModalNovaContasAPagarComponent implements OnInit {
     this.closed.emit(reload);
   }
 
-  async save() {
+  save() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    console.log(this.form.value);
-    
-    try {
-      this.saving = true;
-      const payload = {
-        date: formatDateVencimento(this.dataOperacao, this.form.value.dataOperacao!),
-        name: this.form.value.nomeConta!,
-        categoryid: Number(this.form.value.categoryid),
-        value: parseCurrencyBR(this.form.value.valor),
-        status: 'PENDENTE',
-      };
-      
-      await this.contaMensalService.createContaMensal(payload);
-      
-      this.close(true);
-    } catch {
-      alert('Erro ao salvar conta.');
-    } finally {
-      this.saving = false;
-    }
+    const payload = {
+      date: formatDateVencimento(this.dataOperacao, this.form.value.dataOperacao!),
+      name: this.form.value.nomeConta!,
+      categoryid: Number(this.form.value.categoryid),
+      value: parseCurrencyBR(this.form.value.valor),
+      status: 'PENDENTE',
+    };
+
+    this.saving = true;
+    this.contaMensalService.criar(payload)
+      .pipe(finalize(() => (this.saving = false)))
+      .subscribe({
+        next: () => this.close(true),
+        error: e => alert(extrairMensagemErro(e, 'Erro ao salvar conta.'))
+      });
   }
 }

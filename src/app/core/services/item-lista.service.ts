@@ -1,42 +1,31 @@
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { Time } from '@angular/common';
-
-export type ItemListaDto = {
-    id: number;
-    listaId?: number;
-    descricao?: string;
-    quantidade?: number;
-    status?: string;
-    statusBoolean?: boolean;
-    valor?: number;
-    observacao?: string;
-    dataTarefa?: Date;
-    horarioTarefa?: Time;
-};
+import { ItemListaDto } from '../models/lista.model';
 
 @Injectable({ providedIn: 'root' })
 export class ItemListaService {
     constructor(private api: ApiService) { }
 
-    list(): Promise<ItemListaDto[]> {
+    listar(): Observable<ItemListaDto[]> {
         return this.api.get<ItemListaDto[]>('/GetItemLista');
     }
 
-
-    GetItemListaById(id: number): Promise<ItemListaDto[]> {
-        return this.api.get<ItemListaDto[]>('/GetItemListaById', id);
+    /** Itens de uma lista (a rota da API se chama GetItemListaById, mas recebe o id da lista). */
+    listarDaLista(listaId: number): Observable<ItemListaDto[]> {
+        return this.api.get<ItemListaDto[]>('/GetItemListaById', listaId);
     }
 
-    create(payload: Partial<ItemListaDto>): Promise<any> {
-        return this.api.post('/CreateItemLista', payload);
+    /** A API responde texto ("ItemLista criada com sucesso!"), não JSON. */
+    criar(dto: Partial<ItemListaDto>): Observable<string> {
+        return this.api.postTexto('/CreateItemLista', dto);
     }
 
-    update(payload: Partial<ItemListaDto>): Promise<any> {
-        return this.api.put('/UpdateItemLista', { ...payload });
+    atualizar(dto: Partial<ItemListaDto>): Observable<unknown> {
+        return this.api.put('/UpdateItemLista', dto);
     }
 
-    delete(id: number): Promise<any> {
+    excluir(id: number): Observable<unknown> {
         return this.api.delete('/DeleteItemLista', id);
     }
 }

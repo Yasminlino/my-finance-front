@@ -30,13 +30,7 @@ import { ToggleButtonModule } from 'primeng/togglebutton';
 
 import { MenuItem } from 'primeng/api';
 
-import {
-  GridColumn,
-  GridColumnOption,
-  GridColumnType,
-  GridRowChange,
-  TypeGrid
-} from './data-grid.interface';
+import { GridColumn, GridColumnOption, GridColumnType, GridRowChange, TypeGrid } from './data-grid.interface';
 
 import { CurrencyInputDirective } from '../../directives/currency-input.directive';
 import { ExibirCamposConfig } from '../../models/utils/grid-config.constants';

@@ -1,76 +1,41 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-
-export interface ExtratoItemDto {
-  id: number;              // ou string | number se tiver manual
-  dataMovimentacao: string;
-  valor: number;
-  tipoLancamento: string;
-
-  categoriaId?: number | null;
-  categoriaNome?: string | null;
-
-  tipoMovimentacaoId?: number | null;      // ✅
-  tipoMovimentacaoNome?: string | null; 
-  
-  descricao?: string;
-  observacao?: string;
-  descricaoManual?: string;
-  nomePessoaTransacao?: string;
-
-  bancoId?: number;
-  bancoNome?: string;
-  tipoCartaoId?: number;
-  tipoCartaoNome?: string;
-
-  // cartão
-  parcelaAtual?: number;
-  quantidadeParcelas?: number;
-  numeroFatura?: string;
-
-  pessoaMovimentacaoId?: number;
-
-  categoria?: { id: number; name: string, subCategory: string };
-  tipoMovimentacao?: { id: number; nomeTipoMovimentacao: string };
-}
+import { ExtratoItemDto } from '../models/extrato.model';
 
 @Injectable({ providedIn: 'root' })
 export class ExtratoBancarioItemService {
   constructor(private api: ApiService) { }
 
-  listExtratos(monthFilter: string, bancoId?: number | null, ehCredito: boolean = false): Promise<ExtratoItemDto[]> {
-    return this.api.get<ExtratoItemDto[]>(`/GetExtratoBancarioItensByMonth?month=${monthFilter}&${bancoId !== undefined && bancoId !== null ? `bancoId=${bancoId}&` : ''}ehCredito=${ehCredito}`);
+  /** Itens do mês ("YYYY-MM"); com `ehCredito`, o cartão vem pela fatura do mês. */
+  listarDoMes(mes: string, bancoId?: number | null, ehCredito = false): Observable<ExtratoItemDto[]> {
+    return this.api.get<ExtratoItemDto[]>('/GetExtratoBancarioItensByMonth', undefined, {
+      params: { month: mes, bancoId, ehCredito }
+    });
   }
 
-  createExtratoManualItem(payload: any) {
-    return this.api.post('/CreateExtratoBancarioItem', payload);
+  criar(dto: ExtratoItemDto): Observable<unknown> {
+    return this.api.post('/CreateExtratoBancarioItem', dto);
   }
 
-  updateExtratoItem(payload: any): Promise<any> {
-    return this.api.put('/UpdateExtratoBancarioItem', { ...payload});
+  atualizar(dto: ExtratoItemDto): Observable<unknown> {
+    return this.api.put('/UpdateExtratoBancarioItem', dto);
   }
 
-  importExtrato(
-    file: File,
-    bancoInfo: { id: number; nomeBanco: string; tipoCartaoId?: number | null }
-  ) {
+  importar(arquivo: File, banco: { id: number; nomeBanco: string; tipoCartaoId?: number | null }): Observable<unknown> {
     const form = new FormData();
-    form.append('arquivo', file); // 🔥 nome correto
-    form.append('bancoId', String(bancoInfo.id));
-
-    // opcionais (ok enviar mesmo se o back ignorar)
-    form.append('nomeBanco', bancoInfo.nomeBanco ?? '');
-    if (bancoInfo.tipoCartaoId != null) {
-      form.append('tipoCartaoId', String(bancoInfo.tipoCartaoId));
+    form.append('arquivo', arquivo);
+    form.append('bancoId', String(banco.id));
+    // Opcionais: a API ignora se não usar.
+    form.append('nomeBanco', banco.nomeBanco ?? '');
+    if (banco.tipoCartaoId != null) {
+      form.append('tipoCartaoId', String(banco.tipoCartaoId));
     }
 
     return this.api.post('/ImportExtratoBancario', form);
   }
 
-  
-  delete(id: number): Promise<any> {
+  excluir(id: number): Observable<unknown> {
     return this.api.delete('/DeleteExtratoBancarioItem', id);
   }
 }

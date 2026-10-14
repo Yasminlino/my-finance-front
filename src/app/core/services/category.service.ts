@@ -1,39 +1,33 @@
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-
-export type Category = {
-  id: number;
-  name: string;
-  subCategory: string;
-  naturezaOperacao: number;
-  status: number;
-};
+import { CategoriaCreateUpdateDto, CategoriaDto } from '../models/categoria.model';
 
 @Injectable({ providedIn: 'root' })
 export class CategoryService {
   constructor(private api: ApiService) {}
 
-  list(): Promise<Category[]> {
-     return this.api.get<Category[]>('/GetCategories');
-  }
-  
-  buscarCategoriasAtivas(): Promise<Category[]> {
-     return this.api.get<Category[]>('/GetCategoriasAtivas');
+  listar(): Observable<CategoriaDto[]> {
+    return this.api.get<CategoriaDto[]>('/GetCategories');
   }
 
-  GetCategoryById(id: number): Promise<Category> {
-    return this.api.get<Category>('/GetCategoryById', id);
+  listarAtivas(): Observable<CategoriaDto[]> {
+    return this.api.get<CategoriaDto[]>('/GetCategoriasAtivas');
   }
 
-  create(payload: { name: string; subCategory: string }): Promise<any> {
-    return this.api.post('/CreateCategory', payload);
+  obterPorId(id: number): Observable<CategoriaDto> {
+    return this.api.get<CategoriaDto>('/GetCategoryById', id);
   }
 
-  update(id: number, payload: { name: string; subCategory: string }): Promise<any> {
-    return this.api.put('/UpdateCategory', { id, ...payload });
+  criar(dto: CategoriaCreateUpdateDto): Observable<unknown> {
+    return this.api.post('/CreateCategory', dto);
   }
 
-  delete(id: number): Promise<any> {
+  atualizar(dto: CategoriaCreateUpdateDto & { id: number }): Observable<unknown> {
+    return this.api.put('/UpdateCategory', dto);
+  }
+
+  excluir(id: number): Observable<unknown> {
     return this.api.delete('/DeleteCategory', id);
   }
 }

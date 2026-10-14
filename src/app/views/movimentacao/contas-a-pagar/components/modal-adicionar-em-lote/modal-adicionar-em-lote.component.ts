@@ -1,14 +1,17 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
-import {GridColumn } from 'src/app/shared/components/data-grid/data-grid.interface';
+import { GridColumn } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { Subscription } from 'rxjs';
-import { AccountDto, ContaService } from 'src/app/core/services/contas.service';
+import { ContaService } from 'src/app/core/services/contas.service';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
-import { ContaMensal } from 'src/app/core/models/conta-mensal.model';
+import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import { formatCurrencyBR, formatDateVencimento, parseCurrencyBR } from 'src/app/core/utils/mask';
 import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
+import { ContaDto } from 'src/app/core/models/conta.model';
+import { catchError, concatMap, finalize, forkJoin, from, map, of, toArray } from 'rxjs';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 @Component({
   selector: 'app-modal-adicionar-em-lote',
@@ -20,8 +23,8 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
   @Output() closed = new EventEmitter<boolean>(); // true = salvou algo, false = cancelou
   @Output() 'reload' = new EventEmitter<any[]>();
 
-  contas: AccountDto[] = [];
-  contasMensais: ContaMensal[] = [];
+  contas: ContaDto[] = [];
+  contasMensais: LinhaContasMensais[] = [];
   disabledIds = new Set<number>();
   selectedIds = new Set<number>();
 
@@ -46,10 +49,10 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
   ) { }
 
 
-  async ngOnInit() {
+  ngOnInit() {
     this.setGridColumns()
     this.setExibirCampos()
-    await this.load();
+    this.load();
   }
 
   ngOnDestroy(): void {
@@ -86,7 +89,7 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
     return formatCurrencyBR(v);
   }
 
-  get selectableAccounts(): AccountDto[] {
+  get selectableAccounts(): ContaDto[] {
     return this.contas.filter(a => !this.disabledIds.has(a.id));
   }
 
@@ -123,63 +126,46 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
     this.selectedIds = new Set(selected.map(item => item.id));
   }
 
-  private async load() {
-    try {
-      const [contas, contasMensais] = await Promise.all([
-        this.contaService.buscarContasAtivas(),
-        this.contaMensalService.BuscarContasMensais(this.month, false),
-      ]);
+  private load() {
+    forkJoin({
+      contas: this.contaService.listarAtivas(),
+      contasMensais: this.contaMensalService.listarDoMes(this.month, false),
+    }).subscribe({
+      next: ({ contas, contasMensais }) => {
+        this.contas = contas ?? [];
+        this.contasMensais = contasMensais ?? [];
 
-      this.contas = contas ?? [];
-      this.contasMensais = contasMensais ?? [];
-
-      // 🔹 Mapa: AccountId -> quantidade de lançamentos no mês
-      const mapaLancamentos = new Map<number, number>();
-
-      for (const t of this.contasMensais) {
-        if (!t.idAccount) continue;
-
-        const atual = mapaLancamentos.get(t.idAccount) ?? 0;
-        mapaLancamentos.set(t.idAccount, atual + 1);
-      }
-
-      // 🔹 Set de contas que devem ser desabilitadas
-      const desabilitados = new Set<number>();
-
-      for (const conta of this.contas) {
-        const totalVencimentos = conta.contaVencimentos?.length ?? 0;
-        const totalLancados = mapaLancamentos.get(conta.id) ?? 0;
-
-        // ⚠️ Só desabilita se tiver vencimentos configurados
-        if (totalVencimentos > 0 && totalLancados >= totalVencimentos) {
-          desabilitados.add(conta.id);
+        // AccountId -> quantidade de lançamentos no mês
+        const mapaLancamentos = new Map<number, number>();
+        for (const t of this.contasMensais) {
+          if (!t.idAccount) continue;
+          mapaLancamentos.set(t.idAccount, (mapaLancamentos.get(t.idAccount) ?? 0) + 1);
         }
-      }
 
-      this.disabledIds = desabilitados;
+        // Desabilita só as contas com vencimentos configurados e todos já lançados.
+        const desabilitados = new Set<number>();
+        for (const conta of this.contas) {
+          const totalVencimentos = conta.contaVencimentos?.length ?? 0;
+          const totalLancados = mapaLancamentos.get(conta.id) ?? 0;
+          if (totalVencimentos > 0 && totalLancados >= totalVencimentos) {
+            desabilitados.add(conta.id);
+          }
+        }
+        this.disabledIds = desabilitados;
 
-      // 🔹 Remove da seleção contas que agora estão desabilitadas
-      this.selectedIds = new Set(
-        [...this.selectedIds].filter(id => !this.disabledIds.has(id))
-      );
-
-      // 🔹 Sincroniza a seleção do data-grid com o novo estado de disabledIds
-      this.grid?.clearSelection();
-
-    } catch (e) {
-      console.error(e);
-      this.alertService.error('Erro ao carregar contas cadastradas')
-    }
+        // Tira da seleção as que ficaram desabilitadas e sincroniza o data-grid.
+        this.selectedIds = new Set([...this.selectedIds].filter(id => !this.disabledIds.has(id)));
+        this.grid?.clearSelection();
+      },
+      error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar contas cadastradas'))
+    });
   }
 
-  async handleSave() {
+  handleSave() {
     if (this.selectedIds.size === 0) {
       this.alertService.error('Por favor, selecione ao menos uma conta!')
       return;
     }
-
-    this.saving = true;
-
 
     const payloads = this.contas
       .filter(acc => this.selectedIds.has(acc.id))
@@ -194,31 +180,24 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
         quantidadeParcelas: acc.ehParcelado ? acc.quantidadeParcelas : null,
       }));
 
-    let successCount = 0;
-    let errorCount = 0;
+    this.saving = true;
+    // Uma por vez; uma falha não interrompe as demais.
+    from(payloads).pipe(
+      concatMap(p => this.contaMensalService.criar(p).pipe(map(() => true), catchError(() => of(false)))),
+      toArray(),
+      finalize(() => (this.saving = false))
+    ).subscribe(resultados => {
+      const successCount = resultados.filter(Boolean).length;
+      const errorCount = resultados.length - successCount;
 
-    for (const p of payloads) {
-      try {
-        const created = await this.contaMensalService.createContaMensal(p);
-        // ajuste: se sua API retorna { account: created } como no React:
-        // if (created?.account) successCount++; else errorCount++;
-        if (created) successCount++;
-        else errorCount++;
-      } catch {
-        errorCount++;
+      if (successCount > 0) {
+        this.alertService.success(`${successCount} itens adicionados com sucesso!`);
+        this.reload.emit();
+        this.close(true);
       }
-    }
-
-    this.saving = false;
-
-    if (successCount > 0) {
-      this.alertService.success(`${successCount} itens adicionados com sucesso!`);
-      this.reload.emit();
-      this.close(true);
-    }
-
-    if (errorCount > 0) {
-      this.alertService.error(`${errorCount} itens não foram adicionados!`);
-    }
+      if (errorCount > 0) {
+        this.alertService.error(`${errorCount} itens não foram adicionados!`);
+      }
+    });
   }
 }

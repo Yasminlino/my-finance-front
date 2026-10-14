@@ -1,17 +1,19 @@
 import { Component } from '@angular/core';
-import { Category, CategoryService } from 'src/app/core/services/category.service';
+import { CategoryService } from 'src/app/core/services/category.service';
 import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { STATUS_ATIVO_OPTIONS, statusAtivoLabel } from 'src/app/shared/enums/status.enum';
 import { CadastroListBase } from 'src/app/shared/base/cadastro-list.base';
+import { CategoriaDto } from 'src/app/core/models/categoria.model';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-categoria-list',
   templateUrl: './categoria-list.component.html',
   styleUrls: ['./categoria-list.component.scss']
 })
-export class CategoriaListComponent extends CadastroListBase<Category> {
+export class CategoriaListComponent extends CadastroListBase<CategoriaDto> {
   protected readonly rotulo = { singular: 'categoria', plural: 'categorias', feminino: true };
 
   naturezaOperacaoOptions: GridColumnOption[] = Object.entries(NaturezaOperacaoLabel).map(([value, label]) => ({
@@ -59,15 +61,15 @@ export class CategoriaListComponent extends CadastroListBase<Category> {
     super();
   }
 
-  protected buscar(): Promise<Category[]> {
-    return this.categoryService.list();
+  protected buscar(): Observable<CategoriaDto[]> {
+    return this.categoryService.listar();
   }
 
   protected excluirRegistro(id: number) {
-    return this.categoryService.delete(id);
+    return this.categoryService.excluir(id);
   }
 
-  protected nomeDe(categoria: Category): string {
+  protected nomeDe(categoria: CategoriaDto): string {
     return categoria.name;
   }
 }

@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { ContaMensal } from 'src/app/core/models/conta-mensal.model';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { formatCurrencyBR, formatDateInput, isoDate } from 'src/app/core/utils/mask';
-import { Category, CategoryService } from 'src/app/core/services/category.service';
+import { CategoryService } from 'src/app/core/services/category.service';
 import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
 import { Route, Router } from '@angular/router';
+import { CategoriaDto } from 'src/app/core/models/categoria.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable, catchError, forkJoin, of } from 'rxjs';
 
 @Component({
   selector: 'app-home',
@@ -18,7 +21,7 @@ export class HomeComponent implements OnInit {
   totalProximas = '0'
   totalVencido = '0';
   contasVencendoHoje: any;
-  // categoria: Category[] = [];
+  // categoria: CategoriaDto[] = [];
   contasHoje: { descricao: string; valor: number; categoria: string; tipoConta: string }[] = [];
   proximasContas: { descricao: string; valor: number; categoria: string; tipoConta: string; dataVencimento: Date }[] = [];
   contasVencidas: { descricao: string; valor: number; categoria: string; tipoConta: string; dataVencimento: Date }[] = [];
@@ -27,15 +30,32 @@ export class HomeComponent implements OnInit {
 
   // Categorias do usuário, buscadas uma vez. Antes era um GetCategoryById por conta, e a transação
   // antiga sem categoria virava GetCategoryById/0 → 404, que interrompia a seção inteira.
-  private categorias = new Map<number, Category>();
+  private categorias = new Map<number, CategoriaDto>();
+  private readonly destroyRef = inject(DestroyRef);
 
-  async ngOnInit() {
-    const categorias = await this.categoryService.list();
-    this.categorias = new Map(categorias.map(c => [c.id, c]));
+  ngOnInit() {
+    const hoje = isoDate();
+    // Cada seção é independente: uma busca que falha vira lista vazia e não apaga as outras.
+    const ouVazio = <T>(busca$: Observable<T[]>) =>
+      busca$.pipe(catchError(erro => {
+        console.error('Home: falha ao carregar uma seção', erro);
+        return of([] as T[]);
+      }));
 
-    this.buscaContasVencidas()
-    this.buscaContasVencendoHoje()
-    this.buscaContasVencendoAmanha()
+    forkJoin({
+      categorias: ouVazio(this.categoryService.listar()),
+      vencidas: ouVazio(this.contaMensalService.listarVencidas(hoje)),
+      hoje: ouVazio(this.contaMensalService.listarPorData(hoje, true)),
+      amanha: ouVazio(this.contaMensalService.listarPorData(isoDate(1), true)),
+      depois: ouVazio(this.contaMensalService.listarPorData(isoDate(2), true)),
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ categorias, vencidas, hoje, amanha, depois }) => {
+        this.categorias = new Map(categorias.map(c => [c.id, c]));
+        this.montarVencidas(vencidas);
+        this.montarVencendoHoje(hoje);
+        this.montarProximas([...amanha, ...depois]);
+      });
   }
 
   /** Categoria e tipo da conta; sem categoria, mostra "Sem categoria". */
@@ -47,68 +67,42 @@ export class HomeComponent implements OnInit {
     };
   }
 
-  async buscaContasVencidas() {
-    const hoje = isoDate();
-    var contas = await this.contaMensalService.BuscaContasVencidas(hoje);
+  private emAberto(conta: ContaMensal): boolean {
+    return conta.status === "PENDENTE" || conta.status === "AGUARDANDO";
+  }
 
-    const resultado = contas.map(conta => ({
+  private total(itens: { valor: number }[]): string {
+    return itens.reduce((total, item) => total + Number(item.valor), 0).toFixed(2);
+  }
+
+  private montarVencidas(contas: ContaMensal[]) {
+    this.contasVencidas = contas.map(conta => ({
       descricao: conta.name,
       valor: conta.value,
       ...this.classificar(conta),
       dataVencimento: conta.date
     }));
-
-    this.contasVencidas = resultado;
-
-    this.totalVencido = resultado
-      .reduce((total, item) => total + Number(item.valor), 0)
-      .toFixed(2);
+    this.totalVencido = this.total(this.contasVencidas);
   }
 
-  async buscaContasVencendoHoje() {
-    const hoje = isoDate();
-
-    var contas = await this.contaMensalService.GetTransactionByDate(hoje, true);
-
-    const resultado = contas
-      .filter(conta => conta.status === "PENDENTE" || conta.status === "AGUARDANDO")
-      .map(conta => ({
-        descricao: conta.name,
-        valor: conta.value,
-        ...this.classificar(conta)
-      }));
-
-    this.contasHoje = resultado;
-
-    this.totalHoje = resultado
-      .reduce((total, item) => total + Number(item.valor), 0)
-      .toFixed(2);
+  private montarVencendoHoje(contas: ContaMensal[]) {
+    this.contasHoje = contas.filter(c => this.emAberto(c)).map(conta => ({
+      descricao: conta.name,
+      valor: conta.value,
+      ...this.classificar(conta)
+    }));
+    this.totalHoje = this.total(this.contasHoje);
   }
 
-  async buscaContasVencendoAmanha() {
-    const amanha = isoDate(1);
-    const depois = isoDate(2);
-
-    var contas = await this.contaMensalService.GetTransactionByDate(amanha, true);
-    var contas2 = await this.contaMensalService.GetTransactionByDate(depois, true);
-
-    this.contasProximas.push(...contas)
-    this.contasProximas.push(...contas2)
-
-    const resultado = this.contasProximas
-      .filter(conta => conta.status === "PENDENTE" || conta.status === "AGUARDANDO")
-      .map(conta => ({
-        descricao: conta.name,
-        valor: conta.value,
-        ...this.classificar(conta),
-        dataVencimento: conta.date
-      }));
-
-    this.proximasContas = resultado;
-
-    this.totalProximas = resultado
-      .reduce((total, item) => total + Number(item.valor), 0)
-      .toFixed(2);
+  private montarProximas(contas: ContaMensal[]) {
+    this.contasProximas = contas;
+    this.proximasContas = contas.filter(c => this.emAberto(c)).map(conta => ({
+      descricao: conta.name,
+      valor: conta.value,
+      ...this.classificar(conta),
+      dataVencimento: conta.date
+    }));
+    this.totalProximas = this.total(this.proximasContas);
   }
 
   redirecionaContas(dataVencimento?: any) {

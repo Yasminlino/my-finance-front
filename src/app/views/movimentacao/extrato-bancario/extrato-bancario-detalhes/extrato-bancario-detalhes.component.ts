@@ -1,10 +1,8 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { addMonthsToYearMonth, formatCurrencyBR, formatDateBR, formatDateInput, formatYearMonth, isoDate, parseCurrencyBR } from 'src/app/core/utils/mask';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, TypeGrid, GridRowChange, GridColumnOption } from "src/app/shared/components/data-grid/data-grid.interface"
 import { CategoryService } from 'src/app/core/services/category.service';
-import { Category } from 'src/app/core/services/category.service';
-import { RowForm } from 'src/app/core/interfaces/conta-mensal.interface';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { MenuItem } from 'primeng/api';
 import { AlertService } from 'src/app/shared/components/alert.service';
@@ -12,15 +10,23 @@ import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.se
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { STATUS_PAGAMENTO_OPTIONS } from 'src/app/shared/enums/status.enum';
 import { calcularTotaisSelecao, naturezaPorTipoLancamento } from 'src/app/shared/utils/totais-selecao';
-import { TipoCartaoDto, TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
+import { TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
-import { PessoaMovimentacaoDto, PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
+import { PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
 import { TipoMovimentacaoDto } from 'src/app/core/models/tipo-movimentacao.model';
-import { ExtratoBancarioItemService, ExtratoItemDto } from 'src/app/core/services/extrato-bancario-item.service';
+import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
 import { debounceTime, distinctUntilChanged, map, Observable } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { BancoService } from 'src/app/core/services/banco.service';
 import { EXIBIR_CAMPOS_MOVIMENTACOES, ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
+import { CategoriaDto } from 'src/app/core/models/categoria.model';
+import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
+import { ContextoExtrato, paraExtratoItemDto } from 'src/app/core/models/extrato.mapper';
+import { PessoaMovimentacaoDto } from 'src/app/core/models/pessoa-movimentacao.model';
+import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, catchError, concat, finalize, forkJoin, of, tap, toArray } from 'rxjs';
+import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
 
 @Component({
   selector: 'app-extrato-bancario-detalhes',
@@ -28,6 +34,9 @@ import { EXIBIR_CAMPOS_MOVIMENTACOES, ExibirCamposConfig } from 'src/app/shared/
 })
 export class ExtratoBancarioDetalhesComponent implements OnInit {
   @ViewChild('grid') grid?: DataGridComponent;
+  private readonly destroyRef = inject(DestroyRef);
+  /** Mês pedido ("YYYY-MM"); a carga segue sempre o último. */
+  private readonly mes$ = new Subject<string>();
   breadcrumb = [] = [{ label: 'Extrato Bancário' }, { label: 'Detalhes Extrato Bancário' }]
   titulo = 'Detalhes Extrato Bancário'
   tipoTabela = TypeGrid.editaLinha
@@ -58,7 +67,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   manualGerarTodasParcelas = true;
   manualNumeroFatura = '';
 
-  categorias: Category[] = [];
+  categorias: CategoriaDto[] = [];
   tiposMovimentacao: TipoMovimentacaoDto[] = [];
   tiposConta: TipoCartaoDto[] = [];
   pessoasMov: PessoaMovimentacaoDto[] = [];
@@ -84,7 +93,6 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   loading: boolean = false;
   selectedTotals = { receita: 0, despesa: 0, saldo: 0, count: 0 };
   exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_MOVIMENTACOES };
-  rowForms = new Map<number, RowForm>();
 
   categoriaOptions: string[] = [];
 
@@ -103,17 +111,34 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
     private route: ActivatedRoute
   ) { }
 
-  async ngOnInit() {
-    await this.carregaDadosUrl();
-    await this.carregarDados();
-    this.setGridColumns();
-    this.setitemsButtom();
+  ngOnInit() {
+    this.carregaDadosUrl();
 
-    await this.loadMonth();
+    // Troca de mês: só a resposta do último mês pedido chega à tela (FE-P2-08).
+    ultimaBusca(this.mes$, mes => this.extratoItemService.listarDoMes(mes, this.bancoId, this.isCreditCard), e => {
+      this.loading = false;
+      this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar o extrato do mês.'));
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(itens => {
+        this.extratoMensal = itens.map(item => ({
+          ...item,
+          categoriaNome: item.categoriaNome ?? item.categoria?.name ?? '',
+          tipoMovimentacaoNome: item.tipoMovimentacaoNome ?? item.tipoMovimentacao?.nomeTipoMovimentacao ?? '',
+        }));
+        this.loading = false;
+      });
+
+    // O mês só carrega depois dos catálogos: é o tipo de cartão que diz se é crédito (fatura) ou data.
+    this.carregarDados().subscribe(() => {
+      this.setGridColumns();
+      this.setitemsButtom();
+      this.loadMonth();
+    });
   }
 
-  async carregaDadosUrl() {
-    // Se os parâmetros foram enviados como Query Params (ex: ?bancoId=1&month=2026-05)
+  carregaDadosUrl() {
+    // Parâmetros da rota (ex.: ?bancoId=1&month=2026-05&tipoContaId=2).
     const bancoIdParam = this.route.snapshot.queryParamMap.get('bancoId');
     const monthParam = this.route.snapshot.queryParamMap.get('month');
     const contaIdParam = this.route.snapshot.queryParamMap.get('tipoContaId');
@@ -132,7 +157,6 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
     if (contaIdParam !== null) {
       this.tipoContaId = Number(contaIdParam);
     }
-    console.log('Valores recuperados:', { bancoId: this.bancoId, month: this.month, isCreditCard: this.isCreditCard, tipoContaId: this.tipoContaId });
   }
 
   parseAnoMesParaData(anoMesStr: string): Date | null {
@@ -151,67 +175,38 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   return null;
 }
 
-  /**
-   * Devolve o dono do item vindo da própria linha, ou null quando a linha não traz o campo.
-   * Nunca chuta um id: o backend resolve o usuário pelo claim do JWT e rejeita item de
-   * outro dono, então mandar um id inventado só mascararia o problema (FE-P0-12).
-   */
-  private resolveUserIdDaLinha(linha: any): number | null {
-    const bruto = linha?.UserId ?? linha?.userId;
+  /** Catálogos, título e se é cartão de crédito. Emite uma vez, mesmo se algo falhar. */
+  carregarDados(): Observable<void> {
+    return forkJoin({
+      categorias: this.categoriaService.listarAtivas(),
+      tiposCartao: this.tipoCartaoService.listar(),
+      tiposMov: this.tipoMovimentacaoService.listar(),
+      pessoas: this.pessoaMovService.listar(),
+      banco: this.bancoId ? this.bancoService.obterPorId(this.bancoId) : of(null),
+    }).pipe(
+      map(({ categorias, tiposCartao, tiposMov, pessoas, banco }) => {
+        this.categorias = categorias ?? [];
+        this.tiposConta = tiposCartao ?? [];
+        this.tiposMovimentacao = tiposMov ?? [];
+        this.pessoasMov = pessoas ?? [];
 
-    if (bruto === undefined || bruto === null || bruto === '') {
-      return null;
-    }
+        const tipoCartao = this.tipoContaId ? this.tiposConta.find(e => e.id == this.tipoContaId) : undefined;
+        this.isCreditCard = tipoCartao?.ehCredito === true; // antes comparava o nome (DB-P1-07)
+        const bancoDisplay = banco?.nomeBanco ?? 'Banco Desconhecido';
+        const tipoCartaoDisplay = tipoCartao?.nomeTipoCartao ?? 'Tipo de Cartão Desconhecido';
+        this.titulo = `${tipoCartaoDisplay} - ${bancoDisplay}`;
 
-    const id = Number(bruto);
-
-    return Number.isFinite(id) && id > 0 ? id : null;
-  }
-
-  async carregarDados() {
-    try {
-      const [cats,
-        tiposCartao, tiposMov, pessoas] = await Promise.all([
-          this.categoriaService.buscarCategoriasAtivas(),
-          this.tipoCartaoService.list(),
-          this.tipoMovimentacaoService.list(),
-          this.pessoaMovService.list(),
-        ]);
-      this.categorias = cats ?? [];
-      this.tiposConta = tiposCartao ?? [];
-      this.tiposMovimentacao = tiposMov ?? [];
-      this.pessoasMov = pessoas ?? [];
-
-      var bancoIdDisplay = this.bancoId ? await this.bancoService.getById(this.bancoId)?.then((banco) => banco?.nomeBanco) : 'Banco Desconhecido';
-      const tipoCartao = this.tipoContaId ? tiposCartao.find(e => e.id == this.tipoContaId) : undefined;
-      var tipoCartaoDisplay = tipoCartao?.nomeTipoCartao ?? 'Tipo de Cartão Desconhecido';
-      this.isCreditCard = tipoCartao?.ehCredito === true; // antes comparava o nome (DB-P1-07)
-
-      var tituloBase = `${tipoCartaoDisplay} - ${bancoIdDisplay}`;
-
-      this.titulo =  tituloBase ?? `Extrato Bancário - Detalhes`;
-
-
-      this.categoriasOptions = this.categorias.map(element => ({
-        label: element.name,
-        value: element.id
-      }));
-      this.tiposContaOptions = this.tiposConta.map(element => ({
-        label: element.nomeTipoCartao,
-        value: element.id
-      }));
-      this.tiposMovimentacaoOptions = this.tiposMovimentacao.map(element => ({
-        label: element.nomeTipoMovimentacao,
-        value: element.id
-      }));
-      this.pessoasMovOptions = this.pessoasMov.map(element => ({
-        label: element.nomePessoa,
-        value: element.id
-      }));
-
-    } catch {
-      this.alertService.info('Não foi possível carregar catálogos.');
-    }
+        this.categoriasOptions = this.categorias.map(c => ({ label: c.name, value: c.id }));
+        this.tiposContaOptions = this.tiposConta.map(t => ({ label: t.nomeTipoCartao, value: t.id }));
+        this.tiposMovimentacaoOptions = this.tiposMovimentacao.map(t => ({ label: t.nomeTipoMovimentacao, value: t.id }));
+        this.pessoasMovOptions = this.pessoasMov.map(p => ({ label: p.nomePessoa, value: p.id }));
+      }),
+      catchError(() => {
+        this.alertService.info('Não foi possível carregar catálogos.');
+        return of(undefined);
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    );
   }
 
   onSelectionChange(selectedItems: ExtratoItemDto[]) {
@@ -340,31 +335,18 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   }
 
 
-  async loadMonth(dataSelecionada?: Date) {
-    try {
-      this.loading = true;
-
-      if (dataSelecionada) {
-        this.dateFilter = dataSelecionada;
-        localStorage.setItem('dataFiltroDetalheExtrato', dataSelecionada.toISOString());
-      } else {
-        const ultimoMesSelecionado = localStorage.getItem('dataFiltroDetalheExtrato');
-        this.dateFilter = ultimoMesSelecionado ? new Date(ultimoMesSelecionado) : new Date();
-      }
-
-      const mesFormatado = formatYearMonth(this.dateFilter);
-      this.selectedMonth = mesFormatado
-      this.extratoMensal = (await this.extratoItemService.listExtratos(this.selectedMonth, this.bancoId, this.isCreditCard)).map(item => ({
-        ...item,
-        categoriaNome: item.categoriaNome ?? item.categoria?.name ?? '',
-        tipoMovimentacaoNome: item.tipoMovimentacaoNome ?? item.tipoMovimentacao?.nomeTipoMovimentacao ?? '',
-      }));
-      console.log(this.extratoMensal)
-    } catch (e) {
-      this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar o extrato do mês.'));
-    } finally {
-      this.loading = false;
+  loadMonth(dataSelecionada?: Date) {
+    if (dataSelecionada) {
+      this.dateFilter = dataSelecionada;
+      localStorage.setItem('dataFiltroDetalheExtrato', dataSelecionada.toISOString());
+    } else {
+      const ultimoMesSelecionado = localStorage.getItem('dataFiltroDetalheExtrato');
+      this.dateFilter = ultimoMesSelecionado ? new Date(ultimoMesSelecionado) : new Date();
     }
+
+    this.selectedMonth = formatYearMonth(this.dateFilter);
+    this.loading = true;
+    this.mes$.next(this.selectedMonth);
   }
 
   formatterPessoa = (p: PessoaMovimentacaoDto | null) => p?.nomePessoa ?? '';
@@ -378,174 +360,80 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
     if (evt?.reload) this.loadMonth();
   }
 
-  async onDeleteSelected(rows: ExtratoItemDto[]) {
-    const excluiu = await this.exclusaoEmLote.confirmarEExcluir(
-      this.grid,
-      rows,
-      row => this.extratoItemService.delete(row.id),
-      { singular: 'lançamento', plural: 'lançamentos' }
-    );
-
-    if (excluiu) await this.loadMonth();
+  onDeleteSelected(rows: ExtratoItemDto[]) {
+    this.exclusaoEmLote
+      .confirmarEExcluir(this.grid, rows, row => this.extratoItemService.excluir(row.id), { singular: 'lançamento', plural: 'lançamentos' })
+      .subscribe(excluiu => {
+        if (excluiu) this.loadMonth();
+      });
   }
 
 
 
-  async onDelete(row: ExtratoItemDto) {
-    const ok = window.confirm(`Excluir a conta '${row.nomePessoaTransacao}'?`);
+  onDelete(row: ExtratoItemDto) {
+    const ok = window.confirm(`Excluir o lançamento '${row.nomePessoaTransacao}'?`);
     if (!ok) return;
 
-    // Define o ID que está sendo deletado (ativa o loading na linha correspondente)
+    // Loading na linha até a API responder.
     this.deletingId = row.id;
-
-    try {
-      const response = await this.extratoItemService.delete(row.id);
-
-      if (response) {
-        this.alertService.success(`Conta '${row.nomePessoaTransacao}' deletada com sucesso!`);
-      }
-
-      await this.loadMonth();
-    } catch (e: any) {
-      this.alertService.error(extrairMensagemErro(e, `Falha ao excluir a conta '${row.nomePessoaTransacao}'.`));
-    } finally {
-      // 🔹 O loading só some aqui, quando a API termina (com sucesso ou erro)
-      this.deletingId = null;
-    }
+    this.extratoItemService.excluir(row.id)
+      .pipe(finalize(() => (this.deletingId = null)))
+      .subscribe({
+        next: () => {
+          this.alertService.success(`Lançamento '${row.nomePessoaTransacao}' excluído com sucesso!`);
+          this.loadMonth();
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, `Falha ao excluir o lançamento '${row.nomePessoaTransacao}'.`))
+      });
   }
 
-  // 1. Obtenha a referência do seu componente data-grid no HTML do pai
-  // Substitua 'AppDataGridComponent' pelo nome real da classe do seu componente de grid
+  /** Banco, cartão e mês abertos, mais as listas para resolver categoria e tipo pelo nome. */
+  private contextoExtrato(): ContextoExtrato {
+    return {
+      categorias: this.categorias,
+      tiposMovimentacao: this.tiposMovimentacao,
+      bancoId: this.bancoId ? Number(this.bancoId) : null,
+      tipoCartaoId: this.tipoContaId ? Number(this.tipoContaId) : null,
+      numeroFatura: this.month || null,
+    };
+  }
 
-/** Salva em lote as alterações feitas via edição inline ("Salvar tudo"). */
   /** Salva em lote as alterações feitas via edição inline ("Salvar tudo"). */
-  async onSaveInline(changes: GridRowChange[]) {
+  onSaveInline(changes: GridRowChange[]) {
     if (!changes.length) {
       return;
     }
 
-    try {
-      let response;
-      for (const change of changes) {
-        // Junta os dados originais da linha com as alterações feitas
-        const linhaAtual = {
-          ...change.row,
-          ...change.changes
-        };
-
-        // 1. Trata a data para o formato exato YYYY-MM-DD exigido pelo DateOnly do C#
-        let dataFormatada = '';
-        const rawDate = linhaAtual.DataMovimentacao || linhaAtual.dataMovimentacao;
-        if (rawDate) {
-          dataFormatada = typeof rawDate === 'string' 
-            ? rawDate.split('T')[0] 
-            : formatDateInput(rawDate); // Date à meia-noite local: getters locais, não toISOString (UTC)
-        }
-
-        // 2. Garante o TipoLancamento (obrigatório no backend)
-        const tipoLanc = linhaAtual.TipoLancamento || linhaAtual.tipoLancamento || linhaAtual.tipoMovimentacaoNome || 'Saída';
-
-        // 3. Resolução inteligente de CategoriaId caso venha o nome ou ID
-        // Sem categoria = null (não 0): 0 não existe e a FK recusava a gravação com erro 500.
-        let resolvedCategoriaId: number | null = null;
-        let resolvedCategoriaNome = '';
-        const rawCatId = linhaAtual.CategoriaId ?? linhaAtual.categoriaId;
-        const rawCatNome = linhaAtual.CategoriaNome ?? linhaAtual.categoriaNome;
-
-        if (rawCatId !== undefined && rawCatId !== null && rawCatId !== '') {
-          resolvedCategoriaId = Number(rawCatId);
-          const catObj = this.categorias.find(c => c.id === resolvedCategoriaId);
-          resolvedCategoriaNome = catObj ? catObj.name : rawCatNome;
-        } else if (rawCatNome) {
-          resolvedCategoriaNome = rawCatNome;
-          const catEncontrada = this.categorias.find(c => c.name?.toLowerCase() === String(rawCatNome).toLowerCase());
-          if (catEncontrada) resolvedCategoriaId = catEncontrada.id;
-        }
-
-        // 4. Resolução inteligente de TipoMovimentacaoId caso venha o nome ou ID
-        let resolvedTipoMovId: number | null = null;
-        let resolvedTipoMovNome = '';
-        const rawTipoMovId = linhaAtual.TipoMovimentacaoId ?? linhaAtual.tipoMovimentacaoId;
-        const rawTipoMovNome = linhaAtual.TipoMovimentacaoNome ?? linhaAtual.tipoMovimentacaoNome;
-
-        if (rawTipoMovId !== undefined && rawTipoMovId !== null && rawTipoMovId !== '') {
-          resolvedTipoMovId = Number(rawTipoMovId);
-          const movObj = this.tiposMovimentacao.find(m => m.id === resolvedTipoMovId);
-          resolvedTipoMovNome = movObj ? movObj.nomeTipoMovimentacao : rawTipoMovNome;
-        } else if (rawTipoMovNome) {
-          resolvedTipoMovNome = rawTipoMovNome;
-          const movEncontrada = this.tiposMovimentacao.find(m => m.nomeTipoMovimentacao?.toLowerCase() === String(rawTipoMovNome).toLowerCase());
-          if (movEncontrada) resolvedTipoMovId = movEncontrada.id;
-        }
-
-        // 5. Mapeia exatamente para a estrutura do ExtratoBancarioItemDTO do backend
-        const dtoMapeado = {
-          id: Number(linhaAtual.Id ?? linhaAtual.id),
-          extratoBancarioId: linhaAtual.ExtratoBancarioId !== undefined ? linhaAtual.ExtratoBancarioId : (linhaAtual.extratoBancarioId ?? null),
-          dataMovimentacao: dataFormatada,
-          valor: Number(linhaAtual.Valor ?? linhaAtual.valor ?? 0),
-          tipoLancamento: tipoLanc,
-          
-          descricao: linhaAtual.Descricao ?? linhaAtual.descricao ?? null,
-          observacao: linhaAtual.Observacao ?? linhaAtual.observacao ?? null,
-          
-          pessoaMovimentacaoId: linhaAtual.PessoaMovimentacaoId !== undefined && linhaAtual.PessoaMovimentacaoId !== null ? Number(linhaAtual.PessoaMovimentacaoId) : null,
-          nomePessoaTransacao: linhaAtual.NomePessoaTransacao ?? linhaAtual.nomePessoaTransacao ?? null,
-          identificador: linhaAtual.Identificador ?? linhaAtual.identificador ?? null,
-          
-          bancoId: linhaAtual.BancoId !== undefined && linhaAtual.BancoId !== null ? Number(linhaAtual.BancoId) : (this.bancoId ? Number(this.bancoId) : null),
-          bancoNome: linhaAtual.BancoNome ?? linhaAtual.bancoNome ?? null,
-          
-          categoriaId: resolvedCategoriaId,
-          numeroFatura: linhaAtual.NumeroFatura ?? linhaAtual.numeroFatura ?? this.month ?? null,
-          categoriaNome: resolvedCategoriaNome,
-          
-          ehParcelado: Boolean(linhaAtual.EhParcelado ?? linhaAtual.ehParcelado ?? false),
-          parcelaAtual: linhaAtual.ParcelaAtual !== undefined ? linhaAtual.ParcelaAtual : null,
-          quantidadeParcelas: linhaAtual.QuantidadeParcelas !== undefined ? linhaAtual.QuantidadeParcelas : null,
-          
-          tipoCartaoId: linhaAtual.TipoCartaoId !== undefined && linhaAtual.TipoCartaoId !== null ? Number(linhaAtual.TipoCartaoId) : (this.tipoContaId ? Number(this.tipoContaId) : null),
-          tipoCartaoNome: linhaAtual.TipoCartaoNome ?? linhaAtual.tipoCartaoNome ?? null,
-          
-          tipoMovimentacaoId: resolvedTipoMovId,
-          tipoMovimentacaoNome: resolvedTipoMovNome,
-          
-          // Sem fallback: o dono do item é sempre resolvido pelo claim do JWT no backend.
-          // O `?? 1` anterior mandava a escrita para o usuário 1 quando o campo não vinha (FE-P0-12).
-          userId: this.resolveUserIdDaLinha(linhaAtual),
-          chaveDescricao: linhaAtual.ChaveDescricao ?? linhaAtual.chaveDescricao ?? null,
-          
-          alteraVinculoPessoa: Boolean(linhaAtual.AlteraVinculoPessoa ?? linhaAtual.alteraVinculoPessoa ?? false)
-        };
-
-        response = await this.extratoItemService.updateExtratoItem(dtoMapeado);
-
-        // 6. Atualiza o estado local imediatamente na lista exibida
-        const idAlterado = Number(linhaAtual.Id ?? linhaAtual.id);
-        const index = this.extratoMensal.findIndex(item => item.id === idAlterado);
+    const contexto = this.contextoExtrato();
+    // Linha original + alterações, no contrato camelCase da API (FE-P2-01).
+    const gravacoes = changes.map(change => {
+      const dto = paraExtratoItemDto({ ...change.row, ...change.changes }, contexto);
+      return this.extratoItemService.atualizar(dto).pipe(tap(() => {
+        // Atualiza a linha exibida sem esperar o recarregamento.
+        const index = this.extratoMensal.findIndex(item => item.id === dto.id);
         if (index !== -1) {
           this.extratoMensal[index] = {
             ...this.extratoMensal[index],
             ...change.changes,
-            categoriaId: resolvedCategoriaId,
-            categoriaNome: resolvedCategoriaNome,
-            tipoMovimentacaoId: resolvedTipoMovId,
-            tipoMovimentacaoNome: resolvedTipoMovNome
+            categoriaId: dto.categoriaId,
+            categoriaNome: dto.categoriaNome,
+            tipoMovimentacaoId: dto.tipoMovimentacaoId,
+            tipoMovimentacaoNome: dto.tipoMovimentacaoNome
           };
         }
-      }
+      }));
+    });
 
-      if (response) {
+    // Uma por vez, na ordem; para no primeiro erro, como antes.
+    concat(...gravacoes).pipe(toArray()).subscribe({
+      next: () => {
         this.alertService.success(`${changes.length} alteração(ões) salva(s) com sucesso!`);
-      }
-
-      this.grid?.clearSelection();
-      this.grid?.finishInlineSave(); 
-      await this.loadMonth();        
-
-    } catch (e: any) {
-      this.alertService.error(extrairMensagemErro(e, 'Erro ao salvar as alterações. Tente novamente.'));
-    }
+        this.grid?.clearSelection();
+        this.grid?.finishInlineSave();
+        this.loadMonth();
+      },
+      error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao salvar as alterações. Tente novamente.'))
+    });
   }
     openAddModal() {
     if (this.isCreditCard)
@@ -579,116 +467,76 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   // -----------------------
   // Salvar manual
   // -----------------------
-  async handleSaveManual() {
+  handleSaveManual() {
     // validações
     if (!this.manualData) {
       this.alertService.error('Informe uma data válida.');
       return;
     }
 
-    if (!this.manualValor || String(this.manualValor).trim() === '') {
+    const valor = parseCurrencyBR(this.manualValor);
+    if (valor === null) {
       this.alertService.error('Informe um valor válido.');
       return;
     }
 
-    this.saving = true;
+    // O autocomplete devolve a pessoa (objeto) quando ela é escolhida, ou o texto digitado.
+    const pessoa = typeof this.manualPessoaNome === 'object' ? this.manualPessoaNome : null;
 
-    var isObject = typeof this.manualPessoaNome === 'object' ? this.manualPessoaNome : null;
-    console.log(this.manualPessoaNome)
+    // Item novo: sem id. Mesmo mapeador da edição inline, em camelCase (FE-P2-01).
+    const basePayload = paraExtratoItemDto({
+      dataMovimentacao: this.manualData,
+      valor,
+      tipoLancamento: this.manualTipoLancamento,
+      descricao: this.manualDescricao || null,
+      observacao: this.manualObservacao || null,
+      pessoaMovimentacao: pessoa,
+      nomePessoaTransacao: pessoa ? null : this.manualPessoaNome,
+      pessoaMovimentacaoId: this.manualPessoaId,
+      identificador: this.manualIdentificador || null,
+      categoriaId: this.manualCategoriaId || null,
+      ehParcelado: this.manualParcelado ?? false,
+    }, this.contextoExtrato());
 
-    try {
-      // ✅ NÃO envie Id aqui
-      const basePayload: any = {
-        DataMovimentacao: this.manualData,
-        Valor: parseCurrencyBR(this.manualValor),
-        TipoLancamento: this.manualTipoLancamento,
-
-        Descricao: this.manualDescricao || null,
-        Observacao: this.manualObservacao || null,
-
-        PessoaMovimentacao: isObject ? this.manualPessoaNome : null,
-        NomePessoaTransacao: !isObject ? this.manualPessoaNome : null,
-        PessoaMovimentacaoId: this.manualPessoaId,
-
-        Identificador: this.manualIdentificador || null,
-
-        BancoId: this.bancoId,
-        TipoCartaoId: this.tipoContaId,
-        CategoriaId: this.manualCategoriaId ? Number(this.manualCategoriaId) : null,
-
-        NumeroFatura: this.month || null,
-
-        EhParcelado: this.manualParcelado ?? false,
-      };
-
-      // 1) ✅ Não é cartão OU não parcelado -> cria 1 item e sai
-      if (!this.isCreditCard || !this.manualParcelado) {
-        await this.extratoItemService.createExtratoManualItem(basePayload);
-
-        this.alertService.success('Lançamento adicionado com sucesso!');
-        this.showAddModal = false;
-
-        await this.loadMonth();
-        return;
-      }
-
-      // 2) ✅ É cartão e é parcelado
-      const quantidadeParcelas = Math.max(2, Number(this.manualQuantidadeParcelas) || 2); //exemplo 10
-
-      var totalCriado = 0
-      // 2.1) Parcelado e "gerar todas"
+    // O que criar: 1 item; ou, no cartão parcelado, todas as parcelas (cada uma na fatura do
+    // mês correspondente) ou só a parcela informada.
+    let itens: ExtratoItemDto[];
+    let mensagem: string;
+    if (!this.isCreditCard || !this.manualParcelado) {
+      itens = [basePayload];
+      mensagem = 'Lançamento adicionado com sucesso!';
+    } else {
+      const quantidadeParcelas = Math.max(2, Number(this.manualQuantidadeParcelas) || 2);
       if (this.manualGerarTodasParcelas) {
-
+        itens = [];
         for (let p = this.manualParcelaAtual; p <= quantidadeParcelas; p++) {
-          const groupKey = `PARC-${p}/${quantidadeParcelas}`;
-
-          if (p > this.manualParcelaAtual) {
-            const diferenca = p - this.manualParcelaAtual;
-            basePayload.NumeroFatura = addMonthsToYearMonth(this.month, diferenca);
-          }
-
-          const payloadParcela: any = {
+          itens.push({
             ...basePayload,
-            DataMovimentacao: this.manualData,
-            EhParcelado: true,
-            ParcelaAtual: p,
-            QuantidadeParcelas: quantidadeParcelas,
-            GrupoParcelamento: groupKey,
-          };
-
-          totalCriado += 1
-
-          await this.extratoItemService.createExtratoManualItem(payloadParcela);
+            numeroFatura: addMonthsToYearMonth(this.month, p - this.manualParcelaAtual),
+            ehParcelado: true,
+            parcelaAtual: p,
+            quantidadeParcelas,
+          });
         }
-
-        this.alertService.success(`Parcelamento criado: ${totalCriado} parcelas.`);
-        this.showAddModal = false;
-
-        await this.loadMonth();
-        return;
+        mensagem = `Parcelamento criado: ${itens.length} parcelas.`;
+      } else {
+        itens = [{ ...basePayload, ehParcelado: true, parcelaAtual: 1, quantidadeParcelas }];
+        mensagem = `Compra parcelada registrada (1/${quantidadeParcelas}).`;
       }
-
-      // 2.2) Parcelado SEM gerar todas -> salva só a 1ª
-      const payloadSingle: any = {
-        ...basePayload,
-        EhParcelado: true,
-        ParcelaAtual: 1,
-        QuantidadeParcelas: quantidadeParcelas,
-      };
-
-      await this.extratoItemService.createExtratoManualItem(payloadSingle);
-
-      this.alertService.success(`Compra parcelada registrada (1/${quantidadeParcelas}).`);
-      this.showAddModal = false;
-
-      await this.loadMonth();
-      return;
-
-    } catch (err: any) {
-      this.alertService.error(extrairMensagemErro(err, 'Erro ao adicionar lançamento.'));
-    } finally {
-      this.saving = false;
     }
+
+    this.saving = true;
+    // Uma por vez, na ordem; para no primeiro erro, como antes.
+    concat(...itens.map(item => this.extratoItemService.criar(item)))
+      .pipe(toArray(), finalize(() => (this.saving = false)))
+      .subscribe({
+        next: () => {
+          this.alertService.success(mensagem);
+          this.showAddModal = false;
+          this.loadMonth();
+        },
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao adicionar lançamento.'))
+      });
   }
 
 

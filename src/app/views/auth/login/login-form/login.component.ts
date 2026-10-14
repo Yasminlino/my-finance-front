@@ -2,7 +2,9 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from 'src/app/core/services/Auth.service';
+import { finalize } from 'rxjs';
+import { AuthService } from 'src/app/core/services/auth.service';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 @Component({
   selector: 'app-login',
@@ -45,32 +47,33 @@ export class LoginComponent {
     this.showModalCreate = false;
   }
 
-  async submit() {
+  submit() {
     const e = this.errors;
     if (e.username || e.password) {
       alert('Corrija os erros antes de continuar.');
       return;
     }
 
-    try {
-      this.loading = true;
+    this.loading = true;
+    const username = this.form.controls['username'].value ?? '';
+    const password = this.form.controls['password'].value ?? '';
+    const remember = !!this.form.controls['remember'].value;
 
-      const username = this.form.controls['username'].value ?? '';
-      const password = this.form.controls['password'].value ?? '';
-      const remember = !!this.form.controls['remember'].value;
-
-      const ok = await this.auth.authenticate(username, password, remember);
-
-      if (ok) {
-        await this.router.navigate(['/home'], { replaceUrl: true });
-      } else {
-        alert('Credenciais inválidas.');
-      }
-    } catch (err) {
-      console.error('Erro ao autenticar:', err);
-      alert('Não foi possível autenticar. Tente novamente.');
-    } finally {
-      this.loading = false;
-    }
+    this.auth.autenticar(username, password, remember)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: ok => {
+          if (ok) {
+            this.router.navigate(['/home'], { replaceUrl: true });
+          } else {
+            alert('Credenciais inválidas.');
+          }
+        },
+        error: err => {
+          console.error('Erro ao autenticar:', err);
+          // A API explica a recusa ("Usuário não encontrado..."); a genérica fica para API fora do ar.
+          alert(extrairMensagemErro(err, 'Não foi possível autenticar. Tente novamente.'));
+        }
+      });
   }
 }
