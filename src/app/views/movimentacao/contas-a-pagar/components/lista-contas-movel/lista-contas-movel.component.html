@@ -1,0 +1,130 @@
+<!-- Modo seleção: barra azul por cima do topo do app -->
+@if (modoSelecao) {
+  <div class="barra-selecao">
+    <p-button class="fechar-selecao" icon="pi pi-times" [text]="true" (onClick)="limparSelecao()" ariaLabel="Sair da seleção" />
+    <span class="font-semibold flex-grow-1">{{ totaisSelecao.count }} {{ totaisSelecao.count === 1 ? 'selecionada' : 'selecionadas' }}</span>
+    <p-button label="Selecionar todas" [text]="true" (onClick)="selecionarTodas()" />
+  </div>
+}
+
+<!-- Situação (rola na horizontal) -->
+<div class="filtro-rolavel filtro-situacao-compacto">
+  <p-selectButton [options]="opcoesFiltro" [(ngModel)]="filtro" optionLabel="label" optionValue="value"
+    [allowEmpty]="false" (onChange)="aplicarFiltros()">
+    <ng-template let-opcao pTemplate="item">
+      <span class="white-space-nowrap">{{ opcao.label }}</span>
+      <p-badge [value]="'' + opcao.contagem" styleClass="ml-2"
+        [severity]="opcao.value === 'vencidas' && opcao.contagem > 0 ? 'danger' : 'secondary'" />
+    </ng-template>
+  </p-selectButton>
+</div>
+
+<!-- Busca + painel de filtros -->
+<div class="flex gap-2 my-2">
+  <p-iconField iconPosition="left" class="flex-grow-1">
+    <p-inputIcon styleClass="pi pi-search" />
+    <input pInputText type="text" class="w-full" placeholder="Buscar conta..." [(ngModel)]="busca"
+      (ngModelChange)="aplicarFiltros()" aria-label="Buscar" />
+  </p-iconField>
+  <span class="botao-filtros p-overlay-badge">
+    <p-button icon="pi pi-sliders-h" [outlined]="true" severity="secondary" (onClick)="filtrosAbertos = true"
+      ariaLabel="Filtros" />
+    @if (categoriasSelecionadas.length) {
+      <span class="p-badge p-component p-badge-no-gutter">{{ categoriasSelecionadas.length }}</span>
+    }
+  </span>
+</div>
+
+<!-- Cards -->
+<div class="lista-cards" [class.com-barra-lote]="modoSelecao">
+  @for (conta of visiveis; track conta.id) {
+    @if (meta[conta.id]; as m) {
+      <div class="card-conta" [attr.id]="'card-conta-' + conta.id" role="button" tabindex="0"
+        [class.borda-atrasada]="m.situacao === 'atrasada'" [class.borda-receita]="m.receita && m.situacao !== 'atrasada'"
+        [class.selecionado]="marcada(conta.id)"
+        (pointerdown)="iniciarToque(conta)" (pointerup)="cancelarToque()" (pointerleave)="cancelarToque()"
+        (pointercancel)="cancelarToque()" (contextmenu)="$event.preventDefault()" (click)="tocar(conta)"
+        (keydown.enter)="tocar(conta)">
+        @if (modoSelecao) {
+          <span class="marcador" [class.marcado]="marcada(conta.id)"><i class="pi pi-check"></i></span>
+        } @else {
+          <span class="icone-categoria" [ngClass]="m.cor"><i [class]="m.icone"></i></span>
+        }
+
+        <div class="flex-grow-1 min-w-0">
+          <div class="flex justify-content-between gap-2">
+            <span class="font-semibold nome">{{ conta.name }}</span>
+            <span class="font-bold white-space-nowrap" [class.text-green-600]="m.receita">{{ m.valor }}</span>
+          </div>
+          <div class="flex justify-content-between align-items-center gap-2 mt-1">
+            <small class="text-color-secondary detalhe">
+              {{ conta.categoryName }}
+              @if (conta.observacao) {
+                <span class="surface-100 border-round px-1"><i class="pi pi-comment"></i> {{ conta.observacao }}</span>
+              }
+              @if (m.parcela) {
+                <span class="ml-1">{{ m.parcela }}</span>
+                <p-progressBar [value]="m.progressoParcela" [showValue]="false" styleClass="mini-progresso" />
+              }
+            </small>
+            <p-tag [value]="m.tag.label" [severity]="m.tag.severity" />
+          </div>
+          <div class="flex justify-content-between align-items-center mt-1">
+            <small>
+              {{ m.vencimento.slice(0, 5) }}
+              @if (m.relativo.texto) {
+                · <span [ngClass]="'tom-' + m.relativo.tom">{{ m.relativo.texto }}</span>
+              }
+            </small>
+            @if (!modoSelecao) {
+              <!-- Os botões não contam como toque no card nem iniciam o toque longo. -->
+              <span class="acoes-card" (click)="$event.stopPropagation()" (pointerdown)="$event.stopPropagation()">
+                @if (m.situacao !== 'paga') {
+                  <p-button class="acao-pagar" icon="pi pi-check" [rounded]="true" [text]="true" severity="success"
+                    (onClick)="marcarPago.emit([conta])" ariaLabel="Marcar como pago" />
+                }
+                <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
+                  (onClick)="abrirMenu($event, conta)" ariaLabel="Mais ações" />
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  } @empty {
+    <div class="text-center text-color-secondary p-4">
+      {{ contas.length ? 'Nenhuma conta com esses filtros.' : (loading ? 'Carregando…' : 'Nenhuma conta neste mês.') }}
+    </div>
+  }
+</div>
+
+<!-- Ações em lote, fixas embaixo -->
+@if (modoSelecao) {
+  <div class="barra-lote-movel">
+    <div class="flex justify-content-between text-sm mb-2">
+      <span><span class="block text-color-secondary">Despesa</span><b class="text-red-500">{{ money(totaisSelecao.despesa) }}</b></span>
+      <span><span class="block text-color-secondary">Receita</span><b class="text-green-600">{{ money(totaisSelecao.receita) }}</b></span>
+      <span class="text-right"><span class="block text-color-secondary">Saldo</span><b [class.text-red-500]="totaisSelecao.saldo < 0"
+        [class.text-green-600]="totaisSelecao.saldo >= 0">{{ money(totaisSelecao.saldo) }}</b></span>
+    </div>
+    <div class="flex gap-2">
+      <p-button label="Marcar como pago" icon="pi pi-check" severity="success" class="flex-grow-1" styleClass="w-full"
+        [disabled]="!selecaoTemAbertas" (onClick)="pagarSelecionadas()" />
+      <p-button icon="pi pi-trash" severity="danger" [outlined]="true" (onClick)="excluirSelecionadas()" ariaLabel="Excluir" />
+    </div>
+  </div>
+}
+
+<p-sidebar [(visible)]="filtrosAbertos" position="bottom" header="Filtros" styleClass="painel-filtros h-auto">
+  <label class="block text-sm text-color-secondary mb-1" for="filtro-categorias">Categorias</label>
+  <p-multiSelect inputId="filtro-categorias" [options]="categorias" [(ngModel)]="categoriasSelecionadas"
+    placeholder="Todas as categorias" display="chip" [showHeader]="false" appendTo="body" styleClass="w-full"
+    (onChange)="aplicarFiltros()" />
+  <div class="flex gap-2 mt-3">
+    <p-button label="Limpar filtros" icon="pi pi-filter-slash" [outlined]="true" severity="secondary" styleClass="w-full"
+      class="flex-1" (onClick)="limparFiltros()" />
+    <p-button label="Ver contas" icon="pi pi-check" styleClass="w-full" class="flex-1" (onClick)="filtrosAbertos = false" />
+  </div>
+</p-sidebar>
+
+<p-menu #menuCard [model]="itensMenuCard" [popup]="true" appendTo="body" />

@@ -1,0 +1,258 @@
+<div class="surface-card border-round shadow-1 tags-claras">
+  <!-- Toolbar: situação, busca, categorias, limpar, exportar -->
+  <p-toolbar styleClass="toolbar-tabela border-none border-bottom-1 surface-border border-noround">
+    <div class="p-toolbar-group-start flex-wrap gap-2">
+      <p-selectButton [options]="opcoesFiltro" [(ngModel)]="filtro" optionLabel="label" optionValue="value"
+        [allowEmpty]="false" (onChange)="aoMudarFiltro()" styleClass="filtro-situacao">
+        <ng-template let-opcao pTemplate="item">
+          <span>{{ opcao.label }}</span>
+          <p-badge [value]="'' + opcao.contagem" styleClass="ml-2"
+            [severity]="opcao.value === 'vencidas' && opcao.contagem > 0 ? 'danger' : (opcao.value === 'alteradas' ? 'warning' : 'secondary')" />
+        </ng-template>
+      </p-selectButton>
+    </div>
+
+    <div class="p-toolbar-group-end flex-wrap gap-2">
+      <p-iconField iconPosition="left">
+        <p-inputIcon styleClass="pi pi-search" />
+        <input pInputText type="text" placeholder="Buscar conta, categoria..." [(ngModel)]="busca"
+          (ngModelChange)="aoMudarFiltro()" aria-label="Buscar" />
+      </p-iconField>
+      <p-multiSelect [options]="categorias" [(ngModel)]="categoriasSelecionadas" placeholder="Categorias"
+        [showHeader]="false" selectedItemsLabel="{0} categorias" [maxSelectedLabels]="1" appendTo="body"
+        (onChange)="aoMudarFiltro()" styleClass="filtro-categorias" />
+      <p-button icon="pi pi-filter-slash" [text]="true" severity="secondary" pTooltip="Limpar filtros"
+        tooltipPosition="top" [disabled]="!temFiltro" (onClick)="limparFiltros()" ariaLabel="Limpar filtros" />
+      <p-button icon="pi pi-upload" [text]="true" severity="secondary" pTooltip="Exportar CSV" tooltipPosition="top"
+        (onClick)="exportar()" ariaLabel="Exportar" />
+    </div>
+  </p-toolbar>
+
+  <!-- Ações em lote (fora do modo edição) -->
+  @if (selecao.length && !edicao) {
+    <div class="barra-lote flex flex-wrap align-items-center gap-3 px-3 py-2">
+      <span class="font-semibold">{{ selecao.length }} {{ selecao.length === 1 ? 'selecionada' : 'selecionadas' }}</span>
+      <div class="totais-lote flex flex-wrap align-items-center gap-3 flex-grow-1">
+        <span><span class="text-color-secondary text-sm mr-1">Despesa</span><b class="text-red-500">{{ money(totaisSelecao.despesa) }}</b></span>
+        <span><span class="text-color-secondary text-sm mr-1">Receita</span><b class="text-green-600">{{ money(totaisSelecao.receita) }}</b></span>
+        <span><span class="text-color-secondary text-sm mr-1">Saldo</span><b [class.text-red-500]="totaisSelecao.saldo < 0"
+          [class.text-green-600]="totaisSelecao.saldo >= 0">{{ money(totaisSelecao.saldo) }}</b></span>
+      </div>
+      <p-button label="Marcar como pago" icon="pi pi-check" severity="success" [disabled]="!selecaoTemAbertas"
+        (onClick)="pagarSelecionadas()" />
+      <p-button label="Excluir" icon="pi pi-trash" severity="danger" [outlined]="true" (onClick)="excluirSelecionadas()" />
+      <p-button icon="pi pi-times" [text]="true" severity="secondary" pTooltip="Limpar seleção"
+        (onClick)="limparSelecao()" ariaLabel="Limpar seleção" />
+    </div>
+  }
+
+  <p-table #dt [value]="linhasVisiveis" dataKey="id" [selection]="selecao" (selectionChange)="aoSelecionar($event)"
+    [paginator]="true" [rows]="rows" [first]="first" [rowsPerPageOptions]="[10, 25, 50]" (onPage)="aoPaginar($event)"
+    [loading]="loading" [scrollable]="true" [rowHover]="!edicao" styleClass="tabela-contas"
+    [class.em-edicao]="!!edicao" [columns]="colunasExportacao" [exportFunction]="formatarExportacao"
+    exportFilename="contas-a-pagar">
+
+    <ng-template pTemplate="header">
+      <tr>
+        @if (!edicao) {
+          <th style="width: 3rem"><p-tableHeaderCheckbox /></th>
+        }
+        <th style="min-width: 16rem">Conta</th>
+        <th style="min-width: 7rem">Parcela</th>
+        <th style="min-width: 10rem">Vencimento</th>
+        <th style="min-width: 9rem" class="text-right">Valor</th>
+        <th style="min-width: 9rem">Status</th>
+        @if (edicao) {
+          <th style="min-width: 12rem">Observação</th>
+        }
+        <th style="width: 9rem" class="text-center">Ações</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-conta>
+      <ng-container *ngIf="meta[conta.id] as m">
+        @if (edicao && !bloqueada(conta.id)) {
+          <!-- Linha em edição -->
+          <tr [attr.id]="'conta-' + conta.id" class="linha-edicao" [class.linha-alterada]="alterado(conta.id)">
+            <td>
+              <div class="flex align-items-start gap-2">
+                <span class="icone-categoria" [ngClass]="m.cor"><i [class]="m.icone"></i></span>
+                <div class="flex-grow-1 min-w-0">
+                  <div class="font-semibold">{{ conta.name }}</div>
+                  <small class="text-color-secondary">{{ conta.categoryName }}</small>
+                </div>
+              </div>
+            </td>
+
+            <td>
+              @if (conta.ehParcelado) {
+                <div class="flex align-items-center gap-1">
+                  <p-inputNumber [(ngModel)]="rascunho[conta.id].parcelaAtual" [useGrouping]="false"
+                    inputStyleClass="campo-parcela p-inputtext-sm" [class.campo-alterado]="alterado(conta.id, 'parcelaAtual')"
+                    [appErroCampo]="erro(conta.id, 'parcelaAtual')"
+                    (ngModelChange)="alterar(conta, 'parcelaAtual', $event)" (keydown.escape)="desfazerCampo(conta, 'parcelaAtual')" />
+                  <span class="text-color-secondary">/ {{ conta.quantidadeParcelas }}</span>
+                </div>
+                @if (alterado(conta.id, 'parcelaAtual')) {
+                  <s class="valor-anterior">{{ anterior(conta.id, 'parcelaAtual') }}</s>
+                }
+                @if (erro(conta.id, 'parcelaAtual'); as msg) {
+                  <small class="p-error block">{{ msg }}</small>
+                }
+              } @else {
+                <span class="text-color-secondary">—</span>
+              }
+            </td>
+
+            <td>
+              <p-calendar [(ngModel)]="rascunho[conta.id].date" dateFormat="dd/mm/yy" appendTo="body" [showIcon]="true"
+                inputStyleClass="p-inputtext-sm w-8rem" [class.campo-alterado]="alterado(conta.id, 'date')"
+                [appErroCampo]="erro(conta.id, 'date')"
+                (ngModelChange)="alterar(conta, 'date', $event)" (keydown.escape)="desfazerCampo(conta, 'date')" />
+              @if (alterado(conta.id, 'date')) {
+                <s class="valor-anterior">{{ anterior(conta.id, 'date') }}</s>
+              }
+              @if (erro(conta.id, 'date'); as msg) {
+                <small class="p-error block">{{ msg }}</small>
+              }
+            </td>
+
+            <td class="text-right">
+              <p-inputNumber [(ngModel)]="rascunho[conta.id].value" mode="currency" currency="BRL" locale="pt-BR"
+                inputStyleClass="text-right p-inputtext-sm w-9rem" [class.campo-alterado]="alterado(conta.id, 'value')"
+                [appErroCampo]="erro(conta.id, 'value')"
+                (ngModelChange)="alterar(conta, 'value', $event)" (keydown.escape)="desfazerCampo(conta, 'value')" />
+              @if (alterado(conta.id, 'value')) {
+                <s class="valor-anterior">{{ anterior(conta.id, 'value') }}</s>
+              }
+              @if (erro(conta.id, 'value'); as msg) {
+                <small class="p-error block">{{ msg }}</small>
+              }
+            </td>
+
+            <td>
+              <p-dropdown [options]="statusOptions" [(ngModel)]="rascunho[conta.id].status" optionLabel="label"
+                optionValue="value" appendTo="body" panelStyleClass="tags-claras" styleClass="p-inputtext-sm w-full"
+                [class.campo-alterado]="alterado(conta.id, 'status')"
+                (ngModelChange)="alterar(conta, 'status', $event)" (keydown.escape)="desfazerCampo(conta, 'status')">
+                <ng-template let-opcao pTemplate="selectedItem">
+                  <p-tag [value]="opcao.label" [severity]="opcao.classe" />
+                </ng-template>
+                <ng-template let-opcao pTemplate="item">
+                  <p-tag [value]="opcao.label" [severity]="opcao.classe" />
+                </ng-template>
+              </p-dropdown>
+              @if (alterado(conta.id, 'status')) {
+                <s class="valor-anterior">{{ anterior(conta.id, 'status') }}</s>
+              }
+              @if (previa(conta); as efeito) {
+                <small class="previa block"><i class="pi pi-info-circle mr-1"></i>{{ efeito }}</small>
+              }
+            </td>
+
+            <td>
+              <input pInputText class="w-full p-inputtext-sm" placeholder="Observação"
+                [class.campo-alterado]="alterado(conta.id, 'observacao')" [(ngModel)]="rascunho[conta.id].observacao"
+                (ngModelChange)="alterar(conta, 'observacao', $event)" (keydown.escape)="desfazerCampo(conta, 'observacao')" />
+              @if (alterado(conta.id, 'observacao')) {
+                <s class="valor-anterior">{{ anterior(conta.id, 'observacao') }}</s>
+              }
+            </td>
+
+            <td class="text-center">
+              <p-button class="acao-desfazer" icon="pi pi-undo" [rounded]="true" [text]="true" severity="warning"
+                pTooltip="Desfazer alterações da linha" tooltipPosition="top" [disabled]="!alterado(conta.id)"
+                (onClick)="desfazerLinha(conta)" ariaLabel="Desfazer alterações da linha" />
+            </td>
+          </tr>
+        } @else {
+          <!-- Linha de visualização (ou conta paga bloqueada no modo edição) -->
+          <tr [attr.id]="'conta-' + conta.id" [class.linha-paga]="m.situacao === 'paga'"
+            [class.linha-bloqueada]="edicao && bloqueada(conta.id)">
+            @if (!edicao) {
+              <td><p-tableCheckbox [value]="conta" /></td>
+            }
+
+            <td>
+              <div class="flex align-items-center gap-2">
+                <span class="icone-categoria" [ngClass]="m.cor"><i [class]="m.icone"></i></span>
+                <div class="min-w-0">
+                  <div class="font-semibold flex align-items-center gap-2">
+                    <span class="white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ conta.name }}</span>
+                    @if (conta.observacao) {
+                      <i class="pi pi-comment text-color-secondary text-sm" [pTooltip]="conta.observacao" tooltipPosition="top"></i>
+                    }
+                  </div>
+                  <small class="text-color-secondary">{{ conta.categoryName }}</small>
+                </div>
+              </div>
+            </td>
+
+            <td>
+              @if (m.parcela) {
+                <div class="text-sm">{{ m.parcela }}</div>
+                <p-progressBar [value]="m.progressoParcela" [showValue]="false" styleClass="mini-progresso" />
+              } @else {
+                <span class="text-color-secondary">—</span>
+              }
+            </td>
+
+            <td>
+              <div>{{ m.vencimento }}</div>
+              @if (m.relativo.texto) {
+                <small [ngClass]="'tom-' + m.relativo.tom">{{ m.relativo.texto }}</small>
+              }
+            </td>
+
+            <td class="text-right font-semibold white-space-nowrap" [class.text-green-600]="m.receita">{{ m.valor }}</td>
+
+            <td><p-tag [value]="m.tag.label" [severity]="m.tag.severity" /></td>
+
+            @if (edicao) {
+              <!-- Conta paga bloqueada: a observação aparece como texto na coluna do modo edição. -->
+              <td class="text-sm">{{ conta.observacao || '—' }}</td>
+            }
+
+            <td class="text-center white-space-nowrap">
+              @if (edicao) {
+                <p-button class="acao-desbloquear" label="Desbloquear" icon="pi pi-lock-open" size="small" [text]="true"
+                  severity="secondary" (onClick)="desbloquear(conta)" />
+              } @else {
+                @if (m.situacao !== 'paga') {
+                  <p-button class="acao-pagar" icon="pi pi-check" [rounded]="true" [text]="true" severity="success"
+                    pTooltip="Marcar como pago" tooltipPosition="top" (onClick)="marcarPago.emit([conta])"
+                    ariaLabel="Marcar como pago" />
+                } @else {
+                  <!-- Mesmo espaço do ✓, para os botões ficarem alinhados entre as linhas. -->
+                  <span class="acao-vazia"></span>
+                }
+                <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="secondary" pTooltip="Editar"
+                  tooltipPosition="top" (onClick)="editar.emit(conta)" ariaLabel="Editar" />
+                <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
+                  (onClick)="abrirMenu($event, conta)" ariaLabel="Mais ações" />
+              }
+            </td>
+          </tr>
+        }
+      </ng-container>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="7" class="text-center text-color-secondary p-4">
+          {{ contas.length ? 'Nenhuma conta com esses filtros.' : 'Nenhuma conta neste mês.' }}
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+      <tr>
+        <td [attr.colspan]="edicao ? 3 : 4" class="text-right text-color-secondary">Total de despesas da página</td>
+        <td class="text-right font-bold white-space-nowrap">{{ totalDespesasPaginaFormatado }}</td>
+        <td [attr.colspan]="edicao ? 3 : 2"></td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<p-menu #menuLinha [model]="itensMenuLinha" [popup]="true" appendTo="body" />

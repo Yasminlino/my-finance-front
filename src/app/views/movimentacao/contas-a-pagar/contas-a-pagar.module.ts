@@ -1,25 +1,47 @@
 import { NgModule } from '@angular/core';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { CalendarModule } from 'primeng/calendar';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { InputSwitchModule } from 'primeng/inputswitch';
+import { MenuModule } from 'primeng/menu';
+import { SplitButtonModule } from 'primeng/splitbutton';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { ContasAPagarRoutingModule } from './contas-a-pagar-routing.module';
 import { ContasAPagarComponent } from './contas-a-pagar/contas-a-pagar.component';
-import { TotaisSelecaoComponent } from 'src/app/shared/components/totais-selecao/totais-selecao.component';
-import {  ModalAdicionarEmLoteComponent } from './components/modal-adicionar-em-lote/modal-adicionar-em-lote.component';
+import { ModalAdicionarEmLoteComponent } from './components/modal-adicionar-em-lote/modal-adicionar-em-lote.component';
 import { ModalNovaContasAPagarComponent } from './components/modal-nova-contas-a-pagar/modal-nova-contas-a-pagar.component';
+import { ResumoMesComponent } from './components/resumo-mes/resumo-mes.component';
+import { BarraEdicaoComponent } from './components/barra-edicao/barra-edicao.component';
+import { TabelaContasComponent } from './components/tabela-contas/tabela-contas.component';
+import { ListaContasMovelComponent } from './components/lista-contas-movel/lista-contas-movel.component';
+import { EditarContaSheetComponent } from './components/editar-conta-sheet/editar-conta-sheet.component';
 import { SharedModule } from 'src/app/shared/shared.module';
+// A tela não usa mais o data-grid; a modal "Adicionar em lote" ainda usa.
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-
 
 @NgModule({
   declarations: [
     ContasAPagarComponent,
     ModalAdicionarEmLoteComponent,
-    ModalNovaContasAPagarComponent,    
+    ModalNovaContasAPagarComponent,
   ],
-    imports: [
+  imports: [
     SharedModule,
     ContasAPagarRoutingModule,
+    BreadcrumbModule,
+    CalendarModule,
+    ConfirmDialogModule,
+    InputSwitchModule,
+    MenuModule,
+    SplitButtonModule,
+    TooltipModule,
     DataGridComponent,
-    TotaisSelecaoComponent
+    ResumoMesComponent,
+    BarraEdicaoComponent,
+    TabelaContasComponent,
+    ListaContasMovelComponent,
+    EditarContaSheetComponent
   ]
 })
 export class ContasAPagarModule { }

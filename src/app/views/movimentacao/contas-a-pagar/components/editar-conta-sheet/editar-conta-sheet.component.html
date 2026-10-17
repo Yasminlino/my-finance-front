@@ -1,0 +1,108 @@
+<p-sidebar [visible]="aberto" (visibleChange)="!$event && fechar.emit()" position="bottom" [showCloseIcon]="false"
+  [blockScroll]="true" styleClass="sheet-conta-painel h-auto">
+  @if (conta && rascunho) {
+    <div class="sheet-conta">
+      <span class="alca" aria-hidden="true"></span>
+
+      <!-- Cabeçalho -->
+      <div class="flex align-items-center gap-2 mb-3">
+        <span class="icone-categoria" [ngClass]="cor"><i [class]="icone"></i></span>
+        <div class="flex-grow-1 min-w-0">
+          <div class="font-bold text-lg nome">{{ conta.name }}</div>
+          <small class="text-color-secondary">
+            {{ conta.categoryName }}
+            @if (camposAlterados) {
+              · <span class="contador">{{ camposAlterados }} {{ camposAlterados === 1 ? 'alteração' : 'alterações' }}</span>
+            }
+          </small>
+        </div>
+        <p-button icon="pi pi-times" [rounded]="true" [text]="true" severity="secondary" (onClick)="fechar.emit()"
+          ariaLabel="Fechar" />
+      </div>
+
+      @if (bloqueada) {
+        <!-- Conta paga: só leitura -->
+        <div class="aviso-paga flex align-items-center gap-2 mb-3">
+          <i class="pi pi-lock"></i>
+          <span class="flex-grow-1 text-sm">Conta paga: os campos ficam bloqueados.</span>
+          <p-button label="Desbloquear" icon="pi pi-lock-open" size="small" [outlined]="true" severity="secondary"
+            (onClick)="desbloquear()" />
+        </div>
+        <dl class="leitura">
+          <dt>Valor</dt><dd>{{ anterior('value') }}</dd>
+          <dt>Status</dt><dd>{{ anterior('status') }}</dd>
+          <dt>Vencimento</dt><dd>{{ anterior('date') }}</dd>
+          @if (conta.ehParcelado) {
+            <dt>Parcela</dt><dd>{{ conta.parcelaAtual }} de {{ conta.quantidadeParcelas }}</dd>
+          }
+          <dt>Observação</dt><dd>{{ conta.observacao || '—' }}</dd>
+        </dl>
+      } @else {
+        <div class="grid">
+          <div class="col-6">
+            <label class="rotulo" for="sheet-valor">Valor</label>
+            <p-inputNumber inputId="sheet-valor" [(ngModel)]="rascunho.value" mode="currency" currency="BRL" locale="pt-BR"
+              styleClass="w-full" inputStyleClass="w-full" [class.campo-alterado]="alterado('value')"
+              [appErroCampo]="erro('value')" (ngModelChange)="alterar('value', $event)"
+              (keydown.escape)="desfazerCampo('value')" />
+            @if (alterado('value')) { <s class="valor-anterior">{{ anterior('value') }}</s> }
+            @if (erro('value'); as msg) { <small class="p-error block">{{ msg }}</small> }
+          </div>
+
+          <div class="col-6">
+            <label class="rotulo" for="sheet-status">Status</label>
+            <p-dropdown inputId="sheet-status" [options]="statusOptions" [(ngModel)]="rascunho.status" optionLabel="label"
+              optionValue="value" appendTo="body" panelStyleClass="tags-claras" styleClass="w-full tags-claras"
+              [class.campo-alterado]="alterado('status')" (ngModelChange)="alterar('status', $event)">
+              <ng-template let-opcao pTemplate="selectedItem"><p-tag [value]="opcao.label" [severity]="opcao.classe" /></ng-template>
+              <ng-template let-opcao pTemplate="item"><p-tag [value]="opcao.label" [severity]="opcao.classe" /></ng-template>
+            </p-dropdown>
+            @if (alterado('status')) { <s class="valor-anterior">{{ anterior('status') }}</s> }
+          </div>
+
+          <div class="col-12">
+            <label class="rotulo" for="sheet-vencimento">Vencimento</label>
+            <p-calendar inputId="sheet-vencimento" [(ngModel)]="rascunho.date" dateFormat="dd/mm/yy" [showIcon]="true"
+              [touchUI]="true" [readonlyInput]="true" styleClass="w-full" [class.campo-alterado]="alterado('date')"
+              [appErroCampo]="erro('date')" (ngModelChange)="alterar('date', $event)" />
+            @if (alterado('date')) { <s class="valor-anterior">{{ anterior('date') }}</s> }
+            @if (erro('date'); as msg) { <small class="p-error block">{{ msg }}</small> }
+            @if (previa; as efeito) {
+              <small class="previa block"><i class="pi pi-info-circle mr-1"></i>{{ efeito }}</small>
+            }
+          </div>
+
+          @if (conta.ehParcelado) {
+            <div class="col-12">
+              <label class="rotulo" for="sheet-parcela">Parcela</label>
+              <div class="flex align-items-center gap-2">
+                <p-inputNumber inputId="sheet-parcela" [(ngModel)]="rascunho.parcelaAtual" [useGrouping]="false"
+                  inputStyleClass="campo-parcela" [class.campo-alterado]="alterado('parcelaAtual')"
+                  [appErroCampo]="erro('parcelaAtual')" (ngModelChange)="alterar('parcelaAtual', $event)"
+                  (keydown.escape)="desfazerCampo('parcelaAtual')" />
+                <span class="text-color-secondary">de {{ conta.quantidadeParcelas }}</span>
+              </div>
+              @if (alterado('parcelaAtual')) { <s class="valor-anterior">{{ anterior('parcelaAtual') }}</s> }
+              @if (erro('parcelaAtual'); as msg) { <small class="p-error block">{{ msg }}</small> }
+            </div>
+          }
+
+          <div class="col-12">
+            <label class="rotulo" for="sheet-observacao">Observação</label>
+            <textarea pInputTextarea id="sheet-observacao" rows="2" class="w-full" placeholder="Escreva uma observação..."
+              [class.campo-alterado]="alterado('observacao')" [(ngModel)]="rascunho.observacao"
+              (ngModelChange)="alterar('observacao', $event)" (keydown.escape)="desfazerCampo('observacao')"></textarea>
+            @if (alterado('observacao')) { <s class="valor-anterior">{{ anterior('observacao') }}</s> }
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-2">
+          <p-button label="Desfazer" icon="pi pi-undo" [outlined]="true" severity="secondary" class="flex-1"
+            styleClass="w-full" [disabled]="!camposAlterados || salvando" (onClick)="desfazer()" />
+          <p-button label="Salvar" icon="pi pi-save" class="flex-1" styleClass="w-full" [loading]="salvando"
+            [disabled]="!podeSalvar" (onClick)="confirmar()" />
+        </div>
+      }
+    </div>
+  }
+</p-sidebar>

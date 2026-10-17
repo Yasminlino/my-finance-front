@@ -1,0 +1,95 @@
+@if (!compacto) {
+  <div class="grid">
+    <div class="col-12 sm:col-6 xl:col-3">
+      <p-card styleClass="resumo-card h-full">
+        <div class="flex align-items-start gap-3">
+          <span class="resumo-icone icone-receita"><i class="pi pi-arrow-down-left"></i></span>
+          <div class="min-w-0">
+            <div class="text-color-secondary text-sm">Receitas do mês</div>
+            <div class="font-bold text-2xl text-green-600">{{ money(resumo.receitas) }}</div>
+            <small class="text-color-secondary">{{ lancamentos(resumo.receitasQtd) }}</small>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 sm:col-6 xl:col-3">
+      <p-card styleClass="resumo-card h-full">
+        <div class="flex align-items-start gap-3">
+          <span class="resumo-icone icone-despesa"><i class="pi pi-arrow-up-right"></i></span>
+          <div class="min-w-0">
+            <div class="text-color-secondary text-sm">Despesas do mês</div>
+            <div class="font-bold text-2xl">{{ money(resumo.despesas) }}</div>
+            <small class="text-color-secondary">{{ lancamentos(resumo.despesasQtd) }}</small>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 sm:col-6 xl:col-3">
+      <p-card styleClass="resumo-card h-full">
+        <div class="flex align-items-start gap-3">
+          <span class="resumo-icone icone-pago"><i class="pi pi-check-circle"></i></span>
+          <div class="flex-grow-1 min-w-0">
+            <div class="text-color-secondary text-sm">Já pago</div>
+            <div class="font-bold text-2xl">{{ money(resumo.pago) }}</div>
+            <p-progressBar [value]="resumo.percentualPago" [showValue]="false" styleClass="resumo-progresso mt-1" />
+            <small class="text-color-secondary">{{ resumo.percentualPago | number: '1.0-0' }}% das despesas</small>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 sm:col-6 xl:col-3">
+      <p-card [styleClass]="'resumo-card resumo-vencidas h-full' + (resumo.vencidasQtd > 0 ? ' com-vencidas' : '')">
+        <div class="flex align-items-start gap-3">
+          <span class="resumo-icone icone-vencidas"><i class="pi pi-exclamation-triangle"></i></span>
+          <div class="min-w-0">
+            <div class="text-color-secondary text-sm">Vencidas</div>
+            <div class="font-bold text-2xl" [class.text-red-500]="resumo.vencidasQtd > 0">{{ money(resumo.vencidasValor) }}</div>
+            <small class="text-color-secondary">{{ resumo.vencidasQtd }} {{ resumo.vencidasQtd === 1 ? 'conta' : 'contas' }}</small>
+            @if (resumo.naoRecebidasQtd > 0) {
+              <small class="block text-color-secondary mt-1">+ {{ money(resumo.naoRecebidasValor) }} em receitas não recebidas</small>
+            }
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </div>
+} @else {
+  <!-- Celular: carrossel com rolagem horizontal (scroll-snap). Vencidas aqui são só despesas. -->
+  <div class="carrossel" (scroll)="aoRolar($event)">
+    <div class="resumo-slide">
+      <div class="flex align-items-center justify-content-between">
+        <span class="text-color-secondary text-sm">Despesas do mês</span>
+        <i class="pi pi-arrow-up-right text-orange-500"></i>
+      </div>
+      <div class="font-bold text-2xl">{{ money(resumo.despesas) }}</div>
+      <p-progressBar [value]="resumo.percentualPago" [showValue]="false" styleClass="resumo-progresso my-1" />
+      <small class="text-color-secondary">{{ money(resumo.pago) }} pago · {{ resumo.percentualPago | number: '1.0-0' }}%</small>
+    </div>
+
+    <div class="resumo-slide slide-vencidas" [class.com-vencidas]="resumo.vencidasQtd > 0">
+      <div class="flex align-items-center justify-content-between">
+        <span class="text-color-secondary text-sm">Vencidas</span>
+        <i class="pi pi-exclamation-triangle" [class.text-red-500]="resumo.vencidasQtd > 0"></i>
+      </div>
+      <div class="font-bold text-2xl" [class.text-red-500]="resumo.vencidasQtd > 0">{{ money(resumo.vencidasValor) }}</div>
+      <small class="text-color-secondary">{{ resumo.vencidasQtd }} {{ resumo.vencidasQtd === 1 ? 'despesa' : 'despesas' }} em atraso</small>
+    </div>
+
+    <div class="resumo-slide">
+      <div class="flex align-items-center justify-content-between">
+        <span class="text-color-secondary text-sm">Receitas do mês</span>
+        <i class="pi pi-arrow-down-left text-green-600"></i>
+      </div>
+      <div class="font-bold text-2xl text-green-600">{{ money(resumo.receitas) }}</div>
+      <small class="text-color-secondary">{{ lancamentos(resumo.receitasQtd) }}</small>
+    </div>
+  </div>
+  <div class="carrossel-pontos" aria-hidden="true">
+    @for (i of [0, 1, 2]; track i) {
+      <span [class.ativo]="i === slideAtivo"></span>
+    }
+  </div>
+}

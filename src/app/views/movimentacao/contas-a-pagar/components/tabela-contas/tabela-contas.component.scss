@@ -1,0 +1,91 @@
+.icone-categoria {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--border-radius);
+}
+
+.acao-vazia {
+  display: inline-block;
+  width: 3rem;
+}
+
+
+.barra-lote {
+  background: var(--primary-50);
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.linha-paga td {
+  color: var(--text-color-secondary);
+}
+
+// Modo edição
+.linha-alterada > td:first-child {
+  box-shadow: inset 4px 0 0 var(--orange-500);
+}
+
+.linha-bloqueada td {
+  background: var(--surface-100);
+  color: var(--text-color-secondary);
+}
+
+.valor-anterior {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-color-secondary);
+}
+
+.previa {
+  color: var(--orange-600);
+  margin-top: 0.25rem;
+}
+
+:host ::ng-deep {
+  .campo-alterado .p-inputtext,
+  input.campo-alterado,
+  .campo-alterado.p-dropdown,
+  .campo-alterado .p-dropdown {
+    border-color: var(--orange-400);
+    background: var(--orange-50);
+  }
+
+  // Erro vence o âmbar de "alterado": vermelho mesmo antes de o campo ficar ng-dirty.
+  .campo-alterado.ng-invalid .p-inputtext,
+  .campo-alterado.ng-invalid.p-dropdown {
+    border-color: var(--red-500);
+    background: var(--red-50);
+  }
+
+  .campo-parcela {
+    width: 3.5rem;
+  }
+
+  .linha-edicao td {
+    vertical-align: top;
+  }
+}
+
+:host ::ng-deep {
+  .toolbar-tabela {
+    background: transparent;
+    padding: 0.75rem 1rem;
+  }
+
+  .filtro-categorias {
+    min-width: 11rem;
+  }
+
+  .mini-progresso {
+    height: 0.25rem;
+    width: 4.5rem;
+    margin-top: 0.25rem;
+  }
+
+  .tabela-contas .p-datatable-tfoot > tr > td {
+    background: var(--surface-ground);
+  }
+}

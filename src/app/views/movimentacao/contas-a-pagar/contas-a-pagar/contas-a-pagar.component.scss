@@ -1,3 +1,54 @@
-.border-modal{
-    border: solid 1px #9a9898d9!important;
+.titulo {
+  font-family: inherit;
+  font-size: 1.5rem;
+}
+
+.modo-edicao {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--border-radius);
+  background: var(--surface-card);
+  user-select: none;
+
+  &.ativo {
+    border-color: var(--orange-400);
+    background: var(--orange-50);
+    color: var(--orange-800);
+  }
+}
+
+// Celular: botão flutuante de Nova conta.
+.fab-nova-conta {
+  position: fixed;
+  right: 1rem;
+  bottom: 1.25rem;
+  z-index: 900;
+
+  ::ng-deep .p-button {
+    width: 3.5rem;
+    height: 3.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+}
+
+:host ::ng-deep {
+  .mes-movel .p-calendar {
+    width: 100%;
+  }
+  .p-breadcrumb {
+    padding: 0;
+    background: transparent;
+    border: none;
+    font-size: 0.8rem;
+  }
+
+  .campo-mes {
+    width: 9.5rem;
+    text-transform: capitalize;
+  }
+
+  // Switch âmbar quando o modo edição está ligado.
+  .modo-edicao.ativo .p-inputswitch.p-inputswitch-checked .p-inputswitch-slider {
+    background: var(--orange-500);
+  }
 }

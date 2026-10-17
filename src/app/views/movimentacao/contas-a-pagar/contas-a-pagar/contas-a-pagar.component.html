@@ -1,23 +1,81 @@
 <div class="pagina">
-  <app-data-grid #grid [titulo]="titulo" [dataSource]="contasMensais" [breadcrumb]="breadcrumb" [columns]="gridColumns"
-    [tipoTabela]="tipoTabela" [dateFilter]="dateFilter" [loading]="loading" (edit)="onEdit($event)"
-    (delete)="onDelete($event)" (new)="onOpenCreate()" (reload)="loadMonth()" [statusOptions]="statusOptions" [bloquearLinha]="contaPaga"
-    (selectionChange)="onSelectionChange($event)" (deleteSelected)="onDeleteSelected($event)"
-    [exibeCampos]="exibirCampos" (saveInline)="onSaveInline($event)" [itemsButtom]="itemsButtom" [localStorage]="'dataFiltroContaMensal'"
-    (addBatch)="onOpenAddBatch()">
-    <app-totais-selecao [receita]="selectedTotals.receita" [despesa]="selectedTotals.despesa"
-      [saldo]="selectedTotals.saldo" [count]="selectedTotals.count"></app-totais-selecao>
-  </app-data-grid>
+  @if (!movel()) {
+    <!-- Desktop: cabeçalho com breadcrumb, mês, modo edição e Nova conta -->
+    <div class="cabecalho flex flex-wrap align-items-end justify-content-between gap-3 mt-2 mb-3">
+      <div class="flex flex-column gap-1">
+        <p-breadcrumb [model]="breadcrumb" [home]="home" />
+        <h5 class="m-0 titulo">Contas a Pagar</h5>
+        <small class="text-color-secondary">Gerencie despesas e receitas do mês</small>
+      </div>
 
-  <!-- Modal Form -->
-  <!-- <app-categoria-form *ngIf="showModalForm" [category]="editing" (closed)="closeForm($event)">
-    </app-categoria-form> -->
-  <app-modal-adicionar-em-lote *ngIf="showModalAdd" [month]="selectedMonth" (closed)="showModalAdd=false; $event"
-    (reload)="loadMonth()">
+      <div class="flex flex-wrap align-items-center gap-2">
+        <div class="flex align-items-center gap-1">
+          <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" [disabled]="!!edicao"
+            pTooltip="Mês anterior" tooltipPosition="top" (onClick)="mudarMes(-1)" ariaLabel="Mês anterior" />
+          <p-calendar [(ngModel)]="dateFilter" view="month" dateFormat="MM yy" [readonlyInput]="true" [showIcon]="true"
+            [disabled]="!!edicao" (onSelect)="loadMonth($event)" inputStyleClass="text-center campo-mes" />
+          <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" [disabled]="!!edicao"
+            pTooltip="Próximo mês" tooltipPosition="top" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
+        </div>
+
+        <!-- div e não label em volta do switch: o label repassaria o clique e o switch voltaria na hora. -->
+        <div class="modo-edicao flex align-items-center gap-2" [class.ativo]="!!edicao">
+          <p-inputSwitch #switchEl inputId="switch-edicao" [(ngModel)]="switchEdicao" [disabled]="loading"
+            (onChange)="alternarEdicao($event.checked)" />
+          <label for="switch-edicao" class="cursor-pointer">Modo edição</label>
+        </div>
+
+        <p-splitButton label="Nova conta" icon="pi pi-plus" [model]="itensNovaConta" [disabled]="!!edicao"
+          (onClick)="onOpenCreate()" appendTo="body" />
+      </div>
+    </div>
+
+    @if (edicao) {
+      <app-barra-edicao class="mb-3" [mes]="nomeDoMes" [contagem]="edicao.contagem" [temErros]="edicao.temErros"
+        [salvando]="salvando" (descartar)="descartar()" (salvar)="salvar()" />
+    }
+
+    <app-resumo-mes class="block mb-3" [resumo]="resumo" />
+
+    <app-tabela-contas [contas]="contasMensais" [hoje]="hoje" [loading]="loading" [edicao]="edicao"
+      (marcarPago)="marcarComoPago($event)" (excluir)="excluir($event)" (editar)="editar($event)" />
+  } @else {
+    <!-- Celular: título com ⋮, mês em largura total, resumo em carrossel, cards e botão flutuante -->
+    <div class="flex align-items-center justify-content-between mb-2">
+      <h5 class="m-0 titulo">Contas a Pagar</h5>
+      <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
+        (onClick)="menuTopo.toggle($event)" ariaLabel="Mais ações" />
+      <p-menu #menuTopo [model]="itensNovaConta" [popup]="true" appendTo="body" />
+    </div>
+
+    <div class="mes-movel flex align-items-center gap-2 mb-3">
+      <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" (onClick)="mudarMes(-1)"
+        ariaLabel="Mês anterior" />
+      <p-calendar class="flex-grow-1" styleClass="w-full" [(ngModel)]="dateFilter" view="month" dateFormat="MM 'de' yy"
+        [readonlyInput]="true" [showIcon]="true" [touchUI]="true" (onSelect)="loadMonth($event)" />
+      <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" (onClick)="mudarMes(1)"
+        ariaLabel="Próximo mês" />
+    </div>
+
+    <app-resumo-mes class="block mb-3" [resumo]="resumo" [compacto]="true" />
+
+    <app-lista-contas-movel [contas]="contasMensais" [hoje]="hoje" [loading]="loading"
+      (marcarPago)="marcarComoPago($event)" (excluir)="excluir($event)" (editar)="editar($event)" />
+
+    <p-button class="fab-nova-conta" icon="pi pi-plus" [rounded]="true" size="large" (onClick)="onOpenCreate()"
+      ariaLabel="Nova conta" />
+
+    <app-editar-conta-sheet [conta]="contaEmEdicao" [hoje]="hoje" [salvando]="salvandoConta"
+      (fechar)="contaEmEdicao = null" (salvar)="salvarConta($event)" />
+  }
+
+  <app-modal-adicionar-em-lote *ngIf="showModalAdd" [month]="selectedMonth" (closed)="showModalAdd = false"
+    (reload)="loadMonth(dateFilter)">
   </app-modal-adicionar-em-lote>
 
   <app-modal-nova-contas-a-pagar *ngIf="showModalCreate" [dataOperacao]="dateFilter"
-    (closed)="showModalCreate=false; $event && loadMonth()">
+    (closed)="showModalCreate = false; $event && loadMonth(dateFilter)">
   </app-modal-nova-contas-a-pagar>
 
+  <p-confirmDialog [style]="{ width: '28rem' }" [breakpoints]="{ '576px': '95vw' }" />
 </div>

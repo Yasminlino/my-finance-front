@@ -1,0 +1,90 @@
+.alca {
+  display: block;
+  width: 2.5rem;
+  height: 0.25rem;
+  margin: 0 auto 0.75rem;
+  border-radius: 0.125rem;
+  background: var(--surface-300);
+}
+
+.icone-categoria {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--border-radius);
+}
+
+.nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contador {
+  background: var(--orange-100);
+  color: var(--orange-800);
+  border-radius: 1rem;
+  padding: 0 0.5rem;
+}
+
+.rotulo {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.valor-anterior {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-color-secondary);
+}
+
+.previa {
+  color: var(--orange-600);
+  margin-top: 0.25rem;
+}
+
+.aviso-paga {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--border-radius);
+  background: var(--surface-100);
+}
+
+.leitura {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0;
+
+  dt { color: var(--text-color-secondary); }
+  dd { margin: 0; font-weight: 600; }
+}
+
+:host ::ng-deep {
+  .sheet-conta-painel {
+    border-radius: 1rem 1rem 0 0;
+    max-height: 90vh;
+  }
+
+  .sheet-conta-painel .p-sidebar-header { display: none; }
+
+  // Alterado em âmbar; erro vence em vermelho (como na tabela).
+  .campo-alterado .p-inputtext,
+  textarea.campo-alterado,
+  .campo-alterado.p-dropdown,
+  .campo-alterado .p-dropdown {
+    border-color: var(--orange-400);
+    background: var(--orange-50);
+  }
+
+  .campo-alterado.ng-invalid .p-inputtext {
+    border-color: var(--red-500);
+    background: var(--red-50);
+  }
+
+  .campo-parcela { width: 4.5rem; }
+}

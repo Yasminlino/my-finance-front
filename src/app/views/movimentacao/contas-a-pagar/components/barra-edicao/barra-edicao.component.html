@@ -1,0 +1,22 @@
+<p-toolbar styleClass="barra-edicao">
+  <div class="p-toolbar-group-start gap-2 min-w-0">
+    <i class="pi pi-pencil text-orange-500"></i>
+    <span class="font-semibold">Você está editando as contas de {{ mes }}</span>
+    <span class="contador">{{ contagem }} {{ contagem === 1 ? 'alteração' : 'alterações' }}</span>
+  </div>
+
+  <div class="p-toolbar-group-end gap-2">
+    <!-- Com erro, o aviso ocupa o lugar dos atalhos: a barra fica numa linha só. -->
+    @if (temErros) {
+      <span class="text-red-500 text-sm white-space-nowrap"><i class="pi pi-exclamation-circle mr-1"></i>Corrija os campos em vermelho para salvar</span>
+    } @else {
+      <small class="text-color-secondary atalhos white-space-nowrap">
+        <kbd>Tab</kbd> próximo campo · <kbd>Enter</kbd> confirma · <kbd>Esc</kbd> desfaz o campo
+      </small>
+    }
+    <p-button label="Descartar" icon="pi pi-times" severity="secondary" [outlined]="true" [disabled]="salvando"
+      (onClick)="descartar.emit()" />
+    <p-button [label]="'Salvar alterações (' + contagem + ')'" icon="pi pi-check" [loading]="salvando"
+      [disabled]="contagem === 0 || temErros || salvando" (onClick)="salvar.emit()" />
+  </div>
+</p-toolbar>
