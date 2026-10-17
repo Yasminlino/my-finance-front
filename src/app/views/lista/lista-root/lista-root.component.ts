@@ -34,7 +34,7 @@ export class ListaRootComponent implements OnInit {
   }
 
   lista: ListaDto[] = [];
-  breadcrumb = [{ label: 'Catalago' }, { label: 'Listas' }]
+  breadcrumb = [{ label: 'Listas' }, { label: 'Listas' }]
 
   loading = false;
   errorMsg = '';

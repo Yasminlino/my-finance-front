@@ -24,7 +24,8 @@
 
 <ng-content></ng-content>
 
-<div [ngClass]="{ 'card pt-4': breadcrumb && breadcrumb.length > 0 }">
+<!-- Card do PrimeFlex, como o painel de totais: o "card" do Tabler saiu no FE-P2 e deixava a moldura sem estilo. -->
+<div [ngClass]="{ 'surface-card border-round shadow-1 pt-4 pb-3': breadcrumb && breadcrumb.length > 0 }">
     <p-table #dt [value]="tableRows" [dataKey]="dataKey" editMode="row" showGridLines stripedRows
         styleClass="p-datatable-gridlines overflow-grid" [(selection)]="selectedItems" [resizableColumns]="false"
         [scrollable]="true" [paginator]="exibeCampos?.paginator" (selectionChange)="selectionChange.emit($event)"
@@ -453,7 +454,7 @@
     <ng-template pTemplate="right">
         <p-button label="Cancelar" icon="pi pi-times" class="mr-2" [outlined]="true" [disabled]="pendingCount === 0"
             (onClick)="cancelarTodasAlteracoes()" />
-        <p-button label="Salvar" icon="pi pi-check" class="mr-2" [disabled]="pendingCount === 0"
+        <p-button label="Salvar" icon="pi pi-check" [disabled]="pendingCount === 0"
             (onClick)="onSaveAll()" />
     </ng-template>
 </p-toolbar>

@@ -37,7 +37,7 @@ export class ListaDeChecagemComponent implements OnInit {
 
   lista: ItemListaDto[] = [];
   titulo: string = "Checklist"
-  breadcrumb = [{ label: 'Catalago' }, { label: 'Checklist' }]
+  breadcrumb = [{ label: 'Listas' }, { label: 'Checklist' }]
 
   loading = false;
   errorMsg = '';

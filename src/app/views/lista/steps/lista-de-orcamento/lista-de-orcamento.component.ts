@@ -35,7 +35,7 @@ export class ListaDeOrcamentoComponent implements OnInit {
   lista: ItemListaDto[] = [];
   listaId: number = 0;
   titulo: string = 'Orçamento';
-  breadcrumb = [{ label: 'Catalago' }, { label: 'Orçamento' }]
+  breadcrumb = [{ label: 'Listas' }, { label: 'Orçamento' }]
 
   loading = false;
   errorMsg = '';

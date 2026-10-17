@@ -1,6 +1,7 @@
 import { ChangeDetectorRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 
 import { DataGridComponent } from './data-grid.component';
 import { GridColumn, GridColumnOption } from './data-grid.interface';
@@ -32,7 +33,7 @@ describe('DataGridComponent', () => {
   };
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideNoopAnimations()] });
+    TestBed.configureTestingModule({ providers: [provideNoopAnimations(), provideRouter([])] });
     fixture = TestBed.createComponent(DataGridComponent);
     grid = fixture.componentInstance;
   });
@@ -249,6 +250,20 @@ describe('DataGridComponent', () => {
       expect(row.valor).toBe(10);
       expect(row.__dg.texto['valor']).toBe('R$ 10');
       expect(grid.pendingCount).toBe(0);
+    });
+  });
+
+  describe('moldura da tela (layout)', () => {
+    // A classe "card" vinha do Tabler, que saiu no FE-P2 (e565b3d); o PrimeFlex não a tem e o
+    // grid ficou sem fundo nem borda, com só a faixa da busca em branco.
+    it('com breadcrumb, envolve busca, botões e tabela num card do PrimeFlex', () => {
+      entradas({ columns: colunas, dataSource: [linha()], breadcrumb: [{ label: 'Cadastros' }] });
+
+      const moldura: HTMLElement = fixture.nativeElement.querySelector('p-table').parentElement;
+      expect(moldura.classList).toContain('surface-card');
+      expect(moldura.classList).toContain('border-round');
+      expect(moldura.classList).toContain('shadow-1');
+      expect(moldura.classList).not.toContain('card');
     });
   });
 });

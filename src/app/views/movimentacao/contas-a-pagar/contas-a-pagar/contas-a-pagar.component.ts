@@ -28,7 +28,7 @@ export class ContasAPagarComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   /** Mês pedido ("YYYY-MM"); a carga segue sempre o último. */
   private readonly mes$ = new Subject<string>();
-  breadcrumb = [] = [{ label: 'Cadastros' }, { label: 'Contas Mensais' }]
+  breadcrumb = [{ label: 'Movimentações' }, { label: 'Contas a Pagar' }]
   titulo = 'Contas a Pagar'
   tipoTabela = TypeGrid.editaLinha
   contasMensais: LinhaContasMensais[] = [];
