@@ -49,6 +49,12 @@
   .usuario-nome {
     display: none;
   }
+
+  /* No celular o ☰ vem antes da marca, no canto esquerdo (o PrimeNG o põe depois do "start"). */
+  :host ::ng-deep .topo-menubar .p-menubar-button {
+    order: -1;
+    margin: 0 .5rem 0 0;
+  }
 }
 
 /* Submenu com largura para o rótulo não quebrar ("Tipo Movimentação"). */

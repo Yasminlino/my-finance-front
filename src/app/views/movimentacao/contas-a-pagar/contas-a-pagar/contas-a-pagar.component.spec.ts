@@ -178,6 +178,11 @@ describe('ContasAPagarComponent', () => {
       expect(el().querySelector('p-inputSwitch')).toBeNull();
     });
 
+    it('o ⋮ do título fica no canto direito (só título e botão na linha)', () => {
+      const linha = el().querySelector('.titulo-movel')!;
+      expect(Array.from(linha.children).map(c => c.tagName.toLowerCase())).toEqual(['h5', 'p-button']);
+    });
+
     it('editar abre o bottom sheet da conta', () => {
       tela.editar(contas[1]);
       expect(tela.contaEmEdicao).toBe(contas[1]);

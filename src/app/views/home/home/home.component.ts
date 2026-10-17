@@ -9,11 +9,24 @@ import { CategoriaDto } from 'src/app/core/models/categoria.model';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, catchError, forkJoin, of } from 'rxjs';
 
+/** Painel "Contas vencidas" recolhido; lembrado neste navegador. */
+const CHAVE_VENCIDAS_RECOLHIDAS = 'homeVencidasRecolhidas';
+
+function lerVencidasRecolhidas(): boolean {
+  try {
+    return localStorage.getItem(CHAVE_VENCIDAS_RECOLHIDAS) === 'true';
+  } catch {
+    return false;
+  }
+}
+
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html'
 })
 export class HomeComponent implements OnInit {
+  vencidasRecolhidas = lerVencidasRecolhidas();
+
   contasProximas: ContaMensal[] = [];
   errorMsg = 'teste'
   totalHoje = '0'
@@ -102,6 +115,15 @@ export class HomeComponent implements OnInit {
       dataVencimento: conta.date
     }));
     this.totalProximas = this.total(this.proximasContas);
+  }
+
+  alternarVencidas(): void {
+    this.vencidasRecolhidas = !this.vencidasRecolhidas;
+    try {
+      localStorage.setItem(CHAVE_VENCIDAS_RECOLHIDAS, String(this.vencidasRecolhidas));
+    } catch {
+      // Sem armazenamento (modo privado etc.): vale só até sair da tela.
+    }
   }
 
   redirecionaContas(dataVencimento?: any) {

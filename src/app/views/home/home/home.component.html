@@ -25,12 +25,24 @@
   <div class="grid">
     <!-- CONTAS VENCIDAS -->
     <div class="col-12 md:col-6 lg:col-4">
-      <div class="surface-card border-round shadow-1 h-full">
-        <div class="flex justify-content-between align-items-center px-3 py-2 border-bottom-1 surface-border">
+      <div class="surface-card border-round shadow-1" [class.h-full]="!vencidasRecolhidas">
+        <div class="flex justify-content-between align-items-center gap-2 px-3 py-2 surface-border"
+          [class.border-bottom-1]="!vencidasRecolhidas">
           <h3 class="text-lg font-semibold text-red-500 m-0">Contas vencidas</h3>
+          <div class="flex align-items-center gap-2">
+            <small *ngIf="vencidasRecolhidas && contasVencidas.length" class="text-color-secondary white-space-nowrap">
+              {{ contasVencidas.length }} {{ contasVencidas.length === 1 ? 'conta' : 'contas' }} · {{ money(totalVencido) }}
+            </small>
+            <button type="button" class="p-link recolher-vencidas border-circle w-2rem h-2rem flex align-items-center justify-content-center"
+              [attr.aria-expanded]="!vencidasRecolhidas"
+              [attr.aria-label]="vencidasRecolhidas ? 'Mostrar contas vencidas' : 'Minimizar contas vencidas'"
+              [pTooltip]="vencidasRecolhidas ? 'Mostrar' : 'Minimizar'" tooltipPosition="top" (click)="alternarVencidas()">
+              <i class="pi" [class.pi-chevron-down]="vencidasRecolhidas" [class.pi-chevron-up]="!vencidasRecolhidas"></i>
+            </button>
+          </div>
         </div>
 
-        <div class="p-3">
+        <div class="p-3" *ngIf="!vencidasRecolhidas">
           <div class="flex justify-content-between align-items-start gap-2 mb-2" *ngFor="let conta of contasVencidas">
             <div class="flex-1">
               <div class="font-semibold">{{ conta.tipoConta }} • {{ conta.descricao }}</div>

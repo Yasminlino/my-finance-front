@@ -41,12 +41,13 @@
       (marcarPago)="marcarComoPago($event)" (excluir)="excluir($event)" (editar)="editar($event)" />
   } @else {
     <!-- Celular: título com ⋮, mês em largura total, resumo em carrossel, cards e botão flutuante -->
-    <div class="flex align-items-center justify-content-between mb-2">
+    <!-- O p-menu fica fora da linha: dentro, ele contava como item do flex e o ⋮ ia para o meio. -->
+    <div class="titulo-movel flex align-items-center justify-content-between mb-2">
       <h5 class="m-0 titulo">Contas a Pagar</h5>
       <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
         (onClick)="menuTopo.toggle($event)" ariaLabel="Mais ações" />
-      <p-menu #menuTopo [model]="itensNovaConta" [popup]="true" appendTo="body" />
     </div>
+    <p-menu #menuTopo [model]="itensNovaConta" [popup]="true" appendTo="body" />
 
     <div class="mes-movel flex align-items-center gap-2 mb-3">
       <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" (onClick)="mudarMes(-1)"
