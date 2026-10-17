@@ -102,8 +102,8 @@
 @if (modoSelecao) {
   <div class="barra-lote-movel">
     <div class="flex justify-content-between text-sm mb-2">
-      <span><span class="block text-color-secondary">Despesa</span><b class="text-red-500">{{ money(totaisSelecao.despesa) }}</b></span>
       <span><span class="block text-color-secondary">Receita</span><b class="text-green-600">{{ money(totaisSelecao.receita) }}</b></span>
+      <span><span class="block text-color-secondary">Despesa</span><b class="text-red-500">{{ money(totaisSelecao.despesa) }}</b></span>
       <span class="text-right"><span class="block text-color-secondary">Saldo</span><b [class.text-red-500]="totaisSelecao.saldo < 0"
         [class.text-green-600]="totaisSelecao.saldo >= 0">{{ money(totaisSelecao.saldo) }}</b></span>
     </div>

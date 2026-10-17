@@ -27,17 +27,18 @@ describe('ResumoMesComponent', () => {
       vencidasValor: 2738.56, vencidasQtd: 11
     };
 
-    it('carrossel com Despesas (e o pago), Vencidas e Receitas, nessa ordem, e um ponto por card', () => {
+    it('carrossel com Receitas, Despesas (e o pago) e Vencidas, nessa ordem, e um ponto por card', () => {
       mostrar(outubro, true);
 
-      const cards = Array.from(el().querySelectorAll('.carrossel .resumo-slide'));
+      // Filhos diretos: os três slides lado a lado, nenhum dentro de outro.
+      const cards = Array.from(el().querySelectorAll('.carrossel > .resumo-slide'));
       expect(cards.length).toBe(3);
       const textos = cards.map(c => (c.textContent ?? '').replace(/\s+/g, ' '));
-      expect(textos[0]).toContain('Despesas do mês');
-      expect(textos[0]).toContain('R$ 1.809,18 pago · 40%');
-      expect(textos[1]).toContain('Vencidas');
-      expect(textos[1]).toContain('11 despesas em atraso');
-      expect(textos[2]).toContain('Receitas do mês');
+      expect(textos[0]).toContain('Receitas do mês');
+      expect(textos[1]).toContain('Despesas do mês');
+      expect(textos[1]).toContain('R$ 1.809,18 pago · 40%');
+      expect(textos[2]).toContain('Vencidas');
+      expect(textos[2]).toContain('11 despesas em atraso');
       expect(el().querySelectorAll('.carrossel-pontos span').length).toBe(3);
       expect(el().querySelector('p-card')).toBeNull();
     });

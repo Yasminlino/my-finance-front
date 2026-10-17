@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { Location } from '@angular/common';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ConfirmationService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
@@ -70,6 +71,16 @@ describe('ContasAPagarComponent', () => {
   afterEach(() => {
     jasmine.clock().uninstall();
     localStorage.removeItem('dataFiltroContaMensal');
+  });
+
+  it('desktop: breadcrumb e botão de voltar antes do título', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    const location = TestBed.inject(Location);
+    spyOn(location, 'back');
+
+    expect(el.querySelector('p-breadcrumb')).not.toBeNull();
+    el.querySelector<HTMLButtonElement>('.voltar button')!.click();
+    expect(location.back).toHaveBeenCalled();
   });
 
   it('carrega o último mês escolhido e calcula o resumo', () => {
@@ -178,9 +189,18 @@ describe('ContasAPagarComponent', () => {
       expect(el().querySelector('p-inputSwitch')).toBeNull();
     });
 
+    it('também tem breadcrumb e botão de voltar', () => {
+      const location = TestBed.inject(Location);
+      spyOn(location, 'back');
+
+      expect(el().querySelector('p-breadcrumb')).not.toBeNull();
+      el().querySelector<HTMLButtonElement>('.voltar button')!.click();
+      expect(location.back).toHaveBeenCalled();
+    });
+
     it('o ⋮ do título fica no canto direito (só título e botão na linha)', () => {
       const linha = el().querySelector('.titulo-movel')!;
-      expect(Array.from(linha.children).map(c => c.tagName.toLowerCase())).toEqual(['h5', 'p-button']);
+      expect(Array.from(linha.children).map(c => c.tagName.toLowerCase())).toEqual(['div', 'p-button']);
     });
 
     it('editar abre o bottom sheet da conta', () => {

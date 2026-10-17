@@ -33,8 +33,8 @@
     <div class="barra-lote flex flex-wrap align-items-center gap-3 px-3 py-2">
       <span class="font-semibold">{{ selecao.length }} {{ selecao.length === 1 ? 'selecionada' : 'selecionadas' }}</span>
       <div class="totais-lote flex flex-wrap align-items-center gap-3 flex-grow-1">
-        <span><span class="text-color-secondary text-sm mr-1">Despesa</span><b class="text-red-500">{{ money(totaisSelecao.despesa) }}</b></span>
         <span><span class="text-color-secondary text-sm mr-1">Receita</span><b class="text-green-600">{{ money(totaisSelecao.receita) }}</b></span>
+        <span><span class="text-color-secondary text-sm mr-1">Despesa</span><b class="text-red-500">{{ money(totaisSelecao.despesa) }}</b></span>
         <span><span class="text-color-secondary text-sm mr-1">Saldo</span><b [class.text-red-500]="totaisSelecao.saldo < 0"
           [class.text-green-600]="totaisSelecao.saldo >= 0">{{ money(totaisSelecao.saldo) }}</b></span>
       </div>

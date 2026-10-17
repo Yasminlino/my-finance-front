@@ -61,6 +61,15 @@
   <div class="carrossel" (scroll)="aoRolar($event)">
     <div class="resumo-slide">
       <div class="flex align-items-center justify-content-between">
+        <span class="text-color-secondary text-sm">Receitas do mês</span>
+        <i class="pi pi-arrow-down-left text-green-600"></i>
+      </div>
+      <div class="font-bold text-2xl text-green-600">{{ money(resumo.receitas) }}</div>
+      <small class="text-color-secondary">{{ lancamentos(resumo.receitasQtd) }}</small>
+    </div>
+
+    <div class="resumo-slide">
+      <div class="flex align-items-center justify-content-between">
         <span class="text-color-secondary text-sm">Despesas do mês</span>
         <i class="pi pi-arrow-up-right text-orange-500"></i>
       </div>
@@ -76,15 +85,6 @@
       </div>
       <div class="font-bold text-2xl" [class.text-red-500]="resumo.vencidasQtd > 0">{{ money(resumo.vencidasValor) }}</div>
       <small class="text-color-secondary">{{ resumo.vencidasQtd }} {{ resumo.vencidasQtd === 1 ? 'despesa' : 'despesas' }} em atraso</small>
-    </div>
-
-    <div class="resumo-slide">
-      <div class="flex align-items-center justify-content-between">
-        <span class="text-color-secondary text-sm">Receitas do mês</span>
-        <i class="pi pi-arrow-down-left text-green-600"></i>
-      </div>
-      <div class="font-bold text-2xl text-green-600">{{ money(resumo.receitas) }}</div>
-      <small class="text-color-secondary">{{ lancamentos(resumo.receitasQtd) }}</small>
     </div>
   </div>
   <div class="carrossel-pontos" aria-hidden="true">

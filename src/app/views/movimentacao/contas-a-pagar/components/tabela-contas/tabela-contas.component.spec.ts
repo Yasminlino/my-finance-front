@@ -130,6 +130,7 @@ describe('TabelaContasComponent', () => {
     expect(barra).toMatch(/Despesa\s*R\$\s*200,00/);
     expect(barra).toMatch(/Receita\s*R\$\s*5\.000,00/);
     expect(barra).toMatch(/Saldo\s*R\$\s*4\.800,00/);
+    expect(barra.indexOf('Receita')).toBeLessThan(barra.indexOf('Despesa'));
   });
 
   it('lote: marcar como pago e excluir emitem a seleção inteira; concluirExclusao limpa', () => {

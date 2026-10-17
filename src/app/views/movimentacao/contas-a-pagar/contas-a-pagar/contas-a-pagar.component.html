@@ -4,7 +4,11 @@
     <div class="cabecalho flex flex-wrap align-items-end justify-content-between gap-3 mt-2 mb-3">
       <div class="flex flex-column gap-1">
         <p-breadcrumb [model]="breadcrumb" [home]="home" />
-        <h5 class="m-0 titulo">Contas a Pagar</h5>
+        <div class="flex align-items-center gap-1">
+          <p-button class="voltar" icon="pi pi-chevron-left" [text]="true" [rounded]="true" severity="secondary"
+            size="small" (onClick)="voltar()" ariaLabel="Voltar" />
+          <h5 class="m-0 titulo">Contas a Pagar</h5>
+        </div>
         <small class="text-color-secondary">Gerencie despesas e receitas do mês</small>
       </div>
 
@@ -42,8 +46,13 @@
   } @else {
     <!-- Celular: título com ⋮, mês em largura total, resumo em carrossel, cards e botão flutuante -->
     <!-- O p-menu fica fora da linha: dentro, ele contava como item do flex e o ⋮ ia para o meio. -->
+    <p-breadcrumb [model]="breadcrumb" [home]="home" />
     <div class="titulo-movel flex align-items-center justify-content-between mb-2">
-      <h5 class="m-0 titulo">Contas a Pagar</h5>
+      <div class="flex align-items-center gap-1">
+        <p-button class="voltar" icon="pi pi-chevron-left" [text]="true" [rounded]="true" severity="secondary"
+          size="small" (onClick)="voltar()" ariaLabel="Voltar" />
+        <h5 class="m-0 titulo">Contas a Pagar</h5>
+      </div>
       <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
         (onClick)="menuTopo.toggle($event)" ariaLabel="Mais ações" />
     </div>

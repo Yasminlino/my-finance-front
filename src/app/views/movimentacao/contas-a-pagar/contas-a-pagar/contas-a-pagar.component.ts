@@ -1,5 +1,6 @@
 import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Location } from '@angular/common';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { InputSwitch } from 'primeng/inputswitch';
 import { Subject, catchError, concat, concatMap, defaultIfEmpty, finalize, from, last, map, of, toArray } from 'rxjs';
@@ -42,6 +43,7 @@ export class ContasAPagarComponent implements OnInit {
   private readonly alertService = inject(AlertService);
   private readonly exclusaoEmLote = inject(ExclusaoEmLoteService);
   private readonly confirmacao = inject(ConfirmationService);
+  private readonly location = inject(Location);
 
   /** Mês pedido ("YYYY-MM"); a carga segue sempre o último. */
   private readonly mes$ = new Subject<string>();
@@ -87,6 +89,11 @@ export class ContasAPagarComponent implements OnInit {
       });
 
     this.loadMonth();
+  }
+
+  /** ‹ antes do título: volta para a tela anterior, como fazia o data-grid. */
+  voltar(): void {
+    this.location.back();
   }
 
   get nomeDoMes(): string {

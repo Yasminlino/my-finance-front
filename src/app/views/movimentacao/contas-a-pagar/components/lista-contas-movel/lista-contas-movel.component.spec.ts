@@ -171,6 +171,7 @@ describe('ListaContasMovelComponent', () => {
       const barra = (el().querySelector('.barra-lote-movel')?.textContent ?? '').replace(/\s+/g, ' ');
       expect(barra).toMatch(/Despesa\s*R\$\s*200,00/);
       expect(barra).toMatch(/Receita\s*R\$\s*5\.000,00/);
+      expect(barra.indexOf('Receita')).toBeLessThan(barra.indexOf('Despesa'));
 
       lista.pagarSelecionadas();
       lista.excluirSelecionadas();
