@@ -12,7 +12,7 @@ import { AlertService } from 'src/app/shared/components/alert.service';
 describe('ContaMensalFormComponent', () => {
   let fixture: ComponentFixture<ContaMensalFormComponent>;
   let service: jasmine.SpyObj<ContaService>;
-  const conta = { id: 16, name: 'Inss', value: 89.9, categoryid: 12, status: 1, contaVencimentos: [{ dia: 5 }] };
+  const conta = { id: 16, name: 'Inss', value: 89.9, categoryId: 12, status: 1, contaVencimentos: [{ dia: 5 }] };
 
   const abrir = (registro: any = null) => {
     fixture = TestBed.createComponent(ContaMensalFormComponent);

@@ -14,18 +14,10 @@ export function extrairMensagemErro(erro: unknown, fallback: string): string {
 
   const e = erro as any;
 
-  let corpo = e?.error;
+  const corpo = e?.error;
 
-  // Pedida com responseType 'text' (ApiService.postTexto), a resposta de erro JSON chega como string.
-  if (typeof corpo === 'string' && corpo.trim().startsWith('{')) {
-    try {
-      corpo = JSON.parse(corpo);
-    } catch {
-      // Não era JSON: segue como texto puro.
-    }
-  }
-
-  // Corpo do erro como texto puro (ex.: Unauthorized("Usuário não autorizado!")).
+  // Corpo do erro como texto puro. A API responde sempre { message } (BE-P3-05), mas um proxy ou
+  // servidor fora do ar pode devolver texto.
   if (typeof corpo === 'string' && corpo.trim()) {
     return corpo;
   }

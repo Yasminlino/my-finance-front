@@ -6,6 +6,7 @@ import { formatDateVencimento } from 'src/app/core/utils/mask';
 import { CategoriaDto } from 'src/app/core/models/categoria.model';
 import { finalize } from 'rxjs';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
+import { diasVencimentoValidator, lerDiasVencimento } from 'src/app/core/utils/dias-vencimento';
 
 @Component({
   selector: 'app-modal-nova-contas-a-pagar',
@@ -22,8 +23,9 @@ export class ModalNovaContasAPagarComponent implements OnInit {
   form = this.fb.group({
     nomeConta: ['', [Validators.required, Validators.minLength(2)]],
     valor: [null as number | null, [Validators.required]], // número direto do currencyInput (FE-P2-10)
-    dataOperacao: [null as any, [Validators.required]],
-    categoryid: [null as any, [Validators.required]],
+    // "5, 20": um ou mais dias, como no Cadastro de Contas — a API cria a conta com todos eles.
+    dataOperacao: [null as any, [Validators.required, diasVencimentoValidator]],
+    categoryId: [null as any, [Validators.required]],
   });
 
   constructor(private fb: FormBuilder, private contaMensalService: ContaMensalService, private categoryService: CategoryService) {}
@@ -48,10 +50,13 @@ export class ModalNovaContasAPagarComponent implements OnInit {
       return;
     }
 
+    // Válido pelo diasVencimentoValidator. A data leva o mês e o primeiro dia; a API lança uma transação por dia.
+    const dias = lerDiasVencimento(this.form.value.dataOperacao)!;
     const payload = {
-      date: formatDateVencimento(this.dataOperacao, this.form.value.dataOperacao!),
+      date: formatDateVencimento(this.dataOperacao, dias[0]),
+      diasVencimento: dias,
       name: this.form.value.nomeConta!,
-      categoryid: Number(this.form.value.categoryid),
+      categoryId: Number(this.form.value.categoryId),
       value: this.form.value.valor,
       status: 'PENDENTE',
     };

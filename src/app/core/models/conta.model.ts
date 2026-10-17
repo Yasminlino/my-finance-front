@@ -1,13 +1,13 @@
 /**
- * AccountDTO da API (JSON em camelCase). `categoryid` com "i" minúsculo é o nome que a API
- * usa (AccountDTO.Categoryid); a resposta e o envio seguem esse nome.
+ * AccountDTO da API (JSON em camelCase). Até o BE-P3-09 a categoria vinha como `categoryid`
+ * (AccountDTO.Categoryid); agora é `categoryId`, como no TransactionDTO.
  */
 export type ContaDto = {
   id: number;
   name: string;
   value: number;
   dataOperacao?: number[]; // usado no envio
-  categoryid: number;
+  categoryId: number;
   categoryName?: string | null;
   status: number;
   ehParcelado: boolean;

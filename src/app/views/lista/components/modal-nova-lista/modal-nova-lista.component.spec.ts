@@ -21,7 +21,7 @@ describe('ModalNovaListaComponent', () => {
 
   beforeEach(() => {
     service = jasmine.createSpyObj<ListaService>('ListaService', ['criar', 'atualizar']);
-    service.criar.and.returnValue(of('Lista criada com sucesso!'));
+    service.criar.and.returnValue(of({ id: 8, nome: 'X' } as any));
     service.atualizar.and.returnValue(of({}));
     TestBed.configureTestingModule({
       declarations: [ModalNovaListaComponent],

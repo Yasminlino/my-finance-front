@@ -28,7 +28,7 @@ describe('ModalItemChecagemComponent', () => {
 
   beforeEach(() => {
     service = jasmine.createSpyObj<ItemListaService>('ItemListaService', ['criar', 'atualizar']);
-    service.criar.and.returnValue(of('ItemLista criada com sucesso!'));
+    service.criar.and.returnValue(of({ id: 30, listaId: 31, descricao: 'X' } as any));
     service.atualizar.and.returnValue(of({}));
     TestBed.configureTestingModule({
       declarations: [ModalItemChecagemComponent],

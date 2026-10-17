@@ -7,9 +7,8 @@ import { ItemListaService } from './item-lista.service';
 import { environment } from 'src/environments/environment';
 
 /**
- * CreateLista e CreateItemLista respondem 200 com texto puro ("Lista criada com sucesso!").
- * Pedidos como JSON, o HttpClient falha ao interpretar o corpo e a tela mostra erro mesmo
- * com a lista gravada; por isso o create das listas pede a resposta como texto.
+ * CreateLista e CreateItemLista respondem 201 com o criado em JSON, como os demais cadastros
+ * (BE-P3-05). Antes respondiam 200 com texto puro e o create das listas pedia a resposta como texto.
  */
 describe('Criação de listas e itens', () => {
   let http: HttpTestingController;
@@ -24,19 +23,23 @@ describe('Criação de listas e itens', () => {
 
   afterEach(() => http.verify());
 
-  it('ListaService.criar pede a resposta como texto', () => {
-    TestBed.inject(ListaService).criar({ nome: 'X' }).subscribe();
+  it('ListaService.criar recebe a lista criada como JSON', () => {
+    let criada: unknown;
+    TestBed.inject(ListaService).criar({ nome: 'X' }).subscribe(r => (criada = r));
 
     const req = http.expectOne(`${base}/CreateLista`);
-    expect(req.request.responseType).toBe('text');
-    req.flush('Lista criada com sucesso!');
+    expect(req.request.responseType).toBe('json');
+    req.flush({ id: 8, nome: 'X' }, { status: 201, statusText: 'Created' });
+    expect(criada).toEqual({ id: 8, nome: 'X' });
   });
 
-  it('ItemListaService.criar pede a resposta como texto', () => {
-    TestBed.inject(ItemListaService).criar({ descricao: 'X' }).subscribe();
+  it('ItemListaService.criar recebe o item criado como JSON', () => {
+    let criado: unknown;
+    TestBed.inject(ItemListaService).criar({ descricao: 'X' }).subscribe(r => (criado = r));
 
     const req = http.expectOne(`${base}/CreateItemLista`);
-    expect(req.request.responseType).toBe('text');
-    req.flush('ItemLista criada com sucesso!');
+    expect(req.request.responseType).toBe('json');
+    req.flush({ id: 30, listaId: 8, descricao: 'X' }, { status: 201, statusText: 'Created' });
+    expect(criado).toEqual({ id: 30, listaId: 8, descricao: 'X' });
   });
 });

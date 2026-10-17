@@ -7,10 +7,13 @@ import { ExtratoItemDto } from '../models/extrato.model';
 export class ExtratoBancarioItemService {
   constructor(private api: ApiService) { }
 
-  /** Itens do mês ("YYYY-MM"); com `ehCredito`, o cartão vem pela fatura do mês. */
-  listarDoMes(mes: string, bancoId?: number | null, ehCredito = false): Observable<ExtratoItemDto[]> {
+  /**
+   * Itens do mês ("YYYY-MM"). Cartão de crédito vem pela fatura do mês: a API decide pelo
+   * TipoCartao.EhCredito de cada item — o antigo parâmetro `ehCredito` era ignorado (BE-P3-10).
+   */
+  listarDoMes(mes: string, bancoId?: number | null): Observable<ExtratoItemDto[]> {
     return this.api.get<ExtratoItemDto[]>('/GetExtratoBancarioItensByMonth', undefined, {
-      params: { month: mes, bancoId, ehCredito }
+      params: { month: mes, bancoId }
     });
   }
 

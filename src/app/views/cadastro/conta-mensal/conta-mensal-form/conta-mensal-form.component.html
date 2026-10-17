@@ -26,10 +26,10 @@
 
     <div class="flex flex-column gap-2">
       <label for="conta-categoria">Categoria <span class="text-red-500">*</span></label>
-      <p-dropdown inputId="conta-categoria" formControlName="categoryid" [options]="categories" optionLabel="name"
+      <p-dropdown inputId="conta-categoria" formControlName="categoryId" [options]="categories" optionLabel="name"
         optionValue="id" placeholder="Selecione..." appendTo="body" styleClass="w-full"
-        [class.ng-dirty]="erro('categoryid')" />
-      <small class="p-error" *ngIf="erro('categoryid')">Selecione uma categoria.</small>
+        [class.ng-dirty]="erro('categoryId')" />
+      <small class="p-error" *ngIf="erro('categoryId')">Selecione uma categoria.</small>
     </div>
 
     <div class="flex align-items-center gap-2">

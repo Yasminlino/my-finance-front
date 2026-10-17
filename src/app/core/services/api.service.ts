@@ -39,11 +39,6 @@ export class ApiService {
     return this.http.post<T>(this.buildUrl(url), body);
   }
 
-  /** POST cuja resposta é texto puro (ex.: Ok("Lista criada com sucesso!")); como JSON, o HttpClient falharia no 200. */
-  postTexto(url: string, body: unknown): Observable<string> {
-    return this.http.post(this.buildUrl(url), body, { responseType: 'text' });
-  }
-
   put<T>(url: string, body: unknown): Observable<T> {
     return this.http.put<T>(this.buildUrl(url), body);
   }

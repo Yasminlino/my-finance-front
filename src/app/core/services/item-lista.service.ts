@@ -16,9 +16,9 @@ export class ItemListaService {
         return this.api.get<ItemListaDto[]>('/GetItemListaById', listaId);
     }
 
-    /** A API responde texto ("ItemLista criada com sucesso!"), não JSON. */
-    criar(dto: Partial<ItemListaDto>): Observable<string> {
-        return this.api.postTexto('/CreateItemLista', dto);
+    /** 201 com o item criado (BE-P3-05). */
+    criar(dto: Partial<ItemListaDto>): Observable<ItemListaDto> {
+        return this.api.post<ItemListaDto>('/CreateItemLista', dto);
     }
 
     atualizar(dto: Partial<ItemListaDto>): Observable<unknown> {

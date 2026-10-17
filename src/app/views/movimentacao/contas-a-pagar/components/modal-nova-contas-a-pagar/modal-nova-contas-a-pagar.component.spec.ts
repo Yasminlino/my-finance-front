@@ -34,7 +34,7 @@ describe('ModalNovaContasAPagarComponent', () => {
   });
 
   it('sem valor não salva', () => {
-    fixture.componentInstance.form.patchValue({ nomeConta: 'Luz', dataOperacao: 10, categoryid: 6 });
+    fixture.componentInstance.form.patchValue({ nomeConta: 'Luz', dataOperacao: 10, categoryId: 6 });
 
     fixture.componentInstance.save();
 
@@ -42,11 +42,40 @@ describe('ModalNovaContasAPagarComponent', () => {
   });
 
   it('salva o valor como número', () => {
-    fixture.componentInstance.form.patchValue({ nomeConta: 'Luz', valor: 15.5, dataOperacao: 10, categoryid: 6 });
+    fixture.componentInstance.form.patchValue({ nomeConta: 'Luz', valor: 15.5, dataOperacao: 10, categoryId: 6 });
 
     fixture.componentInstance.save();
 
     expect(service.criar).toHaveBeenCalledWith(jasmine.objectContaining({ value: 15.5 }));
+  });
+
+  it('aceita vários dias: envia os dias em ordem e a data do primeiro', () => {
+    fixture.componentInstance.form.patchValue({ nomeConta: 'Escola', valor: 300, dataOperacao: '20, 5', categoryId: 6 });
+
+    fixture.componentInstance.save();
+
+    const payload = service.criar.calls.mostRecent().args[0];
+    expect(payload.diasVencimento).toEqual([5, 20]);
+    expect((payload.date as Date).getDate()).toBe(5);
+  });
+
+  it('um dia só continua funcionando', () => {
+    fixture.componentInstance.form.patchValue({ nomeConta: 'Luz', valor: 15.5, dataOperacao: '10', categoryId: 6 });
+
+    fixture.componentInstance.save();
+
+    expect(service.criar).toHaveBeenCalledWith(jasmine.objectContaining({ diasVencimento: [10] }));
+  });
+
+  it('dia repetido ou maior que 31 não salva e marca o campo', () => {
+    for (const dias of ['5, 5', '32']) {
+      fixture.componentInstance.form.patchValue({ nomeConta: 'Luz', valor: 15.5, dataOperacao: dias, categoryId: 6 });
+
+      fixture.componentInstance.save();
+
+      expect(fixture.componentInstance.erro('dataOperacao')).toBeTrue();
+    }
+    expect(service.criar).not.toHaveBeenCalled();
   });
 
   it('abre num p-dialog, categoria é p-dropdown e o X fecha sem recarregar (FE-P2-07)', () => {
@@ -55,7 +84,7 @@ describe('ModalNovaContasAPagarComponent', () => {
     const dialogo = fixture.debugElement.query(By.directive(Dialog));
 
     expect(dialogo.componentInstance.header).toBe('Adicionar nova conta');
-    expect((fixture.nativeElement as HTMLElement).querySelector('p-dropdown[formControlName=categoryid]')).not.toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('p-dropdown[formControlName=categoryId]')).not.toBeNull();
     dialogo.componentInstance.close(new Event('click'));
     expect(fechado).toHaveBeenCalledOnceWith(false);
   });

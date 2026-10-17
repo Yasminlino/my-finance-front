@@ -15,16 +15,21 @@
     </div>
 
     <div class="flex flex-column gap-2">
-      <label for="cp-dia">Dia Vencimento</label>
-      <input pInputText id="cp-dia" formControlName="dataOperacao" maxlength="2" placeholder="Ex: 10" />
+      <label for="cp-dia">Dias Vencimento</label>
+      <input pInputText id="cp-dia" formControlName="dataOperacao" inputmode="numeric" placeholder="Ex: 10 ou 5, 20"
+        [class.ng-dirty]="erro('dataOperacao')" />
+      <small *ngIf="!erro('dataOperacao')" class="text-color-secondary">
+        Um ou mais dias, separados por vírgula. Com mais de um, o valor é dividido entre eles.
+      </small>
+      <small class="p-error" *ngIf="erro('dataOperacao')">Informe dias de 1 a 31, sem repetir (ex.: 5, 20).</small>
     </div>
 
     <div class="flex flex-column gap-2">
       <label for="cp-categoria">Categoria</label>
-      <p-dropdown inputId="cp-categoria" formControlName="categoryid" [options]="categorias" optionLabel="name"
+      <p-dropdown inputId="cp-categoria" formControlName="categoryId" [options]="categorias" optionLabel="name"
         optionValue="id" placeholder="Selecione..." appendTo="body" styleClass="w-full"
-        [class.ng-dirty]="erro('categoryid')" />
-      <small class="p-error" *ngIf="erro('categoryid')">Selecione uma categoria.</small>
+        [class.ng-dirty]="erro('categoryId')" />
+      <small class="p-error" *ngIf="erro('categoryId')">Selecione uma categoria.</small>
     </div>
   </form>
 

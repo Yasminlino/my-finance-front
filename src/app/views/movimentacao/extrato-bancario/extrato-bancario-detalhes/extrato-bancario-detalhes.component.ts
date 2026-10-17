@@ -100,7 +100,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
     this.carregaDadosUrl();
 
     // Troca de mês: só a resposta do último mês pedido chega à tela (FE-P2-08).
-    ultimaBusca(this.mes$, mes => this.extratoItemService.listarDoMes(mes, this.bancoId, this.isCreditCard), e => {
+    ultimaBusca(this.mes$, mes => this.extratoItemService.listarDoMes(mes, this.bancoId), e => {
       this.loading = false;
       this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar o extrato do mês.'));
     })

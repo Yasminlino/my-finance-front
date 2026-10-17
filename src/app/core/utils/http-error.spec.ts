@@ -45,15 +45,6 @@ describe('extrairMensagemErro', () => {
     expect(extrairMensagemErro(erro, fallback)).not.toContain('[object Object]');
   });
 
-  it('lê o message do corpo JSON que chegou como texto (requisição com responseType text)', () => {
-    const erro = new HttpErrorResponse({
-      status: 500,
-      error: '{"message":"Operação não permitida: o registro está ligado a outros dados."}'
-    });
-
-    expect(extrairMensagemErro(erro, fallback)).toBe('Operação não permitida: o registro está ligado a outros dados.');
-  });
-
   it('repassa a string quando já recebe uma mensagem pronta', () => {
     expect(extrairMensagemErro('Falha de rede', fallback)).toBe('Falha de rede');
   });

@@ -60,14 +60,21 @@ describe('ApiService', () => {
     http.match(() => true).forEach(r => r.flush({}));
   });
 
-  it('postTexto pede a resposta como texto e devolve a mensagem da API', () => {
-    let resposta: string | undefined;
-    service.postTexto('/CreateLista', { nome: 'X' }).subscribe(r => (resposta = r));
+  it('post de cadastro recebe o criado como JSON (201, BE-P3-05)', () => {
+    let resposta: unknown;
+    service.post('/CreateLista', { nome: 'X' }).subscribe(r => (resposta = r));
 
     const req = http.expectOne(`${base}/CreateLista`);
-    expect(req.request.method).toBe('POST');
-    expect(req.request.responseType).toBe('text');
-    req.flush('Lista criada com sucesso!');
-    expect(resposta).toBe('Lista criada com sucesso!');
+    expect(req.request.responseType).toBe('json');
+    req.flush({ id: 8, nome: 'X' }, { status: 201, statusText: 'Created' });
+    expect(resposta).toEqual({ id: 8, nome: 'X' });
+  });
+
+  it('delete com 204 conclui sem corpo (BE-P3-05)', () => {
+    let concluiu = false;
+    service.delete('/DeleteLista', 8).subscribe({ complete: () => (concluiu = true) });
+
+    http.expectOne(`${base}/DeleteLista/8`).flush(null, { status: 204, statusText: 'No Content' });
+    expect(concluiu).toBeTrue();
   });
 });
