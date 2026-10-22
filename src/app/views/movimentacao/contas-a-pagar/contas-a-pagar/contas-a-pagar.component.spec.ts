@@ -17,9 +17,9 @@ import { signal } from '@angular/core';
 /** Tela de Contas a Pagar: mês, resumo, modo edição, salvar e marcar como pago. */
 describe('ContasAPagarComponent', () => {
   const conta = (parcial: Partial<LinhaContasMensais>): LinhaContasMensais => ({
-    id: 1, idAccount: 1, name: 'Luz', value: 100, date: '2026-10-20' as any, ehParcelado: false,
-    categoryId: 1, categoryName: 'Moradia', tipoContaId: '', subCategoryName: 'Despesa',
-    status: 'PENDENTE', statusSalvo: 'PENDENTE', desbloqueiaCampos: false,
+    id: 1, contaId: 1, nome: 'Luz', valor: 100, data: '2026-10-20' as any, ehParcelado: false,
+    categoriaId: 1, categoriaNome: 'Moradia', tipoContaId: '', subcategoriaNome: 'Despesa',
+    situacao: 'PENDENTE', statusSalvo: 'PENDENTE', desbloqueiaCampos: false,
     ...parcial
   });
 
@@ -39,9 +39,9 @@ describe('ContasAPagarComponent', () => {
     localStorage.setItem('dataFiltroContaMensal', new Date(2026, 9, 1).toISOString());
 
     contas = [
-      conta({ id: 1, value: 200 }),
-      conta({ id: 2, value: 1500, date: '2026-10-05' as any }),
-      conta({ id: 3, value: 5000, subCategoryName: 'Receita', status: 'PAGO NO PRAZO' })
+      conta({ id: 1, valor: 200 }),
+      conta({ id: 2, valor: 1500, data: '2026-10-05' as any }),
+      conta({ id: 3, valor: 5000, subcategoriaNome: 'Receita', situacao: 'PAGO NO PRAZO' })
     ];
 
     service = jasmine.createSpyObj<ContaMensalService>('ContaMensalService', ['listarDoMes', 'atualizar', 'excluir', 'criar']);
@@ -116,7 +116,7 @@ describe('ContasAPagarComponent', () => {
     expect(confirmacao.confirm).not.toHaveBeenCalled();
 
     tela.alternarEdicao(true);
-    tela.edicao!.alterar(1, 'value', 300);
+    tela.edicao!.alterar(1, 'valor', 300);
     tela.alternarEdicao(false);
     expect(confirmacao.confirm).toHaveBeenCalled();
     expect(tela.edicao).not.toBeNull();
@@ -125,13 +125,13 @@ describe('ContasAPagarComponent', () => {
 
   it('salvar envia cada conta alterada, sai da edição e recarrega', () => {
     tela.alternarEdicao(true);
-    tela.edicao!.alterar(1, 'value', 300);
-    tela.edicao!.alterar(2, 'status', 'AGUARDANDO');
+    tela.edicao!.alterar(1, 'valor', 300);
+    tela.edicao!.alterar(2, 'situacao', 'AGUARDANDO');
     service.listarDoMes.calls.reset();
 
     tela.salvar();
 
-    expect(service.atualizar.calls.allArgs().map(([dto]) => [dto.id, dto.value, dto.status])).toEqual([
+    expect(service.atualizar.calls.allArgs().map(([dto]) => [dto.id, dto.valor, dto.situacao])).toEqual([
       [1, 300, 'PENDENTE'],
       [2, 1500, 'AGUARDANDO']
     ]);
@@ -143,7 +143,7 @@ describe('ContasAPagarComponent', () => {
   it('erro ao salvar mantém a edição', () => {
     service.atualizar.and.returnValue(throwError(() => new Error('falhou')));
     tela.alternarEdicao(true);
-    tela.edicao!.alterar(1, 'value', 300);
+    tela.edicao!.alterar(1, 'valor', 300);
 
     tela.salvar();
 
@@ -156,7 +156,7 @@ describe('ContasAPagarComponent', () => {
 
     tela.marcarComoPago([contas[0], contas[1]]);
 
-    expect(service.atualizar.calls.allArgs().map(([dto]) => [dto.id, dto.status])).toEqual([
+    expect(service.atualizar.calls.allArgs().map(([dto]) => [dto.id, dto.situacao])).toEqual([
       [1, 'PAGO NO PRAZO'],
       [2, 'PAGO ATRASADO']
     ]);
@@ -213,9 +213,9 @@ describe('ContasAPagarComponent', () => {
       tela.editar(contas[0]);
       service.listarDoMes.calls.reset();
 
-      tela.salvarConta({ ...contas[0], value: 85 });
+      tela.salvarConta({ ...contas[0], valor: 85 });
 
-      expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ id: 1, value: 85 }));
+      expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ id: 1, valor: 85 }));
       expect(alert.success).toHaveBeenCalled();
       expect(tela.contaEmEdicao).toBeNull();
       expect(service.listarDoMes).toHaveBeenCalled();
@@ -225,7 +225,7 @@ describe('ContasAPagarComponent', () => {
       service.atualizar.and.returnValue(throwError(() => new Error('falhou')));
       tela.editar(contas[0]);
 
-      tela.salvarConta({ ...contas[0], value: 85 });
+      tela.salvarConta({ ...contas[0], valor: 85 });
 
       expect(alert.error).toHaveBeenCalled();
       expect(tela.contaEmEdicao).toBe(contas[0]);

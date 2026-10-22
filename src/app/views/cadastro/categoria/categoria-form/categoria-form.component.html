@@ -4,7 +4,7 @@
   <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
     <div class="flex flex-column gap-2">
       <label for="categoria-nome">Nome categoria <span class="text-red-500">*</span></label>
-      <input pInputText id="categoria-nome" formControlName="name" placeholder="Preencha o nome da categoria."
+      <input pInputText id="categoria-nome" maxlength="120" formControlName="name" placeholder="Preencha o nome da categoria."
         [class.ng-dirty]="erro('name')" />
       <small class="p-error" *ngIf="erro('name')">Informe um nome válido.</small>
     </div>

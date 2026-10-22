@@ -32,7 +32,7 @@ describe('ModalNovaListaComponent', () => {
 
   it('abre num p-dialog com o título e o X fecha sem recarregar', () => {
     const fechado = jasmine.createSpy('closed');
-    abrir({ id: 3, nome: 'Mercado', tipoMovimentacao: 1, status: true });
+    abrir({ id: 3, nome: 'Mercado', tipoMovimentacao: 1, ativo: true });
     fixture.componentInstance.closed.subscribe(fechado);
     const dialogo = fixture.debugElement.query(By.directive(Dialog));
 

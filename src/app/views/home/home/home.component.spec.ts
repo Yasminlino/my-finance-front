@@ -62,8 +62,8 @@ describe('HomeComponent', () => {
 
   describe('contas vencidas recolhíveis', () => {
     const vencidas: ContaMensal[] = [
-      { date: new Date(2026, 9, 5), name: 'Doces', value: 70, idAccount: 1, status: 'PENDENTE', categoryId: null },
-      { date: new Date(2026, 9, 10), name: 'Taxa de obra', value: 883, idAccount: 2, status: 'PENDENTE', categoryId: null }
+      { data: new Date(2026, 9, 5), nome: 'Doces', valor: 70, contaId: 1, situacao: 'PENDENTE', categoriaId: null },
+      { data: new Date(2026, 9, 10), nome: 'Taxa de obra', valor: 883, contaId: 2, situacao: 'PENDENTE', categoriaId: null }
     ];
     const botaoRecolher = () => el().querySelector<HTMLButtonElement>('.recolher-vencidas')!;
 

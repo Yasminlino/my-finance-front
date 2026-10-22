@@ -53,12 +53,12 @@ export class ModalNovaContasAPagarComponent implements OnInit {
     // Válido pelo diasVencimentoValidator. A data leva o mês e o primeiro dia; a API lança uma transação por dia.
     const dias = lerDiasVencimento(this.form.value.dataOperacao)!;
     const payload = {
-      date: formatDateVencimento(this.dataOperacao, dias[0]),
+      data: formatDateVencimento(this.dataOperacao, dias[0]),
       diasVencimento: dias,
-      name: this.form.value.nomeConta!,
-      categoryId: Number(this.form.value.categoryId),
-      value: this.form.value.valor,
-      status: 'PENDENTE',
+      nome: this.form.value.nomeConta!,
+      categoriaId: Number(this.form.value.categoryId),
+      valor: this.form.value.valor,
+      situacao: 'PENDENTE',
     };
 
     this.saving = true;

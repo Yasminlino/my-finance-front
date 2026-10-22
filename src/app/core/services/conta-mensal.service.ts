@@ -4,7 +4,7 @@ import { ApiService } from './api.service';
 import { ContaMensal, LinhaContasMensais } from '../models/conta-mensal.model';
 import { formatDateInput } from '../utils/mask';
 
-/** Contas do mês (Transactions na API). */
+/** Contas do mês (transações na API). */
 @Injectable({ providedIn: 'root' })
 export class ContaMensalService {
   constructor(private api: ApiService) { }
@@ -29,7 +29,7 @@ export class ContaMensalService {
    * O form/grid entrega Date à meia-noite local; formatDateInput lê nos getters locais.
    */
   private comDataDeCalendario(dto: any): any {
-    return dto?.date ? { ...dto, date: formatDateInput(dto.date) } : dto;
+    return dto?.data ? { ...dto, data: formatDateInput(dto.data) } : dto;
   }
 
   criar(dto: any): Observable<unknown> {

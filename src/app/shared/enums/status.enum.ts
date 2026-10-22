@@ -40,6 +40,6 @@ export const STATUS_PAGAMENTO_OPTIONS: GridColumnOption[] = [
 const STATUS_PAGOS = ['PAGO NO PRAZO', 'PAGO ATRASADO'];
 
 /** Conta já paga: em Contas a Pagar ela fica bloqueada para edição inline (FE-P2-04). */
-export function contaPaga(linha: { status?: string }): boolean {
-    return STATUS_PAGOS.includes(linha.status ?? '');
+export function contaPaga(linha: { situacao?: string }): boolean {
+    return STATUS_PAGOS.includes(linha.situacao ?? '');
 }

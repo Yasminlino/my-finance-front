@@ -10,9 +10,9 @@ describe('EditarContaSheetComponent', () => {
   const hoje = new Date(2026, 9, 17, 10, 0);
 
   const conta = (parcial: Partial<LinhaContasMensais>): LinhaContasMensais => ({
-    id: 1, idAccount: 1, name: 'Doces', value: 70, date: '2026-10-05' as any, ehParcelado: false,
-    categoryId: 1, categoryName: 'Alimentação', tipoContaId: '', subCategoryName: 'Despesa',
-    status: 'AGUARDANDO', statusSalvo: 'AGUARDANDO', desbloqueiaCampos: false, observacao: '',
+    id: 1, contaId: 1, nome: 'Doces', valor: 70, data: '2026-10-05' as any, ehParcelado: false,
+    categoriaId: 1, categoriaNome: 'Alimentação', tipoContaId: '', subcategoriaNome: 'Despesa',
+    situacao: 'AGUARDANDO', statusSalvo: 'AGUARDANDO', desbloqueiaCampos: false, observacao: '',
     ...parcial
   });
 
@@ -70,8 +70,8 @@ describe('EditarContaSheetComponent', () => {
 
   it('alterar: contador de alterações, valor anterior riscado e salvar com a conta alterada', () => {
     abrir(conta({}));
-    sheet.alterar('value', 85);
-    sheet.alterar('date', new Date(2026, 9, 20));
+    sheet.alterar('valor', 85);
+    sheet.alterar('data', new Date(2026, 9, 20));
     fixture.detectChanges();
 
     expect(texto()).toContain('2 alterações');
@@ -80,13 +80,13 @@ describe('EditarContaSheetComponent', () => {
 
     botao('Salvar').click();
     expect(salvas.length).toBe(1);
-    expect(salvas[0].value).toBe(85);
+    expect(salvas[0].valor).toBe(85);
     expect(salvas[0].id).toBe(1);
   });
 
   it('erro em vermelho bloqueia o salvar; Desfazer volta tudo', () => {
     abrir(conta({}));
-    sheet.alterar('value', 0);
+    sheet.alterar('valor', 0);
     fixture.detectChanges();
 
     expect(texto()).toContain('Informe um valor maior que zero.');
@@ -95,12 +95,12 @@ describe('EditarContaSheetComponent', () => {
 
     botao('Desfazer').click();
     fixture.detectChanges();
-    expect(sheet.rascunho!.value).toBe(70);
+    expect(sheet.rascunho!.valor).toBe(70);
     expect(texto()).not.toContain('alteração');
   });
 
   it('conta paga abre só leitura; Desbloquear pede confirmação e libera os campos', () => {
-    abrir(conta({ status: 'PAGO NO PRAZO' }));
+    abrir(conta({ situacao: 'PAGO NO PRAZO' }));
 
     expect(painel().querySelector('p-inputNumber')).toBeNull();
     expect(texto()).toContain('Conta paga');

@@ -63,14 +63,14 @@ export function metaDaConta(conta: LinhaContasMensais, hoje: Date): MetaLinha {
   const total = conta.quantidadeParcelas ?? 0;
   const atual = conta.parcelaAtual ?? 0;
   return {
-    icone: iconeDaCategoria(conta.categoryName),
-    cor: corDaCategoria(conta.categoryName),
+    icone: iconeDaCategoria(conta.categoriaNome),
+    cor: corDaCategoria(conta.categoriaNome),
     situacao: situacao(conta, hoje),
-    vencimento: formatDateBR(conta.date),
+    vencimento: formatDateBR(conta.data),
     relativo: vencimentoRelativo(conta, hoje),
     tag: tagDoStatus(conta, hoje),
     receita,
-    valor: (receita ? '+ ' : '') + formatCurrencyBR(conta.value),
+    valor: (receita ? '+ ' : '') + formatCurrencyBR(conta.valor),
     parcela: conta.ehParcelado && total ? `${atual} / ${total}` : '',
     progressoParcela: total ? Math.min(100, atual / total * 100) : 0
   };
@@ -85,7 +85,7 @@ export function metaDasContas(contas: LinhaContasMensais[], hoje: Date): Record<
 /** Por vencimento e, no mesmo dia, por nome. Devolve uma cópia. */
 export function ordenarPorVencimento(contas: LinhaContasMensais[]): LinhaContasMensais[] {
   return [...contas].sort((a, b) =>
-    vencimentoDe(a).getTime() - vencimentoDe(b).getTime() || (a.name ?? '').localeCompare(b.name ?? '', 'pt-BR'));
+    vencimentoDe(a).getTime() - vencimentoDe(b).getTime() || (a.nome ?? '').localeCompare(b.nome ?? '', 'pt-BR'));
 }
 
 export function filtrarContas(
@@ -101,8 +101,8 @@ export function filtrarContas(
   return contas.filter(conta =>
     (!situacaoAlvo || meta[conta.id]?.situacao === situacaoAlvo) &&
     (!alteradas || alteradas.has(conta.id)) &&
-    (!categorias.size || categorias.has(conta.categoryName)) &&
-    (!termo || [conta.name, conta.categoryName, conta.observacao].some(t => semAcento(t).includes(termo)))
+    (!categorias.size || categorias.has(conta.categoriaNome)) &&
+    (!termo || [conta.nome, conta.categoriaNome, conta.observacao].some(t => semAcento(t).includes(termo)))
   );
 }
 
@@ -119,5 +119,5 @@ export function opcoesDeFiltro(contas: LinhaContasMensais[], hoje: Date, alterad
 }
 
 export function categoriasDe(contas: LinhaContasMensais[]): string[] {
-  return [...new Set(contas.map(c => c.categoryName).filter(Boolean))].sort();
+  return [...new Set(contas.map(c => c.categoriaNome).filter(Boolean))].sort();
 }

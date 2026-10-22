@@ -41,7 +41,7 @@
       <ng-container *ngIf="ehCredito">
         <div class="field col-12 md:col-4">
           <label for="lm-fatura">Número da fatura</label>
-          <input pInputText id="lm-fatura" type="text" class="w-full" placeholder="Ex.: 2026-01"
+          <input pInputText id="lm-fatura" maxlength="20" type="text" class="w-full" placeholder="Ex.: 2026-01"
             formControlName="numeroFatura" [class.ng-dirty]="invalido('numeroFatura')" />
           <small class="p-error" *ngIf="invalido('numeroFatura')">Use o formato AAAA-MM.</small>
         </div>
@@ -77,7 +77,7 @@
 
       <div class="field col-12 md:col-6">
         <label for="lm-categoria">Categoria (opcional)</label>
-        <p-dropdown inputId="lm-categoria" formControlName="categoriaId" [options]="categorias" optionLabel="name"
+        <p-dropdown inputId="lm-categoria" formControlName="categoriaId" [options]="categorias" optionLabel="nome"
           optionValue="id" placeholder="Selecione..." [showClear]="true" appendTo="body" styleClass="w-full" />
       </div>
 
@@ -90,12 +90,12 @@
 
       <div class="field col-12 md:col-6">
         <label for="lm-descricao">Descrição (opcional)</label>
-        <input pInputText id="lm-descricao" type="text" class="w-full" formControlName="descricao" />
+        <input pInputText id="lm-descricao" maxlength="200" type="text" class="w-full" formControlName="descricao" />
       </div>
 
       <div class="field col-12">
         <label for="lm-observacao">Observação (opcional)</label>
-        <textarea pInputTextarea id="lm-observacao" class="w-full" rows="3" formControlName="observacao"></textarea>
+        <textarea pInputTextarea id="lm-observacao" maxlength="500" class="w-full" rows="3" formControlName="observacao"></textarea>
       </div>
     </div>
   </form>

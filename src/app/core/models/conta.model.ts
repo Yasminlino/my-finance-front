@@ -1,20 +1,17 @@
-/**
- * AccountDTO da API (JSON em camelCase). Até o BE-P3-09 a categoria vinha como `categoryid`
- * (AccountDTO.Categoryid); agora é `categoryId`, como no TransactionDTO.
- */
+/** ContaDTO da API (JSON em camelCase, em português desde o [DB] P3). */
 export type ContaDto = {
   id: number;
-  name: string;
-  value: number;
+  nome: string;
+  valor: number;
   dataOperacao?: number[]; // usado no envio
-  categoryId: number;
-  categoryName?: string | null;
-  status: number;
+  categoriaId: number;
+  categoriaNome?: string | null;
+  ativo: number;
   ehParcelado: boolean;
   parcelaAtual: number;
   quantidadeParcelas: number;
 
-  contaVencimentos?: ContaVencimentoDto[];
+  vencimentos?: ContaVencimentoDto[];
 };
 
 export type ContaVencimentoDto = {

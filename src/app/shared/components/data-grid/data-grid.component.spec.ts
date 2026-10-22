@@ -74,6 +74,18 @@ describe('DataGridComponent', () => {
       expect(grid.tableRows[0].__dg.severidade).toBe(TagStatus.Success);
     });
 
+    it('campoStatus escolhe de qual campo sai a severidade (DB-P3: ativo, situacao)', () => {
+      const ativo: GridColumnOption[] = [{ label: 'Ativo', value: 1, classe: TagStatus.Success }];
+      entradas({
+        columns: [{ field: 'ativo', header: 'Status', type: 'select', options: ativo }],
+        statusOptions: ativo,
+        campoStatus: 'ativo',
+        dataSource: [{ id: 1, ativo: 1 }]
+      });
+
+      expect(grid.tableRows[0].__dg.severidade).toBe(TagStatus.Success);
+    });
+
     it('recalcula quando o statusOptions chega depois', () => {
       entradas({ columns: colunas, dataSource: [linha({ status: 'PAGO NO PRAZO' })] });
       expect(grid.tableRows[0].__dg.severidade).toBe(TagStatus.Info);
@@ -182,6 +194,18 @@ describe('DataGridComponent', () => {
 
       expect(formatter.calls.count()).toBe(chamadas);
       expect(texto()).toContain('R$ 10');
+    });
+
+    it('a coluna do campoStatus vira tag', () => {
+      const situacoes: GridColumnOption[] = [{ label: 'OK', value: 'OK', classe: TagStatus.Success }];
+      entradas({
+        columns: [{ field: 'situacao', header: 'Status', type: 'select', options: situacoes }],
+        statusOptions: situacoes,
+        campoStatus: 'situacao',
+        dataSource: [{ id: 1, situacao: 'OK' }]
+      });
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('p-tag')?.textContent).toContain('OK');
     });
 
     it('mostra o rótulo do select e o texto formatado', () => {

@@ -83,7 +83,7 @@ export class ListaDeOrcamentoComponent implements OnInit {
         width: "25%"
       },
       {
-        field: "status",
+        field: "situacao",
         header: "STATUS",
         type: GridColumnTypeEnum.Select,
         options: this.statusOptions,
@@ -111,14 +111,14 @@ export class ListaDeOrcamentoComponent implements OnInit {
   }
 
   calculaTotal() {
-    const situacoesUnicas = Array.from(new Set(this.itensLista.map(i => i.status).filter(Boolean))) as string[];
+    const situacoesUnicas = Array.from(new Set(this.itensLista.map(i => i.situacao).filter(Boolean))) as string[];
     this.statusU = situacoesUnicas;
 
 
     this.totalPorSituacao = this.itensLista.some(item => item.valor)
       ? situacoesUnicas.map(situacao => {
         const valorTotal = this.itensLista
-          .filter(item => item.status === situacao)
+          .filter(item => item.situacao === situacao)
           .reduce((total, item) => total + (item.valor ?? 0), 0);
         return { situacao, valorTotal };
       })
@@ -147,7 +147,7 @@ export class ListaDeOrcamentoComponent implements OnInit {
 
     selectedItems.forEach((item) => {
       const val = item.valor || 0;
-      const sub = String(item.status || '').toLowerCase();
+      const sub = String(item.situacao || '').toLowerCase();
       if (sub === 'ok') receita += val;
       if (sub === "aguardando" || sub === "pendente") despesa += val;
     });

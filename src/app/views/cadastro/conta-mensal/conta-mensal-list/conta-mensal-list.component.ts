@@ -38,7 +38,7 @@ export class ContaMensalListComponent extends CadastroListBase<ContaLinha> {
   protected override antesDeCarregar(): Observable<unknown> {
     return this.categoryService.listarAtivas().pipe(tap(categorias => {
       this.categorias = categorias;
-      this.categoriasOptions = categorias.map(categoria => ({ label: categoria.name, value: categoria.name }));
+      this.categoriasOptions = categorias.map(categoria => ({ label: categoria.nome, value: categoria.nome }));
       this.setGridColumns();
     }));
   }
@@ -46,10 +46,10 @@ export class ContaMensalListComponent extends CadastroListBase<ContaLinha> {
   protected buscar(): Observable<ContaLinha[]> {
     return this.contaService.listar().pipe(map(contas => contas.map(item => ({
       ...item,
-      diasVencimentoSort: item.contaVencimentos && item.contaVencimentos.length > 0
-        ? Number(item.contaVencimentos[0].dia)
+      diasVencimentoSort: item.vencimentos && item.vencimentos.length > 0
+        ? Number(item.vencimentos[0].dia)
         : 0,
-      diasVencimentoString: this.getDatas(item.contaVencimentos)
+      diasVencimentoString: this.getDatas(item.vencimentos)
     }))));
   }
 
@@ -58,17 +58,17 @@ export class ContaMensalListComponent extends CadastroListBase<ContaLinha> {
   }
 
   protected nomeDe(conta: ContaLinha): string {
-    return conta.name;
+    return conta.nome;
   }
 
   private setGridColumns(): void {
     this.gridColumns = [
-      { field: 'name', header: 'NOME', type: GridColumnTypeEnum.Text, width: "25%" },
+      { field: 'nome', header: 'NOME', type: GridColumnTypeEnum.Text, width: "25%" },
       {
-        field: "value",
+        field: "valor",
         header: "VALOR",
         type: GridColumnTypeEnum.Money,
-        formatter: (row) => formatCurrencyBR(row.value),
+        formatter: (row) => formatCurrencyBR(row.valor),
         width: '12%',
         editable: true
       },
@@ -76,7 +76,7 @@ export class ContaMensalListComponent extends CadastroListBase<ContaLinha> {
         field: 'diasVencimentoSort',
         header: 'DIA VENCIMENTO',
         type: GridColumnTypeEnum.Number,
-        formatter: (row) => this.getDatas(row.contaVencimentos),
+        formatter: (row) => this.getDatas(row.vencimentos),
         width: "15%"
       },
       {
@@ -87,7 +87,7 @@ export class ContaMensalListComponent extends CadastroListBase<ContaLinha> {
         width: "10%"
       },
       {
-        field: "categoryName",
+        field: "categoriaNome",
         header: "CATEGORIA",
         type: GridColumnTypeEnum.Select,
         options: this.categoriasOptions,
@@ -95,11 +95,11 @@ export class ContaMensalListComponent extends CadastroListBase<ContaLinha> {
         editable: false
       },
       {
-        field: 'status',
+        field: 'ativo',
         header: 'STATUS',
         type: GridColumnTypeEnum.Select,
         options: this.statusOptions,
-        formatter: (row) => statusAtivoLabel(row.status),
+        formatter: (row) => statusAtivoLabel(row.ativo),
         width: "10%"
       },
       { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },

@@ -24,9 +24,9 @@ export class CategoriaListComponent extends CadastroListBase<CategoriaDto> {
   statusOptions = STATUS_ATIVO_OPTIONS;
 
   gridColumns: GridColumn[] = [
-    { field: 'name', header: 'NOME', type: GridColumnTypeEnum.Text, width: "30%" },
+    { field: 'nome', header: 'NOME', type: GridColumnTypeEnum.Text, width: "30%" },
     {
-      field: 'subCategory',
+      field: 'subcategoria',
       header: 'TIPO CATEGORIA',
       type: GridColumnTypeEnum.Select,
       options: [
@@ -45,11 +45,11 @@ export class CategoriaListComponent extends CadastroListBase<CategoriaDto> {
       width: "21%"
     },
     {
-      field: 'status',
+      field: 'ativo',
       header: 'STATUS',
       type: GridColumnTypeEnum.Select,
       options: this.statusOptions,
-      formatter: (row) => statusAtivoLabel(row.status),
+      formatter: (row) => statusAtivoLabel(row.ativo),
       width: "20%"
     },
     { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
@@ -70,6 +70,6 @@ export class CategoriaListComponent extends CadastroListBase<CategoriaDto> {
   }
 
   protected nomeDe(categoria: CategoriaDto): string {
-    return categoria.name;
+    return categoria.nome;
   }
 }

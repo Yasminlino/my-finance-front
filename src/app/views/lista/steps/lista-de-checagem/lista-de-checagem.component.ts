@@ -64,12 +64,12 @@ export class ListaDeChecagemComponent implements OnInit {
       {
         field: 'statusBoolean',
         header: 'STATUS',
-        formatter: (row) => this.statusLabel(row.status),
+        formatter: (row) => this.statusLabel(row.situacao),
         type: GridColumnTypeEnum.Checkbox,
         width: '5%'
       },
-      { field: 'descricao', header: 'DESCRIÇÃO', type: GridColumnTypeEnum.Text, width: "35%", classe: (row) => row.status == "OK" ? 'text-green-600' : 'text-red-500' },
-      { field: 'quantidade', header: 'QUANTIDADE', type: GridColumnTypeEnum.Number, width: "30%", classe: (row) => row.status == "OK" ? 'text-green-600' : 'text-red-500' },
+      { field: 'descricao', header: 'DESCRIÇÃO', type: GridColumnTypeEnum.Text, width: "35%", classe: (row) => row.situacao == "OK" ? 'text-green-600' : 'text-red-500' },
+      { field: 'quantidade', header: 'QUANTIDADE', type: GridColumnTypeEnum.Number, width: "30%", classe: (row) => row.situacao == "OK" ? 'text-green-600' : 'text-red-500' },
       { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
     ]
   }
@@ -92,7 +92,7 @@ export class ListaDeChecagemComponent implements OnInit {
       .pipe(finalize(() => (this.loading = false)), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ itens, lista }) => {
-          this.itemListas = itens.map(i => ({ ...i, statusBoolean: i.status === 'OK' }));
+          this.itemListas = itens.map(i => ({ ...i, statusBoolean: i.situacao === 'OK' }));
           this.titulo = lista.nome;
           this.applyFilters();
         },
@@ -118,8 +118,8 @@ export class ListaDeChecagemComponent implements OnInit {
 
   toggleConcluido(linha: ItemListaDto) {
     const anteriores = this.itemListas;
-    const status = linha.status === 'OK' ? 'PENDENTE' : 'OK';
-    const item = { ...(anteriores.find(i => i.id === linha.id) ?? linha), status, statusBoolean: status === 'OK' };
+    const situacao = linha.situacao === 'OK' ? 'PENDENTE' : 'OK';
+    const item = { ...(anteriores.find(i => i.id === linha.id) ?? linha), situacao, statusBoolean: situacao === 'OK' };
 
     // Array novo: o grid (OnPush) remonta a linha com o status e a cor novos (FE-P2-09).
     this.itemListas = anteriores.map(i => (i.id === item.id ? item : i));

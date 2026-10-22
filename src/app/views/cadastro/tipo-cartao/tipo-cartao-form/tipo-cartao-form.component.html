@@ -4,7 +4,7 @@
   <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
     <div class="flex flex-column gap-2">
       <label for="tipo-cartao-nome">Nome do Tipo Cartão <span class="text-red-500">*</span></label>
-      <input pInputText id="tipo-cartao-nome" formControlName="nomeTipoCartao" [class.ng-dirty]="erro('nomeTipoCartao')" />
+      <input pInputText id="tipo-cartao-nome" maxlength="60" formControlName="nomeTipoCartao" [class.ng-dirty]="erro('nomeTipoCartao')" />
       <small class="p-error" *ngIf="erro('nomeTipoCartao')">Informe um nome válido (mínimo 2 caracteres).</small>
     </div>
 

@@ -5,7 +5,7 @@ export type ListaDto = {
   id: number;
   nome: string;
   tipoMovimentacao: number;
-  status: boolean;
+  ativo: boolean;
 };
 
 /** ItemListaDTO da API (JSON em camelCase). */
@@ -15,7 +15,7 @@ export type ItemListaDto = {
   descricao?: string;
   quantidade?: number;
   /** PENDENTE | AGUARDANDO | OK (CHECK do banco). */
-  status?: string;
+  situacao?: string;
   valor?: number;
   observacao?: string;
   dataTarefa?: Date;

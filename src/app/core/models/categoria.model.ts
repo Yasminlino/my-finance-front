@@ -1,17 +1,17 @@
-/** CategoryDTO da API (JSON em camelCase). */
+/** CategoriaDTO da API (JSON em camelCase). */
 export type CategoriaDto = {
   id: number;
-  name: string;
-  subCategory: string;
+  nome: string;
+  subcategoria: string;
   naturezaOperacao: number;
-  status: number;
+  ativo: number;
 };
 
 /** Envio para CreateCategory/UpdateCategory (id só na atualização). */
 export type CategoriaCreateUpdateDto = {
   id?: number;
-  name: string;
-  subCategory: string;
+  nome: string;
+  subcategoria: string;
   naturezaOperacao?: number | null;
-  status?: number | null;
+  ativo?: number | null;
 };

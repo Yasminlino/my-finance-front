@@ -108,7 +108,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
       .subscribe(itens => {
         this.extratoMensal = itens.map(item => ({
           ...item,
-          categoriaNome: item.categoriaNome ?? item.categoria?.name ?? '',
+          categoriaNome: item.categoriaNome ?? item.categoria?.nome ?? '',
           tipoMovimentacaoNome: item.tipoMovimentacaoNome ?? item.tipoMovimentacao?.nomeTipoMovimentacao ?? '',
         }));
         this.loading = false;
@@ -183,7 +183,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
         const tipoCartaoDisplay = tipoCartao?.nomeTipoCartao ?? 'Tipo de Cartão Desconhecido';
         this.titulo = `${tipoCartaoDisplay} - ${bancoDisplay}`;
 
-        this.categoriasOptions = this.categorias.map(c => ({ label: c.name, value: c.id }));
+        this.categoriasOptions = this.categorias.map(c => ({ label: c.nome, value: c.id }));
         this.tiposContaOptions = this.tiposConta.map(t => ({ label: t.nomeTipoCartao, value: t.id }));
         this.tiposMovimentacaoOptions = this.tiposMovimentacao.map(t => ({ label: t.nomeTipoMovimentacao, value: t.id }));
         this.pessoasMovOptions = this.pessoasMov.map(p => ({ label: p.nomePessoa, value: p.id }));

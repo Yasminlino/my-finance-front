@@ -78,8 +78,8 @@
               <div class="flex align-items-start gap-2">
                 <span class="icone-categoria" [ngClass]="m.cor"><i [class]="m.icone"></i></span>
                 <div class="flex-grow-1 min-w-0">
-                  <div class="font-semibold">{{ conta.name }}</div>
-                  <small class="text-color-secondary">{{ conta.categoryName }}</small>
+                  <div class="font-semibold">{{ conta.nome }}</div>
+                  <small class="text-color-secondary">{{ conta.categoriaNome }}</small>
                 </div>
               </div>
             </td>
@@ -105,36 +105,36 @@
             </td>
 
             <td>
-              <p-calendar [(ngModel)]="rascunho[conta.id].date" dateFormat="dd/mm/yy" appendTo="body" [showIcon]="true"
-                inputStyleClass="p-inputtext-sm w-8rem" [class.campo-alterado]="alterado(conta.id, 'date')"
-                [appErroCampo]="erro(conta.id, 'date')"
-                (ngModelChange)="alterar(conta, 'date', $event)" (keydown.escape)="desfazerCampo(conta, 'date')" />
-              @if (alterado(conta.id, 'date')) {
-                <s class="valor-anterior">{{ anterior(conta.id, 'date') }}</s>
+              <p-calendar [(ngModel)]="rascunho[conta.id].data" dateFormat="dd/mm/yy" appendTo="body" [showIcon]="true"
+                inputStyleClass="p-inputtext-sm w-8rem" [class.campo-alterado]="alterado(conta.id, 'data')"
+                [appErroCampo]="erro(conta.id, 'data')"
+                (ngModelChange)="alterar(conta, 'data', $event)" (keydown.escape)="desfazerCampo(conta, 'data')" />
+              @if (alterado(conta.id, 'data')) {
+                <s class="valor-anterior">{{ anterior(conta.id, 'data') }}</s>
               }
-              @if (erro(conta.id, 'date'); as msg) {
+              @if (erro(conta.id, 'data'); as msg) {
                 <small class="p-error block">{{ msg }}</small>
               }
             </td>
 
             <td class="text-right">
-              <p-inputNumber [(ngModel)]="rascunho[conta.id].value" mode="currency" currency="BRL" locale="pt-BR"
-                inputStyleClass="text-right p-inputtext-sm w-9rem" [class.campo-alterado]="alterado(conta.id, 'value')"
-                [appErroCampo]="erro(conta.id, 'value')"
-                (ngModelChange)="alterar(conta, 'value', $event)" (keydown.escape)="desfazerCampo(conta, 'value')" />
-              @if (alterado(conta.id, 'value')) {
-                <s class="valor-anterior">{{ anterior(conta.id, 'value') }}</s>
+              <p-inputNumber [(ngModel)]="rascunho[conta.id].valor" mode="currency" currency="BRL" locale="pt-BR"
+                inputStyleClass="text-right p-inputtext-sm w-9rem" [class.campo-alterado]="alterado(conta.id, 'valor')"
+                [appErroCampo]="erro(conta.id, 'valor')"
+                (ngModelChange)="alterar(conta, 'valor', $event)" (keydown.escape)="desfazerCampo(conta, 'valor')" />
+              @if (alterado(conta.id, 'valor')) {
+                <s class="valor-anterior">{{ anterior(conta.id, 'valor') }}</s>
               }
-              @if (erro(conta.id, 'value'); as msg) {
+              @if (erro(conta.id, 'valor'); as msg) {
                 <small class="p-error block">{{ msg }}</small>
               }
             </td>
 
             <td>
-              <p-dropdown [options]="statusOptions" [(ngModel)]="rascunho[conta.id].status" optionLabel="label"
+              <p-dropdown [options]="statusOptions" [(ngModel)]="rascunho[conta.id].situacao" optionLabel="label"
                 optionValue="value" appendTo="body" panelStyleClass="tags-claras" styleClass="p-inputtext-sm w-full"
-                [class.campo-alterado]="alterado(conta.id, 'status')"
-                (ngModelChange)="alterar(conta, 'status', $event)" (keydown.escape)="desfazerCampo(conta, 'status')">
+                [class.campo-alterado]="alterado(conta.id, 'situacao')"
+                (ngModelChange)="alterar(conta, 'situacao', $event)" (keydown.escape)="desfazerCampo(conta, 'situacao')">
                 <ng-template let-opcao pTemplate="selectedItem">
                   <p-tag [value]="opcao.label" [severity]="opcao.classe" />
                 </ng-template>
@@ -142,8 +142,8 @@
                   <p-tag [value]="opcao.label" [severity]="opcao.classe" />
                 </ng-template>
               </p-dropdown>
-              @if (alterado(conta.id, 'status')) {
-                <s class="valor-anterior">{{ anterior(conta.id, 'status') }}</s>
+              @if (alterado(conta.id, 'situacao')) {
+                <s class="valor-anterior">{{ anterior(conta.id, 'situacao') }}</s>
               }
               @if (previa(conta); as efeito) {
                 <small class="previa block"><i class="pi pi-info-circle mr-1"></i>{{ efeito }}</small>
@@ -151,7 +151,7 @@
             </td>
 
             <td>
-              <input pInputText class="w-full p-inputtext-sm" placeholder="Observação"
+              <input pInputText class="w-full p-inputtext-sm" maxlength="500" placeholder="Observação"
                 [class.campo-alterado]="alterado(conta.id, 'observacao')" [(ngModel)]="rascunho[conta.id].observacao"
                 (ngModelChange)="alterar(conta, 'observacao', $event)" (keydown.escape)="desfazerCampo(conta, 'observacao')" />
               @if (alterado(conta.id, 'observacao')) {
@@ -178,12 +178,12 @@
                 <span class="icone-categoria" [ngClass]="m.cor"><i [class]="m.icone"></i></span>
                 <div class="min-w-0">
                   <div class="font-semibold flex align-items-center gap-2">
-                    <span class="white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ conta.name }}</span>
+                    <span class="white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ conta.nome }}</span>
                     @if (conta.observacao) {
                       <i class="pi pi-comment text-color-secondary text-sm" [pTooltip]="conta.observacao" tooltipPosition="top"></i>
                     }
                   </div>
-                  <small class="text-color-secondary">{{ conta.categoryName }}</small>
+                  <small class="text-color-secondary">{{ conta.categoriaNome }}</small>
                 </div>
               </div>
             </td>

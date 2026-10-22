@@ -19,7 +19,7 @@ export class ModalItemChecagemComponent implements OnInit {
 
   @Output() closed = new EventEmitter<boolean>();
 
-  /** Formulário Reactive (FE-P2-10); "concluído" é o status OK/PENDENTE do item. */
+  /** Formulário Reactive (FE-P2-10); "concluído" é a situação OK/PENDENTE do item. */
   readonly form = this.fb.group({
     descricao: ['', [Validators.required, naoVazio]],
     quantidade: [1 as number | null, [Validators.required, Validators.min(1)]],
@@ -40,7 +40,7 @@ export class ModalItemChecagemComponent implements OnInit {
       this.form.patchValue({
         descricao: this.item.descricao ?? '',
         quantidade: this.item.quantidade ?? 1,
-        concluido: this.item.status === 'OK'
+        concluido: this.item.situacao === 'OK'
       });
     }
   }
@@ -61,7 +61,7 @@ export class ModalItemChecagemComponent implements OnInit {
     }
 
     const { descricao, quantidade, concluido } = this.form.getRawValue();
-    const dados = { descricao: (descricao ?? '').trim(), quantidade: Number(quantidade), status: concluido ? 'OK' : 'PENDENTE' };
+    const dados = { descricao: (descricao ?? '').trim(), quantidade: Number(quantidade), situacao: concluido ? 'OK' : 'PENDENTE' };
 
     this.loading = true;
     this.errorMsg = '';

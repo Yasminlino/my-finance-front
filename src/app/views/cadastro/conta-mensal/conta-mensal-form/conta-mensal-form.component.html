@@ -4,7 +4,7 @@
   <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
     <div class="flex flex-column gap-2">
       <label for="conta-nome">Descrição <span class="text-red-500">*</span></label>
-      <input pInputText id="conta-nome" formControlName="name" placeholder="Preencha o nome da conta..."
+      <input pInputText id="conta-nome" maxlength="120" formControlName="name" placeholder="Preencha o nome da conta..."
         [class.ng-dirty]="erro('name')" />
       <small class="p-error" *ngIf="erro('name')">Informe um nome válido.</small>
     </div>
@@ -26,7 +26,7 @@
 
     <div class="flex flex-column gap-2">
       <label for="conta-categoria">Categoria <span class="text-red-500">*</span></label>
-      <p-dropdown inputId="conta-categoria" formControlName="categoryId" [options]="categories" optionLabel="name"
+      <p-dropdown inputId="conta-categoria" formControlName="categoryId" [options]="categories" optionLabel="nome"
         optionValue="id" placeholder="Selecione..." appendTo="body" styleClass="w-full"
         [class.ng-dirty]="erro('categoryId')" />
       <small class="p-error" *ngIf="erro('categoryId')">Selecione uma categoria.</small>

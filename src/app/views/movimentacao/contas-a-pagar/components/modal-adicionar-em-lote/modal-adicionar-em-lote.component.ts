@@ -70,7 +70,7 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
   private setGridColumns(): void {
 
     this.gridColumns = [
-      { field: 'name', header: 'NOME DA CONTA', type: GridColumnTypeEnum.Text, width: "40%" }, {
+      { field: 'nome', header: 'NOME DA CONTA', type: GridColumnTypeEnum.Text, width: "40%" }, {
         field: 'parcelaFormatada',
         header: 'PARCELAS',
         type: GridColumnTypeEnum.Text,
@@ -78,8 +78,8 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
         formatter: (row: any) => row.ehParcelado ? `${row.parcelaAtual} de ${row.quantidadeParcelas}` : '-'
       },
       {
-        field: 'value', header: 'VALOR',
-        formatter: (row) => this.money(row.value), type: GridColumnTypeEnum.Money, width: "20%"
+        field: 'valor', header: 'VALOR',
+        formatter: (row) => this.money(row.valor), type: GridColumnTypeEnum.Money, width: "20%"
       }
     ];
   }
@@ -134,17 +134,17 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
         this.contas = contas ?? [];
         this.contasMensais = contasMensais ?? [];
 
-        // AccountId -> quantidade de lançamentos no mês
+        // ContaId -> quantidade de lançamentos no mês
         const mapaLancamentos = new Map<number, number>();
         for (const t of this.contasMensais) {
-          if (!t.idAccount) continue;
-          mapaLancamentos.set(t.idAccount, (mapaLancamentos.get(t.idAccount) ?? 0) + 1);
+          if (!t.contaId) continue;
+          mapaLancamentos.set(t.contaId, (mapaLancamentos.get(t.contaId) ?? 0) + 1);
         }
 
         // Desabilita só as contas com vencimentos configurados e todos já lançados.
         const desabilitados = new Set<number>();
         for (const conta of this.contas) {
-          const totalVencimentos = conta.contaVencimentos?.length ?? 0;
+          const totalVencimentos = conta.vencimentos?.length ?? 0;
           const totalLancados = mapaLancamentos.get(conta.id) ?? 0;
           if (totalVencimentos > 0 && totalLancados >= totalVencimentos) {
             desabilitados.add(conta.id);
@@ -169,11 +169,11 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
     const payloads = this.contas
       .filter(acc => this.selectedIds.has(acc.id))
       .map(acc => ({
-        date: formatDateVencimento(this.month, "01"),
-        name: acc.name,
-        idAccount: acc.id,
-        value: parseCurrencyBR(acc.value) ?? 0,
-        status: 'PENDENTE',
+        data: formatDateVencimento(this.month, "01"),
+        nome: acc.nome,
+        contaId: acc.id,
+        valor: parseCurrencyBR(acc.valor) ?? 0,
+        situacao: 'PENDENTE',
         ehParcelado: acc.ehParcelado,
         parcelaAtual: acc.ehParcelado ? acc.parcelaAtual : null,
         quantidadeParcelas: acc.ehParcelado ? acc.quantidadeParcelas : null,

@@ -236,7 +236,7 @@ export class ContasAPagarComponent implements OnInit {
 
     from(contas).pipe(
       concatMap(conta => this.contaMensalService
-        .atualizar({ ...conta, status: statusAoPagar(vencimentoDe(conta), hoje) })
+        .atualizar({ ...conta, situacao: statusAoPagar(vencimentoDe(conta), hoje) })
         .pipe(
           defaultIfEmpty(null),
           last(),
@@ -261,7 +261,7 @@ export class ContasAPagarComponent implements OnInit {
     const total = contas.length;
     if (pagas === total) {
       this.alertService.success(total === 1
-        ? `Conta '${contas[0].name}' marcada como paga.`
+        ? `Conta '${contas[0].nome}' marcada como paga.`
         : `${total} contas marcadas como pagas.`);
       return;
     }
@@ -290,7 +290,7 @@ export class ContasAPagarComponent implements OnInit {
   private excluirUma(conta: LinhaContasMensais): void {
     this.confirmacao.confirm({
       header: 'Excluir conta',
-      message: `Excluir a conta '${conta.name}'?`,
+      message: `Excluir a conta '${conta.nome}'?`,
       icon: 'pi pi-trash',
       acceptLabel: 'Excluir',
       rejectLabel: 'Cancelar',
@@ -298,10 +298,10 @@ export class ContasAPagarComponent implements OnInit {
       rejectButtonStyleClass: 'p-button-text p-button-secondary',
       accept: () => this.contaMensalService.excluir(conta.id).subscribe({
         next: () => {
-          this.alertService.success(`Conta '${conta.name}' excluída com sucesso!`);
+          this.alertService.success(`Conta '${conta.nome}' excluída com sucesso!`);
           this.loadMonth(this.dateFilter);
         },
-        error: e => this.alertService.error(extrairMensagemErro(e, `Falha ao excluir a conta '${conta.name}'.`))
+        error: e => this.alertService.error(extrairMensagemErro(e, `Falha ao excluir a conta '${conta.nome}'.`))
       })
     });
   }

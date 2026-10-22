@@ -41,7 +41,7 @@ export class ModalNovaListaComponent implements OnInit {
     if (this.lista) {
       this.form.patchValue({
         nome: this.lista.nome,
-        status: this.lista.status,
+        status: this.lista.ativo,
         tipoMovimentacao: this.lista.tipoMovimentacao ?? null,
       });
     }
@@ -67,7 +67,7 @@ export class ModalNovaListaComponent implements OnInit {
       id: this.lista?.id || 0,
       nome: this.form.value.nome!,
       tipoMovimentacao: Number(this.form.value.tipoMovimentacao),
-      status: !!this.form.value.status,
+      ativo: !!this.form.value.status,
     };
 
     this.saving = true;

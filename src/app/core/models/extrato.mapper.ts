@@ -5,7 +5,7 @@ import { TipoMovimentacaoDto } from './tipo-movimentacao.model';
 
 /** O que a tela sabe e a linha pode não trazer: listas para resolver nomes e o banco/cartão/mês abertos. */
 export type ContextoExtrato = {
-  categorias: readonly Pick<CategoriaDto, 'id' | 'name'>[];
+  categorias: readonly Pick<CategoriaDto, 'id' | 'nome'>[];
   tiposMovimentacao: readonly Pick<TipoMovimentacaoDto, 'id' | 'nomeTipoMovimentacao'>[];
   bancoId?: number | null;
   tipoCartaoId?: number | null;
@@ -16,12 +16,12 @@ export type ContextoExtrato = {
  * Linha como vem do grid ou do formulário: ids podem chegar como texto (selects) e a data como Date.
  * Sem `id` é um item novo (lançamento manual).
  */
-export type ExtratoItemEntrada = Partial<Omit<ExtratoItemDto, 'id' | 'dataMovimentacao' | 'categoriaId' | 'tipoMovimentacaoId' | 'userId'>> & {
+export type ExtratoItemEntrada = Partial<Omit<ExtratoItemDto, 'id' | 'dataMovimentacao' | 'categoriaId' | 'tipoMovimentacaoId' | 'usuarioId'>> & {
   id?: number | string | null;
   dataMovimentacao?: string | Date | null;
   categoriaId?: number | string | null;
   tipoMovimentacaoId?: number | string | null;
-  userId?: number | string | null;
+  usuarioId?: number | string | null;
 };
 
 const TIPO_LANCAMENTO_PADRAO = 'Saída';
@@ -62,11 +62,11 @@ function resolver<T extends { id: number }>(
  * O contrato é o JSON camelCase da API: campos em PascalCase não são lidos.
  */
 export function paraExtratoItemDto(linha: ExtratoItemEntrada, contexto: ContextoExtrato): ExtratoItemDto {
-  const categoria = resolver(contexto.categorias, c => c.name, linha.categoriaId, linha.categoriaNome);
+  const categoria = resolver(contexto.categorias, c => c.nome, linha.categoriaId, linha.categoriaNome);
   const tipoMovimentacao = resolver(contexto.tiposMovimentacao, t => t.nomeTipoMovimentacao, linha.tipoMovimentacaoId, linha.tipoMovimentacaoNome);
   const id = idOuNulo(linha.id);
   // O dono é sempre o usuário do token; aqui só repassa um id válido que já veio da API (FE-P0-12).
-  const userId = idOuNulo(linha.userId);
+  const usuarioId = idOuNulo(linha.usuarioId);
 
   const dto: ExtratoItemDto = {
     ...(id !== null ? { id } : {}),
@@ -98,7 +98,7 @@ export function paraExtratoItemDto(linha: ExtratoItemEntrada, contexto: Contexto
     parcelaAtual: linha.parcelaAtual ?? null,
     quantidadeParcelas: linha.quantidadeParcelas ?? null,
 
-    ...(userId !== null ? { userId } : {}),
+    ...(usuarioId !== null ? { usuarioId } : {}),
     chaveDescricao: linha.chaveDescricao ?? null,
     alteraVinculoPessoa: Boolean(linha.alteraVinculoPessoa),
   } as ExtratoItemDto;

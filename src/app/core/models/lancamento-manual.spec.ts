@@ -7,7 +7,7 @@ import { ContextoLancamentoManual, LancamentoManualValores, montarLancamentosMan
  */
 describe('montarLancamentosManuais', () => {
   const contaCorrente: ContextoLancamentoManual = {
-    categorias: [{ id: 29, name: 'Alimentação' }],
+    categorias: [{ id: 29, nome: 'Alimentação' }],
     tiposMovimentacao: [],
     bancoId: 5,
     tipoCartaoId: 2,

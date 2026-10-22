@@ -56,7 +56,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
     forkJoin({ categorias: this.categoriaService.listarAtivas(), tipos: this.tipoMovService.listar() })
       .subscribe({
         next: ({ categorias, tipos }) => {
-          this.categorias = categorias.map(c => ({ label: c.name, value: c.id }));
+          this.categorias = categorias.map(c => ({ label: c.nome, value: c.id }));
           this.movimentacoes = tipos.map(t => ({ label: t.nomeTipoMovimentacao || '', value: t.id }));
           this.setGridColumns();
           this.load();
@@ -182,7 +182,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
         next: pessoas => {
           this.pessoaMovimentacao = pessoas.map(item => ({
             ...item,
-            categoriaName: item.categoria?.name ?? '-',
+            categoriaName: item.categoria?.nome ?? '-',
             tipoMovimentacaoName: item.tipoMovimentacao?.nomeTipoMovimentacao ?? '-',
           }));
         },

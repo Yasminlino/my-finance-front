@@ -71,11 +71,11 @@ export class ListaRootComponent implements OnInit {
         width: "30%"
       },
       {
-        field: 'status',
+        field: 'ativo',
         header: 'STATUS',
         type: GridColumnTypeEnum.Select,
         options: this.statusOptions,
-        formatter: (row) => this.statusLabel(row.status),
+        formatter: (row) => this.statusLabel(row.ativo),
         width: "20%"
       },
       { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['view', 'edit', 'delete'] },

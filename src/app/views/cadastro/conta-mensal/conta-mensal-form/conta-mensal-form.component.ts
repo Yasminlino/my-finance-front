@@ -54,17 +54,17 @@ export class ContaMensalFormComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.registro) {
-      const dias = this.registro.contaVencimentos
+      const dias = this.registro.vencimentos
         ?.map(v => v.dia)
         .sort((a, b) => a - b)
         .join(',');
 
       this.form.patchValue({
-        name: this.registro.name,
-        value: this.registro.value,
+        name: this.registro.nome,
+        value: this.registro.valor,
         dataOperacao: dias, 
-        categoryId: this.registro.categoryId,
-        status: this.registro.status,
+        categoryId: this.registro.categoriaId,
+        status: this.registro.ativo,
         ehParcelado: this.registro.ehParcelado,
         parcelaAtual: this.registro.parcelaAtual,
         quantidadeParcelas: this.registro.quantidadeParcelas
@@ -132,10 +132,10 @@ export class ContaMensalFormComponent implements OnInit {
 
     const payload: Partial<ContaDto> = {
       id: this.registro?.id,
-      name: this.form.value.name!,
-      value: this.form.value.value ?? 0,
-      categoryId: Number(this.form.value.categoryId),
-      status: Number(this.form.value.status),
+      nome: this.form.value.name!,
+      valor: this.form.value.value ?? 0,
+      categoriaId: Number(this.form.value.categoryId),
+      ativo: Number(this.form.value.status),
       ehParcelado: Boolean(this.form.value.ehParcelado),
       parcelaAtual: Number(this.form.value.parcelaAtual),
       quantidadeParcelas: Number(this.form.value.quantidadeParcelas),

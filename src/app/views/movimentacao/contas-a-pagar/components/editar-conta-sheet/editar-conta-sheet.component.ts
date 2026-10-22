@@ -53,8 +53,8 @@ export class EditarContaSheetComponent implements OnChanges {
     if (changes['conta']) {
       this.edicao = this.conta ? new EdicaoContas([this.conta]) : null;
       this.rascunho = this.conta ? this.edicao!.rascunho(this.conta.id) : null;
-      this.icone = iconeDaCategoria(this.conta?.categoryName);
-      this.cor = corDaCategoria(this.conta?.categoryName);
+      this.icone = iconeDaCategoria(this.conta?.categoriaNome);
+      this.cor = corDaCategoria(this.conta?.categoriaNome);
     }
   }
 
@@ -115,7 +115,7 @@ export class EditarContaSheetComponent implements OnChanges {
     if (!conta) return;
     this.confirmacao.confirm({
       header: 'Desbloquear conta paga',
-      message: `A conta '${conta.name}' já está paga. Desbloquear para editar?`,
+      message: `A conta '${conta.nome}' já está paga. Desbloquear para editar?`,
       icon: 'pi pi-lock-open',
       acceptLabel: 'Desbloquear',
       rejectLabel: 'Cancelar',

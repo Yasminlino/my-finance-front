@@ -294,14 +294,14 @@ export class RelatorioGastosMensaisComponent implements OnInit {
 
     // 🟢 ENTRADA
     for (const item of entradaFiltrada) {
-      const nome = item.categoria?.name ?? 'Sem categoria';
+      const nome = item.categoria?.nome ?? 'Sem categoria';
       const valor = toNumber(item.valor);
       mapEntrada.set(nome, (mapEntrada.get(nome) ?? 0) + valor);
     }
 
     // 🔴 SAÍDA
     for (const item of saidaFiltrada) {
-      const nome = item.categoria?.name ?? 'Sem categoria';
+      const nome = item.categoria?.nome ?? 'Sem categoria';
       const valor = toNumber(item.valor);
       mapSaida.set(nome, (mapSaida.get(nome) ?? 0) + valor);
     }
@@ -379,12 +379,12 @@ export class RelatorioGastosMensaisComponent implements OnInit {
     // 🔹 Filtra ENTRADA
     let entradaFiltrada = categoriaLabel === ''
       ? this.extratoItemsEntrada
-      : this.extratoItemsEntrada.filter(i => i.categoria?.name === categoriaLabel);
+      : this.extratoItemsEntrada.filter(i => i.categoria?.nome === categoriaLabel);
 
     // 🔹 Filtra SAÍDA
     let saidaFiltrada = categoriaLabel === ''
       ? this.extratoItemsSaida
-      : this.extratoItemsSaida.filter(i => i.categoria?.name === categoriaLabel);
+      : this.extratoItemsSaida.filter(i => i.categoria?.nome === categoriaLabel);
 
     if (bancoLabel !== '') {
       entradaFiltrada = entradaFiltrada.filter(i => i.banco?.nomeBanco === bancoLabel);

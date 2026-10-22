@@ -4,18 +4,18 @@ import { STATUS_PAGAMENTO_OPTIONS, contaPaga } from 'src/app/shared/enums/status
 import { vencimentoDe } from './contas-a-pagar.regras';
 
 /** Campos que o modo edição de Contas a Pagar deixa alterar. O total de parcelas vem da conta. */
-export type CampoEditavel = 'value' | 'date' | 'status' | 'parcelaAtual' | 'observacao';
+export type CampoEditavel = 'valor' | 'data' | 'situacao' | 'parcelaAtual' | 'observacao';
 
-const CAMPOS_EDITAVEIS: CampoEditavel[] = ['value', 'date', 'status', 'parcelaAtual', 'observacao'];
+const CAMPOS_EDITAVEIS: CampoEditavel[] = ['valor', 'data', 'situacao', 'parcelaAtual', 'observacao'];
 
 /**
  * Valores ligados aos campos, no tipo que cada componente PrimeNG espera. Referência estável por
  * linha: o ngModel não reescreve o campo a cada detecção de mudanças.
  */
 export interface RascunhoConta {
-  value: number | null;
-  date: Date | null;
-  status: string;
+  valor: number | null;
+  data: Date | null;
+  situacao: string;
   parcelaAtual: number | null;
   observacao: string;
 }
@@ -100,10 +100,10 @@ export class EdicaoContas {
     const conta = this.linhaAtual(id);
     const erros: ErrosDaLinha = {};
 
-    const valor = parseCurrencyBR(conta.value);
-    if (valor === null || valor <= 0) erros.value = 'Informe um valor maior que zero.';
+    const valor = parseCurrencyBR(conta.valor);
+    if (valor === null || valor <= 0) erros.valor = 'Informe um valor maior que zero.';
 
-    if (!formatDateInput(conta.date)) erros.date = 'Informe uma data válida.';
+    if (!formatDateInput(conta.data)) erros.data = 'Informe uma data válida.';
 
     if (conta.ehParcelado) {
       const parcela = Number(conta.parcelaAtual);
@@ -126,7 +126,7 @@ export class EdicaoContas {
     return this.contagem > 0 && !this.temErros;
   }
 
-  /** Conta paga (pelo status de quando a edição começou) não é editada sem desbloquear. */
+  /** Conta paga (pela situação de quando a edição começou) não é editada sem desbloquear. */
   bloqueada(id: number): boolean {
     const original = this.originais.get(id);
     return !!original && contaPaga(original) && !this.desbloqueadas.has(id);
@@ -151,11 +151,11 @@ export class EdicaoContas {
   }
 
   rascunho(id: number): RascunhoConta {
-    const data = this.valor(id, 'date');
+    const data = this.valor(id, 'data');
     return {
-      value: parseCurrencyBR(this.valor(id, 'value')),
-      date: data ? vencimentoDe({ date: data }) : null,
-      status: this.valor(id, 'status'),
+      valor: parseCurrencyBR(this.valor(id, 'valor')),
+      data: data ? vencimentoDe({ data }) : null,
+      situacao: this.valor(id, 'situacao'),
       parcelaAtual: this.valor(id, 'parcelaAtual') ?? null,
       observacao: this.valor(id, 'observacao') ?? ''
     };
@@ -165,9 +165,9 @@ export class EdicaoContas {
   anterior(id: number, campo: CampoEditavel): string {
     const original = this.original(id, campo);
     switch (campo) {
-      case 'value': return formatCurrencyBR(original);
-      case 'date': return formatDateBR(original);
-      case 'status': return STATUS_PAGAMENTO_OPTIONS.find(o => o.value === original)?.label ?? original ?? '';
+      case 'valor': return formatCurrencyBR(original);
+      case 'data': return formatDateBR(original);
+      case 'situacao': return STATUS_PAGAMENTO_OPTIONS.find(o => o.value === original)?.label ?? original ?? '';
       case 'observacao': return original || '(vazia)';
       default: return original == null ? '—' : String(original);
     }
@@ -176,9 +176,9 @@ export class EdicaoContas {
 
 function mesmoValor(campo: CampoEditavel, a: unknown, b: unknown): boolean {
   switch (campo) {
-    case 'value':
+    case 'valor':
       return parseCurrencyBR(a) === parseCurrencyBR(b);
-    case 'date':
+    case 'data':
       return formatDateInput(a) === formatDateInput(b);
     case 'parcelaAtual':
       if (a == null || b == null) return (a ?? null) === (b ?? null);

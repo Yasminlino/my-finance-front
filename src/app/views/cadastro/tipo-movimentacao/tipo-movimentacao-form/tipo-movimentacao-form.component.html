@@ -4,14 +4,14 @@
   <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
     <div class="flex flex-column gap-2">
       <label for="tipo-mov-nome">Tipo Movimentação <span class="text-red-500">*</span></label>
-      <input pInputText id="tipo-mov-nome" formControlName="nomeTipoMovimentacao"
+      <input pInputText id="tipo-mov-nome" maxlength="60" formControlName="nomeTipoMovimentacao"
         [class.ng-dirty]="erro('nomeTipoMovimentacao')" />
       <small class="p-error" *ngIf="erro('nomeTipoMovimentacao')">Informe um nome válido.</small>
     </div>
 
     <div class="flex flex-column gap-2">
       <label for="tipo-mov-descricao">Descrição</label>
-      <input pInputText id="tipo-mov-descricao" formControlName="descricao" />
+      <input pInputText id="tipo-mov-descricao" maxlength="200" formControlName="descricao" />
     </div>
   </form>
 

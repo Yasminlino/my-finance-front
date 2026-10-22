@@ -44,7 +44,7 @@ export interface ResumoMes {
 }
 
 /** O que as regras de exibição leem de uma conta. */
-type ContaExibida = { status: string; date: unknown; subCategoryName?: string | null };
+type ContaExibida = { situacao: string; data: unknown; subcategoriaNome?: string | null };
 
 /** Até quantos dias antes o vencimento fica em destaque (laranja). */
 const DIAS_EM_DESTAQUE = 7;
@@ -55,18 +55,18 @@ function inicioDoDia(data: Date): Date {
 }
 
 /** Vencimento à meia-noite local. "YYYY-MM-DD" (DateOnly da API) é lido pelo toDate. */
-export function vencimentoDe(conta: { date: unknown }): Date {
-  const valor = conta.date;
+export function vencimentoDe(conta: { data: unknown }): Date {
+  const valor = conta.data;
   const data = typeof valor === 'string' ? toDate(valor) : new Date(valor as Date);
   return inicioDoDia(data);
 }
 
 /** Dias do início de hoje até o vencimento; negativo quando já venceu. */
-function diasAteVencer(conta: { date: unknown }, hoje: Date): number {
+function diasAteVencer(conta: { data: unknown }, hoje: Date): number {
   return Math.round((vencimentoDe(conta).getTime() - inicioDoDia(hoje).getTime()) / UM_DIA_MS);
 }
 
-export function situacao(conta: { status: string; date: unknown }, hoje: Date): Situacao {
+export function situacao(conta: { situacao: string; data: unknown }, hoje: Date): Situacao {
   if (contaPaga(conta)) return 'paga';
   return diasAteVencer(conta, hoje) < 0 ? 'atrasada' : 'a-vencer';
 }
@@ -98,14 +98,14 @@ export function tagDoStatus(conta: ContaExibida, hoje: Date): TagDoStatus {
     return { label: ehReceita(conta) ? 'NÃO RECEBIDO' : 'ATRASADA', severity: TagStatus.Danger };
   }
 
-  const opcao = STATUS_PAGAMENTO_OPTIONS.find(o => o.value === conta.status);
-  return { label: opcao?.label ?? conta.status, severity: opcao?.classe ?? TagStatus.Secondary };
+  const opcao = STATUS_PAGAMENTO_OPTIONS.find(o => o.value === conta.situacao);
+  return { label: opcao?.label ?? conta.situacao, severity: opcao?.classe ?? TagStatus.Secondary };
 }
 
 /** Modo edição: o que a alteração muda na situação da conta ("" quando nada muda). */
 export function previaDoEfeito(
-  antes: { status: string; date: unknown },
-  depois: { status: string; date: unknown },
+  antes: { situacao: string; data: unknown },
+  depois: { situacao: string; data: unknown },
   hoje: Date
 ): string {
   const de = situacao(antes, hoje);
@@ -116,8 +116,8 @@ export function previaDoEfeito(
   return para === 'atrasada' ? 'Passa a ficar atrasada' : 'Deixa de ficar atrasada';
 }
 
-export function ehReceita(conta: { subCategoryName?: string | null }): boolean {
-  return naturezaPorSubCategoria(conta.subCategoryName) === NaturezaLancamento.Receita;
+export function ehReceita(conta: { subcategoriaNome?: string | null }): boolean {
+  return naturezaPorSubCategoria(conta.subcategoriaNome) === NaturezaLancamento.Receita;
 }
 
 /** Cards do topo: calculados sobre o mês inteiro, não sobre a seleção nem a página. */
@@ -128,8 +128,8 @@ export function resumoDoMes(contas: LinhaContasMensais[], hoje: Date): ResumoMes
   };
 
   for (const conta of contas) {
-    const valor = parseCurrencyBR(conta.value) ?? 0;
-    const natureza = naturezaPorSubCategoria(conta.subCategoryName);
+    const valor = parseCurrencyBR(conta.valor) ?? 0;
+    const natureza = naturezaPorSubCategoria(conta.subcategoriaNome);
     const sit = situacao(conta, hoje);
 
     if (natureza === NaturezaLancamento.Receita) {

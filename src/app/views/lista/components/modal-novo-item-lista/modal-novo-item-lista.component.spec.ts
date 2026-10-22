@@ -33,7 +33,7 @@ describe('ModalNovoItemListaComponent', () => {
   });
 
   it('na edição mostra o valor formatado a partir do número', async () => {
-    abrir({ id: 1, listaId: 30, descricao: 'Pão', quantidade: 1, valor: 25.5, status: 'PENDENTE' });
+    abrir({ id: 1, listaId: 30, descricao: 'Pão', quantidade: 1, valor: 25.5, situacao: 'PENDENTE' });
     await fixture.whenStable();
 
     expect(valor().value).toBe('25,50');

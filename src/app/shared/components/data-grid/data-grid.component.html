@@ -320,7 +320,7 @@
                         @case('select') {
                         <ng-template pTemplate="input">
 
-                            @if (col.field === 'status') {
+                            @if (col.field === campoStatus) {
 
                             <p-dropdown [options]="col.options" optionLabel="label" optionValue="value" appendTo="body"
                                 [(ngModel)]="product[col.field]" (ngModelChange)="onCellChange(product)"
@@ -367,7 +367,7 @@
                                 </button>
                             </div>
                             }
-                            @else if (col.field === 'status') {
+                            @else if (col.field === campoStatus) {
                             <p-tag [severity]="product.__dg.severidade"
                                 [class]="'flex justify-content-center fs-14 ' + product.__dg.classe[col.field]"
                                 [value]="product.__dg.texto[col.field]">

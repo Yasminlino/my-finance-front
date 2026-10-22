@@ -1,6 +1,6 @@
 <div class="pagina">
   <app-data-grid #grid [dataSource]="registrosExibidos" [breadcrumb]="breadcrumb" [columns]="gridColumns"  [titulo]="'Cadastro de categorias'"
-    [statusOptions]="statusOptions" [exibeCampos]="exibirCampos"
+    [statusOptions]="statusOptions" campoStatus="ativo" [exibeCampos]="exibirCampos"
     [loading]="loading" (edit)="onEdit($event)" (new)="openCreate()" (delete)="onDelete($event)" (deleteSelected)="onDeleteSelected($event)"></app-data-grid>
 
   <!-- Modal Form -->

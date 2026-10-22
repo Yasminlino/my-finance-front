@@ -1,106 +1,106 @@
 export type LinhaContasMensais = {
   id: number;
-  idAccount: number;
+  contaId: number;
 
-  name: string;
-  value: string | number;        // pode vir number do backend; no input usamos string formatada
-  date: Date;                 // ideal: YYYY-MM-DD
+  nome: string;
+  valor: string | number;        // pode vir number do backend; no input usamos string formatada
+  data: Date;                 // ideal: YYYY-MM-DD
   ehParcelado: boolean;
   parcelaAtual?: number;       // "1/3", "2/4", etc
   quantidadeParcelas?: number;  // "1/3", "2/4", etc
   observacao?: string;
 
-  categoryId: number;
-  categoryName: string;
+  categoriaId: number;
+  categoriaNome: string;
   tipoContaId: string;
-  subCategoryName?: string;          // "Receita" | "Despesa"
+  subcategoriaNome?: string;          // "Receita" | "Despesa"
 
-  status: string;
+  situacao: string;
   statusSalvo: string;
   desbloqueiaCampos: boolean;
 };
 
 export type LinhaContaMensal = {
   id: number;
-  idAccount: number;
+  contaId: number;
 
-  name: string;
-  value: string | number;        // pode vir number do backend; no input usamos string formatada
-  date: Date;                 // ideal: YYYY-MM-DD
+  nome: string;
+  valor: string | number;        // pode vir number do backend; no input usamos string formatada
+  data: Date;                 // ideal: YYYY-MM-DD
   ehParcelado: boolean;
   parcelaAtual?: number;       // "1/3", "2/4", etc
   quantidadeParcelas?: number;  // "1/3", "2/4", etc
   observacao?: string;
 
-  categoryId: number;
-  categoryName: string;
+  categoriaId: number;
+  categoriaNome: string;
   tipoContaId: string;
-  subCategory?: string;          // "Receita" | "Despesa"
+  subcategoria?: string;          // "Receita" | "Despesa"
 
-  status: string;
+  situacao: string;
   statusSalvo: string;
   desbloqueiaCampos: boolean;
 };
 
 export type AgrupamentoContaMensal = {
-  categoryId: number;
-  categoryName: string;
-  subCategory?: string;
-  accounts: Array<{
+  categoriaId: number;
+  categoriaNome: string;
+  subcategoria?: string;
+  contas: Array<{
     id: number;
-    transactions: Array<{
+    transacoes: Array<{
       id: number;
-      name: string;
-      value: any;
-      date: Date;   // YYYY-MM-DD
-      status: string;
+      nome: string;
+      valor: any;
+      data: Date;   // YYYY-MM-DD
+      situacao: string;
     }>;
   }>;
 };
 
 export type GrupoContaMensal = {
     id: number;
-    name: string;
-    value: number;
-    idAccount: number;
-    categoryId: number;
-    date: string;   // ISO string vindo da API
-    status: string;
+    nome: string;
+    valor: number;
+    contaId: number;
+    categoriaId: number;
+    data: string;   // ISO string vindo da API
+    situacao: string;
     ehParcelado: boolean;
     parcelaAtual?: number;
     quantidadeParcelas?: number;
     observacao?: string;
-    transactions: Array<{
+    transacoes: Array<{
       id: number;
-      name: string;
-      value: number;
-      date: string;   // ISO string vindo da API
-      status: string;
-      idAccount?: number | null;
-      categoryId?: number | null;
+      nome: string;
+      valor: number;
+      data: string;   // ISO string vindo da API
+      situacao: string;
+      contaId?: number | null;
+      categoriaId?: number | null;
     }>;
-    account: {
+    conta: {
       id: number;
-      name: string;
-      value: number;
-      categoryId: number;
+      nome: string;
+      valor: number;
+      categoriaId: number;
     }
 };
 
 export type ContaMensal = {
-  date: Date;
-  name: string;
-  value: number;
-  idAccount: number;
-  status: string;
-  categoryId?: any;
+  data: Date;
+  nome: string;
+  valor: number;
+  contaId: number;
+  situacao: string;
+  categoriaId?: any;
   parcelaFormatada?: string;
 }
 
 export type ContaVencendo = {
-  date: Date;
-  name: string;
-  value: number;
-  idAccount: number;
-  status: string;
+  data: Date;
+  nome: string;
+  valor: number;
+  contaId: number;
+  situacao: string;
 }

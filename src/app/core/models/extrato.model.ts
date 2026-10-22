@@ -37,12 +37,12 @@ export interface ExtratoItemDto {
   parcelaAtual?: number | null;
   quantidadeParcelas?: number | null;
 
-  userId?: number;
+  usuarioId?: number;
   chaveDescricao?: string | null;
   /** Pede à API para atualizar também o vínculo da pessoa com categoria/tipo. */
   alteraVinculoPessoa?: boolean;
 
-  categoria?: Pick<CategoriaDto, 'id' | 'name' | 'subCategory'> | null;
+  categoria?: Pick<CategoriaDto, 'id' | 'nome' | 'subcategoria'> | null;
   tipoMovimentacao?: Pick<TipoMovimentacaoDto, 'id' | 'nomeTipoMovimentacao'> | null;
 }
 

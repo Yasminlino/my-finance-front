@@ -19,7 +19,7 @@ export function filtrarExtratos(
 
     if (categoria)
     {
-        itens = itens.filter(i => i.categoria?.name === categoria);
+        itens = itens.filter(i => i.categoria?.nome === categoria);
     }
 
     return itens;

@@ -3,7 +3,7 @@
   <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
     <div class="flex flex-column gap-2">
       <label for="banco-nome">Nome Banco <span class="text-red-500">*</span></label>
-      <input pInputText id="banco-nome" formControlName="nomeBanco" placeholder="Preencha o nome do banco..."
+      <input pInputText id="banco-nome" maxlength="120" formControlName="nomeBanco" placeholder="Preencha o nome do banco..."
         [class.ng-dirty]="erro('nomeBanco')" />
       <small class="p-error" *ngIf="erro('nomeBanco')">Informe um nome válido.</small>
     </div>

@@ -55,7 +55,7 @@ export class ModalNovoItemListaComponent implements OnInit {
         quantidade: this.item.quantidade,
         valor: this.item.valor ?? null,
         observacao: this.item.observacao,
-        status: this.item.status ?? 'PENDENTE',
+        status: this.item.situacao ?? 'PENDENTE',
         dataTarefa: this.item.dataTarefa ?? null,
         horarioTarefa: this.item.horarioTarefa ?? null,
       });
@@ -86,7 +86,7 @@ export class ModalNovoItemListaComponent implements OnInit {
       listaId: this.listaId,
       descricao: this.form.value.descricao!,
       quantidade: Number(this.form.value.quantidade),
-      status: this.form.value.status!,
+      situacao: this.form.value.status!,
       valor: this.form.value.valor ?? undefined,
       observacao: this.form.value.observacao!,
       dataTarefa: this.form.value.dataTarefa ?? undefined,

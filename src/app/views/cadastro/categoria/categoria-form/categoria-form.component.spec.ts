@@ -12,7 +12,7 @@ import { AlertService } from 'src/app/shared/components/alert.service';
 describe('CategoriaFormComponent', () => {
   let fixture: ComponentFixture<CategoriaFormComponent>;
   let service: jasmine.SpyObj<CategoryService>;
-  const categoria = { id: 29, name: 'Alimentação', subCategory: 'Despesa', naturezaOperacao: 1, status: 1 };
+  const categoria = { id: 29, nome: 'Alimentação', subcategoria: 'Despesa', naturezaOperacao: 1, ativo: 1 };
 
   beforeEach(() => {
     service = jasmine.createSpyObj<CategoryService>('CategoryService', ['criar', 'atualizar']);
@@ -40,7 +40,17 @@ describe('CategoriaFormComponent', () => {
 
     fixture.componentInstance.save();
 
-    expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ id: 29, name: 'Mercado' }));
+    expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ id: 29, nome: 'Mercado' }));
+  });
+
+  it('o nome tem o limite da API (120) e passar dele não salva (DB-P3-04)', () => {
+    const nome = document.getElementById('categoria-nome') as HTMLInputElement;
+    expect(nome.maxLength).toBe(120);
+
+    fixture.componentInstance.form.patchValue({ name: 'a'.repeat(121) });
+    fixture.componentInstance.save();
+
+    expect(service.atualizar).not.toHaveBeenCalled();
   });
 
   it('abre num p-dialog com o título e o X fecha sem recarregar (FE-P2-07)', () => {

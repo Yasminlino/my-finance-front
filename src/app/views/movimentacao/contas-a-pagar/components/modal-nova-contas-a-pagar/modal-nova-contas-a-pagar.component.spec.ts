@@ -46,7 +46,7 @@ describe('ModalNovaContasAPagarComponent', () => {
 
     fixture.componentInstance.save();
 
-    expect(service.criar).toHaveBeenCalledWith(jasmine.objectContaining({ value: 15.5 }));
+    expect(service.criar).toHaveBeenCalledWith(jasmine.objectContaining({ valor: 15.5 }));
   });
 
   it('aceita vários dias: envia os dias em ordem e a data do primeiro', () => {
@@ -56,7 +56,7 @@ describe('ModalNovaContasAPagarComponent', () => {
 
     const payload = service.criar.calls.mostRecent().args[0];
     expect(payload.diasVencimento).toEqual([5, 20]);
-    expect((payload.date as Date).getDate()).toBe(5);
+    expect((payload.data as Date).getDate()).toBe(5);
   });
 
   it('um dia só continua funcionando', () => {

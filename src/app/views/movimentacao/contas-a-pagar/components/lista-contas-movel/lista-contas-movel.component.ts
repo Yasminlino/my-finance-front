@@ -203,7 +203,7 @@ export class ListaContasMovelComponent implements OnChanges, OnDestroy, GridSele
   }
 
   private aposMudarSelecao(): void {
-    this.totaisSelecao = calcularTotaisSelecao(this.selecionadas(), c => c.value, c => naturezaPorSubCategoria(c.subCategoryName));
+    this.totaisSelecao = calcularTotaisSelecao(this.selecionadas(), c => c.valor, c => naturezaPorSubCategoria(c.subcategoriaNome));
   }
 
   money(valor: number): string {

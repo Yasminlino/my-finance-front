@@ -6,7 +6,7 @@ import { ContextoExtrato, paraExtratoItemDto } from './extrato.mapper';
  */
 describe('paraExtratoItemDto', () => {
   const contexto: ContextoExtrato = {
-    categorias: [{ id: 7, name: 'Mercado' }, { id: 8, name: 'Saúde' }],
+    categorias: [{ id: 7, nome: 'Mercado' }, { id: 8, nome: 'Saúde' }],
     tiposMovimentacao: [{ id: 3, nomeTipoMovimentacao: 'Alimentação' }],
     bancoId: 5,
     tipoCartaoId: 2,
@@ -75,10 +75,10 @@ describe('paraExtratoItemDto', () => {
     expect(paraExtratoItemDto({ id: 1 }, contexto).tipoLancamento).toBe('Saída');
   });
 
-  it('userId só quando é um id válido; nunca inventa dono', () => {
-    expect(paraExtratoItemDto({ id: 1, userId: 4 }, contexto).userId).toBe(4);
-    expect(paraExtratoItemDto({ id: 1 }, contexto).userId).toBeUndefined();
-    expect(paraExtratoItemDto({ id: 1, userId: 0 }, contexto).userId).toBeUndefined();
+  it('usuarioId só quando é um id válido; nunca inventa dono', () => {
+    expect(paraExtratoItemDto({ id: 1, usuarioId: 4 }, contexto).usuarioId).toBe(4);
+    expect(paraExtratoItemDto({ id: 1 }, contexto).usuarioId).toBeUndefined();
+    expect(paraExtratoItemDto({ id: 1, usuarioId: 0 }, contexto).usuarioId).toBeUndefined();
   });
 
   it('item novo (lançamento manual) não manda id', () => {

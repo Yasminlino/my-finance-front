@@ -53,12 +53,12 @@
 
         <div class="flex-grow-1 min-w-0">
           <div class="flex justify-content-between gap-2">
-            <span class="font-semibold nome">{{ conta.name }}</span>
+            <span class="font-semibold nome">{{ conta.nome }}</span>
             <span class="font-bold white-space-nowrap" [class.text-green-600]="m.receita">{{ m.valor }}</span>
           </div>
           <div class="flex justify-content-between align-items-center gap-2 mt-1">
             <small class="text-color-secondary detalhe">
-              {{ conta.categoryName }}
+              {{ conta.categoriaNome }}
               @if (conta.observacao) {
                 <span class="surface-100 border-round px-1"><i class="pi pi-comment"></i> {{ conta.observacao }}</span>
               }

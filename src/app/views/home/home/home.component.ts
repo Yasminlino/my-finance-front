@@ -72,15 +72,15 @@ export class HomeComponent implements OnInit {
 
   /** Categoria e tipo da conta; sem categoria, mostra "Sem categoria". */
   private classificar(conta: ContaMensal) {
-    const categoria = this.categorias.get(Number(conta.categoryId));
+    const categoria = this.categorias.get(Number(conta.categoriaId));
     return {
-      categoria: categoria?.name || 'Sem categoria',
+      categoria: categoria?.nome || 'Sem categoria',
       tipoConta: categoria ? NaturezaOperacaoLabel[categoria.naturezaOperacao] : 'Sem tipo'
     };
   }
 
   private emAberto(conta: ContaMensal): boolean {
-    return conta.status === "PENDENTE" || conta.status === "AGUARDANDO";
+    return conta.situacao === "PENDENTE" || conta.situacao === "AGUARDANDO";
   }
 
   private total(itens: { valor: number }[]): string {
@@ -89,18 +89,18 @@ export class HomeComponent implements OnInit {
 
   private montarVencidas(contas: ContaMensal[]) {
     this.contasVencidas = contas.map(conta => ({
-      descricao: conta.name,
-      valor: conta.value,
+      descricao: conta.nome,
+      valor: conta.valor,
       ...this.classificar(conta),
-      dataVencimento: conta.date
+      dataVencimento: conta.data
     }));
     this.totalVencido = this.total(this.contasVencidas);
   }
 
   private montarVencendoHoje(contas: ContaMensal[]) {
     this.contasHoje = contas.filter(c => this.emAberto(c)).map(conta => ({
-      descricao: conta.name,
-      valor: conta.value,
+      descricao: conta.nome,
+      valor: conta.valor,
       ...this.classificar(conta)
     }));
     this.totalHoje = this.total(this.contasHoje);
@@ -109,10 +109,10 @@ export class HomeComponent implements OnInit {
   private montarProximas(contas: ContaMensal[]) {
     this.contasProximas = contas;
     this.proximasContas = contas.filter(c => this.emAberto(c)).map(conta => ({
-      descricao: conta.name,
-      valor: conta.value,
+      descricao: conta.nome,
+      valor: conta.valor,
       ...this.classificar(conta),
-      dataVencimento: conta.date
+      dataVencimento: conta.data
     }));
     this.totalProximas = this.total(this.proximasContas);
   }

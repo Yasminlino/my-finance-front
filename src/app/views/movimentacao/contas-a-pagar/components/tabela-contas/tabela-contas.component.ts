@@ -91,12 +91,12 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
   ];
 
   readonly colunasExportacao = [
-    { field: 'name', header: 'Conta' },
-    { field: 'categoryName', header: 'Categoria' },
+    { field: 'nome', header: 'Conta' },
+    { field: 'categoriaNome', header: 'Categoria' },
     { field: 'parcelaAtual', header: 'Parcela' },
-    { field: 'date', header: 'Vencimento' },
-    { field: 'value', header: 'Valor' },
-    { field: 'status', header: 'Status' },
+    { field: 'data', header: 'Vencimento' },
+    { field: 'valor', header: 'Valor' },
+    { field: 'situacao', header: 'Status' },
     { field: 'observacao', header: 'Observação' }
   ];
 
@@ -158,7 +158,7 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
   desbloquear(conta: LinhaContasMensais): void {
     this.confirmacao.confirm({
       header: 'Desbloquear conta paga',
-      message: `A conta '${conta.name}' já está paga. Desbloquear para editar?`,
+      message: `A conta '${conta.nome}' já está paga. Desbloquear para editar?`,
       icon: 'pi pi-lock-open',
       acceptLabel: 'Desbloquear',
       rejectLabel: 'Cancelar',
@@ -250,8 +250,8 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
   private calcularTotalPagina(): void {
     this.totalDespesasPagina = this.linhasVisiveis
       .slice(this.first, this.first + this.rows)
-      .filter(c => naturezaPorSubCategoria(c.subCategoryName) === NaturezaLancamento.Despesa)
-      .reduce((soma, c) => soma + (parseCurrencyBR(c.value) ?? 0), 0);
+      .filter(c => naturezaPorSubCategoria(c.subcategoriaNome) === NaturezaLancamento.Despesa)
+      .reduce((soma, c) => soma + (parseCurrencyBR(c.valor) ?? 0), 0);
   }
 
   money(valor: number): string {
@@ -264,7 +264,7 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
 
   aoSelecionar(selecao: LinhaContasMensais[]): void {
     this.selecao = selecao;
-    this.totaisSelecao = calcularTotaisSelecao(selecao, c => c.value, c => naturezaPorSubCategoria(c.subCategoryName));
+    this.totaisSelecao = calcularTotaisSelecao(selecao, c => c.valor, c => naturezaPorSubCategoria(c.subcategoriaNome));
   }
 
   limparSelecao(): void {
@@ -301,8 +301,8 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
 
   /** Exportação legível: data e valor como na tela. */
   readonly formatarExportacao = ({ data, field }: { data: any; field: string }) => {
-    if (field === 'date') return formatDateBR(data);
-    if (field === 'value') return formatCurrencyBR(data, { simbolo: false });
+    if (field === 'data') return formatDateBR(data);
+    if (field === 'valor') return formatCurrencyBR(data, { simbolo: false });
     return data ?? '';
   };
 }

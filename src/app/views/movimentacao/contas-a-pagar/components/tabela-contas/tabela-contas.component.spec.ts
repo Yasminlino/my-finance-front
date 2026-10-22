@@ -11,17 +11,17 @@ describe('TabelaContasComponent', () => {
   const hoje = new Date(2026, 9, 17, 10, 0);
 
   const conta = (parcial: Partial<LinhaContasMensais>): LinhaContasMensais => ({
-    id: 1, idAccount: 1, name: 'Luz', value: 100, date: '2026-10-20' as any, ehParcelado: false,
-    categoryId: 1, categoryName: 'Moradia', tipoContaId: '', subCategoryName: 'Despesa',
-    status: 'PENDENTE', statusSalvo: 'PENDENTE', desbloqueiaCampos: false,
+    id: 1, contaId: 1, nome: 'Luz', valor: 100, data: '2026-10-20' as any, ehParcelado: false,
+    categoriaId: 1, categoriaNome: 'Moradia', tipoContaId: '', subcategoriaNome: 'Despesa',
+    situacao: 'PENDENTE', statusSalvo: 'PENDENTE', desbloqueiaCampos: false,
     ...parcial
   });
 
   const contas = [
-    conta({ id: 1, name: 'Energia elétrica', value: 200 }),
-    conta({ id: 2, name: 'Aluguel', value: 1500, date: '2026-10-05' as any }),
-    conta({ id: 3, name: 'Salário', value: 5000, categoryName: 'Renda', subCategoryName: 'Receita', status: 'PAGO NO PRAZO' }),
-    conta({ id: 4, name: 'Carro', value: 800, categoryName: 'Transporte', ehParcelado: true, parcelaAtual: 8, quantidadeParcelas: 12 })
+    conta({ id: 1, nome: 'Energia elétrica', valor: 200 }),
+    conta({ id: 2, nome: 'Aluguel', valor: 1500, data: '2026-10-05' as any }),
+    conta({ id: 3, nome: 'Salário', valor: 5000, categoriaNome: 'Renda', subcategoriaNome: 'Receita', situacao: 'PAGO NO PRAZO' }),
+    conta({ id: 4, nome: 'Carro', valor: 800, categoriaNome: 'Transporte', ehParcelado: true, parcelaAtual: 8, quantidadeParcelas: 12 })
   ];
 
   let fixture: ComponentFixture<TabelaContasComponent>;
@@ -179,7 +179,7 @@ describe('TabelaContasComponent', () => {
     });
 
     it('campo alterado: linha marcada, valor anterior riscado e contador do filtro', () => {
-      tabela.alterar(contas[0], 'value', 250);
+      tabela.alterar(contas[0], 'valor', 250);
       fixture.detectChanges();
 
       expect(linha(1).classList).toContain('linha-alterada');
@@ -192,14 +192,14 @@ describe('TabelaContasComponent', () => {
     });
 
     it('Esc desfaz o campo; o botão da linha desfaz a linha', () => {
-      tabela.alterar(contas[0], 'value', 250);
+      tabela.alterar(contas[0], 'valor', 250);
       tabela.alterar(contas[0], 'observacao', 'conferir');
       fixture.detectChanges();
 
       linha(1).querySelector('p-inputNumber')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
       fixture.detectChanges();
-      expect(edicao.foiAlterado(1, 'value')).toBeFalse();
-      expect(tabela.rascunho[1].value).toBe(200);
+      expect(edicao.foiAlterado(1, 'valor')).toBeFalse();
+      expect(tabela.rascunho[1].valor).toBe(200);
       expect(edicao.foiAlterado(1, 'observacao')).toBeTrue();
 
       linha(1).querySelector<HTMLButtonElement>('.acao-desfazer button')!.click();
@@ -225,7 +225,7 @@ describe('TabelaContasComponent', () => {
     });
 
     it('prévia do efeito ao mudar o vencimento', () => {
-      tabela.alterar(contas[1], 'date', new Date(2026, 9, 30));
+      tabela.alterar(contas[1], 'data', new Date(2026, 9, 30));
       fixture.detectChanges();
 
       expect(linha(2).textContent).toContain('Deixa de ficar atrasada');

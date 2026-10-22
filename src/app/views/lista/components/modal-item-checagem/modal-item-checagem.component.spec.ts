@@ -57,18 +57,18 @@ describe('ModalItemChecagemComponent', () => {
 
     modal.salvar();
 
-    expect(service.criar).toHaveBeenCalledOnceWith({ descricao: 'Pão', quantidade: 2, status: 'PENDENTE', listaId: 31 });
+    expect(service.criar).toHaveBeenCalledOnceWith({ descricao: 'Pão', quantidade: 2, situacao: 'PENDENTE', listaId: 31 });
     expect(fechado).toHaveBeenCalledOnceWith(true);
   });
 
   it('editar um item concluído abre marcado e mantém OK ao salvar', () => {
-    abrir({ id: 7, listaId: 31, descricao: 'Pão', quantidade: 1, status: 'OK' });
+    abrir({ id: 7, listaId: 31, descricao: 'Pão', quantidade: 1, situacao: 'OK' });
 
     expect(modal.form.value.concluido).toBeTrue();
     modal.form.patchValue({ quantidade: 3 });
     modal.salvar();
 
-    expect(service.atualizar).toHaveBeenCalledOnceWith(jasmine.objectContaining({ id: 7, quantidade: 3, status: 'OK' }));
+    expect(service.atualizar).toHaveBeenCalledOnceWith(jasmine.objectContaining({ id: 7, quantidade: 3, situacao: 'OK' }));
   });
 
   it('erro da API aparece no modal, que continua aberto', () => {

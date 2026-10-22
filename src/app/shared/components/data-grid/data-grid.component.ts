@@ -95,6 +95,8 @@ export class DataGridComponent implements OnChanges {
   @Input() loading = false;
   @Input() itemsButtom: MenuItem[] = [];
   @Input() statusOptions: GridColumnOption[] = [];
+  /** Campo da linha que vira tag colorida pelo statusOptions (DB-P3: "ativo" nos cadastros, "situacao" nos itens). */
+  @Input() campoStatus = 'status';
   @Input() exibeCampos: ExibirCamposConfig | null = null;
   @Input() disabledRowIds?: Set<any>;
   /**
@@ -200,7 +202,7 @@ export class DataGridComponent implements OnChanges {
    * porque as telas passavam [dataSource] antes de [columns] (FE-P2-06).
    */
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['dataSource'] || changes['columns'] || changes['statusOptions'] || changes['disabledRowIds'] || changes['bloquearLinha']) {
+    if (changes['dataSource'] || changes['columns'] || changes['statusOptions'] || changes['campoStatus'] || changes['disabledRowIds'] || changes['bloquearLinha']) {
       this.montarLinhas();
     }
   }
@@ -226,7 +228,7 @@ export class DataGridComponent implements OnChanges {
     const meta: GridLinhaMeta = {
       texto: {},
       classe: {},
-      severidade: this.getSeverityStatus(linha.status),
+      severidade: this.getSeverityStatus(linha[this.campoStatus]),
       desabilitada: this.isRowDisabled(linha),
       bloqueada: this.bloquearLinha?.(linha) === true
     };

@@ -53,10 +53,10 @@ export class CategoriaFormComponent implements OnInit {
     this.validaPerfilUsuario()
     if (this.registro) {
       this.form.patchValue({
-        name: this.registro.name,
-        subCategory: this.registro.subCategory,
+        name: this.registro.nome,
+        subCategory: this.registro.subcategoria,
         naturezaOperacao: this.registro.naturezaOperacao,
-        status: this.registro.status,
+        status: this.registro.ativo,
       });
     }
   }
@@ -82,10 +82,10 @@ export class CategoriaFormComponent implements OnInit {
     }
 
     const payload = {
-      name: this.form.value.name!,
-      subCategory: this.form.value.subCategory!,
+      nome: this.form.value.name!,
+      subcategoria: this.form.value.subCategory!,
       naturezaOperacao: this.perfilEmpresa ?  this.form.value.naturezaOperacao :this.form.value.subCategory == 'Receita' ? 0 : this.form.value.naturezaOperacao,
-      status: this.form.value.status
+      ativo: this.form.value.status
     };
 
     this.saving = true;
