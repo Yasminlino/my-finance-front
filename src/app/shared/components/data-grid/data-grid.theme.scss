@@ -1,0 +1,432 @@
+/*
+ * Tema do PrimeNG dentro do data-grid. Fica fora do componente para o SCSS dele caber no orçamento
+ * de 4 kB do anyComponentStyle, e com escopo para não vazar para o resto da página.
+ *
+ * .dg            host do grid (antes `:host ::ng-deep`; a mesma especificidade).
+ * :where(.dg)    o que antes ia sem `:host` (`::ng-deep` puro). O :where não soma especificidade, então
+ *                a regra pesa o mesmo de antes, mas só vale dentro do grid. Antes valia na página
+ *                inteira enquanto houvesse um grid aberto.
+ * .dg-panel      painéis do grid que abrem no body (panelStyleClass dos dropdowns, multiselects e calendários).
+ */
+
+app-data-grid {
+    overflow-y: scroll !important;
+}
+
+/* ----- Tabela ----- */
+
+:where(.dg) {
+    .p-datatable .p-datatable-table {
+        border-collapse: collapse;
+    }
+
+    /* Linhas desabilitadas (não selecionáveis) */
+    .p-datatable .p-datatable-tbody > tr.row-disabled {
+        opacity: 0.5;
+    }
+
+    .p-datatable .p-datatable-tbody > tr.row-disabled td {
+        pointer-events: none;
+    }
+
+    /* Linha com alterações pendentes (não salvas) */
+    .p-datatable .p-datatable-tbody > tr.row-dirty > td {
+        background-color: #fef3c7 !important;
+    }
+
+    /* Bordas ao redor do grid; rola na horizontal no celular */
+    .p-datatable-wrapper {
+        margin: 0 1rem;
+        border: solid 1px #d1d5db;
+        border-bottom: none;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .p-datatable .p-datatable-thead > tr > th {
+        border-bottom: 1px solid #d1d5db !important;
+        padding: 0.5rem 0.5rem !important;
+        font-size: 12px !important;
+    }
+
+    .p-datatable .p-datatable-tbody > tr > td {
+        border-bottom: 1px solid #d1d5db !important;
+        padding: 0.5rem !important;
+    }
+
+    .p-datatable .p-datatable-thead > tr > th > .p-inputtext-sm {
+        padding: 0.5rem 0.5rem !important;
+    }
+
+    .p-datatable .p-datatable-thead > tr.ng-star-inserted > th {
+        background-color: #f0f4fa !important;
+        color: #157c8d !important;
+        min-height: 2.2rem !important;
+        height: 2.2rem !important;
+    }
+
+    .p-datatable .p-datatable-thead > tr.ng-star-inserted > th > div > .p-element > .p-icon-wrapper > svg {
+        background-color: #f0f4fa !important;
+        color: #157c8d !important;
+        font-size: 10px;
+    }
+
+    .p-datatable .p-datatable-thead > tr.dg-filter-row > th {
+        background-color: white !important;
+    }
+
+    /* Altura uniforme dos controles de filtro */
+    .p-datatable .p-datatable-thead tr.dg-filter-row .p-dropdown-label,
+    .p-datatable .p-datatable-thead tr.dg-filter-row .p-multiselect-label,
+    .p-datatable .p-datatable-thead tr.dg-filter-row .p-calendar input,
+    .p-datatable .p-datatable-thead tr.dg-filter-row .p-inputnumber input {
+        line-height: 1.25rem;
+        padding-top: 0.375rem;
+        padding-bottom: 0.375rem;
+    }
+
+    .p-datatable-tbody tr.ng-star-inserted {
+        height: 1rem !important;
+    }
+
+    .p-sortable-column-icon {
+        width: 12px !important;
+        height: 12px !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* O grid tem o próprio spinner abaixo da barra de ferramentas */
+    .p-datatable .p-datatable-loading-overlay {
+        display: none !important;
+    }
+
+    .actions-center {
+        justify-self: center !important;
+    }
+
+    a:hover {
+        text-decoration: unset !important;
+    }
+
+    /* ----- Paginação ----- */
+
+    .p-paginator {
+        margin: 0 1rem 1rem;
+        border: solid 1px #d1d5db;
+        border-top: none;
+        border-bottom-left-radius: 6px;
+        border-bottom-right-radius: 6px;
+        font-size: 14px !important;
+        line-height: 14px !important;
+    }
+
+    .p-paginator .p-paginator-current {
+        height: 2rem;
+    }
+
+    .p-paginator .p-dropdown {
+        margin-left: 0.1rem;
+        margin-right: 0.1rem;
+        height: 2rem;
+        width: 4rem !important;
+        text-align-last: center;
+        align-self: anchor-center;
+    }
+
+    .p-paginator-page,
+    .p-paginator-next,
+    .p-paginator-prev,
+    .p-paginator-last,
+    .p-paginator-first,
+    .p-dropdown-trigger {
+        height: 2rem;
+        border-radius: 100%;
+        min-width: 2rem;
+        width: 2rem;
+        align-self: center;
+    }
+
+    /* ----- Calendário ----- */
+
+    .p-datepicker-trigger {
+        background: white !important;
+        border-bottom-left-radius: 0 !important;
+        border-top-left-radius: 0 !important;
+        border: solid 1.5px #d1d5db !important;
+        color: #4b5563;
+        box-sizing: border-box;
+        padding: 0.3rem 0.5rem !important;
+    }
+
+    .botao-popup > .p-element > button {
+        border: solid 1px #d1d5db;
+        height: 2rem;
+        width: 2rem;
+        background-color: white;
+
+        span {
+            color: black !important;
+            margin: 0 !important;
+        }
+    }
+
+    /* ----- Tags ----- */
+
+    .p-tag {
+        width: 8rem !important;
+        background-color: #d0e1fd !important;
+        color: #295bac !important;
+    }
+
+    .p-tag-secondary { background-color: #f1f5f9 !important; color: #475569 !important; }
+    .p-tag-success { background-color: #caf1d8 !important; color: #188a42 !important; }
+    .p-tag-info { background-color: #d0e1fd !important; color: #295bac !important; }
+    .p-tag-warning { background-color: #feddc7 !important; color: #ae510f !important; }
+    .p-tag-danger { background-color: #ffd0ce !important; color: #b32b23 !important; }
+
+    /* Painéis que abrem dentro do grid (a paginação), como os do body */
+    .p-overlay.p-component.ng-star-inserted {
+        z-index: 99999 !important;
+        margin-left: -15px;
+    }
+}
+
+/* ----- Itens dos painéis: dentro do grid e nos que abrem no body ----- */
+
+:where(.dg, .dg-panel) {
+    .p-dropdown-item,
+    .p-multiselect-item > span {
+        font-size: 14px !important;
+    }
+
+    .p-multiselect-item > .p-checkbox {
+        align-items: center;
+    }
+}
+
+.p-multiselect-panel:where(.dg-panel) .p-multiselect-header .p-multiselect-filter-container .p-inputtext {
+    padding: 0.3rem 0.3rem !important;
+}
+
+.p-overlay.p-component.ng-star-inserted:where(:has(.dg-panel)) {
+    z-index: 99999 !important;
+    margin-left: -15px;
+}
+
+/* Calendários do grid: o do filtro e o do mês abrem dentro dele; o da edição em linha, no body. */
+:where(.dg) .p-datepicker,
+.p-datepicker:where(.dg-panel) {
+    table td > span,
+    table th > span {
+        width: auto;
+        height: auto;
+        transition: box-shadow 0.2s;
+        border: 1px solid transparent;
+        padding: 0 !important;
+        margin: 0;
+        border-radius: 0 !important;
+        font-size: 12px !important;
+    }
+
+    table th,
+    table td {
+        padding: 0.2rem !important;
+        text-align: center;
+    }
+
+    table tr.ng-star-inserted {
+        height: 1rem !important;
+    }
+}
+
+:where(.dg .p-datepicker, .p-datepicker.dg-panel) .p-datepicker-header {
+    padding: 0;
+    margin: 0;
+    height: 2.5rem;
+}
+
+/* ----- Controles do grid (antes `:host ::ng-deep`) ----- */
+
+.dg {
+    .p-button,
+    .p-dropdown-label,
+    .p-menuitem-text,
+    .p-multiselect-label,
+    .p-paginator,
+    .p-calendar input,
+    .p-inputnumber input,
+    .ng-pristine {
+        font-size: 14px !important;
+    }
+
+    .p-datatable .p-datatable-thead tr.dg-filter-row > th .p-multiselect,
+    .p-datatable .p-datatable-thead tr.dg-filter-row > th > input,
+    .p-dropdown {
+        width: 100% !important;
+    }
+
+    .p-multiselect-trigger {
+        width: 1rem;
+        padding-right: 1rem;
+    }
+
+    .p-multiselect-clearable .p-multiselect-label-container {
+        padding: 0 !important;
+    }
+
+    .p-input-icon-right > .p-icon-wrapper {
+        width: 0.7rem;
+    }
+
+    td > .p-element > .p-inputtext,
+    td > .p-element > .p-inputtext-sm {
+        padding: 0.5rem 0.5rem !important;
+    }
+
+    .p-calendar > input,
+    .p-dropdown-label {
+        padding: 0.375rem 0.375rem !important;
+    }
+
+    .p-input-icon-left > .p-inputtext {
+        height: 2rem;
+        margin-top: 0.5rem;
+    }
+
+    .p-inputnumber > .p-inputtext {
+        width: 100%;
+    }
+
+    .p-checkbox-box {
+        width: 16px !important;
+        height: 16px !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .p-button {
+        border-radius: 0.5rem;
+        padding: 0.3rem 0.8rem;
+    }
+
+    button:focus:not(:focus-visible),
+    .p-button:focus:not(:focus-visible) {
+        box-shadow: none !important;
+    }
+
+    .p-toolbar {
+        border: none;
+        padding: 0;
+        margin: 0 !important;
+        background-color: transparent !important;
+    }
+
+    .p-datatable-header {
+        background: white;
+        border: none;
+        padding-top: 0;
+    }
+
+    .p-datatable table {
+        table-layout: fixed;
+    }
+
+    .p-breadcrumb {
+        padding: 0 0 0.5rem 0.5rem;
+        margin: 0;
+        background: transparent;
+        border: none;
+        font-size: 0.8rem;
+    }
+
+    .p-icon {
+        height: 0.75rem;
+        width: 0.75rem;
+    }
+
+    /* Diálogos do próprio grid (texto da descrição) */
+    .p-dialog-content {
+        padding-top: 4px;
+        padding-bottom: 1rem;
+    }
+
+    /* Com .p-dialog para vencer o rodapé global de styles.scss (gap .5rem), que vem depois deste arquivo. */
+    .p-dialog .p-dialog-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .p-inputtextarea {
+        height: 3vw;
+    }
+
+    .dg-inline-calendar,
+    .dg-inline-calendar .p-calendar {
+        width: 100% !important;
+        min-width: 9rem;
+    }
+}
+
+/* ----- Celular ----- */
+
+@media screen and (max-width: 768px) {
+    .dg .p-datatable table {
+        table-layout: auto !important;
+    }
+
+    /* Com .dg (e não :where) para vencer o .p-button-icon-only de 1.5rem do componente, que agora vem depois. */
+    .dg .p-datatable .p-button.p-button-icon-only {
+        width: 1rem !important;
+        height: 1rem !important;
+    }
+
+    :where(.dg) {
+
+        .p-datatable .p-datatable-thead tr.dg-filter-row > th .p-inputtext,
+        .p-datatable .p-datatable-thead tr.dg-filter-row > th .p-dropdown,
+        .p-datatable .p-datatable-thead tr.dg-filter-row > th .p-multiselect,
+        .p-datatable .p-datatable-thead tr.dg-filter-row > th .p-calendar {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        .p-datatable .p-datatable-thead > tr > th > div {
+            display: block !important;
+            max-width: calc(100% - 30px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .p-toolbar-group-right {
+            width: 100%;
+            justify-content: flex-end;
+        }
+
+        .buttons-actions .p-button-label {
+            display: none !important;
+        }
+
+        .buttons-actions .p-button {
+            width: 1rem !important;
+            height: 1rem !important;
+            justify-content: center !important;
+        }
+
+        .p-button .p-button-icon-left {
+            margin-right: 0;
+        }
+
+        .dg-actions-container {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 4px !important;
+        }
+    }
+}

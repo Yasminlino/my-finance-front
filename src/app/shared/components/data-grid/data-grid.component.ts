@@ -72,6 +72,8 @@ import { toDate } from 'src/app/core/utils/mask';
   ],
   templateUrl: './data-grid.component.html',
   styleUrl: './data-grid.component.scss',
+  // O tema do grid (data-grid.theme.scss, global) tem escopo nesta classe.
+  host: { class: 'dg' },
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DataGridComponent implements OnChanges {

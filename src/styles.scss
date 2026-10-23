@@ -1,5 +1,12 @@
 /* Estilos globais. O kit de UI é PrimeNG + PrimeFlex + PrimeIcons (FE-P2-07). */
 
+@use './app/shared/components/data-grid/data-grid.theme';
+
+/* Avisos abaixo do cabeçalho fixo (antes vinha, vazado, do SCSS do data-grid, só nas telas com grid). */
+.p-toast {
+  margin-top: 4rem;
+}
+
 /* Base do tema Lara: os tamanhos do PrimeNG são em rem e foram pensados para 14px. */
 html {
   font-size: 14px;

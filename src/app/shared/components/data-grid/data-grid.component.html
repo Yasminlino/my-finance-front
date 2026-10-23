@@ -148,7 +148,7 @@
                     } -->
                     @case('select') {
                     <p-multiSelect [options]="col.options" optionLabel="label" optionValue="value" placeholder="Todos"
-                        [panelStyle]="{'width': '12rem', 'min-width': '12rem'}" [showClear]="true" appendTo="body"
+                        [panelStyle]="{'width': '12rem', 'min-width': '12rem'}" [showClear]="true" appendTo="body" panelStyleClass="dg-panel"
                         [(ngModel)]="filtroValores[col.field]" (onChange)="onValueFilter($event, col, dt)">
                     </p-multiSelect>
                     }
@@ -314,7 +314,7 @@
                             <p-calendar [(ngModel)]="product[col.field]" (ngModelChange)="onCellChange(product)"
                                 dateFormat="dd/mm/yy" [showIcon]="true" [readonlyInput]="true" appendTo="body"
                                 inputStyleClass="w-full" [panelStyle]="{'width': '15rem', 'min-width': '15rem'}"
-                                class="dg-inline-calendar" />
+                                panelStyleClass="dg-panel" class="dg-inline-calendar" />
                         </ng-template>
                         }
                         @case('select') {
@@ -324,7 +324,7 @@
 
                             <p-dropdown [options]="col.options" optionLabel="label" optionValue="value" appendTo="body"
                                 [(ngModel)]="product[col.field]" (ngModelChange)="onCellChange(product)"
-                                [styleClass]="'status-dropdown'" class="w-full">
+                                [styleClass]="'status-dropdown'" panelStyleClass="dg-panel" class="w-full">
 
                                 <ng-template pTemplate="selectedItem" let-option>
                                     @if (option) {
@@ -345,7 +345,8 @@
                             } @else {
 
                             <p-dropdown [options]="col.options" optionLabel="label" optionValue="value" appendTo="body"
-                                [(ngModel)]="product[col.field]" (ngModelChange)="onCellChange(product)" class="w-full">
+                                [(ngModel)]="product[col.field]" (ngModelChange)="onCellChange(product)"
+                                panelStyleClass="dg-panel" class="w-full">
                             </p-dropdown>
 
                             }
