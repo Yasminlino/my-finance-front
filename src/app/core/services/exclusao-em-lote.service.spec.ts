@@ -2,11 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { ExclusaoEmLoteService } from './exclusao-em-lote.service';
 
 describe('ExclusaoEmLoteService', () => {
   let service: ExclusaoEmLoteService;
   let alertService: jasmine.SpyObj<AlertService>;
+  let confirmacao: jasmine.SpyObj<ConfirmacaoService>;
 
   const rotulo = { singular: 'conta', plural: 'contas', feminino: true };
   const rows = [{ id: 1 }, { id: 2 }, { id: 3 }];
@@ -20,10 +22,13 @@ describe('ExclusaoEmLoteService', () => {
       'contrast'
     ]);
 
+    confirmacao = jasmine.createSpyObj<ConfirmacaoService>('ConfirmacaoService', ['confirmar']);
+
     TestBed.configureTestingModule({
       providers: [
         ExclusaoEmLoteService,
         { provide: AlertService, useValue: alertService },
+        { provide: ConfirmacaoService, useValue: confirmacao },
         MessageService
       ]
     });
@@ -112,7 +117,7 @@ describe('ExclusaoEmLoteService', () => {
     });
 
     it('pergunta com o rótulo, exclui, limpa a seleção e libera o grid', async () => {
-      const confirm = spyOn(window, 'confirm').and.returnValue(true);
+      const confirm = confirmacao.confirmar.and.resolveTo(true);
       const excluirItem = jasmine.createSpy('excluirItem').and.returnValue(of(null));
 
       const executou = await firstValueFrom(service.confirmarEExcluir(grid, rows, excluirItem, rotulo));
@@ -125,7 +130,7 @@ describe('ExclusaoEmLoteService', () => {
     });
 
     it('concorda a pergunta no singular e no masculino', async () => {
-      const confirm = spyOn(window, 'confirm').and.returnValue(true);
+      const confirm = confirmacao.confirmar.and.resolveTo(true);
 
       await firstValueFrom(service.confirmarEExcluir(grid, [{ id: 1 }], () => of(null), { singular: 'banco', plural: 'bancos' }));
 
@@ -133,7 +138,7 @@ describe('ExclusaoEmLoteService', () => {
     });
 
     it('cancelado: não exclui, não limpa a seleção e libera o grid', async () => {
-      spyOn(window, 'confirm').and.returnValue(false);
+      confirmacao.confirmar.and.resolveTo(false);
       const excluirItem = jasmine.createSpy('excluirItem');
 
       const executou = await firstValueFrom(service.confirmarEExcluir(grid, rows, excluirItem, rotulo));
@@ -144,7 +149,7 @@ describe('ExclusaoEmLoteService', () => {
     });
 
     it('lista vazia: nem pergunta e libera o grid', async () => {
-      const confirm = spyOn(window, 'confirm');
+      const confirm = confirmacao.confirmar;
 
       const executou = await firstValueFrom(service.confirmarEExcluir(grid, [], () => of(null), rotulo));
 
@@ -154,7 +159,7 @@ describe('ExclusaoEmLoteService', () => {
     });
 
     it('sucesso não emite erro genérico extra (bug do finally em Contas a Pagar)', async () => {
-      spyOn(window, 'confirm').and.returnValue(true);
+      confirmacao.confirmar.and.resolveTo(true);
 
       await firstValueFrom(service.confirmarEExcluir(grid, rows, () => of(null), rotulo));
 
@@ -162,7 +167,7 @@ describe('ExclusaoEmLoteService', () => {
     });
 
     it('funciona sem grid', async () => {
-      spyOn(window, 'confirm').and.returnValue(true);
+      confirmacao.confirmar.and.resolveTo(true);
 
       const executou = await firstValueFrom(service.confirmarEExcluir(undefined, rows, () => of(null), rotulo));
 

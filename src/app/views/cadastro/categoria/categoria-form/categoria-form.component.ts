@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CategoryService } from 'src/app/core/services/category.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
@@ -47,7 +47,7 @@ export class CategoriaFormComponent implements OnInit {
 
   perfilEmpresa = false;
 
-  constructor(private fb: FormBuilder, private categoryService: CategoryService, private readonly alertService: AlertService, private cdRef: ChangeDetectorRef) { }
+  constructor(private fb: FormBuilder, private categoryService: CategoryService, private readonly alertService: AlertService) { }
 
   ngOnInit(): void {
     this.validaPerfilUsuario()

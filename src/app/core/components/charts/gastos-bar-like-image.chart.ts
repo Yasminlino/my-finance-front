@@ -1,5 +1,8 @@
 import { ApexChartOptions } from './apex-chart/apex-chart.component';
 
+/** O que o ApexCharts entrega no clique e no tooltip: o ponto e a série. */
+type PontoDoGrafico = { dataPointIndex?: number; seriesIndex?: number } | undefined;
+
 export type GastosBarChartParams = {
   seriesName?: string;
 
@@ -87,7 +90,7 @@ export function createGastosBarLikeImageChart(
       fontFamily: 'inherit',
 
       events: {
-        dataPointSelection: (_event: any, _chartContext: any, config: any) => {
+        dataPointSelection: (_event: unknown, _chartContext: unknown, config: PontoDoGrafico) => {
           const index = config?.dataPointIndex ?? -1;
           if (index < 0) return;
 
@@ -144,7 +147,7 @@ export function createGastosBarLikeImageChart(
     tooltip: {
       theme: tooltipTheme,
       y: {
-        formatter: (val: number, opts: any) => {
+        formatter: (val: number, opts?: PontoDoGrafico) => {
           const i = opts?.dataPointIndex ?? 0;
           const seriesIndex = opts?.seriesIndex ?? 0;
 

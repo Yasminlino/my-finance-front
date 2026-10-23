@@ -1,16 +1,17 @@
-import { Component, DestroyRef, Input, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApexChartOptions } from 'src/app/core/components/charts/apex-chart/apex-chart.component';
 import { createGastosBarLikeImageChart } from 'src/app/core/components/charts/gastos-bar-like-image.chart';
 import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
 import { NaturezaOperacao } from 'src/app/shared/enums/natureza-operacao.enum';
+import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
 import { Meses } from 'src/app/views/movimentacao/extrato-bancario/components/models/meses';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, filter } from 'rxjs';
 import { FormControl, FormGroup } from '@angular/forms';
 import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
 
-function toNumber(v: any): number {
+function toNumber(v: unknown): number {
   // se vier string "123.45" ou number, converte para number
   const n = Number(v);
   return isNaN(n) ? 0 : n;
@@ -25,8 +26,8 @@ function toNumber(v: any): number {
 export class RelatorioGastosMensaisComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly mes$ = new Subject<string>();
-  extratoItemsSaida: any[] = [];
-  extratoItemsEntrada: any[] = [];
+  extratoItemsSaida: ExtratoItemDto[] = [];
+  extratoItemsEntrada: ExtratoItemDto[] = [];
   meses = Meses;
 
   totalEntrada = 0;
@@ -54,7 +55,7 @@ export class RelatorioGastosMensaisComponent implements OnInit {
     tipo: new FormControl<'Todos' | 'Entrada' | 'Saída'>('Todos', { nonNullable: true })
   });
   /** Itens do mês carregado, antes do filtro de tipo. */
-  private itensDoMes: any[] = [];
+  private itensDoMes: ExtratoItemDto[] = [];
 
   
   perfilEmpresa = false
@@ -126,9 +127,9 @@ export class RelatorioGastosMensaisComponent implements OnInit {
   }
 
   calculaGatosPorMetodoContabil(tipoCard: string) {
-    var totalSaidaMaiorQueMeta = false;
-    var porcentagemTotal = 0;
-    var totalSaidaPorTipo = 0;
+    let totalSaidaMaiorQueMeta = false;
+    let porcentagemTotal = 0;
+    let totalSaidaPorTipo = 0;
 
     if (this.totalEntrada === 0 || this.totalSaida === 0) {
       return {
@@ -163,7 +164,7 @@ export class RelatorioGastosMensaisComponent implements OnInit {
       porcentagemTotal = this.calcularPorcentagem(totalSaidaPorTipo, totalEntradaPorTipo, true);
       totalSaidaMaiorQueMeta = totalEntradaPorTipo > totalSaidaPorTipo ? false : true;    
     } else if (tipoCard === 'totalEmpresa') {
-      var totalEntradaPorTipo = this.somarEntradaPorNatureza(NaturezaOperacao.Empresa);
+      const totalEntradaPorTipo = this.somarEntradaPorNatureza(NaturezaOperacao.Empresa);
       totalSaidaPorTipo = this.somarGastosPorNatureza(NaturezaOperacao.Empresa);
       porcentagemTotal = this.calcularPorcentagem(totalSaidaPorTipo, totalEntradaPorTipo, true);
       totalSaidaMaiorQueMeta = totalEntradaPorTipo > totalSaidaPorTipo ? false : true;
@@ -177,12 +178,12 @@ export class RelatorioGastosMensaisComponent implements OnInit {
     return iconProgressing
   }
 
-  private somarGastosPorNatureza(natureza: any): number {
+  private somarGastosPorNatureza(natureza: NaturezaOperacao): number {
     return this.extratoItemsSaida
       .filter(i => i.categoria?.naturezaOperacao === natureza)
       .reduce((acc, i) => acc + toNumber(i.valor), 0);
   }
-  private somarEntradaPorNatureza(natureza: any): number {
+  private somarEntradaPorNatureza(natureza: NaturezaOperacao): number {
     return this.extratoItemsEntrada
       .filter(i => i.categoria?.naturezaOperacao === natureza)
       .reduce((acc, i) => acc + toNumber(i.valor), 0);
@@ -203,8 +204,8 @@ export class RelatorioGastosMensaisComponent implements OnInit {
     const monthNumber = this.getMonthFilter();
     if (!monthNumber) return null;
 
-    var split = monthNumber.split('-');
-    var mes = parseInt(split[1], 10);
+    const split = monthNumber.split('-');
+    const mes = parseInt(split[1], 10);
     return this.meses[mes] + ' de ' + split[0];
   }
 
@@ -275,8 +276,6 @@ export class RelatorioGastosMensaisComponent implements OnInit {
       },
     });
 
-    console.log('Entrada:', mapEntrada);
-    console.log('Saída:', mapSaida);
   }
 
   calculaDadosPorCategoria(bancoLabel: string) {
@@ -352,8 +351,6 @@ export class RelatorioGastosMensaisComponent implements OnInit {
       },
     });
 
-    console.log('Entrada por categoria:', mapEntrada);
-    console.log('Saída por categoria:', mapSaida);
   }
 
   onCategoriaClick(categoriaLabel: string) {
@@ -457,7 +454,7 @@ export class RelatorioGastosMensaisComponent implements OnInit {
 
   calcularTipoMovimentacaoPorBanco(bancoLabel: string) {
 
-    var itensBancos = bancoLabel == '' ? this.extratoItemsSaida : this.extratoItemsSaida.filter((item) => item.banco?.nomeBanco === bancoLabel);
+    const itensBancos = bancoLabel == '' ? this.extratoItemsSaida : this.extratoItemsSaida.filter((item) => item.banco?.nomeBanco === bancoLabel);
 
     const map = new Map<string, number>();
 

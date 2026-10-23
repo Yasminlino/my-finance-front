@@ -1,10 +1,11 @@
 import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
+import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { ListaService } from 'src/app/core/services/lista.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ItemListaService } from 'src/app/core/services/item-lista.service';
 import { TipoLista } from 'src/app/shared/enums/tipo-lista.enum';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
@@ -26,6 +27,7 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 export class ListaDeOrcamentoComponent implements OnInit {
   @ViewChild('grid') grid?: DataGridComponent;
   private readonly destroyRef = inject(DestroyRef);
+  private readonly confirmacao = inject(ConfirmacaoService);
 
   itensLista: ItemListaDto[] = [];
   
@@ -38,7 +40,6 @@ export class ListaDeOrcamentoComponent implements OnInit {
   breadcrumb = [{ label: 'Listas' }, { label: 'Orçamento' }]
 
   loading = false;
-  errorMsg = '';
   statusU: string[] = [];
   statusOptions: GridColumnOption[] = [
     { label: 'OK', value: 'OK', classe: TagStatus.Success },
@@ -46,7 +47,6 @@ export class ListaDeOrcamentoComponent implements OnInit {
     { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Danger }
   ];
 
-  q = '';
   selectedTotals = { receita: 0, despesa: 0, saldo: 0, count: 0 };
 
   showModalCreateItem = false;
@@ -57,14 +57,14 @@ export class ListaDeOrcamentoComponent implements OnInit {
   situacoes: string[] = [];
   totalPorSituacao: { situacao: string | undefined; valorTotal: number; }[] = [];
 
-  constructor(private itemListaService: ItemListaService, private listaService: ListaService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService, private readonly router: Router, private readonly route: ActivatedRoute) { }
+  constructor(private itemListaService: ItemListaService, private listaService: ListaService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService, private readonly route: ActivatedRoute) { }
 
   ngOnInit() {
     this.setGridColumns();
     this.load();
   }
 
-  money(v: any) { return formatCurrencyBR(v); }
+  money(v: unknown) { return formatCurrencyBR(v); }
 
   private setGridColumns(): void {
     this.gridColumns = [
@@ -126,19 +126,7 @@ export class ListaDeOrcamentoComponent implements OnInit {
   }
 
   applyFilters() {
-    const term = this.q.trim().toLowerCase();
-
-    this.lista = [...this.itensLista]
-      .sort((a, b) => (a.descricao ?? '').localeCompare(b.descricao ?? ''))
-      .filter(c => {
-        if (!term) return true;
-        return (c.descricao ?? '').toLowerCase().includes(term) || String(c.id).includes(term);
-      });
-  }
-
-  onSearchChange(value: string) {
-    this.q = value;
-    this.applyFilters();
+    this.lista = [...this.itensLista].sort((a, b) => (a.descricao ?? '').localeCompare(b.descricao ?? ''));
   }
 
   onSelectionChange(selectedItems: ItemListaDto[]) {
@@ -177,8 +165,8 @@ export class ListaDeOrcamentoComponent implements OnInit {
     if (reload) this.load();
   }
 
-  onDelete(c: ItemListaDto) {
-    const ok = window.confirm(`Excluir o item "${c.descricao}"?`);
+  async onDelete(c: ItemListaDto) {
+    const ok = await this.confirmacao.confirmar(`Excluir o item "${c.descricao}"?`);
     if (!ok) return;
 
     this.itemListaService.excluir(c.id).subscribe({

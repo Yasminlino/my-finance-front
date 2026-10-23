@@ -1,5 +1,6 @@
 
 import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
+import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
@@ -37,10 +38,6 @@ export class ListaRootComponent implements OnInit {
   breadcrumb = [{ label: 'Listas' }, { label: 'Listas' }]
 
   loading = false;
-  errorMsg = '';
-
-  q = '';
-  statusFilter: 'ALL' | 'Ativo' | 'Inativo' = 'ALL';
 
   showModalCreate = false;
   showModalUpdate = false;
@@ -48,6 +45,7 @@ export class ListaRootComponent implements OnInit {
   editing: ListaDto | null = null;
   @ViewChild('grid') grid?: DataGridComponent;
   private readonly destroyRef = inject(DestroyRef);
+  private readonly confirmacao = inject(ConfirmacaoService);
 
   constructor(private listaService: ListaService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService, private readonly router: Router) { }
 
@@ -96,24 +94,7 @@ export class ListaRootComponent implements OnInit {
   }
 
   applyFilters() {
-    const term = this.q.trim().toLowerCase();
-
-    this.lista = [...this.listas]
-      .sort((a, b) => (a.nome ?? '').localeCompare(b.nome ?? ''))
-      .filter(c => {
-        if (!term) return true;
-        return (c.nome ?? '').toLowerCase().includes(term) || String(c.id).includes(term);
-      });
-  }
-
-  onSearchChange(value: string) {
-    this.q = value;
-    this.applyFilters();
-  }
-
-  onStatusChange(value: any) {
-    this.statusFilter = value;
-    this.applyFilters();
+    this.lista = [...this.listas].sort((a, b) => (a.nome ?? '').localeCompare(b.nome ?? ''));
   }
 
   openCreate() {
@@ -150,8 +131,8 @@ export class ListaRootComponent implements OnInit {
     if (reload) this.load();
   }
 
-  onDelete(c: ListaDto) {
-    const ok = window.confirm(`Excluir a lista "${c.nome}"?`);
+  async onDelete(c: ListaDto) {
+    const ok = await this.confirmacao.confirmar(`Excluir a lista "${c.nome}"?`);
     if (!ok) return;
 
     this.listaService.excluir(c.id).subscribe({

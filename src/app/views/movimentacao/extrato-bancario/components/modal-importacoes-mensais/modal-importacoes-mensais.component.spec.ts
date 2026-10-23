@@ -1,3 +1,4 @@
+import { ConfirmationService } from 'primeng/api';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -22,6 +23,8 @@ describe('ModalImportacoesMensaisComponent', () => {
       declarations: [ModalImportacoesMensaisComponent],
       imports: [SharedModule, DataGridComponent],
       providers: [
+        // O ConfirmacaoService (data-grid, exclusões) usa o do root; no app vem do AppModule.
+        ConfirmationService,
         provideNoopAnimations(),
         { provide: ExtratoBancarioService, useValue: extratos },
         { provide: AlertService, useValue: jasmine.createSpyObj('AlertService', ['success', 'error']) }

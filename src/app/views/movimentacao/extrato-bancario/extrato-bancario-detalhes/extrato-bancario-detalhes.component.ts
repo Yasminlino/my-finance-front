@@ -1,4 +1,5 @@
 import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
+import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { formatCurrencyBR, formatDateBR, formatDateInput, formatYearMonth } from 'src/app/core/utils/mask';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, TypeGrid, GridRowChange, GridColumnOption } from "src/app/shared/components/data-grid/data-grid.interface"
@@ -36,9 +37,10 @@ import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
 export class ExtratoBancarioDetalhesComponent implements OnInit {
   @ViewChild('grid') grid?: DataGridComponent;
   private readonly destroyRef = inject(DestroyRef);
+  private readonly confirmacao = inject(ConfirmacaoService);
   /** Mês pedido ("YYYY-MM"); a carga segue sempre o último. */
   private readonly mes$ = new Subject<string>();
-  breadcrumb = [] = [{ label: 'Extrato Bancário' }, { label: 'Detalhes Extrato Bancário' }]
+  breadcrumb = [{ label: 'Extrato Bancário' }, { label: 'Detalhes Extrato Bancário' }]
   titulo = 'Detalhes Extrato Bancário'
   tipoTabela = TypeGrid.editaLinha
   extratoMensal: ExtratoItemDto[] = [];
@@ -74,15 +76,15 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
 
 
   deletingId: number | null = null;
-  selectedMonth: any;
+  selectedMonth = '';
   loading: boolean = false;
   selectedTotals = { receita: 0, despesa: 0, saldo: 0, count: 0 };
   exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_MOVIMENTACOES };
 
   categoriaOptions: string[] = [];
 
-  money(v: any) { return formatCurrencyBR(v); }
-  dateInput(v: any) { return formatDateInput(v); }
+  money(v: unknown) { return formatCurrencyBR(v); }
+  dateInput(v: unknown) { return formatDateInput(v); }
 
 
   constructor( 
@@ -259,7 +261,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
         field: "parcelaAtual",
         header: "PARCELA",
         type: GridColumnTypeEnum.Number,
-        formatter: (row: any) => // <--- Adicionado o tipo (row: any)
+        formatter: (row: ExtratoItemDto) =>
           row.dataMovimentacao && row.parcelaAtual && row.quantidadeParcelas
             ? `${row.parcelaAtual}/${row.quantidadeParcelas}`
             : '',
@@ -342,8 +344,8 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
 
 
 
-  onDelete(row: ExtratoItemDto) {
-    const ok = window.confirm(`Excluir o lançamento '${row.nomePessoaTransacao}'?`);
+  async onDelete(row: ExtratoItemDto) {
+    const ok = await this.confirmacao.confirmar(`Excluir o lançamento '${row.nomePessoaTransacao}'?`);
     if (!ok) return;
 
     // Loading na linha até a API responder.

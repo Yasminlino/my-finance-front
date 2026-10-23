@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
+import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { GridColumn } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
@@ -18,7 +19,6 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 export class ModalImportacoesMensaisComponent implements OnInit {
   @Input() monthFilter!: string; // pode ser '2026-01-01' ou Date
   @Output() closed = new EventEmitter<boolean>(); // true = salvou algo, false = cancelou
-  @Output() 'reload' = new EventEmitter<any[]>();
 
   importacaoesMensais: ExtratoBancarioDto[] = [];
   disabledIds = new Set<number>();
@@ -34,6 +34,8 @@ export class ModalImportacoesMensaisComponent implements OnInit {
   showModalForm = false;
   @ViewChild('grid') grid?: DataGridComponent;  
   deletingId: number | null = null;
+
+  private readonly confirmacao = inject(ConfirmacaoService);
 
   constructor(
     private readonly extratobancarioService: ExtratoBancarioService,
@@ -67,7 +69,7 @@ export class ModalImportacoesMensaisComponent implements OnInit {
     ];
   }
 
-  money(v: any) {
+  money(v: unknown) {
     return formatCurrencyBR(v);
   }
 
@@ -90,13 +92,13 @@ export class ModalImportacoesMensaisComponent implements OnInit {
         error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar as importações do mês.'))
       });
   }
-  deleteRow(r: ExtratoBancarioDto) {
+  async deleteRow(r: ExtratoBancarioDto) {
     if (r.id < 0) {
       this.importacaoesMensais = this.importacaoesMensais.filter(x => x.id !== r.id);
       return;
     }
 
-    if (!confirm(`Excluir "${r.nomeArquivoOrigem}"?`)) return;
+    if (!(await this.confirmacao.confirmar(`Excluir "${r.nomeArquivoOrigem}"?`))) return;
 
     this.extratobancarioService.excluir(r.id)
       .pipe(finalize(() => (this.deletingId = null)))

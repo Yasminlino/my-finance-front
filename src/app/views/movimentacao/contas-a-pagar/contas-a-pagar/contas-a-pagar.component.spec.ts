@@ -54,6 +54,8 @@ describe('ContasAPagarComponent', () => {
     TestBed.configureTestingModule({
       imports: [ContasAPagarModule],
       providers: [
+        // O ConfirmacaoService (data-grid, exclusões) usa o do root; no app vem do AppModule.
+        ConfirmationService,
         provideRouter([]),
         { provide: LarguraTelaService, useValue: { movel } },
         provideNoopAnimations(),

@@ -20,7 +20,7 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
   @Input() month!: string; // pode ser '2026-01-01' ou Date
   @Output() closed = new EventEmitter<boolean>(); // true = salvou algo, false = cancelou
-  @Output() 'reload' = new EventEmitter<any[]>();
+  @Output() 'reload' = new EventEmitter<void>();
 
   contas: ContaDto[] = [];
   contasMensais: LinhaContasMensais[] = [];
@@ -33,12 +33,10 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
 
   loading = false;
   saving = false;
-  q = '';
 
   showModalForm = false;
   @ViewChild('grid') grid?: DataGridComponent;
   private sub = new Subscription();
-  alertTimer: any;
 
 
   constructor(
@@ -56,7 +54,6 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.sub.unsubscribe();
-    if (this.alertTimer) clearTimeout(this.alertTimer);
   }
 
 
@@ -75,7 +72,7 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
         header: 'PARCELAS',
         type: GridColumnTypeEnum.Text,
         width: "40%",
-        formatter: (row: any) => row.ehParcelado ? `${row.parcelaAtual} de ${row.quantidadeParcelas}` : '-'
+        formatter: (row: ContaDto) => row.ehParcelado ? `${row.parcelaAtual} de ${row.quantidadeParcelas}` : '-'
       },
       {
         field: 'valor', header: 'VALOR',
@@ -84,7 +81,7 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
     ];
   }
 
-  money(v: any) {
+  money(v: unknown) {
     return formatCurrencyBR(v);
   }
 
@@ -121,7 +118,7 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
   }
 
   /** Atualiza `selectedIds` a partir da seleção emitida pelo data-grid. */
-  onSelectionChange(selected: any[]): void {
+  onSelectionChange(selected: ContaDto[]): void {
     this.selectedIds = new Set(selected.map(item => item.id));
   }
 

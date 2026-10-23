@@ -1,9 +1,7 @@
 import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { CategoryService } from 'src/app/core/services/category.service';
-import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn } from 'src/app/shared/components/data-grid/data-grid.interface';
-import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
@@ -11,8 +9,6 @@ import { Router } from '@angular/router';
 import { formatYearMonth } from 'src/app/core/utils/mask';
 import { TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
-import { ContaService } from 'src/app/core/services/contas.service';
-import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { BancoService } from 'src/app/core/services/banco.service';
 import { PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
 import { PessoaMovimentacaoDto } from 'src/app/core/models/pessoa-movimentacao.model';
@@ -26,6 +22,16 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, forkJoin } from 'rxjs';
 import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
 
+
+/** Uma linha do resumo: totais do mês por banco e tipo de conta. Ids em texto ('null' quando sem tipo). */
+type ResumoBanco = {
+  bancoId: string;
+  bancoNome: string;
+  tipoCartaoId: string;
+  tipoContaNome: string;
+  totalEntrada: number;
+  totalSaida: number;
+};
 
 @Component({
   selector: 'app-extrato-bancario-resumo',
@@ -41,8 +47,8 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   /** Para o autocomplete do lançamento manual. */
   pessoas: PessoaMovimentacaoDto[] = [];
   extratos: ExtratoItemDto[] = [];
-  resumo: any[] = [];
-  selectedMonth: any;
+  resumo: ResumoBanco[] = [];
+  selectedMonth = '';
   itemsButtom: MenuItem[] = [];
 
   breadcrumb = [{ label: 'Movimentações' }, { label: 'Resumo Extrato Bancário' }]
@@ -191,7 +197,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
         header: 'TOTAL ENTRADAS',
         type: GridColumnTypeEnum.Text,
         width: "25%",
-        formatter: (row: any) => this.formatarMoeda(row.totalEntrada),
+        formatter: (row: ResumoBanco) => this.formatarMoeda(row.totalEntrada),
         classe: 'text-green-600 font-bold'
       },
       {
@@ -199,7 +205,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
         header: 'TOTAL SAÍDAS',
         type: GridColumnTypeEnum.Text,
         width: "25%",
-        formatter: (row: any) => this.formatarMoeda(row.totalSaida),
+        formatter: (row: ResumoBanco) => this.formatarMoeda(row.totalSaida),
         classe: 'text-red-500 font-bold'
       },
       { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions },
@@ -212,11 +218,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
   }
 
   abrirRelatorioMensal() {
-    const params: any = {
-      month: this.selectedMonth,
-    };
-
-    this.router.navigate(['extrato-bancario/relatorio'], { queryParams: params });
+    this.router.navigate(['extrato-bancario/relatorio'], { queryParams: { month: this.selectedMonth } });
   }
 
   loadMonth(dataSelecionada?: Date) {
@@ -233,16 +235,10 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     this.mes$.next(this.selectedMonth);
   }
 
-  private buildResumo(): any[] {
-    const map = new Map<string, any>();
+  private buildResumo(): ResumoBanco[] {
+    const map = new Map<string, ResumoBanco>();
 
     for (const banco of this.bancos) {
-      // // ✅ aplica filtro de banco
-      // if (this.bancoFilter && String(banco.id) !== String(this.bancoFilter)) continue;
-
-      // // ✅ aplica filtro de tipo de conta/cartão
-      // if (this.tipoContaFilter && String(banco.tipoCartaoId ?? '') !== String(this.tipoContaFilter)) continue;
-
       const bancoId = String(banco.id);
       const tipoCartaoId = String(banco.tipoCartaoId ?? 'null');
       const key = `${bancoId}-${tipoCartaoId}`;
@@ -281,7 +277,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
         });
       }
 
-      const row = map.get(key);
+      const row = map.get(key)!;
       row.totalEntrada += totalEntrada;
       row.totalSaida += totalSaida;
     }
@@ -309,15 +305,10 @@ export class ExtratoBancarioResumoComponent implements OnInit {
     this.showModalConfigPessoas = true;
   }
 
-  onEdit(row: ExtratoItemDto) {
-    console.log('Objeto recebido no onEdit:', row);
-    const params: any = {
-      month: this.selectedMonth,
-      bancoId: row.bancoId,
-      tipoContaId: row.tipoCartaoId,
-    };
-
-    this.router.navigate(['extrato-bancario/detalhes'], { queryParams: params });
+  onEdit(row: ResumoBanco) {
+    this.router.navigate(['extrato-bancario/detalhes'], {
+      queryParams: { month: this.selectedMonth, bancoId: row.bancoId, tipoContaId: row.tipoCartaoId }
+    });
   }
 }
 

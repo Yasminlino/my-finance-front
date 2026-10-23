@@ -38,11 +38,11 @@ export class EdicaoContas {
     contas.forEach(conta => this.originais.set(conta.id, { ...conta }));
   }
 
-  original(id: number, campo: CampoEditavel): any {
+  original(id: number, campo: CampoEditavel): LinhaContasMensais[CampoEditavel] | undefined {
     return this.originais.get(id)?.[campo];
   }
 
-  valor(id: number, campo: CampoEditavel): any {
+  valor(id: number, campo: CampoEditavel): unknown {
     const alteracoes = this.alteracoes.get(id);
     return alteracoes && campo in alteracoes ? alteracoes[campo] : this.original(id, campo);
   }
@@ -155,23 +155,27 @@ export class EdicaoContas {
     return {
       valor: parseCurrencyBR(this.valor(id, 'valor')),
       data: data ? vencimentoDe({ data }) : null,
-      situacao: this.valor(id, 'situacao'),
-      parcelaAtual: this.valor(id, 'parcelaAtual') ?? null,
-      observacao: this.valor(id, 'observacao') ?? ''
+      situacao: String(this.valor(id, 'situacao') ?? ''),
+      parcelaAtual: numeroOuNulo(this.valor(id, 'parcelaAtual')),
+      observacao: String(this.valor(id, 'observacao') ?? '')
     };
   }
 
   /** Valor de antes da edição, como a tela mostra, para o riscado sob o campo. */
   anterior(id: number, campo: CampoEditavel): string {
-    const original = this.original(id, campo);
+    const conta = this.originais.get(id);
     switch (campo) {
-      case 'valor': return formatCurrencyBR(original);
-      case 'data': return formatDateBR(original);
-      case 'situacao': return STATUS_PAGAMENTO_OPTIONS.find(o => o.value === original)?.label ?? original ?? '';
-      case 'observacao': return original || '(vazia)';
-      default: return original == null ? '—' : String(original);
+      case 'valor': return formatCurrencyBR(conta?.valor);
+      case 'data': return formatDateBR(conta?.data);
+      case 'situacao': return STATUS_PAGAMENTO_OPTIONS.find(o => o.value === conta?.situacao)?.label ?? conta?.situacao ?? '';
+      case 'observacao': return conta?.observacao || '(vazia)';
+      case 'parcelaAtual': return conta?.parcelaAtual == null ? '—' : String(conta.parcelaAtual);
     }
   }
+}
+
+function numeroOuNulo(valor: unknown): number | null {
+  return valor == null || valor === '' ? null : Number(valor);
 }
 
 function mesmoValor(campo: CampoEditavel, a: unknown, b: unknown): boolean {

@@ -1,4 +1,4 @@
-﻿<p-toolbar styleClass="mb-2 mt-2">
+<p-toolbar styleClass="mb-2 mt-2">
     <ng-template pTemplate="left">
         <div class="flex flex-column w-full gap-1">
             @if(breadcrumb !== null){
@@ -54,7 +54,7 @@
                 </div>
                 <div class="flex flex-column gap-2 buttons-actions">
 
-                    <!-- AÃ§Ãµes principais -->
+                    <!-- Ações principais -->
                     <div class="flex align-items-center flex-wrap gap-2">
                         @if(exibeCampos?.buttonNew){
                         <p-button severity="success" label="Novo" [outlined]="true" icon="pi pi-plus"
@@ -143,13 +143,13 @@
                     @switch(col.type || 'text') {
                     <!-- @case('select') {
                     <p-dropdown [options]="col.options" optionLabel="label" optionValue="value" placeholder="Todos"
-                        [showClear]="true" appendTo="body" (onChange)="onSelectFilter($event, col, dt)">
+                        [showClear]="true" appendTo="body" (onChange)="onValueFilter($event, col, dt)">
                     </p-dropdown>
                     } -->
                     @case('select') {
                     <p-multiSelect [options]="col.options" optionLabel="label" optionValue="value" placeholder="Todos"
                         [panelStyle]="{'width': '12rem', 'min-width': '12rem'}" [showClear]="true" appendTo="body"
-                        [(ngModel)]="filtroValores[col.field]" (onChange)="onMultiSelectFilter($event, col, dt)">
+                        [(ngModel)]="filtroValores[col.field]" (onChange)="onValueFilter($event, col, dt)">
                     </p-multiSelect>
                     }
                     @case('number') {
@@ -157,7 +157,7 @@
                         [(ngModel)]="filtroValores[col.field]" />
                     }
                     @case('money') {
-                    <p-inputNumber placeholder="Buscar" (onInput)="onNumberFilter($event, col, dt)"
+                    <p-inputNumber placeholder="Buscar" (onInput)="onValueFilter($event, col, dt)"
                         [(ngModel)]="filtroValores[col.field]">
                     </p-inputNumber>
                     }

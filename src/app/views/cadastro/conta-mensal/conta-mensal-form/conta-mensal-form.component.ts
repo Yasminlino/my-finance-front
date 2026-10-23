@@ -37,8 +37,8 @@ export class ContaMensalFormComponent implements OnInit {
     name: ['', [Validators.required, Validators.minLength(2)]],
     // Número direto do currencyInput (FE-P2-10).
     value: [0 as number | null, [Validators.required]],
-    dataOperacao: [null as any, [Validators.required]],
-    categoryId: [null as any, [Validators.required, Validators.min(1)]],
+    dataOperacao: [null as string | null, [Validators.required]],
+    categoryId: [null as number | null, [Validators.required, Validators.min(1)]],
     status: [1, Validators.required],
     ehParcelado: [false],
     parcelaAtual: [1],
@@ -73,7 +73,7 @@ export class ContaMensalFormComponent implements OnInit {
   }
 
   onInputChange(valor: string) {
-    var a = valor.replace(/[^0-9,]/g, '');
+    const a = valor.replace(/[^0-9,]/g, '');
     this.form.patchValue({ dataOperacao: a });
 
     if (valor.includes(',')) {
@@ -82,7 +82,7 @@ export class ContaMensalFormComponent implements OnInit {
         .map(d => parseInt(d.trim(), 10))
         .filter(d => !isNaN(d) && d >= 1);
 
-      var diasValidos = "";
+      let diasValidos = "";
 
       for (let i = 0; i < dias.length; i++) {
         if (dias.indexOf(dias[i]) !== i) {
@@ -105,7 +105,7 @@ export class ContaMensalFormComponent implements OnInit {
   }
 
   onDiasChange(valor: string) {
-    var a = valor.replace(/[^0-9,]/g, '');
+    let a = valor.replace(/[^0-9,]/g, '');
     if (a[a.length - 1] == ",") {
       a = a.slice(0, -1);
       this.form.patchValue({ dataOperacao: a });

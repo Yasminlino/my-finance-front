@@ -14,7 +14,8 @@ import { diasVencimentoValidator, lerDiasVencimento } from 'src/app/core/utils/d
 })
 export class ModalNovaContasAPagarComponent implements OnInit {
   @Output() closed = new EventEmitter<boolean>();
-  @Input() dataOperacao = null as any;
+  /** Mês aberto em Contas a Pagar: a conta nova vence nele. */
+  @Input({ required: true }) dataOperacao!: Date;
 
   saving = false;
   categorias: CategoriaDto[] = [];
@@ -24,8 +25,8 @@ export class ModalNovaContasAPagarComponent implements OnInit {
     nomeConta: ['', [Validators.required, Validators.minLength(2)]],
     valor: [null as number | null, [Validators.required]], // número direto do currencyInput (FE-P2-10)
     // "5, 20": um ou mais dias, como no Cadastro de Contas — a API cria a conta com todos eles.
-    dataOperacao: [null as any, [Validators.required, diasVencimentoValidator]],
-    categoryId: [null as any, [Validators.required]],
+    dataOperacao: [null as string | null, [Validators.required, diasVencimentoValidator]],
+    categoryId: [null as number | null, [Validators.required]],
   });
 
   constructor(private fb: FormBuilder, private contaMensalService: ContaMensalService, private categoryService: CategoryService) {}
@@ -57,7 +58,7 @@ export class ModalNovaContasAPagarComponent implements OnInit {
       diasVencimento: dias,
       nome: this.form.value.nomeConta!,
       categoriaId: Number(this.form.value.categoryId),
-      valor: this.form.value.valor,
+      valor: this.form.value.valor!,
       situacao: 'PENDENTE',
     };
 

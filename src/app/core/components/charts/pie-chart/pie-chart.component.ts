@@ -60,7 +60,7 @@ export class PieChartComponent implements OnChanges {
     const chart: ApexChart = {
       ...(opt.chart ?? { type: 'pie' }),
       type: 'pie',
-      height: (opt.chart?.height as any) ?? this.height,
+      height: opt.chart?.height ?? this.height,
     };
 
     return {

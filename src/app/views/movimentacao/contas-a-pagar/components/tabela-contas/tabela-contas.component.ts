@@ -129,10 +129,10 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
     this.contas.forEach(conta => (this.rascunho[conta.id] = this.edicao!.rascunho(conta.id)));
   }
 
-  alterar(conta: LinhaContasMensais, campo: CampoEditavel, valor: unknown): void {
+  alterar<C extends CampoEditavel>(conta: LinhaContasMensais, campo: C, valor: RascunhoConta[C]): void {
     if (!this.edicao) return;
     this.edicao.alterar(conta.id, campo, valor);
-    (this.rascunho[conta.id] as any)[campo] = valor;
+    this.rascunho[conta.id][campo] = valor;
     this.atualizarOpcoesFiltro();
   }
 
@@ -300,8 +300,8 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
   }
 
   /** Exportação legível: data e valor como na tela. */
-  readonly formatarExportacao = ({ data, field }: { data: any; field: string }) => {
-    if (field === 'data') return formatDateBR(data);
+  readonly formatarExportacao = ({ data, field }: { data: unknown; field: string }) => {
+    if (field === 'data') return data instanceof Date || typeof data === 'string' ? formatDateBR(data) : '';
     if (field === 'valor') return formatCurrencyBR(data, { simbolo: false });
     return data ?? '';
   };

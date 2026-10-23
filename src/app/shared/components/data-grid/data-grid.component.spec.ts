@@ -1,5 +1,6 @@
+import { ConfirmationService } from 'primeng/api';
 import { ChangeDetectorRef } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 
@@ -33,9 +34,35 @@ describe('DataGridComponent', () => {
   };
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideNoopAnimations(), provideRouter([])] });
+    // ConfirmationService: o ConfirmacaoService usa o do root; no app ele vem do AppModule.
+    TestBed.configureTestingModule({ providers: [ConfirmationService, provideNoopAnimations(), provideRouter([])] });
     fixture = TestBed.createComponent(DataGridComponent);
     grid = fixture.componentInstance;
+  });
+
+  describe('filtro de data (FE-P3-04)', () => {
+    const outubro = [linha({ id: 1, vencimento: '2026-10-05' }), linha({ id: 2, vencimento: '2026-10-06' })];
+
+    // O p-table aplica o filtro depois do filterDelay (300 ms).
+    it('escolher um dia mostra só as linhas daquele dia', fakeAsync(() => {
+      entradas({ columns: colunas, dataSource: outubro });
+
+      grid.onDateFilter(new Date(2026, 9, 5), colunas[1], grid.dt!);
+      tick(300);
+
+      expect(grid.dt!.filteredValue?.map(r => r.id)).toEqual([1]);
+    }));
+
+    it('limpar o filtro volta todas as linhas', fakeAsync(() => {
+      entradas({ columns: colunas, dataSource: outubro });
+      grid.onDateFilter(new Date(2026, 9, 5), colunas[1], grid.dt!);
+      tick(300);
+
+      grid.onDateFilter(null, colunas[1], grid.dt!);
+      tick(300);
+
+      expect(grid.dt!.filteredValue ?? grid.dt!.value).toHaveSize(2);
+    }));
   });
 
   describe('montagem das linhas (FE-P2-06)', () => {

@@ -40,7 +40,7 @@ type ApexChartOptionsRequired = {
   yaxis: ApexYAxis | ApexYAxis[];
   tooltip: ApexTooltip;
   legend: ApexLegend;
-  colors: any[];
+  colors: string[];
   fill: ApexFill;
   stroke: ApexStroke;
   title: ApexTitleSubtitle;
@@ -78,7 +78,7 @@ export class ApexChartComponent implements OnChanges {
     // Defaults mínimos pra nunca passar undefined para o <apx-chart>
     const chart: ApexChart = {
       ...(opt.chart ?? { type: 'bar' }),
-      height: (opt.chart?.height as any) ?? this.height,
+      height: opt.chart?.height ?? this.height,
       fontFamily: opt.chart?.fontFamily ?? 'inherit',
     };
 
@@ -95,7 +95,7 @@ export class ApexChartComponent implements OnChanges {
       tooltip: opt.tooltip ?? {},
       legend: opt.legend ?? {},
 
-      colors: (opt.colors ?? []) as any[],
+      colors: opt.colors ?? [],
       fill: opt.fill ?? {},
       stroke: opt.stroke ?? {},
       title: opt.title ?? {},

@@ -1,11 +1,12 @@
 import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
+import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ItemListaService } from 'src/app/core/services/item-lista.service';
 import { ListaService } from 'src/app/core/services/lista.service';
 import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
@@ -40,9 +41,6 @@ export class ListaDeChecagemComponent implements OnInit {
   breadcrumb = [{ label: 'Listas' }, { label: 'Checklist' }]
 
   loading = false;
-  errorMsg = '';
-
-  q = '';
 
   showModalCreateItem = false;
   showModalUpdateItem = false;
@@ -50,8 +48,9 @@ export class ListaDeChecagemComponent implements OnInit {
   editing: ItemListaDto | null = null;
   @ViewChild('grid') grid?: DataGridComponent;
   private readonly destroyRef = inject(DestroyRef);
+  private readonly confirmacao = inject(ConfirmacaoService);
 
-  constructor(private itemListaService: ItemListaService, private readonly listaService: ListaService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService, private readonly router: Router, private readonly route: ActivatedRoute) { }
+  constructor(private itemListaService: ItemListaService, private readonly listaService: ListaService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService, private readonly route: ActivatedRoute) { }
 
   ngOnInit() {
     this.setExibirCampos()
@@ -101,19 +100,7 @@ export class ListaDeChecagemComponent implements OnInit {
   }
 
   applyFilters() {
-    const term = this.q.trim().toLowerCase();
-
-    this.lista = [...this.itemListas]
-      .sort((a, b) => (a.descricao ?? '').localeCompare(b.descricao ?? ''))
-      .filter(c => {
-        if (!term) return true;
-        return (c.descricao ?? '').toLowerCase().includes(term) || String(c.id).includes(term);
-      });
-  }
-
-  onSearchChange(value: string) {
-    this.q = value;
-    this.applyFilters();
+    this.lista = [...this.itemListas].sort((a, b) => (a.descricao ?? '').localeCompare(b.descricao ?? ''));
   }
 
   toggleConcluido(linha: ItemListaDto) {
@@ -149,8 +136,8 @@ export class ListaDeChecagemComponent implements OnInit {
     if (reload) this.load();
   }
 
-  onDelete(c: ItemListaDto) {
-    const ok = window.confirm(`Excluir o item "${c.descricao}"?`);
+  async onDelete(c: ItemListaDto) {
+    const ok = await this.confirmacao.confirmar(`Excluir o item "${c.descricao}"?`);
     if (!ok) return;
 
     this.itemListaService.excluir(c.id).subscribe({

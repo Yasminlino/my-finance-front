@@ -20,87 +20,28 @@ export type LinhaContasMensais = {
   desbloqueiaCampos: boolean;
 };
 
-export type LinhaContaMensal = {
-  id: number;
-  contaId: number;
-
-  nome: string;
-  valor: string | number;        // pode vir number do backend; no input usamos string formatada
-  data: Date;                 // ideal: YYYY-MM-DD
-  ehParcelado: boolean;
-  parcelaAtual?: number;       // "1/3", "2/4", etc
-  quantidadeParcelas?: number;  // "1/3", "2/4", etc
-  observacao?: string;
-
-  categoriaId: number;
-  categoriaNome: string;
-  tipoContaId: string;
-  subcategoria?: string;          // "Receita" | "Despesa"
-
-  situacao: string;
-  statusSalvo: string;
-  desbloqueiaCampos: boolean;
-};
-
-export type AgrupamentoContaMensal = {
-  categoriaId: number;
-  categoriaNome: string;
-  subcategoria?: string;
-  contas: Array<{
-    id: number;
-    transacoes: Array<{
-      id: number;
-      nome: string;
-      valor: any;
-      data: Date;   // YYYY-MM-DD
-      situacao: string;
-    }>;
-  }>;
-};
-
-export type GrupoContaMensal = {
-    id: number;
-    nome: string;
-    valor: number;
-    contaId: number;
-    categoriaId: number;
-    data: string;   // ISO string vindo da API
-    situacao: string;
-    ehParcelado: boolean;
-    parcelaAtual?: number;
-    quantidadeParcelas?: number;
-    observacao?: string;
-    transacoes: Array<{
-      id: number;
-      nome: string;
-      valor: number;
-      data: string;   // ISO string vindo da API
-      situacao: string;
-      contaId?: number | null;
-      categoriaId?: number | null;
-    }>;
-    conta: {
-      id: number;
-      nome: string;
-      valor: number;
-      categoriaId: number;
-    }
-};
-
 export type ContaMensal = {
   data: Date;
   nome: string;
   valor: number;
   contaId: number;
   situacao: string;
-  categoriaId?: any;
+  categoriaId?: number | null;
   parcelaFormatada?: string;
 }
 
-export type ContaVencendo = {
-  data: Date;
+/** Corpo de /CreateTransaction e /UpdateTransaction (TransacaoDTO da API). */
+export type TransacaoPayload = {
+  id?: number;
+  data: Date | string;          // vai sempre como "YYYY-MM-DD" (ContaMensalService)
   nome: string;
-  valor: number;
-  contaId: number;
+  valor: number | string;       // a edição de Contas a Pagar guarda o valor do input
+  contaId?: number | null;
+  categoriaId?: number | null;
   situacao: string;
-}
+  ehParcelado?: boolean;
+  parcelaAtual?: number | null;
+  quantidadeParcelas?: number | null;
+  observacao?: string | null;
+  diasVencimento?: number[];    // só na criação: uma transação por dia
+};

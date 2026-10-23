@@ -71,6 +71,9 @@ const routes: Routes = [
 ];
 
 @NgModule({
+  // useHash de propósito (FE-P3-04): o GitHub Pages não tem fallback de SPA. Sem o "#", recarregar
+  // ou abrir um link direto (/contas-a-pagar) dá 404. Tirar exige um 404.html no deploy:gh e quebra
+  // os favoritos com "#/".
   imports: [RouterModule.forRoot(routes, { useHash: true })],
   exports: [RouterModule]
 })

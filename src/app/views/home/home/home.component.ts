@@ -4,7 +4,7 @@ import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { formatCurrencyBR, formatDateInput, isoDate } from 'src/app/core/utils/mask';
 import { CategoryService } from 'src/app/core/services/category.service';
 import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
-import { Route, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { CategoriaDto } from 'src/app/core/models/categoria.model';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, catchError, forkJoin, of } from 'rxjs';
@@ -32,7 +32,6 @@ export class HomeComponent implements OnInit {
   totalHoje = '0'
   totalProximas = '0'
   totalVencido = '0';
-  contasVencendoHoje: any;
   // categoria: CategoriaDto[] = [];
   contasHoje: { descricao: string; valor: number; categoria: string; tipoConta: string }[] = [];
   proximasContas: { descricao: string; valor: number; categoria: string; tipoConta: string; dataVencimento: Date }[] = [];
@@ -126,15 +125,12 @@ export class HomeComponent implements OnInit {
     }
   }
 
-  redirecionaContas(dataVencimento?: any) {
-    const params: any = {
-      date: formatDateInput(dataVencimento) || isoDate(),
-    };
-
-    this.router.navigate(['contas-a-pagar'], { queryParams: params });
+  redirecionaContas(dataVencimento?: Date | string) {
+    const date = formatDateInput(dataVencimento) || isoDate();
+    this.router.navigate(['contas-a-pagar'], { queryParams: { date } });
   }
 
-  money(v: any) {
+  money(v: unknown) {
     // Os totais chegam como string de toFixed(2) ("60.00"); formatCurrencyBR lê texto em pt-BR
     // (ponto = milhar) e mostraria R$ 6.000,00. Number() é o que o antigo formatMoney fazia.
     return formatCurrencyBR(Number(v));

@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Observable, catchError, concatMap, defaultIfEmpty, defer, finalize, from, last, map, of, tap, toArray } from 'rxjs';
+import { Observable, catchError, concatMap, defaultIfEmpty, defer, finalize, from, last, map, of, switchMap, tap, toArray } from 'rxjs';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from '../utils/http-error';
+import { ConfirmacaoService } from './confirmacao.service';
 
 /** Nome da entidade excluída, para montar a mensagem com concordância correta. */
 export interface RotuloEntidade {
@@ -39,7 +40,7 @@ export interface GridSelecionavel {
  */
 @Injectable({ providedIn: 'root' })
 export class ExclusaoEmLoteService {
-  constructor(private readonly alertService: AlertService) {}
+  constructor(private readonly alertService: AlertService, private readonly confirmacao: ConfirmacaoService) {}
 
   /**
    * Fluxo completo do (deleteSelected) do data-grid: confirma, exclui e sempre avisa o grid
@@ -61,13 +62,12 @@ export class ExclusaoEmLoteService {
       }
 
       const selecionado = this.concordar(rows.length, rotulo, 'selecionado', 'selecionada');
-      if (!window.confirm(`Excluir ${rows.length} ${this.substantivo(rows.length, rotulo)} ${selecionado}?`)) {
-        return of(false).pipe(concluir);
-      }
+      const pergunta = `Excluir ${rows.length} ${this.substantivo(rows.length, rotulo)} ${selecionado}?`;
 
-      return this.excluir(rows, excluirItem, rotulo).pipe(
-        tap(() => (excluiu = true)),
-        map(() => true),
+      return from(this.confirmacao.confirmar(pergunta)).pipe(
+        switchMap(ok => ok
+          ? this.excluir(rows, excluirItem, rotulo).pipe(tap(() => (excluiu = true)), map(() => true))
+          : of(false)),
         concluir
       );
     });

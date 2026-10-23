@@ -2,7 +2,11 @@ import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 
-type AuthResponse = { token: any, usuario: any };
+/** Resposta de /Autenticar: o token com a validade e o usuário (perfil e nome vão para o localStorage). */
+type AuthResponse = {
+  token: { token: string; dataExpiracao?: string | null } | null;
+  usuario: { perfil?: string | null; nomeUsuario?: string | null } | null;
+};
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

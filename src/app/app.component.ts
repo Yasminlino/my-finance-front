@@ -7,7 +7,6 @@ import { PrimeNGConfig } from 'primeng/api';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'my-finance-front';
   constructor(private primengConfig: PrimeNGConfig) {
     this.primengConfig.setTranslation({
       firstDayOfWeek: 0,

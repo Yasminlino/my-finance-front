@@ -1,3 +1,4 @@
+import { ConfirmationService } from 'primeng/api';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -28,6 +29,8 @@ describe('ModalConfiguracaoVinculoPessoaComponent', () => {
       declarations: [ModalConfiguracaoVinculoPessoaComponent],
       imports: [SharedModule, DataGridComponent],
       providers: [
+        // O ConfirmacaoService (data-grid, exclusões) usa o do root; no app vem do AppModule.
+        ConfirmationService,
         provideNoopAnimations(),
         { provide: PessoaMovimentacaoService, useValue: pessoas },
         { provide: CategoryService, useValue: categorias },

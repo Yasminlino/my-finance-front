@@ -34,7 +34,7 @@ describe('ModalNovaContasAPagarComponent', () => {
   });
 
   it('sem valor não salva', () => {
-    fixture.componentInstance.form.patchValue({ nomeConta: 'Luz', dataOperacao: 10, categoryId: 6 });
+    fixture.componentInstance.form.patchValue({ nomeConta: 'Luz', dataOperacao: '10', categoryId: 6 });
 
     fixture.componentInstance.save();
 
@@ -42,7 +42,7 @@ describe('ModalNovaContasAPagarComponent', () => {
   });
 
   it('salva o valor como número', () => {
-    fixture.componentInstance.form.patchValue({ nomeConta: 'Luz', valor: 15.5, dataOperacao: 10, categoryId: 6 });
+    fixture.componentInstance.form.patchValue({ nomeConta: 'Luz', valor: 15.5, dataOperacao: '10', categoryId: 6 });
 
     fixture.componentInstance.save();
 

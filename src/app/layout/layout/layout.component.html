@@ -4,3 +4,6 @@
 <!-- Outlet único de toast para todo o app: MessageService é global e cada outlet montado
      reemite a mesma mensagem (ver FE-P0-02). -->
 <p-toast></p-toast>
+
+<!-- Diálogo único das confirmações (ConfirmacaoService, FE-P3-04). -->
+<p-confirmDialog [style]="{ width: '28rem' }" [breakpoints]="{ '576px': '95vw' }" />

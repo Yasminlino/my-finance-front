@@ -1,6 +1,7 @@
 import { DestroyRef, Directive, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, finalize, of, switchMap } from 'rxjs';
+import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { ExclusaoEmLoteService, RotuloEntidade } from 'src/app/core/services/exclusao-em-lote.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { AlertService } from 'src/app/shared/components/alert.service';
@@ -20,6 +21,7 @@ import { EXIBIR_CAMPOS_CADASTRO, ExibirCamposConfig } from 'src/app/shared/model
 export abstract class CadastroListBase<T extends { id: number }> implements OnInit {
   protected readonly alertService = inject(AlertService);
   protected readonly exclusaoEmLote = inject(ExclusaoEmLoteService);
+  private readonly confirmacao = inject(ConfirmacaoService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** Fonte: tudo o que veio da API. */
@@ -91,9 +93,9 @@ export abstract class CadastroListBase<T extends { id: number }> implements OnIn
     if (reload) this.load();
   }
 
-  onDelete(registro: T) {
+  async onDelete(registro: T) {
     const { singular, feminino } = this.rotulo;
-    const ok = window.confirm(`Excluir ${feminino ? 'a' : 'o'} ${singular} "${this.nomeDe(registro)}"?`);
+    const ok = await this.confirmacao.confirmar(`Excluir ${feminino ? 'a' : 'o'} ${singular} "${this.nomeDe(registro)}"?`);
     if (!ok) return;
 
     const entidade = singular.charAt(0).toUpperCase() + singular.slice(1);

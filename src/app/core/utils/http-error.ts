@@ -7,12 +7,18 @@ import { HttpErrorResponse } from '@angular/common/http';
  * expõe em `HttpErrorResponse.error`. Passar o próprio erro para o AlertService
  * (que recebe `string`) renderizava "[object Object]" no toast — ver FE-P0-07.
  */
+/** O que este helper lê de um erro: o HttpErrorResponse (`error` = corpo) ou um Error comum. */
+type ErroLido = {
+  error?: string | { message?: unknown; title?: unknown; detail?: unknown } | null;
+  message?: unknown;
+} | null | undefined;
+
 export function extrairMensagemErro(erro: unknown, fallback: string): string {
   if (typeof erro === 'string' && erro.trim()) {
     return erro;
   }
 
-  const e = erro as any;
+  const e = erro as ErroLido;
 
   const corpo = e?.error;
 
@@ -24,10 +30,11 @@ export function extrairMensagemErro(erro: unknown, fallback: string): string {
 
   // Em HttpErrorResponse o `message` é sempre técnico ("Http failure response for ...:
   // 0 Unknown Error" quando a API está fora do ar) — nesse caso vale o fallback.
+  const objeto = typeof corpo === 'object' ? corpo : null;
   const candidatos = [
-    corpo?.message,
-    corpo?.title,
-    corpo?.detail,
+    objeto?.message,
+    objeto?.title,
+    objeto?.detail,
     erro instanceof HttpErrorResponse ? undefined : e?.message
   ];
 

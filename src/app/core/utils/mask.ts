@@ -4,7 +4,7 @@
  *  - padrão:            "R$ 1.234,56"
  *  - { simbolo: false }: "1.234,56"
  */
-export function formatCurrencyBR(value: any, opcoes: { simbolo?: boolean } = {}): string {
+export function formatCurrencyBR(value: unknown, opcoes: { simbolo?: boolean } = {}): string {
   const n = parseCurrencyBR(value) ?? 0;
   const simbolo = opcoes.simbolo ?? true;
 
@@ -21,7 +21,7 @@ export function formatCurrencyBR(value: any, opcoes: { simbolo?: boolean } = {})
  * Vazio ou inválido devolve null; quem precisa de número usa `?? 0`.
  * Texto é sempre lido no formato pt-BR (ponto = milhar, vírgula = decimal).
  */
-export function parseCurrencyBR(value: any): number | null {
+export function parseCurrencyBR(value: unknown): number | null {
   if (value === null || value === undefined) return null;
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
 
@@ -37,7 +37,7 @@ export function parseCurrencyBR(value: any): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function formatDateInput(value: any): string {
+export function formatDateInput(value: unknown): string {
   // garante YYYY-MM-DD (se já vier ok, retorna ok)
   if (!value) return '';
   const s = String(value);
@@ -71,7 +71,7 @@ export function addMonthsToYearMonth(yearMonth: string, months: number): string 
   return formatYearMonth(data);
 }
 
-export function formatDateVencimento(baseMonth: string | Date, dataOperacao: any): Date {
+export function formatDateVencimento(baseMonth: string | Date, dataOperacao: number | string | null | undefined): Date {
 
   let ano: number;
   let mes: number;

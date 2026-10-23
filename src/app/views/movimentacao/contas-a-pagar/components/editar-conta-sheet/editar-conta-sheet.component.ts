@@ -79,10 +79,10 @@ export class EditarContaSheetComponent implements OnChanges {
     return previaDoEfeito(this.conta, this.edicao.linhaAtual(this.conta.id), this.hoje);
   }
 
-  alterar(campo: CampoEditavel, valor: unknown): void {
+  alterar<C extends CampoEditavel>(campo: C, valor: RascunhoConta[C]): void {
     if (!this.conta || !this.edicao || !this.rascunho) return;
     this.edicao.alterar(this.conta.id, campo, valor);
-    (this.rascunho as any)[campo] = valor;
+    this.rascunho[campo] = valor;
   }
 
   /** Esc no campo. */

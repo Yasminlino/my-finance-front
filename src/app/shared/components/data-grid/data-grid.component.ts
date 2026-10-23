@@ -1,4 +1,4 @@
-﻿import {
+import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
@@ -7,7 +7,8 @@
   OnChanges,
   Output,
   SimpleChanges,
-  ViewChild
+  ViewChild,
+  inject
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
@@ -33,6 +34,7 @@ import { MenuModule } from 'primeng/menu';
 import { ToggleButtonModule } from 'primeng/togglebutton';
 
 import { MenuItem } from 'primeng/api';
+import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 
 import { GridColumn, GridColumnOption, GridColumnType, GridLinhaMeta, GridRowChange, TypeGrid } from './data-grid.interface';
 
@@ -78,6 +80,8 @@ export class DataGridComponent implements OnChanges {
    * OnPush (FE-P2-09): o grid só redesenha quando muda um @Input ou quando há evento no próprio
    * template. Os métodos públicos que as telas chamam via @ViewChild marcam a view com o cdr.
    */
+  private readonly confirmacao = inject(ConfirmacaoService);
+
   constructor(private readonly cdr: ChangeDetectorRef) {}
 
   // ---------------------------------------------------------------------------
@@ -104,7 +108,8 @@ export class DataGridComponent implements OnChanges {
    * (ex.: conta paga em Contas a Pagar). Antes o grid fixava `status === 'PAGO'` (FE-P2-04).
    */
   @Input() bloquearLinha?: (linha: any) => boolean;
-  @Input() localStorage?: String;
+  /** Chave do localStorage onde o mês do filtro fica guardado (padrão: "dataFiltro"). */
+  @Input() localStorage?: string;
 
   // ---------------------------------------------------------------------------
   // Outputs
@@ -265,16 +270,16 @@ export class DataGridComponent implements OnChanges {
   // Disabled rows
   // ---------------------------------------------------------------------------
 
-  /**
-   * Returns true when the row must be rendered as disabled / non-selectable.
-   * A row is considered disabled when its dataKey value is present in the
-   * `disabledRowIds` set provided by the host component.
-   */
   /** Linha marcada pelo componente pai como `somenteLeitura: true` (ex.: tipo de cartão padrão do sistema). */
   isSomenteLeitura(row: any): boolean {
     return row?.somenteLeitura === true;
   }
 
+  /**
+   * Returns true when the row must be rendered as disabled / non-selectable:
+   * read-only rows, or rows whose dataKey value is present in the
+   * `disabledRowIds` set provided by the host component.
+   */
   isRowDisabled(row: any): boolean {
     if (this.isSomenteLeitura(row)) {
       return true;
@@ -291,7 +296,7 @@ export class DataGridComponent implements OnChanges {
   /**
    * PrimeNG `p-table` `rowSelectable` callback.
    * Returning `false` prevents the row from being added to (or removed from)
-   * the selection â€” both when the user clicks the row checkbox and when the
+   * the selection — both when the user clicks the row checkbox and when the
    * header "select all" checkbox is toggled.
    */
   readonly rowSelectableFn = ({ data }: { data: any; index: number }): boolean =>
@@ -347,7 +352,7 @@ export class DataGridComponent implements OnChanges {
   }
 
   // ---------------------------------------------------------------------------
-  // AÃ§Ãµes
+  // Ações
   // ---------------------------------------------------------------------------
 
   colActions(column: GridColumn): string[] {
@@ -597,14 +602,15 @@ export class DataGridComponent implements OnChanges {
     this.cdr.markForCheck();
   }
 
-  cancelarTodasAlteracoes(): void {
+  async cancelarTodasAlteracoes(): Promise<void> {
     if (this.pendingCount === 0) {
       this.disableEditMode();
       return;
     }
 
-    const confirmed = window.confirm(
-      'Tem certeza que deseja desfazer todas as alterações?'
+    const confirmed = await this.confirmacao.confirmar(
+      'Tem certeza que deseja desfazer todas as alterações?',
+      { titulo: 'Desfazer alterações', aceitar: 'Desfazer' }
     );
 
     if (!confirmed) {
@@ -784,7 +790,7 @@ export class DataGridComponent implements OnChanges {
       case 'number':
         return 'equals';
       case 'date':
-        return 'dateIs'; // Garanta que estÃ¡ usando dateIs
+        return 'dateIs';
       case 'boolean':
         return 'equals';
       default:
@@ -816,20 +822,9 @@ export class DataGridComponent implements OnChanges {
     );
   }
 
-  onSelectFilter(
-    event: any,
-    column: GridColumn,
-    table: Table
-  ): void {
-    table.filter(
-      event?.value ?? null,
-      column.field,
-      this.matchMode(column)
-    );
-  }
-
-  onMultiSelectFilter(
-    event: any,
+  /** Filtro de select, multiselect e número: os três eventos do PrimeNG trazem o valor em `value`. */
+  onValueFilter(
+    event: { value?: unknown } | null,
     column: GridColumn,
     table: Table
   ): void {
@@ -841,7 +836,7 @@ export class DataGridComponent implements OnChanges {
   }
 
   onBooleanFilter(
-    event: any,
+    event: { checked?: boolean } | null,
     column: GridColumn,
     table: Table
   ): void {
@@ -855,49 +850,14 @@ export class DataGridComponent implements OnChanges {
     );
   }
 
-  onNumberFilter(
-    event: any,
-    column: GridColumn,
-    table: Table
-  ): void {
-    table.filter(
-      event?.value ?? null,
-      column.field,
-      this.matchMode(column)
-    );
+  /**
+   * As colunas de data guardam Date na linha (montarLinhas). O filtro manda o Date do calendário
+   * com o matchMode da coluna ('dateIs': mesmo dia). Antes ia o texto "YYYY-MM-DD" com 'equals',
+   * que o PrimeNG compara com Date.toString() e nunca casava (FE-P3-04).
+   */
+  onDateFilter(event: Date | null, column: GridColumn, table: Table): void {
+    table.filter(event, column.field, this.matchMode(column));
   }
-
-  onDateFilter(event: any, column: GridColumn, table: Table): void {
-    let value = null;
-
-    if (event) {
-      const date = new Date(event);
-      // Força o formato yyyy-mm-dd para testar se bate certo com os dados da linha
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      value = `${year}-${month}-${day}`;
-    }
-
-    // Tente fixar temporariamente 'contains' ou 'equals' para validar
-    table.filter(value, column.field, 'equals');
-  }
-
-  private toDateOnly(
-    date: Date | string
-  ): Date {
-    const value = new Date(date);
-
-    return new Date(
-      value.getFullYear(),
-      value.getMonth(),
-      value.getDate()
-    );
-  }
-
-  // Adicione propriedades de controle de filtro se desejar, 
-  // ou atualize o método clear para resetar os valores via ViewChild/Query:
-
 
   clear(table: Table): void {
     table.clear();
@@ -911,10 +871,9 @@ export class DataGridComponent implements OnChanges {
   onLoadMonth(event: Date | undefined): void {
     if (event) {
       this.dateFilter = event;
-      var local = this.localStorage?.valueOf();
 
       localStorage.setItem(
-        local ?? 'dataFiltro',
+        this.localStorage ?? 'dataFiltro',
         event.toISOString()
       );
     }

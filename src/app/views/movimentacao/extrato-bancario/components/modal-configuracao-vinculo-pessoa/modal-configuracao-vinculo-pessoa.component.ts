@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
+import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { GridColumn, GridColumnOption, GridRowChange } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
@@ -7,9 +8,7 @@ import { formatCurrencyBR} from 'src/app/core/utils/mask';
 import { PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
 import { CategoryService } from 'src/app/core/services/category.service';
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
-import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
 import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
-import { ExtratoBancarioDto } from 'src/app/core/models/extrato.model';
 import { PessoaMovimentacaoDto } from 'src/app/core/models/pessoa-movimentacao.model';
 import { concat, finalize, forkJoin, toArray } from 'rxjs';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
@@ -23,7 +22,6 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
 
   @Input() monthFilter!: string; // pode ser '2026-01-01' ou Date
   @Output() closed = new EventEmitter<boolean>(); // true = salvou algo, false = cancelou
-  @Output() 'reload' = new EventEmitter<any[]>();
 
   pessoaMovimentacao: PessoaMovimentacaoDto[] = [];
   disabledIds = new Set<number>();
@@ -41,11 +39,12 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   @ViewChild('grid') grid?: DataGridComponent;
   deletingId: number | null = null;
 
+  private readonly confirmacao = inject(ConfirmacaoService);
+
   constructor(
     private pessoaService: PessoaMovimentacaoService,
     private categoriaService: CategoryService,
     private tipoMovService: TipoMovimentacaoService,
-    private extratoBancarioService: ExtratoBancarioItemService,
     private readonly alertService: AlertService,
   ) { }
 
@@ -101,12 +100,12 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
     ];
   }
 
-  categoriaLabel(status: any): any {
-    return this.categorias.find(c => c.value === status)?.label ?? '-';
+  categoriaLabel(categoriaId: number | null | undefined): string {
+    return this.categorias.find(c => c.value === categoriaId)?.label ?? '-';
   }
 
-  tipoMovimentacaoLabel(status: any): any {
-    return this.movimentacoes.find(c => c.value === status)?.label ?? '-';
+  tipoMovimentacaoLabel(tipoMovimentacaoId: number | null | undefined): string {
+    return this.movimentacoes.find(c => c.value === tipoMovimentacaoId)?.label ?? '-';
   }
 
   addRow() {
@@ -122,7 +121,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
     ];
   }
 
-  money(v: any) {
+  money(v: unknown) {
     return formatCurrencyBR(v);
   }
 
@@ -189,13 +188,13 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
         error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar as pessoas.'))
       });
   }
-  deleteRow(r: ExtratoBancarioDto) {
+  async deleteRow(r: PessoaMovimentacaoDto) {
     if (r.id < 0) {
       this.pessoaMovimentacao = this.pessoaMovimentacao.filter(x => x.id !== r.id);
       return;
     }
 
-    if (!confirm(`Excluir cadastro?`)) return;
+    if (!(await this.confirmacao.confirmar('Excluir cadastro?'))) return;
 
     this.pessoaService.excluir(r.id)
       .pipe(finalize(() => (this.deletingId = null)))

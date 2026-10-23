@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { ExclusaoEmLoteService, RotuloEntidade } from 'src/app/core/services/exclusao-em-lote.service';
 import { CadastroListBase } from './cadastro-list.base';
 
@@ -26,16 +27,19 @@ describe('CadastroListBase (FE-P1-02)', () => {
   let tela: ItemListTesteComponent;
   let alertService: jasmine.SpyObj<AlertService>;
   let exclusao: jasmine.SpyObj<ExclusaoEmLoteService>;
+  let confirmacao: jasmine.SpyObj<ConfirmacaoService>;
 
   beforeEach(() => {
     alertService = jasmine.createSpyObj<AlertService>('AlertService', ['success', 'error', 'info', 'contrast']);
     exclusao = jasmine.createSpyObj<ExclusaoEmLoteService>('ExclusaoEmLoteService', ['confirmarEExcluir']);
+    confirmacao = jasmine.createSpyObj<ConfirmacaoService>('ConfirmacaoService', ['confirmar']);
 
     TestBed.configureTestingModule({
       declarations: [ItemListTesteComponent],
       providers: [
         { provide: AlertService, useValue: alertService },
-        { provide: ExclusaoEmLoteService, useValue: exclusao }
+        { provide: ExclusaoEmLoteService, useValue: exclusao },
+        { provide: ConfirmacaoService, useValue: confirmacao }
       ]
     });
 
@@ -93,7 +97,7 @@ describe('CadastroListBase (FE-P1-02)', () => {
   });
 
   it('onDelete confirma com artigo e nome, exclui e recarrega', async () => {
-    const confirm = spyOn(window, 'confirm').and.returnValue(true);
+    const confirm = confirmacao.confirmar.and.resolveTo(true);
 
     await tela.onDelete({ id: 7, nome: 'Lazer' });
 
@@ -104,7 +108,7 @@ describe('CadastroListBase (FE-P1-02)', () => {
   });
 
   it('onDelete cancelado não exclui', async () => {
-    spyOn(window, 'confirm').and.returnValue(false);
+    confirmacao.confirmar.and.resolveTo(false);
 
     await tela.onDelete({ id: 7, nome: 'Lazer' });
 
@@ -112,7 +116,7 @@ describe('CadastroListBase (FE-P1-02)', () => {
   });
 
   it('onDelete com erro mostra a mensagem da API', async () => {
-    spyOn(window, 'confirm').and.returnValue(true);
+    confirmacao.confirmar.and.resolveTo(true);
     tela.excluirSpy.and.returnValue(throwError(() => ({ error: { message: 'Possui vínculos' } })));
 
     await tela.onDelete({ id: 7, nome: 'Lazer' });
@@ -121,7 +125,7 @@ describe('CadastroListBase (FE-P1-02)', () => {
   });
 
   it('onDelete com erro sem mensagem usa o rótulo', async () => {
-    spyOn(window, 'confirm').and.returnValue(true);
+    confirmacao.confirmar.and.resolveTo(true);
     tela.excluirSpy.and.returnValue(throwError(() => null));
 
     await tela.onDelete({ id: 7, nome: 'Lazer' });

@@ -23,18 +23,18 @@ describe('ContaMensalService: vencimento como data de calendário', () => {
   afterEach(() => http.verify());
 
   it('criar envia data como "YYYY-MM-DD"', () => {
-    TestBed.inject(ContaMensalService).criar({ nome: 'Luz', data: new Date(2026, 9, 5) }).subscribe();
+    TestBed.inject(ContaMensalService).criar({ nome: 'Luz', valor: 120, situacao: 'PENDENTE', data: new Date(2026, 9, 5) }).subscribe();
 
     const req = http.expectOne(`${base}/CreateTransaction`);
-    expect(req.request.body).toEqual({ nome: 'Luz', data: '2026-10-05' });
+    expect(req.request.body).toEqual({ nome: 'Luz', valor: 120, situacao: 'PENDENTE', data: '2026-10-05' });
     req.flush({});
   });
 
   it('atualizar envia data como "YYYY-MM-DD"', () => {
-    TestBed.inject(ContaMensalService).atualizar({ id: 3, data: new Date(2026, 11, 31) }).subscribe();
+    TestBed.inject(ContaMensalService).atualizar({ id: 3, nome: 'Luz', valor: 120, situacao: 'PAGO', data: new Date(2026, 11, 31) }).subscribe();
 
     const req = http.expectOne(`${base}/UpdateTransaction`);
-    expect(req.request.body).toEqual({ id: 3, data: '2026-12-31' });
+    expect(req.request.body).toEqual({ id: 3, nome: 'Luz', valor: 120, situacao: 'PAGO', data: '2026-12-31' });
     req.flush({});
   });
 });

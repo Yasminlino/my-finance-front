@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { ContaMensal, LinhaContasMensais } from '../models/conta-mensal.model';
+import { ContaMensal, LinhaContasMensais, TransacaoPayload } from '../models/conta-mensal.model';
 import { formatDateInput } from '../utils/mask';
 
 /** Contas do mês (transações na API). */
@@ -28,15 +28,15 @@ export class ContaMensalService {
    * O vencimento é data de calendário na API (DB-P1-02): vai sempre como "YYYY-MM-DD".
    * O form/grid entrega Date à meia-noite local; formatDateInput lê nos getters locais.
    */
-  private comDataDeCalendario(dto: any): any {
-    return dto?.data ? { ...dto, data: formatDateInput(dto.data) } : dto;
+  private comDataDeCalendario(dto: TransacaoPayload): TransacaoPayload {
+    return dto.data ? { ...dto, data: formatDateInput(dto.data) } : dto;
   }
 
-  criar(dto: any): Observable<unknown> {
+  criar(dto: TransacaoPayload): Observable<unknown> {
     return this.api.post('/CreateTransaction', this.comDataDeCalendario(dto));
   }
 
-  atualizar(dto: any): Observable<unknown> {
+  atualizar(dto: TransacaoPayload): Observable<unknown> {
     return this.api.put('/UpdateTransaction', this.comDataDeCalendario(dto));
   }
 

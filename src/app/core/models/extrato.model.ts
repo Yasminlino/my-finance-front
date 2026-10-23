@@ -1,3 +1,4 @@
+import { BancoDto } from './banco.model';
 import { CategoriaDto } from './categoria.model';
 import { PessoaMovimentacaoDto } from './pessoa-movimentacao.model';
 import { TipoMovimentacaoDto } from './tipo-movimentacao.model';
@@ -42,7 +43,9 @@ export interface ExtratoItemDto {
   /** Pede à API para atualizar também o vínculo da pessoa com categoria/tipo. */
   alteraVinculoPessoa?: boolean;
 
-  categoria?: Pick<CategoriaDto, 'id' | 'nome' | 'subcategoria'> | null;
+  /** Navegações que a API devolve na leitura (o relatório de gastos agrupa por elas). */
+  banco?: Pick<BancoDto, 'id' | 'nomeBanco'> | null;
+  categoria?: Pick<CategoriaDto, 'id' | 'nome' | 'subcategoria'> & Partial<Pick<CategoriaDto, 'naturezaOperacao'>> | null;
   tipoMovimentacao?: Pick<TipoMovimentacaoDto, 'id' | 'nomeTipoMovimentacao'> | null;
 }
 

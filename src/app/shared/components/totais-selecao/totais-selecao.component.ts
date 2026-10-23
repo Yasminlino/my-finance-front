@@ -18,5 +18,5 @@ export class TotaisSelecaoComponent {
   @Input() saldo = 0;
   @Input() count = 0;
 
-  money(v: any) { return formatCurrencyBR(v); }
+  money(v: unknown) { return formatCurrencyBR(v); }
 }
