@@ -12,7 +12,7 @@ import { AlertService } from 'src/app/shared/components/alert.service';
 describe('CategoriaFormComponent', () => {
   let fixture: ComponentFixture<CategoriaFormComponent>;
   let service: jasmine.SpyObj<CategoryService>;
-  const categoria = { id: 29, nome: 'Alimentação', subcategoria: 'Despesa', naturezaOperacao: 1, ativo: 1 };
+  const categoria = { id: 29, nome: 'Alimentação', subcategoria: 'Despesa', naturezaOperacao: 1, ativo: true };
 
   beforeEach(() => {
     service = jasmine.createSpyObj<CategoryService>('CategoryService', ['criar', 'atualizar']);
@@ -41,6 +41,15 @@ describe('CategoriaFormComponent', () => {
     fixture.componentInstance.save();
 
     expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ id: 29, nome: 'Mercado' }));
+  });
+
+  it('envia ativo como boolean: inativa continua false ao salvar', () => {
+    fixture.componentRef.setInput('registro', { ...categoria, ativo: false });
+    fixture.componentInstance.ngOnInit();
+
+    fixture.componentInstance.save();
+
+    expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ id: 29, ativo: false }));
   });
 
   it('o nome tem o limite da API (120) e passar dele não salva (DB-P3-04)', () => {

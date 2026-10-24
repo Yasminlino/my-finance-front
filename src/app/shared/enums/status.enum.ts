@@ -18,15 +18,15 @@ export type TagStatus = typeof TagStatus[keyof typeof TagStatus];
 
 /**
  * Status ativo/inativo dos cadastros (Banco, Categoria, Conta).
- * As telas derivam `status` do `ativo` da API como 1 = ativo, 0 = inativo.
+ * `ativo` é boolean na API em todos eles.
  */
 export const STATUS_ATIVO_OPTIONS: GridColumnOption[] = [
-    { label: 'Ativo', value: 1, classe: TagStatus.Success },
-    { label: 'Inativo', value: 0, classe: TagStatus.Secondary }
+    { label: 'Ativo', value: true, classe: TagStatus.Success },
+    { label: 'Inativo', value: false, classe: TagStatus.Secondary }
 ];
 
-export function statusAtivoLabel(value: number): string {
-    return value === 1 ? 'Ativo' : 'Inativo';
+export function statusAtivoLabel(value: boolean | null | undefined): string {
+    return value ? 'Ativo' : 'Inativo';
 }
 
 /** Situação de pagamento dos lançamentos (Contas a Pagar e Extrato). */

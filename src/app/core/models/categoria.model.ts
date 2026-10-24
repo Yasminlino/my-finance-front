@@ -4,7 +4,7 @@ export type CategoriaDto = {
   nome: string;
   subcategoria: string;
   naturezaOperacao: number;
-  ativo: number;
+  ativo: boolean;
 };
 
 /** Envio para CreateCategory/UpdateCategory (id só na atualização). */
@@ -13,5 +13,5 @@ export type CategoriaCreateUpdateDto = {
   nome: string;
   subcategoria: string;
   naturezaOperacao?: number | null;
-  ativo?: number | null;
+  ativo?: boolean | null;
 };

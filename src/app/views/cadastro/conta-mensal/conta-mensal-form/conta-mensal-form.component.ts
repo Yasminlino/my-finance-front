@@ -13,7 +13,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
-import { OPCOES_STATUS_NUMERICO } from 'src/app/shared/utils/opcoes-status';
+import { OPCOES_ATIVO } from 'src/app/shared/utils/opcoes-status';
 
 @Component({
   selector: 'app-conta-mensal-form',
@@ -31,7 +31,7 @@ export class ContaMensalFormComponent implements OnInit {
   quantidadeParcelas = 2;
 
   saving = false;
-  readonly opcoesStatus = OPCOES_STATUS_NUMERICO;
+  readonly opcoesStatus = OPCOES_ATIVO;
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -39,7 +39,7 @@ export class ContaMensalFormComponent implements OnInit {
     value: [0 as number | null, [Validators.required]],
     dataOperacao: [null as string | null, [Validators.required]],
     categoryId: [null as number | null, [Validators.required, Validators.min(1)]],
-    status: [1, Validators.required],
+    status: [true, Validators.required],
     ehParcelado: [false],
     parcelaAtual: [1],
     quantidadeParcelas: [1]
@@ -135,7 +135,7 @@ export class ContaMensalFormComponent implements OnInit {
       nome: this.form.value.name!,
       valor: this.form.value.value ?? 0,
       categoriaId: Number(this.form.value.categoryId),
-      ativo: Number(this.form.value.status),
+      ativo: !!this.form.value.status,
       ehParcelado: Boolean(this.form.value.ehParcelado),
       parcelaAtual: Number(this.form.value.parcelaAtual),
       quantidadeParcelas: Number(this.form.value.quantidadeParcelas),

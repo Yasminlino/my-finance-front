@@ -12,7 +12,7 @@ import { AlertService } from 'src/app/shared/components/alert.service';
 describe('ContaMensalFormComponent', () => {
   let fixture: ComponentFixture<ContaMensalFormComponent>;
   let service: jasmine.SpyObj<ContaService>;
-  const conta = { id: 16, nome: 'Inss', valor: 89.9, categoriaId: 12, ativo: 1, vencimentos: [{ dia: 5 }] };
+  const conta = { id: 16, nome: 'Inss', valor: 89.9, categoriaId: 12, ativo: true, vencimentos: [{ dia: 5 }] };
 
   const abrir = (registro: any = null) => {
     fixture = TestBed.createComponent(ContaMensalFormComponent);
@@ -49,6 +49,14 @@ describe('ContaMensalFormComponent', () => {
     fixture.componentInstance.save();
 
     expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ valor: 15.5 }));
+  });
+
+  it('envia ativo como boolean: inativa continua false ao salvar', () => {
+    abrir({ ...conta, ativo: false });
+
+    fixture.componentInstance.save();
+
+    expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ id: 16, ativo: false }));
   });
 
   it('abre num p-dialog com o título e o X fecha sem recarregar (FE-P2-07)', () => {

@@ -13,7 +13,7 @@ import { Observable, map, tap } from 'rxjs';
 /** Banco com os campos derivados que o grid exibe. */
 type BancoLinha = BancoDto & {
   nomeTipoCartaoFormatado: string;
-  status: number;
+  status: boolean;
 };
 
 @Component({
@@ -47,7 +47,7 @@ export class BancoListComponent extends CadastroListBase<BancoLinha> {
       ...item,
       nomeTipoCartaoFormatado: item.tipoCartao?.nomeTipoCartao ||
         this.tiposCartao.find(t => t.id === item.tipoCartaoId)?.nomeTipoCartao || '-',
-      status: item.ativo ? 1 : 0
+      status: !!item.ativo
     }))));
   }
 

@@ -6,7 +6,7 @@ export type ContaDto = {
   dataOperacao?: number[]; // usado no envio
   categoriaId: number;
   categoriaNome?: string | null;
-  ativo: number;
+  ativo: boolean;
   ehParcelado: boolean;
   parcelaAtual: number;
   quantidadeParcelas: number;

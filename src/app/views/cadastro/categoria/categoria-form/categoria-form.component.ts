@@ -10,7 +10,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
-import { OPCOES_STATUS_NUMERICO } from 'src/app/shared/utils/opcoes-status';
+import { OPCOES_ATIVO } from 'src/app/shared/utils/opcoes-status';
 
 @Component({
   selector: 'app-categoria-form',
@@ -24,7 +24,7 @@ export class CategoriaFormComponent implements OnInit {
   @Output() closed = new EventEmitter<boolean>();
 
   saving = false;
-  readonly opcoesStatus = OPCOES_STATUS_NUMERICO;
+  readonly opcoesStatus = OPCOES_ATIVO;
 
   readonly opcoesTipo = [
     { label: 'Receita', value: 'Receita' },
@@ -42,7 +42,7 @@ export class CategoriaFormComponent implements OnInit {
     name: ['', [Validators.required, Validators.minLength(2)]],
     subCategory: ['', [Validators.required]],
     naturezaOperacao: [1, [Validators.required]], 
-    status: [1, [Validators.required]],
+    status: [true, [Validators.required]],
   });
 
   perfilEmpresa = false;

@@ -6,7 +6,7 @@ import { provideRouter } from '@angular/router';
 
 import { DataGridComponent } from './data-grid.component';
 import { GridColumn, GridColumnOption } from './data-grid.interface';
-import { TagStatus } from '../../enums/status.enum';
+import { STATUS_ATIVO_OPTIONS, TagStatus } from '../../enums/status.enum';
 
 describe('DataGridComponent', () => {
   let fixture: ComponentFixture<DataGridComponent>;
@@ -102,15 +102,16 @@ describe('DataGridComponent', () => {
     });
 
     it('campoStatus escolhe de qual campo sai a severidade (DB-P3: ativo, situacao)', () => {
-      const ativo: GridColumnOption[] = [{ label: 'Ativo', value: 1, classe: TagStatus.Success }];
+      // "ativo" é boolean em todos os cadastros (card [DB] contas.ativo e categorias.ativo).
       entradas({
-        columns: [{ field: 'ativo', header: 'Status', type: 'select', options: ativo }],
-        statusOptions: ativo,
+        columns: [{ field: 'ativo', header: 'Status', type: 'select', options: STATUS_ATIVO_OPTIONS }],
+        statusOptions: STATUS_ATIVO_OPTIONS,
         campoStatus: 'ativo',
-        dataSource: [{ id: 1, ativo: 1 }]
+        dataSource: [{ id: 1, ativo: true }, { id: 2, ativo: false }]
       });
 
       expect(grid.tableRows[0].__dg.severidade).toBe(TagStatus.Success);
+      expect(grid.tableRows[1].__dg.severidade).toBe(TagStatus.Secondary);
     });
 
     it('recalcula quando o statusOptions chega depois', () => {
