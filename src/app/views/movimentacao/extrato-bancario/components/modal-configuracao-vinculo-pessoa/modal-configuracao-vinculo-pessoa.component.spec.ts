@@ -17,10 +17,13 @@ import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid
 /** Vínculos de pessoa num p-dialog (FE-P2-07). */
 describe('ModalConfiguracaoVinculoPessoaComponent', () => {
   let fixture: ComponentFixture<ModalConfiguracaoVinculoPessoaComponent>;
+  let pessoas: jasmine.SpyObj<PessoaMovimentacaoService>;
 
   beforeEach(() => {
-    const pessoas = jasmine.createSpyObj<PessoaMovimentacaoService>('PessoaMovimentacaoService', ['listar', 'criar', 'atualizar', 'excluir']);
+    pessoas = jasmine.createSpyObj<PessoaMovimentacaoService>('PessoaMovimentacaoService', ['listar', 'criar', 'atualizar', 'excluir']);
     pessoas.listar.and.returnValue(of([]));
+    pessoas.criar.and.returnValue(of({ id: 1, nomePessoa: '', categoriaId: null, tipoMovimentacaoId: null }));
+    pessoas.atualizar.and.returnValue(of({ id: 7, nomePessoa: '', categoriaId: null, tipoMovimentacaoId: null }));
     const categorias = jasmine.createSpyObj<CategoryService>('CategoryService', ['listarAtivas']);
     categorias.listarAtivas.and.returnValue(of([]));
     const tipos = jasmine.createSpyObj<TipoMovimentacaoService>('TipoMovimentacaoService', ['listar']);
@@ -52,5 +55,17 @@ describe('ModalConfiguracaoVinculoPessoaComponent', () => {
     expect(dialogo.componentInstance.header).toBe('Vínculos cadastrados');
     dialogo.componentInstance.close(new Event('click'));
     expect(fechado).toHaveBeenCalledOnceWith(false);
+  });
+
+  it('salvar grava os ids escolhidos nos selects; id negativo cria, positivo atualiza', () => {
+    fixture.componentInstance.onSaveInline([
+      { row: { id: 7, nomePessoa: 'Ana', categoriaId: 3, tipoMovimentacaoId: 2 }, changes: { categoriaId: 3 } },
+      { row: { id: -1, nomePessoa: ' João ', categoriaId: null, tipoMovimentacaoId: 5 }, changes: { nomePessoa: ' João ', tipoMovimentacaoId: 5 } }
+    ]);
+
+    expect(pessoas.atualizar).toHaveBeenCalledOnceWith(
+      { id: 7, nomePessoa: 'Ana', categoriaId: 3, tipoMovimentacaoId: 2, mesAtualizacao: '2026-10' });
+    expect(pessoas.criar).toHaveBeenCalledOnceWith(
+      { nomePessoa: 'João', categoriaId: null, tipoMovimentacaoId: 5, mesAtualizacao: '2026-10' });
   });
 });

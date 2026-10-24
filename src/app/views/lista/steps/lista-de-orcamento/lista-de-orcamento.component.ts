@@ -25,14 +25,14 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
   styleUrls: ['./lista-de-orcamento.component.scss'],
 })
 export class ListaDeOrcamentoComponent implements OnInit {
-  @ViewChild('grid') grid?: DataGridComponent;
+  @ViewChild('grid') grid?: DataGridComponent<ItemListaDto>;
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmacao = inject(ConfirmacaoService);
 
   itensLista: ItemListaDto[] = [];
   
   exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO, buttonViewLine: true };
-  gridColumns: GridColumn[] = [];
+  gridColumns: GridColumn<ItemListaDto>[] = [];
   tipoLista = TipoLista.Orcamento;
   lista: ItemListaDto[] = [];
   listaId: number = 0;

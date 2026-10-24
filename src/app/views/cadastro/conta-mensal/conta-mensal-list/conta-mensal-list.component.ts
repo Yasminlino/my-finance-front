@@ -28,7 +28,7 @@ export class ContaMensalListComponent extends CadastroListBase<ContaLinha> {
   categorias: CategoriaDto[] = [];
   categoriasOptions: GridColumnOption[] = [];
   statusOptions = STATUS_ATIVO_OPTIONS;
-  gridColumns: GridColumn[] = [];
+  gridColumns: GridColumn<ContaLinha>[] = [];
   breadcrumb = [{ label: 'Cadastros' }, { label: 'Contas' }];
 
   constructor(private categoryService: CategoryService, private contaService: ContaService) {

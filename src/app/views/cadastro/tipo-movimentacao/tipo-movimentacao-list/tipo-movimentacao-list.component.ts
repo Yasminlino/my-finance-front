@@ -14,7 +14,7 @@ import { Observable } from 'rxjs';
 export class TipoMovimentacaoListComponent extends CadastroListBase<TipoMovimentacaoDto> {
   protected readonly rotulo = { singular: 'tipo de movimentação', plural: 'tipos de movimentação' };
 
-  gridColumns: GridColumn[] = [
+  gridColumns: GridColumn<TipoMovimentacaoDto>[] = [
     { field: 'nomeTipoMovimentacao', header: 'NOME TIPO MOVIMENTAÇÃO', type: GridColumnTypeEnum.Text, width: "40%" },
     { field: 'descricao', header: 'DESCRIÇÃO', type: GridColumnTypeEnum.Text, width: "50%" },
     { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },

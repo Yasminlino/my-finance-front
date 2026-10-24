@@ -23,7 +23,7 @@ export class CategoriaListComponent extends CadastroListBase<CategoriaDto> {
 
   statusOptions = STATUS_ATIVO_OPTIONS;
 
-  gridColumns: GridColumn[] = [
+  gridColumns: GridColumn<CategoriaDto>[] = [
     { field: 'nome', header: 'NOME', type: GridColumnTypeEnum.Text, width: "30%" },
     {
       field: 'subcategoria',

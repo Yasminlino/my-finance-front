@@ -25,14 +25,14 @@ export class ModalImportacoesMensaisComponent implements OnInit {
   selectedIds = new Set<number>();
 
   exibirCampos: ExibirCamposConfig | null = null;
-  gridColumns: GridColumn[] = []
+  gridColumns: GridColumn<ExtratoBancarioDto>[] = []
 
   loading = false;
   saving = false;
   q = '';
 
   showModalForm = false;
-  @ViewChild('grid') grid?: DataGridComponent;  
+  @ViewChild('grid') grid?: DataGridComponent<ExtratoBancarioDto>;  
   deletingId: number | null = null;
 
   private readonly confirmacao = inject(ConfirmacaoService);

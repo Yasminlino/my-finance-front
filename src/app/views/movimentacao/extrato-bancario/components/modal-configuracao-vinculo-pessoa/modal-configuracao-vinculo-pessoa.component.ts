@@ -28,7 +28,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   selectedIds = new Set<number>();
 
   exibirCampos: ExibirCamposConfig | null = null;
-  gridColumns: GridColumn[] = []
+  gridColumns: GridColumn<PessoaMovimentacaoDto>[] = []
   categorias: GridColumnOption[] = [];
   movimentacoes: GridColumnOption[] = [];
 
@@ -36,7 +36,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   saving = false;
   q = '';
 
-  @ViewChild('grid') grid?: DataGridComponent;
+  @ViewChild('grid') grid?: DataGridComponent<PessoaMovimentacaoDto>;
   deletingId: number | null = null;
 
   private readonly confirmacao = inject(ConfirmacaoService);
@@ -79,7 +79,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
     this.gridColumns = [
       { field: 'nomePessoa', header: 'NOME', type: GridColumnTypeEnum.Text, width: "25%" },
       {
-        field: "categoriaId", // <-- Alterado de categoriaName para categoriaId
+        field: "categoriaId",
         header: "CATEGORIA",
         type: GridColumnTypeEnum.Select,
         formatter: (row) => this.categoriaLabel(row.categoriaId),
@@ -88,7 +88,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
         editable: true
       },
       {
-        field: 'tipoMovimentacaoId', // <-- Alterado de tipoMovimentacaoName para tipoMovimentacaoId
+        field: 'tipoMovimentacaoId',
         header: 'TIPO MOVIMENTAÇÃO',
         type: GridColumnTypeEnum.Select,
         formatter: (row) => this.tipoMovimentacaoLabel(row.tipoMovimentacaoId),
@@ -132,21 +132,18 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
     this.grid?.onSaveAll();
   }
 
-  onSaveInline(changes: GridRowChange[]) {
+  onSaveInline(changes: GridRowChange<PessoaMovimentacaoDto>[]) {
     if (!changes.length) {
       this.close(true);
       return;
     }
 
     const gravacoes = changes.map(change => {
-      // Mapeia os valores selecionados para garantir que pegamos os IDs corretos.
-      const catSelecionada = this.categorias.find(c => c.label === change.changes['categoriaName'] || c.value === change.changes['categoriaId']);
-      const movSelecionada = this.movimentacoes.find(m => m.label === change.changes['tipoMovimentacaoName'] || m.value === change.changes['tipoMovimentacaoId']);
-
+      // Os selects gravam o id na própria coluna (categoriaId/tipoMovimentacaoId).
       const payload = {
-        nomePessoa: (change.changes['nomePessoa'] ?? change.row.nomePessoa ?? '').trim(),
-        categoriaId: catSelecionada ? catSelecionada.value : (change.changes['categoriaId'] ?? change.row.categoriaId ?? null),
-        tipoMovimentacaoId: movSelecionada ? movSelecionada.value : (change.changes['tipoMovimentacaoId'] ?? change.row.tipoMovimentacaoId ?? null),
+        nomePessoa: (change.changes.nomePessoa ?? change.row.nomePessoa ?? '').trim(),
+        categoriaId: change.changes.categoriaId ?? change.row.categoriaId ?? null,
+        tipoMovimentacaoId: change.changes.tipoMovimentacaoId ?? change.row.tipoMovimentacaoId ?? null,
         mesAtualizacao: this.monthFilter ?? null,
       };
 
@@ -179,11 +176,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: pessoas => {
-          this.pessoaMovimentacao = pessoas.map(item => ({
-            ...item,
-            categoriaName: item.categoria?.nome ?? '-',
-            tipoMovimentacaoName: item.tipoMovimentacao?.nomeTipoMovimentacao ?? '-',
-          }));
+          this.pessoaMovimentacao = pessoas;
         },
         error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar as pessoas.'))
       });

@@ -7,30 +7,35 @@ import { GridColumnTypeEnum } from "./enum/grid-column.enum";
  */
 export type GridColumnType = `${GridColumnTypeEnum}`;
 
+/**
+ * Campo de uma coluna: um campo da linha da tela, ou 'actions' (a coluna de botões). Com T, o compilador
+ * recusa nome de campo errado — o modo de falha do [DB] P3 (card #26).
+ */
+export type GridCampo<T> = (keyof T & string) | 'actions';
 
-export interface GridColumn {
-  field: string;
+export interface GridColumn<T> {
+  field: GridCampo<T>;
   header: string;
   type?: GridColumnType;
   options?: GridColumnOption[];
-  formatter?: (row: any) => any;
+  formatter?: (row: T) => unknown;
   icon?: string;
   functions?: string[];
   filterMatchMode?: string;
   width?: string;
   editable?: boolean;
-  classe?: string | ((row: any) => string);
+  classe?: string | ((row: T) => string);
 }
 
 export enum TypeGrid {
   editaModal = 1,
   editaLinha = 2,
-  visualizacao = 3 
+  visualizacao = 3
 }
 
 export interface GridColumnOption {
   label: string;
-  value: any;
+  value: unknown;
   classe?: TagStatus;
 }
 
@@ -43,7 +48,7 @@ export interface GridColumnOption {
  */
 export interface GridLinhaMeta {
   /** O que a célula mostra: o formatter, o rótulo do select ou o próprio valor. */
-  texto: Record<string, any>;
+  texto: Record<string, unknown>;
   /** Classe CSS de cada coluna (`col.classe`, que pode depender da linha). */
   classe: Record<string, string>;
   /** Severidade da tag de status. */
@@ -54,10 +59,20 @@ export interface GridLinhaMeta {
   bloqueada: boolean;
 }
 
+/**
+ * A linha como o grid a guarda: uma cópia da linha da tela, com as datas convertidas e os campos internos
+ * (`__dg` e `__dg_<campo>` da busca global). Por dentro o grid lê e grava pelo nome da coluna; a tela recebe
+ * a linha de volta como T.
+ */
+export interface LinhaGrid {
+  [campo: string]: unknown;
+  __dg?: GridLinhaMeta;
+}
+
 /** Alterações pendentes de uma linha editada inline. */
-export interface GridRowChange {
+export interface GridRowChange<T> {
   /** Linha original (já atualizada com os novos valores). */
-  row: any;
+  row: T;
   /** Campos alterados: campo -> novo valor. */
-  changes: Record<string, any>;
+  changes: Partial<T>;
 }

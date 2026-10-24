@@ -27,7 +27,7 @@ export class BancoListComponent extends CadastroListBase<BancoLinha> {
   tiposCartao: TipoCartaoDto[] = [];
   tipoCartaoOpcoes: GridColumnOption[] = [];
   statusOptions = STATUS_ATIVO_OPTIONS;
-  gridColumns: GridColumn[] = [];
+  gridColumns: GridColumn<BancoLinha>[] = [];
   breadcrumb = [{ label: 'Cadastros' }, { label: 'Bancos' }];
 
   constructor(private tipoCartaoService: TipoCartaoService, private bancoService: BancoService) {

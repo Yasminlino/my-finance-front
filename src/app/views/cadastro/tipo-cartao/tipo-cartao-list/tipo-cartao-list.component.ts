@@ -17,7 +17,7 @@ type TipoCartaoLinha = TipoCartaoDto & { somenteLeitura: boolean };
 export class TipoCartaoListComponent extends CadastroListBase<TipoCartaoLinha> {
   protected readonly rotulo = { singular: 'tipo de cartão', plural: 'tipos de cartão' };
 
-  gridColumns: GridColumn[] = [
+  gridColumns: GridColumn<TipoCartaoLinha>[] = [
     { field: 'nomeTipoCartao', header: 'NOME TIPO CARTÃO', type: GridColumnTypeEnum.Text, width: "50%" },
     { field: 'ehSistema', header: 'PADRÃO DO SISTEMA', type: GridColumnTypeEnum.Text, formatter: (row) => row.ehSistema ? 'Sim' : 'Não', width: "20%" },
     { field: 'ehCredito', header: 'CARTÃO DE CRÉDITO', type: GridColumnTypeEnum.Text, formatter: (row) => row.ehCredito ? 'Sim' : 'Não', width: "20%" },

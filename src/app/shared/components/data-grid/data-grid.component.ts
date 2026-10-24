@@ -36,7 +36,9 @@ import { ToggleButtonModule } from 'primeng/togglebutton';
 import { MenuItem } from 'primeng/api';
 import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 
-import { GridColumn, GridColumnOption, GridColumnType, GridLinhaMeta, GridRowChange, TypeGrid } from './data-grid.interface';
+import {
+  GridColumn, GridColumnOption, GridColumnType, GridLinhaMeta, GridRowChange, LinhaGrid, TypeGrid
+} from './data-grid.interface';
 
 import { CurrencyInputDirective } from '../../directives/currency-input.directive';
 import { ExibirCamposConfig } from '../../models/utils/grid-config.constants';
@@ -76,11 +78,14 @@ import { toDate } from 'src/app/core/utils/mask';
   host: { class: 'dg' },
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DataGridComponent implements OnChanges {
+export class DataGridComponent<T extends object> implements OnChanges {
 
   /**
    * OnPush (FE-P2-09): o grid só redesenha quando muda um @Input ou quando há evento no próprio
    * template. Os métodos públicos que as telas chamam via @ViewChild marcam a view com o cdr.
+   *
+   * Genérico no tipo da linha (card #26): a tela passa `T[]` e `GridColumn<T>[]` e recebe `T` nas saídas.
+   * Por dentro a linha é uma LinhaGrid (lida e gravada pelo nome da coluna); comoLinha/comoT fazem a ponte.
    */
   private readonly confirmacao = inject(ConfirmacaoService);
 
@@ -92,8 +97,8 @@ export class DataGridComponent implements OnChanges {
 
   @Input() titulo = '';
   /** Linhas a exibir. As telas trocam o array (nunca o alteram no lugar) para o grid remontar. */
-  @Input() dataSource: any[] = [];
-  @Input() columns: GridColumn[] = [];
+  @Input() dataSource: T[] = [];
+  @Input() columns: GridColumn<T>[] = [];
   @Input() breadcrumb?: null | MenuItem[] = null;
   @Input() dataKey = 'id';
   @Input() tipoTabela: TypeGrid = TypeGrid.editaModal;
@@ -104,12 +109,12 @@ export class DataGridComponent implements OnChanges {
   /** Campo da linha que vira tag colorida pelo statusOptions (DB-P3: "ativo" nos cadastros, "situacao" nos itens). */
   @Input() campoStatus = 'status';
   @Input() exibeCampos: ExibirCamposConfig | null = null;
-  @Input() disabledRowIds?: Set<any>;
+  @Input() disabledRowIds?: Set<unknown>;
   /**
    * Regra de negócio de quem usa o grid: a linha que devolve true não entra na edição inline
    * (ex.: conta paga em Contas a Pagar). Antes o grid fixava `status === 'PAGO'` (FE-P2-04).
    */
-  @Input() bloquearLinha?: (linha: any) => boolean;
+  @Input() bloquearLinha?: (linha: T) => boolean;
   /** Chave do localStorage onde o mês do filtro fica guardado (padrão: "dataFiltro"). */
   @Input() localStorage?: string;
 
@@ -117,19 +122,20 @@ export class DataGridComponent implements OnChanges {
   // Outputs
   // ---------------------------------------------------------------------------
 
-  @Output() new = new EventEmitter<any>();
-  @Output() edit = new EventEmitter<any>();
-  @Output() view = new EventEmitter<any>();
-  @Output() checkbox = new EventEmitter<any>();
-  @Output() delete = new EventEmitter<any>();
-  @Output() activate = new EventEmitter<any>();
-  @Output() deactivate = new EventEmitter<any>();
-  @Output() saveInline = new EventEmitter<GridRowChange[]>();
-  @Output() deleteSelected = new EventEmitter<any[]>();
-  @Output() saveSelected = new EventEmitter<any[]>();
-  @Output() addBatch = new EventEmitter<any[]>();
-  @Output() selectionChange = new EventEmitter<any[]>();
-  @Output() reload = new EventEmitter<any>();
+  @Output() new = new EventEmitter<void>();
+  @Output() edit = new EventEmitter<T>();
+  @Output() view = new EventEmitter<T>();
+  @Output() checkbox = new EventEmitter<T>();
+  @Output() delete = new EventEmitter<T>();
+  @Output() activate = new EventEmitter<T>();
+  @Output() deactivate = new EventEmitter<T>();
+  @Output() saveInline = new EventEmitter<GridRowChange<T>[]>();
+  @Output() deleteSelected = new EventEmitter<T[]>();
+  @Output() saveSelected = new EventEmitter<T[]>();
+  @Output() addBatch = new EventEmitter<void>();
+  @Output() selectionChange = new EventEmitter<T[]>();
+  /** Mês escolhido no calendário do grid (ou nada, no "Atualizar"). */
+  @Output() reload = new EventEmitter<Date | undefined>();
 
   // ---------------------------------------------------------------------------
   // ViewChild
@@ -157,18 +163,18 @@ export class DataGridComponent implements OnChanges {
   /** Exclusão em lote em andamento: liga ao emitir deleteSelected, desliga em concluirExclusao(). */
   deleting = false;
 
-  tableRows: any[] = [];
-  selectedItems: any[] = [];
+  tableRows: LinhaGrid[] = [];
+  selectedItems: LinhaGrid[] = [];
 
-  activeRows: Set<any> = new Set();
+  activeRows: Set<unknown> = new Set();
 
   // ---------------------------------------------------------------------------
   // Dialog - Textarea
   // ---------------------------------------------------------------------------
 
   dialogVisible = false;
-  dialogRow: any = null;
-  dialogColumn: GridColumn | null = null;
+  dialogRow: LinhaGrid | null = null;
+  dialogColumn: GridColumn<T> | null = null;
   dialogValue = '';
 
   viewDialogVisible = false;
@@ -179,10 +185,10 @@ export class DataGridComponent implements OnChanges {
 
   // ---------------------------------------------------------------------------
 
-  originalRows = new Map<any, any>();
+  originalRows = new Map<unknown, LinhaGrid>();
 
-  pendingChanges = new Map<any, GridRowChange>();
-  filtroValores: { [key: string]: any } = {};
+  pendingChanges = new Map<unknown, GridRowChange<T>>();
+  filtroValores: Record<string, unknown> = {};
   // ---------------------------------------------------------------------------
   // Filtros
   // ---------------------------------------------------------------------------
@@ -218,11 +224,12 @@ export class DataGridComponent implements OnChanges {
     const colunasData = this.columns.filter(column => column.type === 'date');
 
     this.tableRows = (this.dataSource ?? []).map(row => {
-      const linha = { ...row };
+      const linha = this.comoLinha(row);
       colunasData.forEach(column => {
         // "YYYY-MM-DD" (DateOnly) vira meia-noite local, não UTC — ver toDate().
-        if (linha[column.field] && typeof linha[column.field] === 'string') {
-          linha[column.field] = toDate(linha[column.field]);
+        const valor = linha[column.field];
+        if (valor && typeof valor === 'string') {
+          linha[column.field] = toDate(valor);
         }
       });
       this.calcularExibicao(linha);
@@ -230,23 +237,33 @@ export class DataGridComponent implements OnChanges {
     });
   }
 
+  /** Cópia da linha da tela, para o grid converter datas e guardar `__dg` sem mexer no original. */
+  private comoLinha(row: T): LinhaGrid {
+    return { ...row } as unknown as LinhaGrid;
+  }
+
+  /** A linha do grid devolvida à tela (saídas, formatter, bloquearLinha): os campos de T continuam nela. */
+  private comoT(linha: LinhaGrid): T {
+    return linha as unknown as T;
+  }
+
   /** Recalcula `linha.__dg` (ver GridLinhaMeta) e os campos `__dg_<campo>` da busca global. */
-  private calcularExibicao(linha: any): void {
+  private calcularExibicao(linha: LinhaGrid): void {
     const meta: GridLinhaMeta = {
       texto: {},
       classe: {},
       severidade: this.getSeverityStatus(linha[this.campoStatus]),
       desabilitada: this.isRowDisabled(linha),
-      bloqueada: this.bloquearLinha?.(linha) === true
+      bloqueada: this.bloquearLinha?.(this.comoT(linha)) === true
     };
 
     this.columns.forEach(column => {
       if (column.type === 'actions') return;
 
       if (typeof column.formatter === 'function') {
-        let formatado: any;
+        let formatado: unknown;
         try {
-          formatado = column.formatter(linha);
+          formatado = column.formatter(this.comoT(linha));
         } catch {
           formatado = '';
         }
@@ -264,7 +281,7 @@ export class DataGridComponent implements OnChanges {
     linha.__dg = meta;
   }
 
-  rowKey(row: any): any {
+  rowKey(row: LinhaGrid): unknown {
     return row?.[this.dataKey];
   }
 
@@ -273,8 +290,8 @@ export class DataGridComponent implements OnChanges {
   // ---------------------------------------------------------------------------
 
   /** Linha marcada pelo componente pai como `somenteLeitura: true` (ex.: tipo de cartão padrão do sistema). */
-  isSomenteLeitura(row: any): boolean {
-    return row?.somenteLeitura === true;
+  isSomenteLeitura(row: LinhaGrid): boolean {
+    return row?.['somenteLeitura'] === true;
   }
 
   /**
@@ -282,7 +299,7 @@ export class DataGridComponent implements OnChanges {
    * read-only rows, or rows whose dataKey value is present in the
    * `disabledRowIds` set provided by the host component.
    */
-  isRowDisabled(row: any): boolean {
+  isRowDisabled(row: LinhaGrid): boolean {
     if (this.isSomenteLeitura(row)) {
       return true;
     }
@@ -301,7 +318,7 @@ export class DataGridComponent implements OnChanges {
    * the selection — both when the user clicks the row checkbox and when the
    * header "select all" checkbox is toggled.
    */
-  readonly rowSelectableFn = ({ data }: { data: any; index: number }): boolean =>
+  readonly rowSelectableFn = ({ data }: { data: LinhaGrid; index: number }): boolean =>
     !this.isRowDisabled(data);
 
   // ---------------------------------------------------------------------------
@@ -309,12 +326,12 @@ export class DataGridComponent implements OnChanges {
   // ---------------------------------------------------------------------------
 
   openTextAreaDialog(
-    row: any,
-    column: GridColumn
+    row: LinhaGrid,
+    column: GridColumn<T>
   ): void {
     this.dialogRow = row;
     this.dialogColumn = column;
-    this.dialogValue = row[column.field] ?? '';
+    this.dialogValue = this.textoDe(row[column.field]);
 
     this.dialogVisible = true;
   }
@@ -339,10 +356,10 @@ export class DataGridComponent implements OnChanges {
   }
 
   openTextAreaViewDialog(
-    row: any,
-    column: GridColumn
+    row: LinhaGrid,
+    column: GridColumn<T>
   ): void {
-    this.viewDialogValue = row[column.field] ?? '';
+    this.viewDialogValue = this.textoDe(row[column.field]);
     this.viewDialogTitle = column.header;
     this.viewDialogVisible = true;
   }
@@ -353,30 +370,35 @@ export class DataGridComponent implements OnChanges {
     this.viewDialogTitle = '';
   }
 
+  /** Texto do diálogo de texto longo: vazio quando a célula não tem valor. */
+  private textoDe(valor: unknown): string {
+    return valor == null ? '' : String(valor);
+  }
+
   // ---------------------------------------------------------------------------
   // Ações
   // ---------------------------------------------------------------------------
 
-  colActions(column: GridColumn): string[] {
+  colActions(column: GridColumn<T>): string[] {
     return column.functions?.length
       ? column.functions
       : ['edit', 'delete'];
   }
 
-  onEditClick(row: any, _column: GridColumn): void {
-    this.edit.emit(row);
+  onEditClick(row: LinhaGrid, _column: GridColumn<T>): void {
+    this.edit.emit(this.comoT(row));
   }
 
-  onViewClick(row: any, _column: GridColumn): void {
-    this.view.emit(row);
+  onViewClick(row: LinhaGrid, _column: GridColumn<T>): void {
+    this.view.emit(this.comoT(row));
   }
 
-  onCheckBoxClick(row: any): void {
-    this.checkbox.emit(row);
+  onCheckBoxClick(row: LinhaGrid): void {
+    this.checkbox.emit(this.comoT(row));
   }
 
-  onDelete(row: any): void {
-    this.delete.emit(row);
+  onDelete(row: LinhaGrid): void {
+    this.delete.emit(this.comoT(row));
   }
 
   openNew(): void {
@@ -390,12 +412,12 @@ export class DataGridComponent implements OnChanges {
   // ---------------------------------------------------------------------------
   // ---------------------------------------------------------------------------
 
-  getSelectLabel(col: any, value: any): string {
+  /** Rótulo da opção cujo value é o valor da célula; sem opção correspondente, o próprio valor. */
+  getSelectLabel(col: GridColumn<T>, value: unknown): unknown {
     if (!col.options || value === null || value === undefined) {
       return value ?? '-';
     }
-    // Procura na lista de opções aquela cujo 'value' (o ID) seja igual ao valor atual da linha
-    const option = col.options.find((opt: any) => opt.value === value);
+    const option = col.options.find(opt => opt.value === value);
     return option ? option.label : value;
   }
 
@@ -427,7 +449,7 @@ export class DataGridComponent implements OnChanges {
         return;
       }
 
-      editingRowKeys[key] = true;
+      editingRowKeys[String(key)] = true;
 
       if (!this.originalRows.has(key)) {
         this.originalRows.set(
@@ -452,8 +474,8 @@ export class DataGridComponent implements OnChanges {
     this.cdr.markForCheck();
   }
 
-  private cloneRow(row: any): any {
-    const clone = { ...row };
+  private cloneRow(row: LinhaGrid): LinhaGrid {
+    const clone: LinhaGrid = { ...row };
 
     this.columns.forEach(column => {
       clone[column.field] =
@@ -463,7 +485,7 @@ export class DataGridComponent implements OnChanges {
     return clone;
   }
 
-  isRowChanged(row: any): boolean {
+  isRowChanged(row: LinhaGrid): boolean {
     const key = this.rowKey(row);
 
     if (key === undefined) {
@@ -484,7 +506,7 @@ export class DataGridComponent implements OnChanges {
     );
   }
 
-  isInlineEditable(column: GridColumn): boolean {
+  isInlineEditable(column: GridColumn<T>): boolean {
     if (
       column.field === 'actions' ||
       column.editable === false
@@ -505,13 +527,13 @@ export class DataGridComponent implements OnChanges {
     ].includes(column.type);
   }
 
-  editableColumns(): GridColumn[] {
+  editableColumns(): GridColumn<T>[] {
     return this.columns.filter(column =>
       this.isInlineEditable(column)
     );
   }
 
-  onCellChange(row: any): void {
+  onCellChange(row: LinhaGrid): void {
     // O ngModel já alterou a linha: o texto exibido acompanha o novo valor.
     this.calcularExibicao(row);
 
@@ -527,7 +549,7 @@ export class DataGridComponent implements OnChanges {
       return;
     }
 
-    const changes: Record<string, any> = {};
+    const changes: Record<string, unknown> = {};
 
     this.editableColumns().forEach(column => {
       const currentValue = this.normalizeComparableValue(
@@ -551,12 +573,13 @@ export class DataGridComponent implements OnChanges {
     }
 
     this.pendingChanges.set(key, {
-      row,
-      changes
+      row: this.comoT(row),
+      // Só campos editáveis de colunas da tela, ou seja, campos de T.
+      changes: changes as Partial<T>
     });
   }
 
-  revertRow(row: any): void {
+  revertRow(row: LinhaGrid): void {
     const key = this.rowKey(row);
 
     if (key === undefined) {
@@ -655,7 +678,7 @@ export class DataGridComponent implements OnChanges {
     this.cdr.markForCheck();
   }
 
-  private cloneValue(value: any): any {
+  private cloneValue(value: unknown): unknown {
     if (value instanceof Date) {
       return new Date(value.getTime());
     }
@@ -674,7 +697,7 @@ export class DataGridComponent implements OnChanges {
     return value;
   }
 
-  private normalizeComparableValue(value: any): any {
+  private normalizeComparableValue(value: unknown): unknown {
     if (value instanceof Date) {
       return new Date(
         value.getFullYear(),
@@ -710,8 +733,8 @@ export class DataGridComponent implements OnChanges {
   }
 
   protected valuesEqual(
-    a: any,
-    b: any
+    a: unknown,
+    b: unknown
   ): boolean {
     if (a === b) {
       return true;
@@ -735,7 +758,7 @@ export class DataGridComponent implements OnChanges {
   // ---------------------------------------------------------------------------
 
   getSeverityStatus(
-    statusValue: string
+    statusValue: unknown
   ): TagStatus {
     const option =
       this.statusOptions.find(
@@ -756,9 +779,9 @@ export class DataGridComponent implements OnChanges {
 
     this.deleting = true;
 
-    this.deleteSelected.emit([
-      ...this.selectedItems
-    ]);
+    this.deleteSelected.emit(
+      this.selectedItems.map(linha => this.comoT(linha))
+    );
   }
 
   clearSelection(): void {
@@ -801,7 +824,7 @@ export class DataGridComponent implements OnChanges {
   }
 
   matchMode(
-    column: GridColumn
+    column: GridColumn<T>
   ): string {
     return (
       column.filterMatchMode ??
@@ -811,7 +834,7 @@ export class DataGridComponent implements OnChanges {
 
   onFilter(
     event: Event,
-    column: GridColumn,
+    column: GridColumn<T>,
     table: Table
   ): void {
     const value =
@@ -827,7 +850,7 @@ export class DataGridComponent implements OnChanges {
   /** Filtro de select, multiselect e número: os três eventos do PrimeNG trazem o valor em `value`. */
   onValueFilter(
     event: { value?: unknown } | null,
-    column: GridColumn,
+    column: GridColumn<T>,
     table: Table
   ): void {
     table.filter(
@@ -839,7 +862,7 @@ export class DataGridComponent implements OnChanges {
 
   onBooleanFilter(
     event: { checked?: boolean } | null,
-    column: GridColumn,
+    column: GridColumn<T>,
     table: Table
   ): void {
     const value =
@@ -857,7 +880,7 @@ export class DataGridComponent implements OnChanges {
    * com o matchMode da coluna ('dateIs': mesmo dia). Antes ia o texto "YYYY-MM-DD" com 'equals',
    * que o PrimeNG compara com Date.toString() e nunca casava (FE-P3-04).
    */
-  onDateFilter(event: Date | null, column: GridColumn, table: Table): void {
+  onDateFilter(event: Date | null, column: GridColumn<T>, table: Table): void {
     table.filter(event, column.field, this.matchMode(column));
   }
 
@@ -913,8 +936,9 @@ export class DataGridComponent implements OnChanges {
   }
 
   private exportFallback(): void {
-    const rows =
-      (this.dt as any)?.filteredValue ??
+    // Filtrado: as linhas do grid; sem filtro: as da tela. As duas têm os campos de T.
+    const rows: T[] =
+      (this.dt?.filteredValue as T[] | null | undefined) ??
       this.dataSource ??
       [];
 
@@ -938,13 +962,13 @@ export class DataGridComponent implements OnChanges {
         .join(',')
     );
 
-    rows.forEach((row: any) => {
+    rows.forEach(row => {
       const values =
         exportColumns.map(column => {
           const rawValue =
             column.formatter
               ? column.formatter(row)
-              : row?.[column.field];
+              : this.comoLinha(row)[column.field];
 
           const value =
             rawValue == null
@@ -987,13 +1011,13 @@ export class DataGridComponent implements OnChanges {
     URL.revokeObjectURL(url);
   }
 
-  getColumnClass(col: any, product: any): string {
+  getColumnClass(col: GridColumn<T>, linha: LinhaGrid): string {
     if (!col.classe) {
       return '';
     }
     // Se a classe for uma função (ex: para o valor positivo/negativo), executa-a passando a linha
     if (typeof col.classe === 'function') {
-      return col.classe(product);
+      return col.classe(this.comoT(linha));
     }
     // Se for apenas uma string normal (ex: 'p-tag-danger')
     return col.classe;

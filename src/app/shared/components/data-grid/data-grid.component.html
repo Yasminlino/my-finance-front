@@ -149,7 +149,8 @@
                     @case('select') {
                     <p-multiSelect [options]="col.options" optionLabel="label" optionValue="value" placeholder="Todos"
                         [panelStyle]="{'width': '12rem', 'min-width': '12rem'}" [showClear]="true" appendTo="body" panelStyleClass="dg-panel"
-                        [(ngModel)]="filtroValores[col.field]" (onChange)="onValueFilter($event, col, dt)">
+                        [(ngModel)]="filtroValores[col.field]" (onChange)="onValueFilter($event, col, dt)"
+                        (onClear)="onValueFilter(null, col, dt)">
                     </p-multiSelect>
                     }
                     @case('number') {

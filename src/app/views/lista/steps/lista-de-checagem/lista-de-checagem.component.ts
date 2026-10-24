@@ -15,6 +15,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, forkJoin } from 'rxjs';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
+/** Linha do grid: o item com o checkbox derivado da situação. */
+type ItemChecagemLinha = ItemListaDto & { statusBoolean: boolean };
+
 @Component({
   selector: 'app-lista-de-checagem',
   templateUrl: './lista-de-checagem.component.html',
@@ -22,9 +25,9 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 })
 export class ListaDeChecagemComponent implements OnInit {
 
-  itemListas: ItemListaDto[] = [];
+  itemListas: ItemChecagemLinha[] = [];
   exibirCampos: ExibirCamposConfig | null = null;
-  gridColumns: GridColumn[] = [];
+  gridColumns: GridColumn<ItemChecagemLinha>[] = [];
 
   statusOptions: GridColumnOption[] = [
     { label: 'OK', value: 'OK', classe: TagStatus.Success },
@@ -32,11 +35,11 @@ export class ListaDeChecagemComponent implements OnInit {
   ];
   listaId: number = 0;
 
-  statusLabel(value: string): boolean {
+  statusLabel(value?: string): boolean {
     return value === 'OK' ? true : false;
   }
 
-  lista: ItemListaDto[] = [];
+  lista: ItemChecagemLinha[] = [];
   titulo: string = "Checklist"
   breadcrumb = [{ label: 'Listas' }, { label: 'Checklist' }]
 
@@ -46,7 +49,7 @@ export class ListaDeChecagemComponent implements OnInit {
   showModalUpdateItem = false;
 
   editing: ItemListaDto | null = null;
-  @ViewChild('grid') grid?: DataGridComponent;
+  @ViewChild('grid') grid?: DataGridComponent<ItemChecagemLinha>;
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmacao = inject(ConfirmacaoService);
 

@@ -33,7 +33,7 @@ export abstract class CadastroListBase<T extends { id: number }> implements OnIn
   loading = false;
   showModalForm = false;
   editing: T | null = null;
-  @ViewChild('grid') grid?: DataGridComponent;
+  @ViewChild('grid') grid?: DataGridComponent<T>;
 
   /** Nome da entidade, usado em todas as mensagens. */
   protected abstract readonly rotulo: RotuloEntidade;

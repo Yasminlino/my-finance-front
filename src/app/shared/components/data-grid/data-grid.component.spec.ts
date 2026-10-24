@@ -1,23 +1,39 @@
 import { ConfirmationService } from 'primeng/api';
 import { ChangeDetectorRef } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { MultiSelect } from 'primeng/multiselect';
 import { provideRouter } from '@angular/router';
 
 import { DataGridComponent } from './data-grid.component';
 import { GridColumn, GridColumnOption } from './data-grid.interface';
 import { STATUS_ATIVO_OPTIONS, TagStatus } from '../../enums/status.enum';
 
+/** Linha das telas de teste: os campos que as colunas abaixo usam. */
+interface Linha {
+  id: number;
+  nome?: string;
+  vencimento?: string;
+  categoriaId?: number;
+  valor?: number;
+  status?: string;
+  ativo?: boolean;
+  situacao?: string;
+  somenteLeitura?: boolean;
+  bloqueado?: boolean;
+}
+
 describe('DataGridComponent', () => {
-  let fixture: ComponentFixture<DataGridComponent>;
-  let grid: DataGridComponent;
+  let fixture: ComponentFixture<DataGridComponent<Linha>>;
+  let grid: DataGridComponent<Linha>;
 
   const statusOptions: GridColumnOption[] = [
     { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Danger },
     { label: 'PAGO NO PRAZO', value: 'PAGO NO PRAZO', classe: TagStatus.Success }
   ];
 
-  const colunas: GridColumn[] = [
+  const colunas: GridColumn<Linha>[] = [
     { field: 'nome', header: 'Nome' },
     { field: 'vencimento', header: 'Vencimento', type: 'date' },
     { field: 'categoriaId', header: 'Categoria', type: 'select', options: [{ label: 'Casa', value: 6 }] },
@@ -25,7 +41,7 @@ describe('DataGridComponent', () => {
     { field: 'status', header: 'Status', type: 'select', options: statusOptions }
   ];
 
-  const linha = (extra: Record<string, unknown> = {}) =>
+  const linha = (extra: Partial<Linha> = {}): Linha =>
     ({ id: 1, nome: 'Luz', vencimento: '2026-10-05', categoriaId: 6, valor: 10, status: 'PENDENTE', ...extra });
 
   const entradas = (valores: Record<string, unknown>) => {
@@ -36,7 +52,7 @@ describe('DataGridComponent', () => {
   beforeEach(() => {
     // ConfirmationService: o ConfirmacaoService usa o do root; no app ele vem do AppModule.
     TestBed.configureTestingModule({ providers: [ConfirmationService, provideNoopAnimations(), provideRouter([])] });
-    fixture = TestBed.createComponent(DataGridComponent);
+    fixture = TestBed.createComponent(DataGridComponent<Linha>);
     grid = fixture.componentInstance;
   });
 
@@ -65,12 +81,30 @@ describe('DataGridComponent', () => {
     }));
   });
 
+  describe('filtro de seleção (card #36)', () => {
+    const linhas = [linha({ id: 1, categoriaId: 6 }), linha({ id: 2, categoriaId: 7 })];
+
+    it('o × do multiselect limpa o filtro e volta todas as linhas', fakeAsync(() => {
+      entradas({ columns: colunas, exibeCampos: { filter: true }, dataSource: linhas });
+      grid.onValueFilter({ value: [6] }, colunas[2], grid.dt!);
+      tick(300);
+      expect(grid.dt!.filteredValue?.map(r => r.id)).toEqual([1]);
+
+      // O × do PrimeNG chama clear(): emite onClear, não onChange.
+      const filtro = fixture.debugElement.query(By.directive(MultiSelect)).componentInstance as MultiSelect;
+      filtro.clear(new MouseEvent('click'));
+      tick(300);
+
+      expect(grid.dt!.filteredValue ?? grid.dt!.value).toHaveSize(2);
+    }));
+  });
+
   describe('montagem das linhas (FE-P2-06)', () => {
     it('converte as datas mesmo quando as colunas chegam depois dos dados', () => {
       entradas({ dataSource: [linha()] });
       entradas({ columns: colunas });
 
-      const data = grid.tableRows[0].vencimento;
+      const data = grid.tableRows[0]['vencimento'] as Date;
       expect(data instanceof Date).toBeTrue();
       expect(data.getFullYear()).toBe(2026);
       expect(data.getMonth()).toBe(9);
@@ -82,23 +116,23 @@ describe('DataGridComponent', () => {
       entradas({ columns: colunas, dataSource: [original] });
 
       expect(original.vencimento).toBe('2026-10-05');
-      expect((original as any).__dg).toBeUndefined();
+      expect('__dg' in original).toBeFalse();
     });
 
     it('pré-calcula o texto da célula: formatter, rótulo do select ou o valor', () => {
       entradas({ columns: colunas, statusOptions, dataSource: [linha()] });
 
-      const meta = grid.tableRows[0].__dg;
+      const meta = grid.tableRows[0].__dg!;
       expect(meta.texto['valor']).toBe('R$ 10');
       expect(meta.texto['categoriaId']).toBe('Casa');
       expect(meta.texto['nome']).toBe('Luz');
-      expect(grid.tableRows[0].__dg_valor).toBe('R$ 10');
+      expect(grid.tableRows[0]['__dg_valor']).toBe('R$ 10');
     });
 
     it('pré-calcula a severidade da tag de status', () => {
       entradas({ columns: colunas, statusOptions, dataSource: [linha({ status: 'PAGO NO PRAZO' })] });
 
-      expect(grid.tableRows[0].__dg.severidade).toBe(TagStatus.Success);
+      expect(grid.tableRows[0].__dg!.severidade).toBe(TagStatus.Success);
     });
 
     it('campoStatus escolhe de qual campo sai a severidade (DB-P3: ativo, situacao)', () => {
@@ -110,16 +144,16 @@ describe('DataGridComponent', () => {
         dataSource: [{ id: 1, ativo: true }, { id: 2, ativo: false }]
       });
 
-      expect(grid.tableRows[0].__dg.severidade).toBe(TagStatus.Success);
-      expect(grid.tableRows[1].__dg.severidade).toBe(TagStatus.Secondary);
+      expect(grid.tableRows[0].__dg!.severidade).toBe(TagStatus.Success);
+      expect(grid.tableRows[1].__dg!.severidade).toBe(TagStatus.Secondary);
     });
 
     it('recalcula quando o statusOptions chega depois', () => {
       entradas({ columns: colunas, dataSource: [linha({ status: 'PAGO NO PRAZO' })] });
-      expect(grid.tableRows[0].__dg.severidade).toBe(TagStatus.Info);
+      expect(grid.tableRows[0].__dg!.severidade).toBe(TagStatus.Info);
 
       entradas({ statusOptions });
-      expect(grid.tableRows[0].__dg.severidade).toBe(TagStatus.Success);
+      expect(grid.tableRows[0].__dg!.severidade).toBe(TagStatus.Success);
     });
 
     it('marca como desabilitada a linha somente leitura ou listada em disabledRowIds', () => {
@@ -129,7 +163,7 @@ describe('DataGridComponent', () => {
         dataSource: [linha(), linha({ id: 2 }), linha({ id: 3, somenteLeitura: true })]
       });
 
-      expect(grid.tableRows.map(r => r.__dg.desabilitada)).toEqual([false, true, true]);
+      expect(grid.tableRows.map(r => r.__dg!.desabilitada)).toEqual([false, true, true]);
     });
 
     it('refaz o texto da linha alterada na edição inline', () => {
@@ -137,15 +171,15 @@ describe('DataGridComponent', () => {
       grid.toggleEdicaoTabela();
       const row = grid.tableRows[0];
 
-      row.valor = 25;
+      row['valor'] = 25;
       grid.onCellChange(row);
 
-      expect(row.__dg.texto['valor']).toBe('R$ 25');
+      expect(row.__dg!.texto['valor']).toBe('R$ 25');
     });
   });
 
   describe('bloqueio de linha (FE-P2-04)', () => {
-    const paga = (r: any) => r.status === 'PAGO NO PRAZO';
+    const paga = (r: Linha) => r.status === 'PAGO NO PRAZO';
 
     it('a linha bloqueada pela tela não entra no modo de edição', () => {
       entradas({
@@ -156,7 +190,7 @@ describe('DataGridComponent', () => {
 
       grid.toggleEdicaoTabela();
 
-      expect(grid.tableRows.map(r => r.__dg.bloqueada)).toEqual([false, true]);
+      expect(grid.tableRows.map(r => r.__dg!.bloqueada)).toEqual([false, true]);
       expect(grid.originalRows.has(1)).toBeTrue();
       expect(grid.originalRows.has(2)).toBeFalse();
     });
@@ -212,7 +246,7 @@ describe('DataGridComponent', () => {
     const texto = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
 
     it('o formatter roda ao montar as linhas, não a cada ciclo de detecção', () => {
-      const formatter = jasmine.createSpy('formatter').and.callFake((r: any) => `R$ ${r.valor}`);
+      const formatter = jasmine.createSpy('formatter').and.callFake((r: Linha) => `R$ ${r.valor}`);
       entradas({ columns: [{ field: 'valor', header: 'Valor', type: 'money', formatter }], dataSource: [linha()] });
       const chamadas = formatter.calls.count();
 
@@ -259,8 +293,8 @@ describe('DataGridComponent', () => {
 
     it('no modo de edição a linha bloqueada mostra o cadeado', () => {
       entradas({
-        columns: [...colunas, { field: 'acoes', header: 'Ações', type: 'actions' }],
-        bloquearLinha: (r: any) => r.id === 2,
+        columns: [...colunas, { field: 'actions', header: 'Ações', type: 'actions' }],
+        bloquearLinha: (r: Linha) => r.id === 2,
         dataSource: [linha(), linha({ id: 2 })]
       });
 
@@ -282,7 +316,7 @@ describe('DataGridComponent', () => {
       grid.toggleEdicaoTabela();
       const row = grid.tableRows[0];
 
-      row.nome = 'Luz nova';
+      row['nome'] = 'Luz nova';
       grid.onCellChange(row);
       grid.onSaveAll();
 
@@ -295,12 +329,12 @@ describe('DataGridComponent', () => {
       grid.toggleEdicaoTabela();
       const row = grid.tableRows[0];
 
-      row.valor = 25;
+      row['valor'] = 25;
       grid.onCellChange(row);
       grid.revertRow(row);
 
-      expect(row.valor).toBe(10);
-      expect(row.__dg.texto['valor']).toBe('R$ 10');
+      expect(row['valor']).toBe(10);
+      expect(row.__dg!.texto['valor']).toBe('R$ 10');
       expect(grid.pendingCount).toBe(0);
     });
   });

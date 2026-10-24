@@ -28,14 +28,14 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
   selectedIds = new Set<number>();
 
   exibirCampos: ExibirCamposConfig | null = null;
-  gridColumns: GridColumn[] = []
+  gridColumns: GridColumn<ContaDto>[] = []
   breadcrumb = [{ label: 'Cadastros' }, { label: 'Tipo movimentação' }]
 
   loading = false;
   saving = false;
 
   showModalForm = false;
-  @ViewChild('grid') grid?: DataGridComponent;
+  @ViewChild('grid') grid?: DataGridComponent<ContaDto>;
   private sub = new Subscription();
 
 
@@ -68,7 +68,7 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
 
     this.gridColumns = [
       { field: 'nome', header: 'NOME DA CONTA', type: GridColumnTypeEnum.Text, width: "40%" }, {
-        field: 'parcelaFormatada',
+        field: 'parcelaAtual',
         header: 'PARCELAS',
         type: GridColumnTypeEnum.Text,
         width: "40%",

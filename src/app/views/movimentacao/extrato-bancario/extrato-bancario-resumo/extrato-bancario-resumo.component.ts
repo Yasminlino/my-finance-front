@@ -40,7 +40,7 @@ type ResumoBanco = {
 export class ExtratoBancarioResumoComponent implements OnInit {
   exibirCampos: ExibirCamposConfig | null = null;
   dateFilter: Date | undefined
-  gridColumns: GridColumn[] = [];
+  gridColumns: GridColumn<ResumoBanco>[] = [];
   categorias: CategoriaDto[] = [];
   tiposConta: TipoCartaoDto[] = [];
   bancos: BancoDto[] = [];
@@ -64,7 +64,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
 
 
   editing: CategoriaDto | null = null;
-  @ViewChild('grid') grid?: DataGridComponent;
+  @ViewChild('grid') grid?: DataGridComponent<ResumoBanco>;
   private readonly destroyRef = inject(DestroyRef);
   /** Mês pedido ("YYYY-MM"); a carga segue sempre o último. */
   private readonly mes$ = new Subject<string>();

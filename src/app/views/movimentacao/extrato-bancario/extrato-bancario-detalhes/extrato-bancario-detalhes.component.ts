@@ -35,7 +35,7 @@ import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
   templateUrl: './extrato-bancario-detalhes.component.html',
 })
 export class ExtratoBancarioDetalhesComponent implements OnInit {
-  @ViewChild('grid') grid?: DataGridComponent;
+  @ViewChild('grid') grid?: DataGridComponent<ExtratoItemDto>;
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmacao = inject(ConfirmacaoService);
   /** Mês pedido ("YYYY-MM"); a carga segue sempre o último. */
@@ -46,7 +46,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   extratoMensal: ExtratoItemDto[] = [];
   dateFilter: Date | undefined
 
-  gridColumns: GridColumn[] = [];
+  gridColumns: GridColumn<ExtratoItemDto>[] = [];
   itemsButtom: MenuItem[] = [];
 
 
@@ -240,6 +240,19 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   }
 
   private setGridColumns(): void {
+    // Só no cartão de crédito.
+    const colunasCartao: GridColumn<ExtratoItemDto>[] = this.isCreditCard ? [{
+      field: "parcelaAtual",
+      header: "PARCELA",
+      type: GridColumnTypeEnum.Number,
+      formatter: (row) =>
+        row.dataMovimentacao && row.parcelaAtual && row.quantidadeParcelas
+          ? `${row.parcelaAtual}/${row.quantidadeParcelas}`
+          : '',
+      width: '10%',
+      editable: true
+    }] : [];
+
     this.gridColumns = [
       {
         field: "dataMovimentacao",
@@ -256,18 +269,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
         width: this.isCreditCard ? '15%' : '20%',
         editable: true
       },
-      // Adição condicional correta usando spread operator e operador ternário
-      ...(this.isCreditCard ? [{
-        field: "parcelaAtual",
-        header: "PARCELA",
-        type: GridColumnTypeEnum.Number,
-        formatter: (row: ExtratoItemDto) =>
-          row.dataMovimentacao && row.parcelaAtual && row.quantidadeParcelas
-            ? `${row.parcelaAtual}/${row.quantidadeParcelas}`
-            : '',
-        width: '10%',
-        editable: true
-      }] : []),
+      ...colunasCartao,
       {
         field: "categoriaId",
         header: "CATEGORIA",
@@ -381,7 +383,7 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
   }
 
   /** Salva em lote as alterações feitas via edição inline ("Salvar tudo"). */
-  onSaveInline(changes: GridRowChange[]) {
+  onSaveInline(changes: GridRowChange<ExtratoItemDto>[]) {
     if (!changes.length) {
       return;
     }

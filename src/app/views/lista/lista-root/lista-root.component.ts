@@ -23,7 +23,7 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 export class ListaRootComponent implements OnInit {
   listas: ListaDto[] = [];
   exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO, buttonViewLine: true };
-  gridColumns: GridColumn[] = [];
+  gridColumns: GridColumn<ListaDto>[] = [];
 
   statusOptions: GridColumnOption[] = [
     { label: 'Ativo', value: true, classe: TagStatus.Success },
@@ -43,7 +43,7 @@ export class ListaRootComponent implements OnInit {
   showModalUpdate = false;
 
   editing: ListaDto | null = null;
-  @ViewChild('grid') grid?: DataGridComponent;
+  @ViewChild('grid') grid?: DataGridComponent<ListaDto>;
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmacao = inject(ConfirmacaoService);
 
