@@ -2,7 +2,6 @@ import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import {
   contarPorSituacao,
-  corDaCategoria,
   iconeDaCategoria,
   previaDoEfeito,
   resumoDoMes,
@@ -184,23 +183,6 @@ describe('contas-a-pagar.regras', () => {
       expect(iconeDaCategoria('Logística')).toBe('pi pi-truck');
       expect(iconeDaCategoria('Débito automático')).toBe('pi pi-sync');
       expect(iconeDaCategoria('Imposto/Juros')).toBe('pi pi-receipt');
-    });
-  });
-
-  describe('corDaCategoria', () => {
-    it('é estável para o mesmo nome (sem diferenciar acento e caixa) e fica entre as 8 cores', () => {
-      expect(corDaCategoria('Saúde')).toBe(corDaCategoria('SAUDE'));
-      expect(corDaCategoria('Moradia')).toMatch(/^cor-[0-7]$/);
-    });
-
-    it('categorias diferentes tendem a cores diferentes', () => {
-      const cores = new Set(['Moradia', 'Saúde', 'Salário', 'Transporte', 'Investimento', 'Cartão de crédito']
-        .map(corDaCategoria));
-      expect(cores.size).toBeGreaterThan(3);
-    });
-
-    it('sem categoria usa a cor neutra', () => {
-      expect(corDaCategoria(undefined)).toBe('cor-neutra');
     });
   });
 });

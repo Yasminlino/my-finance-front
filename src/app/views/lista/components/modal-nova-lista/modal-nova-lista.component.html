@@ -1,17 +1,17 @@
-<p-dialog [header]="lista ? 'Editar Lista' : 'Nova Lista'" [visible]="true" [modal]="true" [dismissableMask]="true"
-  [draggable]="false" [style]="{ width: '32rem' }" [breakpoints]="{ '576px': '95vw' }" (visibleChange)="close(false)">
+<mf-form-panel [titulo]="lista ? 'Editar Lista' : 'Nova Lista'" [salvando]="saving" (fechar)="close(false)"
+  (salvar)="save()">
   <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
     <div class="flex flex-column gap-2">
       <label for="lista-nome">Nome Lista</label>
       <input pInputText id="lista-nome" maxlength="120" formControlName="nome" [class.ng-dirty]="erro('nome')" />
-      <small class="p-error" *ngIf="erro('nome')">Informe um nome válido.</small>
+      <mf-field-error [control]="form.controls.nome">Informe um nome válido.</mf-field-error>
     </div>
 
     <div class="flex flex-column gap-2">
       <label for="lista-tipo">Tipo Lista</label>
       <p-dropdown inputId="lista-tipo" formControlName="tipoMovimentacao" [options]="opcoesTipo"
         placeholder="Selecione..." appendTo="body" styleClass="w-full" [class.ng-dirty]="erro('tipoMovimentacao')" />
-      <small class="p-error" *ngIf="erro('tipoMovimentacao')">Selecione um tipo de Lista.</small>
+      <mf-field-error [control]="form.controls.tipoMovimentacao">Selecione um tipo de Lista.</mf-field-error>
     </div>
 
     <div class="flex flex-column gap-2">
@@ -20,9 +20,4 @@
         styleClass="w-full" />
     </div>
   </form>
-
-  <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
-    <p-button label="Salvar" icon="pi pi-check" [loading]="saving" (onClick)="save()" />
-  </ng-template>
-</p-dialog>
+</mf-form-panel>

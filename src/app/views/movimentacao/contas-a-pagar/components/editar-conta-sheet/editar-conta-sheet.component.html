@@ -6,7 +6,7 @@
 
       <!-- Cabeçalho -->
       <div class="flex align-items-center gap-2 mb-3">
-        <span class="icone-categoria" [ngClass]="cor"><i [class]="icone"></i></span>
+        <mf-category-icon [natureza]="natureza" [icone]="icone" tamanho="lg" />
         <div class="flex-grow-1 min-w-0">
           <div class="font-bold text-lg nome">{{ conta.nome }}</div>
           <small class="text-color-secondary">
@@ -52,7 +52,7 @@
           <div class="col-6">
             <label class="rotulo" for="sheet-status">Status</label>
             <p-dropdown inputId="sheet-status" [options]="statusOptions" [(ngModel)]="rascunho.situacao" optionLabel="label"
-              optionValue="value" appendTo="body" panelStyleClass="tags-claras" styleClass="w-full tags-claras"
+              optionValue="value" appendTo="body" panelStyleClass="mf-tags-claras" styleClass="w-full mf-tags-claras"
               [class.campo-alterado]="alterado('situacao')" (ngModelChange)="alterar('situacao', $event)">
               <ng-template let-opcao pTemplate="selectedItem"><p-tag [value]="opcao.label" [severity]="opcao.classe" /></ng-template>
               <ng-template let-opcao pTemplate="item"><p-tag [value]="opcao.label" [severity]="opcao.classe" /></ng-template>

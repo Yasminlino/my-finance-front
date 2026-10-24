@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { Dialog } from 'primeng/dialog';
+import { FormPanelComponent } from 'src/app/shared/ui/form-panel/form-panel.component';
 import { of, throwError } from 'rxjs';
 
 import { ModalLancamentoManualComponent } from './modal-lancamento-manual.component';
@@ -188,20 +188,24 @@ describe('ModalLancamentoManualComponent', () => {
     expect(fechado).toHaveBeenCalledOnceWith(false);
   });
 
-  it('abre num p-dialog; o X fecha sem gravar e some enquanto grava (FE-P2-07)', () => {
+  it('abre no painel lateral grande; fechar não grava e não vale enquanto grava (card #27)', () => {
     const fechado = jasmine.createSpy('fechado');
     entradas({});
     modal.fechado.subscribe(fechado);
-    const dialogo = fixture.debugElement.query(By.directive(Dialog));
+    const painel = fixture.debugElement.query(By.directive(FormPanelComponent)).componentInstance as FormPanelComponent;
 
-    expect(dialogo.componentInstance.header).toBe('Adicionar lançamento manual');
-    expect(dialogo.componentInstance.closable).toBeTrue();
+    expect(painel.titulo).toBe('Adicionar lançamento manual');
+    expect(painel.tamanho).toBe('lg');
+
     modal.salvando = true;
     fixture.detectChanges();
-    expect(dialogo.componentInstance.closable).toBeFalse();
+    expect(painel.salvando).toBeTrue(); // o painel desabilita X e Cancelar e ignora Esc e clique fora
+    painel.fechar.emit();
+    expect(fechado).not.toHaveBeenCalled();
 
     modal.salvando = false;
-    dialogo.componentInstance.close(new Event('click'));
+    fixture.detectChanges();
+    painel.fechar.emit();
     expect(fechado).toHaveBeenCalledOnceWith(false);
   });
 });

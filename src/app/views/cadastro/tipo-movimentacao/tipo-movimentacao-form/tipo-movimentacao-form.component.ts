@@ -6,14 +6,15 @@ import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { finalize } from 'rxjs';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
-import { DialogModule } from 'primeng/dialog';
+import { FormPanelComponent } from 'src/app/shared/ui/form-panel/form-panel.component';
+import { FieldErrorComponent } from 'src/app/shared/ui/field-error/field-error.component';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-tipo-movimentacao-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DialogModule, InputTextModule, ButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, FormPanelComponent, FieldErrorComponent, InputTextModule, ButtonModule],
   templateUrl: './tipo-movimentacao-form.component.html'
 })
 export class TipoMovimentacaoFormComponent implements OnInit {

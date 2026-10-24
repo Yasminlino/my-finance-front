@@ -1,15 +1,15 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { CardModule } from 'primeng/card';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { formatCurrencyBR } from 'src/app/core/utils/mask';
+import { StatCardComponent } from 'src/app/shared/ui/stat-card/stat-card.component';
 import { ResumoMes } from '../../contas-a-pagar.regras';
 
 /** Cards do topo de Contas a Pagar, calculados sobre o mês inteiro (resumoDoMes). */
 @Component({
   selector: 'app-resumo-mes',
   standalone: true,
-  imports: [CardModule, ProgressBarModule, DecimalPipe],
+  imports: [StatCardComponent, ProgressBarModule, DecimalPipe],
   templateUrl: './resumo-mes.component.html',
   styleUrls: ['./resumo-mes.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

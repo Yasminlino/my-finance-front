@@ -1,38 +1,27 @@
-<div class="pagina">
+<div class="mf-pagina">
   @if (!movel()) {
     <!-- Desktop: cabeçalho com breadcrumb, mês, modo edição e Nova conta -->
-    <div class="cabecalho flex flex-wrap align-items-end justify-content-between gap-3 mt-2 mb-3">
-      <div class="flex flex-column gap-1">
-        <p-breadcrumb [model]="breadcrumb" [home]="home" />
-        <div class="flex align-items-center gap-1">
-          <p-button class="voltar" icon="pi pi-chevron-left" [text]="true" [rounded]="true" severity="secondary"
-            size="small" (onClick)="voltar()" ariaLabel="Voltar" />
-          <h5 class="m-0 titulo">Contas a Pagar</h5>
-        </div>
-        <small class="text-color-secondary">Gerencie despesas e receitas do mês</small>
+    <mf-page-header class="block mt-2 mb-3" titulo="Contas a Pagar" subtitulo="Gerencie despesas e receitas do mês"
+      [breadcrumb]="breadcrumb" [home]="home" [mostrarVoltar]="true" (voltar)="voltar()">
+      <div acoes class="flex align-items-center gap-1">
+        <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" [disabled]="!!edicao"
+          pTooltip="Mês anterior" tooltipPosition="top" (onClick)="mudarMes(-1)" ariaLabel="Mês anterior" />
+        <p-calendar [(ngModel)]="dateFilter" view="month" dateFormat="MM yy" [readonlyInput]="true" [showIcon]="true"
+          [disabled]="!!edicao" (onSelect)="loadMonth($event)" inputStyleClass="text-center campo-mes" />
+        <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" [disabled]="!!edicao"
+          pTooltip="Próximo mês" tooltipPosition="top" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
       </div>
 
-      <div class="flex flex-wrap align-items-center gap-2">
-        <div class="flex align-items-center gap-1">
-          <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" [disabled]="!!edicao"
-            pTooltip="Mês anterior" tooltipPosition="top" (onClick)="mudarMes(-1)" ariaLabel="Mês anterior" />
-          <p-calendar [(ngModel)]="dateFilter" view="month" dateFormat="MM yy" [readonlyInput]="true" [showIcon]="true"
-            [disabled]="!!edicao" (onSelect)="loadMonth($event)" inputStyleClass="text-center campo-mes" />
-          <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" [disabled]="!!edicao"
-            pTooltip="Próximo mês" tooltipPosition="top" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
-        </div>
-
-        <!-- div e não label em volta do switch: o label repassaria o clique e o switch voltaria na hora. -->
-        <div class="modo-edicao flex align-items-center gap-2" [class.ativo]="!!edicao">
-          <p-inputSwitch #switchEl inputId="switch-edicao" [(ngModel)]="switchEdicao" [disabled]="loading"
-            (onChange)="alternarEdicao($event.checked)" />
-          <label for="switch-edicao" class="cursor-pointer">Modo edição</label>
-        </div>
-
-        <p-splitButton label="Nova conta" icon="pi pi-plus" [model]="itensNovaConta" [disabled]="!!edicao"
-          (onClick)="onOpenCreate()" appendTo="body" />
+      <!-- div e não label em volta do switch: o label repassaria o clique e o switch voltaria na hora. -->
+      <div acoes class="modo-edicao flex align-items-center gap-2" [class.ativo]="!!edicao">
+        <p-inputSwitch #switchEl inputId="switch-edicao" [(ngModel)]="switchEdicao" [disabled]="loading"
+          (onChange)="alternarEdicao($event.checked)" />
+        <label for="switch-edicao" class="cursor-pointer">Modo edição</label>
       </div>
-    </div>
+
+      <p-splitButton acoes label="Nova conta" icon="pi pi-plus" [model]="itensNovaConta" [disabled]="!!edicao"
+        (onClick)="onOpenCreate()" appendTo="body" />
+    </mf-page-header>
 
     @if (edicao) {
       <app-barra-edicao class="mb-3" [mes]="nomeDoMes" [contagem]="edicao.contagem" [temErros]="edicao.temErros"
@@ -41,21 +30,16 @@
 
     <app-resumo-mes class="block mb-3" [resumo]="resumo" />
 
-    <app-tabela-contas [contas]="contasMensais" [hoje]="hoje" [loading]="loading" [edicao]="edicao"
-      (marcarPago)="marcarComoPago($event)" (excluir)="excluir($event)" (editar)="editar($event)" />
+    <app-tabela-contas [contas]="contasMensais" [hoje]="hoje" [naturezas]="naturezas" [loading]="loading"
+      [edicao]="edicao" (marcarPago)="marcarComoPago($event)" (excluir)="excluir($event)" (editar)="editar($event)" />
   } @else {
     <!-- Celular: título com ⋮, mês em largura total, resumo em carrossel, cards e botão flutuante -->
-    <!-- O p-menu fica fora da linha: dentro, ele contava como item do flex e o ⋮ ia para o meio. -->
-    <p-breadcrumb [model]="breadcrumb" [home]="home" />
-    <div class="titulo-movel flex align-items-center justify-content-between mb-2">
-      <div class="flex align-items-center gap-1">
-        <p-button class="voltar" icon="pi pi-chevron-left" [text]="true" [rounded]="true" severity="secondary"
-          size="small" (onClick)="voltar()" ariaLabel="Voltar" />
-        <h5 class="m-0 titulo">Contas a Pagar</h5>
-      </div>
-      <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
+    <!-- O p-menu fica fora do cabeçalho: dentro, ele contava como item do flex e o ⋮ ia para o meio. -->
+    <mf-page-header class="block mb-2" titulo="Contas a Pagar" [breadcrumb]="breadcrumb" [home]="home"
+      [mostrarVoltar]="true" (voltar)="voltar()">
+      <p-button acoes icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
         (onClick)="menuTopo.toggle($event)" ariaLabel="Mais ações" />
-    </div>
+    </mf-page-header>
     <p-menu #menuTopo [model]="itensNovaConta" [popup]="true" appendTo="body" />
 
     <div class="mes-movel flex align-items-center gap-2 mb-3">
@@ -69,13 +53,12 @@
 
     <app-resumo-mes class="block mb-3" [resumo]="resumo" [compacto]="true" />
 
-    <app-lista-contas-movel [contas]="contasMensais" [hoje]="hoje" [loading]="loading"
+    <app-lista-contas-movel [contas]="contasMensais" [hoje]="hoje" [naturezas]="naturezas" [loading]="loading"
       (marcarPago)="marcarComoPago($event)" (excluir)="excluir($event)" (editar)="editar($event)" />
 
-    <p-button class="fab-nova-conta" icon="pi pi-plus" [rounded]="true" size="large" (onClick)="onOpenCreate()"
-      ariaLabel="Nova conta" />
+    <mf-fab rotulo="Nova conta" (clique)="onOpenCreate()" />
 
-    <app-editar-conta-sheet [conta]="contaEmEdicao" [hoje]="hoje" [salvando]="salvandoConta"
+    <app-editar-conta-sheet [conta]="contaEmEdicao" [hoje]="hoje" [naturezas]="naturezas" [salvando]="salvandoConta"
       (fechar)="contaEmEdicao = null" (salvar)="salvarConta($event)" />
   }
 

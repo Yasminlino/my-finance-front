@@ -1,4 +1,4 @@
-<div class="pagina">
+<div class="mf-pagina">
   <app-data-grid #grid [dataSource]="extratoMensal" [breadcrumb]="breadcrumb" [columns]="gridColumns" (saveInline)="onSaveInline($event)"
     (reload)="loadMonth()" [titulo]="titulo" [dateFilter]="dateFilter" [localStorage]="'dataFiltroDetalheExtrato'" (selectionChange)="onSelectionChange($event)" (delete)="onDelete($event)" (deleteSelected)="onDeleteSelected($event)"
     [itemsButtom]="itemsButtom" [exibeCampos]="exibirCampos" [loading]="loading">

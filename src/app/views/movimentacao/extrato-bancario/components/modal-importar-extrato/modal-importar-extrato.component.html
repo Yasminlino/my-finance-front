@@ -1,5 +1,5 @@
 <p-dialog header="Importar extrato" [visible]="true" [modal]="true" [closable]="!importando" [draggable]="false"
-  [style]="{ width: '32rem' }" [breakpoints]="{ '576px': '95vw' }" (visibleChange)="cancelar()">
+  styleClass="mf-dialog-sm" (visibleChange)="cancelar()">
   <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="salvar()" novalidate>
     <div class="flex flex-column gap-2">
       <label for="ie-banco">Banco</label>

@@ -8,7 +8,8 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { BancoDto } from 'src/app/core/models/banco.model';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 import { finalize } from 'rxjs';
-import { DialogModule } from 'primeng/dialog';
+import { FormPanelComponent } from 'src/app/shared/ui/form-panel/form-panel.component';
+import { FieldErrorComponent } from 'src/app/shared/ui/field-error/field-error.component';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
@@ -17,7 +18,7 @@ import { OPCOES_ATIVO } from 'src/app/shared/utils/opcoes-status';
 @Component({
   selector: 'app-banco-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CurrencyInputDirective, DialogModule, DropdownModule, InputTextModule, ButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, CurrencyInputDirective, FormPanelComponent, FieldErrorComponent, DropdownModule, InputTextModule, ButtonModule],
   templateUrl: './banco-form.component.html'
 })
 export class BancoFormComponent implements OnInit {

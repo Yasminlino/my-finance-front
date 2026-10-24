@@ -2,7 +2,7 @@ import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import { formatCurrencyBR, formatDateBR } from 'src/app/core/utils/mask';
 import {
   FiltroSituacao, Situacao, TagDoStatus, VencimentoRelativo,
-  contarPorSituacao, corDaCategoria, ehReceita, iconeDaCategoria, situacao, tagDoStatus, vencimentoDe,
+  contarPorSituacao, ehReceita, iconeDaCategoria, situacao, tagDoStatus, vencimentoDe,
   vencimentoRelativo
 } from './contas-a-pagar.regras';
 
@@ -14,8 +14,8 @@ import {
 /** O que a linha mostra, calculado ao receber as contas e não a cada detecção de mudanças. */
 export interface MetaLinha {
   icone: string;
-  /** Classe da paleta (cor-0 … cor-7) pela categoria. */
-  cor: string;
+  /** Natureza da categoria (cor do ícone, mf-category-icon); null enquanto as categorias não chegam. */
+  natureza: number | null;
   situacao: Situacao;
   vencimento: string;
   relativo: VencimentoRelativo;
@@ -58,13 +58,15 @@ function semAcento(texto: string | null | undefined): string {
   return (texto ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
-export function metaDaConta(conta: LinhaContasMensais, hoje: Date): MetaLinha {
+export function metaDaConta(
+  conta: LinhaContasMensais, hoje: Date, naturezas: ReadonlyMap<number, number> = new Map()
+): MetaLinha {
   const receita = ehReceita(conta);
   const total = conta.quantidadeParcelas ?? 0;
   const atual = conta.parcelaAtual ?? 0;
   return {
     icone: iconeDaCategoria(conta.categoriaNome),
-    cor: corDaCategoria(conta.categoriaNome),
+    natureza: naturezas.get(conta.categoriaId) ?? null,
     situacao: situacao(conta, hoje),
     vencimento: formatDateBR(conta.data),
     relativo: vencimentoRelativo(conta, hoje),
@@ -76,9 +78,11 @@ export function metaDaConta(conta: LinhaContasMensais, hoje: Date): MetaLinha {
   };
 }
 
-export function metaDasContas(contas: LinhaContasMensais[], hoje: Date): Record<number, MetaLinha> {
+export function metaDasContas(
+  contas: LinhaContasMensais[], hoje: Date, naturezas: ReadonlyMap<number, number> = new Map()
+): Record<number, MetaLinha> {
   const meta: Record<number, MetaLinha> = {};
-  contas.forEach(conta => (meta[conta.id] = metaDaConta(conta, hoje)));
+  contas.forEach(conta => (meta[conta.id] = metaDaConta(conta, hoje, naturezas)));
   return meta;
 }
 

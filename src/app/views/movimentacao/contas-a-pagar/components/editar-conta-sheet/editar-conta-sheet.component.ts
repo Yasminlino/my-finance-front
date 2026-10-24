@@ -12,7 +12,8 @@ import { TagModule } from 'primeng/tag';
 
 import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import { STATUS_PAGAMENTO_OPTIONS } from 'src/app/shared/enums/status.enum';
-import { corDaCategoria, iconeDaCategoria, previaDoEfeito } from '../../contas-a-pagar.regras';
+import { CategoryIconComponent } from 'src/app/shared/ui/category-icon/category-icon.component';
+import { iconeDaCategoria, previaDoEfeito } from '../../contas-a-pagar.regras';
 import { CampoEditavel, EdicaoContas, RascunhoConta } from '../../edicao-contas';
 import { ErroCampoDirective } from '../../erro-campo.directive';
 
@@ -26,7 +27,7 @@ import { ErroCampoDirective } from '../../erro-campo.directive';
   standalone: true,
   imports: [
     NgClass, FormsModule, SidebarModule, ButtonModule, InputNumberModule, CalendarModule, DropdownModule,
-    InputTextareaModule, TagModule, ErroCampoDirective
+    InputTextareaModule, TagModule, ErroCampoDirective, CategoryIconComponent
   ],
   templateUrl: './editar-conta-sheet.component.html',
   styleUrls: ['./editar-conta-sheet.component.scss']
@@ -38,6 +39,8 @@ export class EditarContaSheetComponent implements OnChanges {
   /** Conta em edição; null fecha o sheet. */
   @Input() conta: LinhaContasMensais | null = null;
   @Input() hoje = new Date();
+  /** categoriaId → natureza (cor do ícone). */
+  @Input() naturezas: ReadonlyMap<number, number> = new Map();
   @Input() salvando = false;
 
   @Output() fechar = new EventEmitter<void>();
@@ -47,14 +50,16 @@ export class EditarContaSheetComponent implements OnChanges {
   edicao: EdicaoContas | null = null;
   rascunho: RascunhoConta | null = null;
   icone = '';
-  cor = '';
+  natureza: number | null = null;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['conta']) {
       this.edicao = this.conta ? new EdicaoContas([this.conta]) : null;
       this.rascunho = this.conta ? this.edicao!.rascunho(this.conta.id) : null;
       this.icone = iconeDaCategoria(this.conta?.categoriaNome);
-      this.cor = corDaCategoria(this.conta?.categoriaNome);
+    }
+    if (changes['conta'] || changes['naturezas']) {
+      this.natureza = this.conta ? this.naturezas.get(this.conta.categoriaId) ?? null : null;
     }
   }
 

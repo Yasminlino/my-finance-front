@@ -1,14 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { Dialog } from 'primeng/dialog';
+import { FormPanelComponent } from 'src/app/shared/ui/form-panel/form-panel.component';
 import { of } from 'rxjs';
 
 import { ModalNovaListaComponent } from './modal-nova-lista.component';
 import { ListaService } from 'src/app/core/services/lista.service';
 import { SharedModule } from 'src/app/shared/shared.module';
 
-/** Nova/editar lista em p-dialog com campos PrimeNG (FE-P2-07). */
+/** Nova/editar lista no painel lateral (mf-form-panel, card #27) com campos PrimeNG (FE-P2-07). */
 describe('ModalNovaListaComponent', () => {
   let fixture: ComponentFixture<ModalNovaListaComponent>;
   let service: jasmine.SpyObj<ListaService>;
@@ -30,14 +30,14 @@ describe('ModalNovaListaComponent', () => {
     });
   });
 
-  it('abre num p-dialog com o título e o X fecha sem recarregar', () => {
+  it('abre no painel lateral com o título e o X fecha sem recarregar', () => {
     const fechado = jasmine.createSpy('closed');
     abrir({ id: 3, nome: 'Mercado', tipoMovimentacao: 1, ativo: true });
     fixture.componentInstance.closed.subscribe(fechado);
-    const dialogo = fixture.debugElement.query(By.directive(Dialog));
+    const dialogo = fixture.debugElement.query(By.directive(FormPanelComponent));
 
-    expect(dialogo.componentInstance.header).toBe('Editar Lista');
-    dialogo.componentInstance.close(new Event('click'));
+    expect(dialogo.componentInstance.titulo).toBe('Editar Lista');
+    dialogo.componentInstance.fechar.emit();
     expect(fechado).toHaveBeenCalledOnceWith(false);
   });
 

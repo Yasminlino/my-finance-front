@@ -33,7 +33,15 @@ describe('contas-a-pagar.lista', () => {
     expect(meta[3].receita).toBeTrue();
     expect(meta[3].valor.replace(/\s/g, ' ')).toBe('+ R$ 5.000,00');
     expect(meta[1].icone).toBe('pi pi-home');
-    expect(meta[1].cor).toMatch(/^cor-[0-7]$/);
+  });
+
+  it('metaDasContas: a cor vem da natureza da categoria (card #27), e sem natureza conhecida fica null', () => {
+    const naturezas = new Map([[1, 2], [7, 0]]);
+    const comNatureza = metaDasContas([conta({ id: 1, categoriaId: 1 }), conta({ id: 2, categoriaId: 99 })], hoje, naturezas);
+
+    expect(comNatureza[1].natureza).toBe(2);
+    expect(comNatureza[2].natureza).toBeNull();
+    expect(meta[1].natureza).toBeNull(); // sem o mapa (categorias ainda carregando)
   });
 
   it('ordenarPorVencimento: por data e, no mesmo dia, por nome, sem mexer na lista original', () => {

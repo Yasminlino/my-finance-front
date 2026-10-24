@@ -40,7 +40,7 @@ describe('ResumoMesComponent', () => {
       expect(textos[2]).toContain('Vencidas');
       expect(textos[2]).toContain('11 despesas em atraso');
       expect(el().querySelectorAll('.carrossel-pontos span').length).toBe(3);
-      expect(el().querySelector('p-card')).toBeNull();
+      expect(el().querySelector('mf-stat-card')).toBeNull();
     });
 
     it('vencidas no singular', () => {
@@ -52,7 +52,7 @@ describe('ResumoMesComponent', () => {
   it('mostra os quatro valores em reais e o percentual pago', () => {
     mostrar({ receitas: 3000, despesas: 1750, pago: 1000, percentualPago: 1000 / 1750 * 100, vencidasValor: 500, vencidasQtd: 1 });
 
-    expect(el().querySelectorAll('p-card').length).toBe(4);
+    expect(el().querySelectorAll('mf-stat-card').length).toBe(4);
     expect(texto()).toContain('R$ 3.000,00');
     expect(texto()).toContain('R$ 1.750,00');
     expect(texto()).toContain('R$ 1.000,00');
@@ -66,16 +66,16 @@ describe('ResumoMesComponent', () => {
 
     expect(texto()).toContain('1 lançamento');
     expect(texto()).toContain('3 lançamentos');
-    expect(el().querySelectorAll('.resumo-icone').length).toBe(4);
+    expect(el().querySelectorAll('.mf-stat-card__icone').length).toBe(4);
   });
 
   it('plural das vencidas e card de vencidas destacado só quando há vencidas', () => {
     mostrar({ vencidasValor: 900, vencidasQtd: 3 });
     expect(texto()).toContain('3 contas');
-    expect(el().querySelector('.resumo-vencidas.com-vencidas')).not.toBeNull();
+    expect(el().querySelector('.mf-stat-card--destaque')).not.toBeNull();
 
     mostrar({});
-    expect(el().querySelector('.resumo-vencidas.com-vencidas')).toBeNull();
+    expect(el().querySelector('.mf-stat-card--destaque')).toBeNull();
   });
 
   it('receitas não recebidas aparecem à parte no card de vencidas, só quando há', () => {

@@ -1,13 +1,12 @@
-<p-dialog [header]="'Adicionar lançamento manual' + (ehCredito ? ' (Cartão de crédito)' : '')" [visible]="true"
-  [modal]="true" [closable]="!salvando" [draggable]="false" [style]="{ width: '56rem' }"
-  [breakpoints]="{ '960px': '95vw' }" (visibleChange)="cancelar()">
+<mf-form-panel [titulo]="'Adicionar lançamento manual' + (ehCredito ? ' (Cartão de crédito)' : '')" tamanho="lg"
+  [salvando]="salvando" (fechar)="cancelar()" (salvar)="salvar()">
   <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
     <div class="formgrid grid">
       <div class="field col-12 md:col-4">
         <label for="lm-data">Data</label>
         <input pInputText id="lm-data" type="date" class="w-full" formControlName="dataMovimentacao"
           [class.ng-dirty]="invalido('dataMovimentacao')" />
-        <small class="p-error" *ngIf="invalido('dataMovimentacao')">Informe a data.</small>
+        <mf-field-error [control]="form.controls.dataMovimentacao">Informe a data.</mf-field-error>
       </div>
 
       <div class="field col-12 md:col-4">
@@ -20,7 +19,7 @@
         <label for="lm-valor">Valor</label>
         <input pInputText id="lm-valor" type="text" inputmode="decimal" class="w-full" currencyInput
           formControlName="valor" placeholder="0,00" [class.ng-dirty]="invalido('valor')" />
-        <small class="p-error" *ngIf="invalido('valor')">Informe um valor maior que zero.</small>
+        <mf-field-error [control]="form.controls.valor">Informe um valor maior que zero.</mf-field-error>
       </div>
 
       <div class="field col-12 md:col-6">
@@ -28,14 +27,14 @@
         <p-dropdown inputId="lm-banco" formControlName="bancoId" [options]="bancos" optionLabel="nomeBanco"
           optionValue="id" placeholder="Selecione..." appendTo="body" styleClass="w-full"
           [class.ng-dirty]="invalido('bancoId')" />
-        <small class="p-error" *ngIf="invalido('bancoId')">Selecione o banco.</small>
+        <mf-field-error [control]="form.controls.bancoId">Selecione o banco.</mf-field-error>
       </div>
 
       <div class="field col-12 md:col-6">
         <label for="lm-tipo-conta">Tipo conta / cartão</label>
         <input pInputText id="lm-tipo-conta" type="text" class="w-full" [value]="tipoCartao?.nomeTipoCartao ?? '—'"
           disabled />
-        <small class="text-color-secondary">Definido pelo banco.</small>
+        <small class="mf-hint">Definido pelo banco.</small>
       </div>
 
       <ng-container *ngIf="ehCredito">
@@ -43,7 +42,7 @@
           <label for="lm-fatura">Número da fatura</label>
           <input pInputText id="lm-fatura" maxlength="20" type="text" class="w-full" placeholder="Ex.: 2026-01"
             formControlName="numeroFatura" [class.ng-dirty]="invalido('numeroFatura')" />
-          <small class="p-error" *ngIf="invalido('numeroFatura')">Use o formato AAAA-MM.</small>
+          <mf-field-error [control]="form.controls.numeroFatura">Use o formato AAAA-MM.</mf-field-error>
         </div>
 
         <div class="field col-12 md:col-8 flex align-items-end gap-2 pb-2">
@@ -56,13 +55,14 @@
             <label for="lm-total">Total de parcelas</label>
             <input pInputText id="lm-total" type="number" min="2" class="w-full" formControlName="quantidadeParcelas"
               [class.ng-dirty]="invalido('quantidadeParcelas')" />
-            <small class="p-error" *ngIf="invalido('quantidadeParcelas')">No mínimo 2 parcelas.</small>
+            <mf-field-error [control]="form.controls.quantidadeParcelas">No mínimo 2 parcelas.</mf-field-error>
           </div>
 
           <div class="field col-12 md:col-4">
             <label for="lm-parcela">Parcela atual</label>
             <input pInputText id="lm-parcela" type="number" min="1" class="w-full" formControlName="parcelaAtual"
               [class.ng-dirty]="invalido('parcelaAtual') || parcelaForaDoTotal" />
+            <!-- Fica um <small> próprio: o erro também vale quando a parcela passa do total, que não é validação do campo. -->
             <small class="p-error" *ngIf="invalido('parcelaAtual') || parcelaForaDoTotal">
               {{ parcelaForaDoTotal ? 'A parcela atual não pode passar do total.' : 'A parcela começa em 1.' }}
             </small>
@@ -99,9 +99,4 @@
       </div>
     </div>
   </form>
-
-  <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" [outlined]="true" [disabled]="salvando" (onClick)="cancelar()" />
-    <p-button label="Salvar" icon="pi pi-check" [loading]="salvando" (onClick)="salvar()" />
-  </ng-template>
-</p-dialog>
+</mf-form-panel>

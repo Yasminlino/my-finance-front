@@ -8,7 +8,8 @@ import { CategoriaDto } from 'src/app/core/models/categoria.model';
 import { ContaDto } from 'src/app/core/models/conta.model';
 import { finalize } from 'rxjs';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
-import { DialogModule } from 'primeng/dialog';
+import { FormPanelComponent } from 'src/app/shared/ui/form-panel/form-panel.component';
+import { FieldErrorComponent } from 'src/app/shared/ui/field-error/field-error.component';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -18,7 +19,7 @@ import { OPCOES_ATIVO } from 'src/app/shared/utils/opcoes-status';
 @Component({
   selector: 'app-conta-mensal-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CurrencyInputDirective, DialogModule, DropdownModule, InputTextModule, CheckboxModule, ButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, CurrencyInputDirective, FormPanelComponent, FieldErrorComponent, DropdownModule, InputTextModule, CheckboxModule, ButtonModule],
   templateUrl: './conta-mensal-form.component.html'
 })
 export class ContaMensalFormComponent implements OnInit {

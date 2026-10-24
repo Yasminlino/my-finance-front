@@ -48,8 +48,11 @@ describe('ContasAPagarComponent', () => {
     service.listarDoMes.and.callFake(() => of(contas));
     service.atualizar.and.returnValue(of({}));
     alert = jasmine.createSpyObj<AlertService>('AlertService', ['success', 'error', 'contrast']);
-    const categorias = jasmine.createSpyObj<CategoryService>('CategoryService', ['listarAtivas']);
+    const categorias = jasmine.createSpyObj<CategoryService>('CategoryService', ['listarAtivas', 'listar']);
     categorias.listarAtivas.and.returnValue(of([]));
+    categorias.listar.and.returnValue(of([
+      { id: 1, nome: 'Moradia', subcategoria: 'Despesa', naturezaOperacao: 1, ativo: true }
+    ]));
 
     TestBed.configureTestingModule({
       imports: [ContasAPagarModule],
@@ -80,9 +83,15 @@ describe('ContasAPagarComponent', () => {
     const location = TestBed.inject(Location);
     spyOn(location, 'back');
 
-    expect(el.querySelector('p-breadcrumb')).not.toBeNull();
-    el.querySelector<HTMLButtonElement>('.voltar button')!.click();
+    expect(el.querySelector('mf-page-header p-breadcrumb')).not.toBeNull();
+    el.querySelector<HTMLButtonElement>('mf-page-header button[aria-label="Voltar"]')!.click();
     expect(location.back).toHaveBeenCalled();
+  });
+
+  it('ícone da categoria com a cor da natureza (todas as categorias, inclusive inativas) — card #27', () => {
+    expect(tela.naturezas.get(1)).toBe(1);
+    expect((fixture.nativeElement as HTMLElement).querySelector('#conta-1 .mf-icone-categoria')?.classList)
+      .toContain('mf-natureza-1');
   });
 
   it('carrega o último mês escolhido e calcula o resumo', () => {
@@ -187,7 +196,7 @@ describe('ContasAPagarComponent', () => {
       expect(el().querySelector('app-lista-contas-movel')).not.toBeNull();
       expect(el().querySelector('app-tabela-contas')).toBeNull();
       expect(el().querySelector('app-resumo-mes .carrossel')).not.toBeNull();
-      expect(el().querySelector('.fab-nova-conta')).not.toBeNull();
+      expect(el().querySelector('mf-fab')).not.toBeNull();
       expect(el().querySelector('p-inputSwitch')).toBeNull();
     });
 
@@ -195,14 +204,16 @@ describe('ContasAPagarComponent', () => {
       const location = TestBed.inject(Location);
       spyOn(location, 'back');
 
-      expect(el().querySelector('p-breadcrumb')).not.toBeNull();
-      el().querySelector<HTMLButtonElement>('.voltar button')!.click();
+      expect(el().querySelector('mf-page-header p-breadcrumb')).not.toBeNull();
+      el().querySelector<HTMLButtonElement>('mf-page-header button[aria-label="Voltar"]')!.click();
       expect(location.back).toHaveBeenCalled();
     });
 
-    it('o ⋮ do título fica no canto direito (só título e botão na linha)', () => {
-      const linha = el().querySelector('.titulo-movel')!;
-      expect(Array.from(linha.children).map(c => c.tagName.toLowerCase())).toEqual(['div', 'p-button']);
+    it('o ⋮ do título fica nas ações do cabeçalho, à direita, e o p-menu fica fora dele', () => {
+      const acoes = el().querySelector('mf-page-header .mf-page-header__acoes')!;
+      expect(Array.from(acoes.children).map(c => c.tagName.toLowerCase())).toEqual(['p-button']);
+      expect(acoes.querySelector('button[aria-label="Mais ações"]')).not.toBeNull();
+      expect(el().querySelector('mf-page-header p-menu')).toBeNull();
     });
 
     it('editar abre o bottom sheet da conta', () => {

@@ -1,5 +1,4 @@
 import { NgModule } from '@angular/core';
-import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { CalendarModule } from 'primeng/calendar';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { InputSwitchModule } from 'primeng/inputswitch';
@@ -17,6 +16,8 @@ import { TabelaContasComponent } from './components/tabela-contas/tabela-contas.
 import { ListaContasMovelComponent } from './components/lista-contas-movel/lista-contas-movel.component';
 import { EditarContaSheetComponent } from './components/editar-conta-sheet/editar-conta-sheet.component';
 import { SharedModule } from 'src/app/shared/shared.module';
+import { PageHeaderComponent } from 'src/app/shared/ui/page-header/page-header.component';
+import { FabComponent } from 'src/app/shared/ui/fab/fab.component';
 // A tela não usa mais o data-grid; a modal "Adicionar em lote" ainda usa.
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 
@@ -29,7 +30,6 @@ import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid
   imports: [
     SharedModule,
     ContasAPagarRoutingModule,
-    BreadcrumbModule,
     CalendarModule,
     ConfirmDialogModule,
     InputSwitchModule,
@@ -41,7 +41,9 @@ import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid
     BarraEdicaoComponent,
     TabelaContasComponent,
     ListaContasMovelComponent,
-    EditarContaSheetComponent
+    EditarContaSheetComponent,
+    PageHeaderComponent,
+    FabComponent
   ]
 })
 export class ContasAPagarModule { }

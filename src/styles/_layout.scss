@@ -1,0 +1,20 @@
+/* Estrutura das páginas e dos modais (card #27). */
+
+/* Área de conteúdo das telas (antes .pagina; antes ainda, container-xl do Tabler). */
+.mf-pagina {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Avisos abaixo do cabeçalho fixo. */
+.p-toast {
+  margin-top: 4rem;
+}
+
+/* Rodapé dos p-dialog: botões à direita com espaço entre eles. */
+.p-dialog .p-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

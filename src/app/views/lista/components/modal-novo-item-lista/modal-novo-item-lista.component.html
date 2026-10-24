@@ -1,5 +1,5 @@
-<p-dialog [header]="item ? 'Editar Item' : 'Novo Item'" [visible]="true" [modal]="true" [dismissableMask]="true"
-  [draggable]="false" [style]="{ width: '36rem' }" [breakpoints]="{ '576px': '95vw' }" (visibleChange)="close(false)">
+<mf-form-panel [titulo]="item ? 'Editar Item' : 'Novo Item'" [salvando]="saving" (fechar)="close(false)"
+  (salvar)="save()">
   <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
     <div *ngIf="alert.type" class="p-3 border-round"
       [ngClass]="alert.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'">
@@ -9,27 +9,27 @@
     <div class="flex flex-column gap-2">
       <label for="item-descricao">Descrição</label>
       <input pInputText id="item-descricao" maxlength="200" formControlName="descricao" [class.ng-dirty]="erro('descricao')" />
-      <small class="p-error" *ngIf="erro('descricao')">Informe uma descrição válida.</small>
+      <mf-field-error [control]="form.controls.descricao">Informe uma descrição válida.</mf-field-error>
     </div>
 
     <div class="flex flex-column gap-2" *ngIf="tipoLista === 1 || tipoLista === 2">
       <label for="item-quantidade">Quantidade</label>
       <input pInputText id="item-quantidade" type="number" min="1" formControlName="quantidade"
         [class.ng-dirty]="erro('quantidade')" />
-      <small class="p-error" *ngIf="erro('quantidade')">Quantidade deve ser no mínimo 1.</small>
+      <mf-field-error [control]="form.controls.quantidade">Quantidade deve ser no mínimo 1.</mf-field-error>
     </div>
 
     <div class="flex flex-column gap-2">
       <label for="item-valor">Valor</label>
       <input pInputText id="item-valor" type="text" inputmode="decimal" formControlName="valor" currencyInput
         placeholder="0,00" [class.ng-dirty]="erro('valor')" />
-      <small class="p-error" *ngIf="erro('valor')">Informe um valor.</small>
+      <mf-field-error [control]="form.controls.valor">Informe um valor.</mf-field-error>
     </div>
 
     <div class="flex flex-column gap-2">
       <label for="item-observacao">Observação</label>
       <input pInputText id="item-observacao" maxlength="500" formControlName="observacao" [class.ng-dirty]="erro('observacao')" />
-      <small class="p-error" *ngIf="erro('observacao')">Informe uma descrição válida.</small>
+      <mf-field-error [control]="form.controls.observacao">Informe uma descrição válida.</mf-field-error>
     </div>
 
     <div class="flex flex-column gap-2">
@@ -50,9 +50,4 @@
       </div>
     </div>
   </form>
-
-  <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
-    <p-button label="Salvar" icon="pi pi-check" [loading]="saving" (onClick)="save()" />
-  </ng-template>
-</p-dialog>
+</mf-form-panel>

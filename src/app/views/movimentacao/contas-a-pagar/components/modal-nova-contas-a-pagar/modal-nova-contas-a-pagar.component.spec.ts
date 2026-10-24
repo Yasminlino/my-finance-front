@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { Dialog } from 'primeng/dialog';
+import { FormPanelComponent } from 'src/app/shared/ui/form-panel/form-panel.component';
 import { of } from 'rxjs';
 
 import { ModalNovaContasAPagarComponent } from './modal-nova-contas-a-pagar.component';
@@ -78,14 +78,14 @@ describe('ModalNovaContasAPagarComponent', () => {
     expect(service.criar).not.toHaveBeenCalled();
   });
 
-  it('abre num p-dialog, categoria é p-dropdown e o X fecha sem recarregar (FE-P2-07)', () => {
+  it('abre no painel lateral, categoria é p-dropdown e o X fecha sem recarregar (FE-P2-07)', () => {
     const fechado = jasmine.createSpy('closed');
     fixture.componentInstance.closed.subscribe(fechado);
-    const dialogo = fixture.debugElement.query(By.directive(Dialog));
+    const dialogo = fixture.debugElement.query(By.directive(FormPanelComponent));
 
-    expect(dialogo.componentInstance.header).toBe('Adicionar nova conta');
+    expect(dialogo.componentInstance.titulo).toBe('Adicionar nova conta');
     expect((fixture.nativeElement as HTMLElement).querySelector('p-dropdown[formControlName=categoryId]')).not.toBeNull();
-    dialogo.componentInstance.close(new Event('click'));
+    dialogo.componentInstance.fechar.emit();
     expect(fechado).toHaveBeenCalledOnceWith(false);
   });
 });

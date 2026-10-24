@@ -17,6 +17,7 @@ import { TagModule } from 'primeng/tag';
 import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import { GridSelecionavel } from 'src/app/core/services/exclusao-em-lote.service';
 import { formatCurrencyBR } from 'src/app/core/utils/mask';
+import { CategoryIconComponent } from 'src/app/shared/ui/category-icon/category-icon.component';
 import { TotaisSelecao, calcularTotaisSelecao, naturezaPorSubCategoria } from 'src/app/shared/utils/totais-selecao';
 import { FiltroSituacao } from '../../contas-a-pagar.regras';
 import {
@@ -36,18 +37,20 @@ const TOQUE_LONGO_MS = 500;
   standalone: true,
   imports: [
     NgClass, FormsModule, SelectButtonModule, BadgeModule, IconFieldModule, InputIconModule, InputTextModule,
-    MultiSelectModule, ButtonModule, ProgressBarModule, TagModule, MenuModule, SidebarModule
+    MultiSelectModule, ButtonModule, ProgressBarModule, TagModule, MenuModule, SidebarModule, CategoryIconComponent
   ],
   templateUrl: './lista-contas-movel.component.html',
   styleUrls: ['./lista-contas-movel.component.scss'],
   // Tags no estilo claro do app, menores e sem quebrar ("ATRASADA" numa linha só).
-  host: { class: 'tags-claras tags-compactas' }
+  host: { class: 'mf-tags-claras tags-compactas' }
 })
 export class ListaContasMovelComponent implements OnChanges, OnDestroy, GridSelecionavel {
   @ViewChild('menuCard') menuCard?: Menu;
 
   @Input() contas: LinhaContasMensais[] = [];
   @Input() hoje = new Date();
+  /** categoriaId → natureza (cor do ícone). Vazio enquanto a tela carrega as categorias. */
+  @Input() naturezas: ReadonlyMap<number, number> = new Map();
   @Input() loading = false;
 
   @Output() marcarPago = new EventEmitter<LinhaContasMensais[]>();
@@ -80,8 +83,10 @@ export class ListaContasMovelComponent implements OnChanges, OnDestroy, GridSele
   ];
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['contas'] || changes['hoje'] || changes['naturezas']) {
+      this.meta = metaDasContas(this.contas, this.hoje, this.naturezas);
+    }
     if (changes['contas'] || changes['hoje']) {
-      this.meta = metaDasContas(this.contas, this.hoje);
       this.ordenadas = ordenarPorVencimento(this.contas);
       this.categorias = categoriasDe(this.contas);
       this.opcoesFiltro = opcoesDeFiltro(this.contas, this.hoje);

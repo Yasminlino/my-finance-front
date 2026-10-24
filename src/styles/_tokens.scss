@@ -1,0 +1,53 @@
+/*
+ * Tokens do MyFinance (card #27). Único lugar do projeto com cor fixa: as telas usam var(--mf-*)
+ * ou as variáveis do tema Lara (--surface-*, --text-color*, --blue-500…). `npm run checar:estilos`
+ * falha se aparecer cor hexadecimal no SCSS de uma tela.
+ *
+ * Os valores fixos abaixo são os que as telas já usavam; vieram para cá sem mudar a aparência.
+ */
+
+:root {
+  /* Semânticas */
+  --mf-primary: var(--primary-color);
+  --mf-receita: var(--green-600);
+  --mf-despesa: var(--red-600);
+  --mf-alerta: var(--orange-500);
+  --mf-info: var(--blue-500);
+  --mf-neutro: var(--text-color-secondary);
+  --mf-edicao: #fef3c7; /* fundo do modo edição e das linhas alteradas */
+
+  /* Bordas e cabeçalho das tabelas (data-grid) */
+  --mf-borda: #d1d5db;
+  --mf-tabela-cabecalho-bg: #f0f4fa;
+  --mf-tabela-cabecalho-fg: #157c8d;
+  --mf-texto-controle: #4b5563;
+  --mf-texto-vazio: #797575; /* "sem registros" do data-grid */
+
+  /* Tags com fundo claro: os mesmos pares no data-grid e em Contas a Pagar */
+  --mf-tag-info-bg: #d0e1fd;
+  --mf-tag-info-fg: #295bac;
+  --mf-tag-secondary-bg: #f1f5f9;
+  --mf-tag-secondary-fg: #475569;
+  --mf-tag-success-bg: #caf1d8;
+  --mf-tag-success-fg: #188a42;
+  --mf-tag-warning-bg: #feddc7;
+  --mf-tag-warning-fg: #ae510f;
+  --mf-tag-danger-bg: #ffd0ce;
+  --mf-tag-danger-fg: #b32b23;
+
+  /* Natureza da categoria (NaturezaOperacao 0..5): a mesma cor em Contas a Pagar, Contas e Categorias */
+  --mf-natureza-0-bg: var(--green-100);  --mf-natureza-0-fg: var(--green-700);  /* Rendimento / Entrada */
+  --mf-natureza-1-bg: var(--blue-100);   --mf-natureza-1-fg: var(--blue-700);   /* Essencial */
+  --mf-natureza-2-bg: var(--purple-100); --mf-natureza-2-fg: var(--purple-700); /* Estilo de vida / Lazer */
+  --mf-natureza-3-bg: var(--teal-100);   --mf-natureza-3-fg: var(--teal-700);   /* Reserva / Investimento */
+  --mf-natureza-4-bg: var(--orange-100); --mf-natureza-4-fg: var(--orange-700); /* Pessoal */
+  --mf-natureza-5-bg: var(--indigo-100); --mf-natureza-5-fg: var(--indigo-700); /* Empresa */
+  --mf-natureza-neutra-bg: var(--surface-200);
+  --mf-natureza-neutra-fg: var(--text-color-secondary);
+
+  /* Forma */
+  --mf-radius: 8px;
+  --mf-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+  /* Celular: abaixo de 768px (o md: do PrimeFlex) */
+}

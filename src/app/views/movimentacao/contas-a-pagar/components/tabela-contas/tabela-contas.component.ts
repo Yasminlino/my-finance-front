@@ -16,13 +16,14 @@ import { ProgressBarModule } from 'primeng/progressbar';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { Table, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
-import { ToolbarModule } from 'primeng/toolbar';
+import { FilterBarComponent } from 'src/app/shared/ui/filter-bar/filter-bar.component';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import { GridSelecionavel } from 'src/app/core/services/exclusao-em-lote.service';
 import { formatCurrencyBR, formatDateBR, parseCurrencyBR } from 'src/app/core/utils/mask';
 import { STATUS_PAGAMENTO_OPTIONS } from 'src/app/shared/enums/status.enum';
+import { CategoryIconComponent } from 'src/app/shared/ui/category-icon/category-icon.component';
 import {
   NaturezaLancamento, TotaisSelecao, calcularTotaisSelecao, naturezaPorSubCategoria
 } from 'src/app/shared/utils/totais-selecao';
@@ -41,9 +42,9 @@ import { ErroCampoDirective } from '../../erro-campo.directive';
   selector: 'app-tabela-contas',
   standalone: true,
   imports: [
-    NgClass, NgIf, FormsModule, TableModule, ToolbarModule, SelectButtonModule, BadgeModule, IconFieldModule,
+    NgClass, NgIf, FormsModule, TableModule, FilterBarComponent, SelectButtonModule, BadgeModule, IconFieldModule,
     InputIconModule, InputTextModule, MultiSelectModule, ButtonModule, TooltipModule, ProgressBarModule,
-    TagModule, MenuModule, InputNumberModule, CalendarModule, DropdownModule, ErroCampoDirective
+    TagModule, MenuModule, InputNumberModule, CalendarModule, DropdownModule, ErroCampoDirective, CategoryIconComponent
   ],
   templateUrl: './tabela-contas.component.html',
   styleUrls: ['./tabela-contas.component.scss']
@@ -56,6 +57,8 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
 
   @Input() contas: LinhaContasMensais[] = [];
   @Input() hoje = new Date();
+  /** categoriaId → natureza (cor do ícone). Vazio enquanto a tela carrega as categorias. */
+  @Input() naturezas: ReadonlyMap<number, number> = new Map();
   @Input() loading = false;
   /** Presente quando o modo edição está ligado. */
   @Input() edicao: EdicaoContas | null = null;
@@ -101,8 +104,10 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
   ];
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['contas'] || changes['hoje'] || changes['naturezas']) {
+      this.meta = metaDasContas(this.contas, this.hoje, this.naturezas);
+    }
     if (changes['contas'] || changes['hoje']) {
-      this.meta = metaDasContas(this.contas, this.hoje);
       this.contasOrdenadas = ordenarPorVencimento(this.contas);
       this.categorias = categoriasDe(this.contas);
       // Seleção de contas que não existem mais (outro mês, excluídas) sai junto.

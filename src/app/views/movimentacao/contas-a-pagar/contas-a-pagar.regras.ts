@@ -224,17 +224,4 @@ export function iconeDaCategoria(nome: string | null | undefined): string {
   return ICONES_POR_PALAVRA.find(([palavra]) => chave.includes(palavra))?.[1] ?? ICONE_PADRAO;
 }
 
-/** Quantidade de cores da paleta de categorias (classes cor-0 … cor-7 na tabela). */
-const CORES_DE_CATEGORIA = 8;
-
-/**
- * Cor do ícone da categoria, estável pelo nome: a mesma categoria tem sempre a mesma cor, sem
- * precisar cadastrar cor na API. Hash simples do nome normalizado sobre a paleta.
- */
-export function corDaCategoria(nome: string | null | undefined): string {
-  const chave = chaveDaCategoria(nome);
-  if (!chave) return 'cor-neutra';
-  let hash = 0;
-  for (const letra of chave) hash = (hash * 31 + letra.charCodeAt(0)) >>> 0;
-  return `cor-${hash % CORES_DE_CATEGORIA}`;
-}
+// A cor do ícone vem da natureza da categoria (mf-category-icon, card #27), não mais do nome.

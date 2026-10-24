@@ -1,20 +1,4 @@
-.resumo-icone {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: var(--border-radius);
-  font-size: 1.15rem;
-}
-
-.icone-receita { background: var(--green-100); color: var(--green-700); }
-.icone-despesa { background: var(--orange-100); color: var(--orange-700); }
-.icone-pago { background: var(--blue-100); color: var(--blue-700); }
-.icone-vencidas { background: var(--red-100); color: var(--red-600); }
-
-// Celular
+// Desktop: os cards são mf-stat-card (card #27). Aqui fica o carrossel do celular.
 .carrossel {
   display: flex;
   gap: 0.75rem;
@@ -60,20 +44,6 @@
   }
 }
 
-:host ::ng-deep {
-  .resumo-card .p-card-body {
-    padding: 1rem;
-  }
-
-  .resumo-card .p-card-content {
-    padding: 0;
-  }
-
-  .resumo-vencidas.com-vencidas {
-    border-left: 4px solid var(--red-500);
-  }
-
-  .resumo-progresso {
-    height: 0.4rem;
-  }
+:host ::ng-deep .resumo-progresso {
+  height: 0.4rem;
 }

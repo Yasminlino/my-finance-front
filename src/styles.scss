@@ -1,11 +1,11 @@
-/* Estilos globais. O kit de UI é PrimeNG + PrimeFlex + PrimeIcons (FE-P2-07). */
+/* Estilos globais. O kit de UI é PrimeNG + PrimeFlex + PrimeIcons (FE-P2-07); a base de UI do
+   MyFinance (tokens, tipografia, layout e classes compartilhadas) fica em src/styles/ (card #27). */
 
 @use './app/shared/components/data-grid/data-grid.theme';
-
-/* Avisos abaixo do cabeçalho fixo (antes vinha, vazado, do SCSS do data-grid, só nas telas com grid). */
-.p-toast {
-  margin-top: 4rem;
-}
+@use './styles/tokens';
+@use './styles/typography';
+@use './styles/layout';
+@use './styles/components';
 
 /* Base do tema Lara: os tamanhos do PrimeNG são em rem e foram pensados para 14px. */
 html {
@@ -53,80 +53,4 @@ img {
 ol, ul {
   padding-left: 0;
   margin-bottom: 0;
-}
-
-/* Rodapé dos p-dialog: botões à direita com espaço entre eles (antes vinha, vazado, do SCSS do data-grid). */
-.p-dialog .p-dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: .5rem;
-}
-
-/* Área de conteúdo das telas (antes container-xl do Tabler). */
-.pagina {
-  max-width: 1320px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-/*
- * Tags com fundo claro, as mesmas cores que o data-grid aplica (vazado) nas outras telas.
- * Classe e não global: Contas a Pagar não usa mais o data-grid, e o painel do dropdown abre no body.
- */
-.tags-claras {
-  .p-tag { background-color: #d0e1fd; color: #295bac; }
-  .p-tag-secondary { background-color: #f1f5f9; color: #475569; }
-  .p-tag-success { background-color: #caf1d8; color: #188a42; }
-  .p-tag-info { background-color: #d0e1fd; color: #295bac; }
-  .p-tag-warning { background-color: #feddc7; color: #ae510f; }
-  .p-tag-danger { background-color: #ffd0ce; color: #b32b23; }
-  .p-tag { white-space: nowrap; }
-}
-
-/* Tags menores (cards do celular). */
-.tags-compactas .p-tag {
-  font-size: 0.65rem;
-  padding: 0.15rem 0.4rem;
-}
-
-/* Contas a Pagar: cor do ícone de cada categoria (corDaCategoria) e tons do vencimento relativo.
-   Global porque a tabela (desktop) e a lista de cards (celular) usam os mesmos. */
-.icone-categoria {
-  &.cor-0 { background: var(--blue-100); color: var(--blue-700); }
-  &.cor-1 { background: var(--green-100); color: var(--green-700); }
-  &.cor-2 { background: var(--orange-100); color: var(--orange-700); }
-  &.cor-3 { background: var(--purple-100); color: var(--purple-700); }
-  &.cor-4 { background: var(--teal-100); color: var(--teal-700); }
-  &.cor-5 { background: var(--pink-100); color: var(--pink-700); }
-  &.cor-6 { background: var(--indigo-100); color: var(--indigo-700); }
-  &.cor-7 { background: var(--yellow-100); color: var(--yellow-800); }
-  &.cor-neutra { background: var(--surface-200); color: var(--text-color-secondary); }
-}
-
-.tom-vermelho { color: var(--red-500); }
-.tom-laranja { color: var(--orange-500); }
-.tom-cinza { color: var(--text-color-secondary); }
-
-/* Filtro de situação no celular: os quatro botões dividem a largura e o badge não encosta na borda.
-   Abaixo de ~340px o contêiner (.filtro-rolavel) ainda rola na horizontal. */
-.filtro-situacao-compacto .p-selectbutton {
-  display: flex;
-  flex-wrap: nowrap;
-  min-width: 100%;
-
-  .p-button {
-    flex: 1 0 auto;
-    justify-content: center;
-    padding: 0.5rem 0.6rem;
-    font-size: 0.85rem;
-    white-space: nowrap;
-  }
-
-  .p-badge {
-    min-width: 1.1rem;
-    height: 1.1rem;
-    line-height: 1.1rem;
-    font-size: 0.65rem;
-    margin-left: 0.35rem !important;
-  }
 }

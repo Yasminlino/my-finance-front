@@ -48,7 +48,7 @@
         @if (modoSelecao) {
           <span class="marcador" [class.marcado]="marcada(conta.id)"><i class="pi pi-check"></i></span>
         } @else {
-          <span class="icone-categoria" [ngClass]="m.cor"><i [class]="m.icone"></i></span>
+          <mf-category-icon [natureza]="m.natureza" [icone]="m.icone" />
         }
 
         <div class="flex-grow-1 min-w-0">

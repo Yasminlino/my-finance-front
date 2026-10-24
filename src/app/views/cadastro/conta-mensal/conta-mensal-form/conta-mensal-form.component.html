@@ -1,27 +1,26 @@
-<p-dialog [header]="registro ? 'Editar Conta' : 'Nova Conta'" [visible]="true" [modal]="true"
-  [dismissableMask]="true" [draggable]="false" [style]="{ width: '36rem' }" [breakpoints]="{ '576px': '95vw' }"
-  (visibleChange)="close(false)">
+<mf-form-panel [titulo]="registro ? 'Editar Conta' : 'Nova Conta'" [salvando]="saving" (fechar)="close(false)"
+  (salvar)="save()">
   <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
     <div class="flex flex-column gap-2">
       <label for="conta-nome">Descrição <span class="text-red-500">*</span></label>
       <input pInputText id="conta-nome" maxlength="120" formControlName="name" placeholder="Preencha o nome da conta..."
         [class.ng-dirty]="erro('name')" />
-      <small class="p-error" *ngIf="erro('name')">Informe um nome válido.</small>
+      <mf-field-error [control]="form.controls.name">Informe um nome válido.</mf-field-error>
     </div>
 
     <div class="flex flex-column gap-2">
       <label for="conta-valor">Valor</label>
       <input pInputText id="conta-valor" type="text" inputmode="decimal" formControlName="value" currencyInput
         placeholder="0,00" [class.ng-dirty]="erro('value')" />
-      <small class="p-error" *ngIf="erro('value')">Informe um valor.</small>
+      <mf-field-error [control]="form.controls.value">Informe um valor.</mf-field-error>
     </div>
 
     <div class="flex flex-column gap-2">
       <label for="conta-dias">Dias Vencimentos</label>
       <input pInputText id="conta-dias" type="text" formControlName="dataOperacao" placeholder="Ex: 5, 20"
         (input)="onInputChange(($any($event.target)).value)" (blur)="onDiasChange(($any($event.target)).value)"
-        [class.ng-dirty]="erro('value')" />
-      <small class="p-error" *ngIf="erro('value')">Informe ao menos um dia de vencimento.</small>
+        [class.ng-dirty]="erro('dataOperacao')" />
+      <mf-field-error [control]="form.controls.dataOperacao">Informe ao menos um dia de vencimento.</mf-field-error>
     </div>
 
     <div class="flex flex-column gap-2">
@@ -29,7 +28,7 @@
       <p-dropdown inputId="conta-categoria" formControlName="categoryId" [options]="categories" optionLabel="nome"
         optionValue="id" placeholder="Selecione..." appendTo="body" styleClass="w-full"
         [class.ng-dirty]="erro('categoryId')" />
-      <small class="p-error" *ngIf="erro('categoryId')">Selecione uma categoria.</small>
+      <mf-field-error [control]="form.controls.categoryId">Selecione uma categoria.</mf-field-error>
     </div>
 
     <div class="flex align-items-center gap-2">
@@ -54,9 +53,4 @@
         styleClass="w-full" />
     </div>
   </form>
-
-  <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
-    <p-button label="Salvar" icon="pi pi-check" [loading]="saving" (onClick)="save()" />
-  </ng-template>
-</p-dialog>
+</mf-form-panel>

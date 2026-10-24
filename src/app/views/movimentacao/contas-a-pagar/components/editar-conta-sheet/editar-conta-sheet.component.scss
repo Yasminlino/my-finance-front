@@ -7,16 +7,6 @@
   background: var(--surface-300);
 }
 
-.icone-categoria {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: var(--border-radius);
-}
-
 .nome {
   overflow: hidden;
   text-overflow: ellipsis;

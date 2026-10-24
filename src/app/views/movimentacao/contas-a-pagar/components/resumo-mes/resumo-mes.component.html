@@ -1,59 +1,36 @@
 @if (!compacto) {
   <div class="grid">
     <div class="col-12 sm:col-6 xl:col-3">
-      <p-card styleClass="resumo-card h-full">
-        <div class="flex align-items-start gap-3">
-          <span class="resumo-icone icone-receita"><i class="pi pi-arrow-down-left"></i></span>
-          <div class="min-w-0">
-            <div class="text-color-secondary text-sm">Receitas do mês</div>
-            <div class="font-bold text-2xl text-green-600">{{ money(resumo.receitas) }}</div>
-            <small class="text-color-secondary">{{ lancamentos(resumo.receitasQtd) }}</small>
-          </div>
-        </div>
-      </p-card>
+      <mf-stat-card class="block h-full" rotulo="Receitas do mês" [valor]="money(resumo.receitas)"
+        icone="pi pi-arrow-down-left" tom="receita" corDoValor="receita">
+        <small class="text-color-secondary">{{ lancamentos(resumo.receitasQtd) }}</small>
+      </mf-stat-card>
     </div>
 
     <div class="col-12 sm:col-6 xl:col-3">
-      <p-card styleClass="resumo-card h-full">
-        <div class="flex align-items-start gap-3">
-          <span class="resumo-icone icone-despesa"><i class="pi pi-arrow-up-right"></i></span>
-          <div class="min-w-0">
-            <div class="text-color-secondary text-sm">Despesas do mês</div>
-            <div class="font-bold text-2xl">{{ money(resumo.despesas) }}</div>
-            <small class="text-color-secondary">{{ lancamentos(resumo.despesasQtd) }}</small>
-          </div>
-        </div>
-      </p-card>
+      <mf-stat-card class="block h-full" rotulo="Despesas do mês" [valor]="money(resumo.despesas)"
+        icone="pi pi-arrow-up-right" tom="despesa">
+        <small class="text-color-secondary">{{ lancamentos(resumo.despesasQtd) }}</small>
+      </mf-stat-card>
     </div>
 
     <div class="col-12 sm:col-6 xl:col-3">
-      <p-card styleClass="resumo-card h-full">
-        <div class="flex align-items-start gap-3">
-          <span class="resumo-icone icone-pago"><i class="pi pi-check-circle"></i></span>
-          <div class="flex-grow-1 min-w-0">
-            <div class="text-color-secondary text-sm">Já pago</div>
-            <div class="font-bold text-2xl">{{ money(resumo.pago) }}</div>
-            <p-progressBar [value]="resumo.percentualPago" [showValue]="false" styleClass="resumo-progresso mt-1" />
-            <small class="text-color-secondary">{{ resumo.percentualPago | number: '1.0-0' }}% das despesas</small>
-          </div>
-        </div>
-      </p-card>
+      <mf-stat-card class="block h-full" rotulo="Já pago" [valor]="money(resumo.pago)" icone="pi pi-check-circle"
+        tom="info">
+        <p-progressBar [value]="resumo.percentualPago" [showValue]="false" styleClass="resumo-progresso mt-1" />
+        <small class="text-color-secondary">{{ resumo.percentualPago | number: '1.0-0' }}% das despesas</small>
+      </mf-stat-card>
     </div>
 
     <div class="col-12 sm:col-6 xl:col-3">
-      <p-card [styleClass]="'resumo-card resumo-vencidas h-full' + (resumo.vencidasQtd > 0 ? ' com-vencidas' : '')">
-        <div class="flex align-items-start gap-3">
-          <span class="resumo-icone icone-vencidas"><i class="pi pi-exclamation-triangle"></i></span>
-          <div class="min-w-0">
-            <div class="text-color-secondary text-sm">Vencidas</div>
-            <div class="font-bold text-2xl" [class.text-red-500]="resumo.vencidasQtd > 0">{{ money(resumo.vencidasValor) }}</div>
-            <small class="text-color-secondary">{{ resumo.vencidasQtd }} {{ resumo.vencidasQtd === 1 ? 'conta' : 'contas' }}</small>
-            @if (resumo.naoRecebidasQtd > 0) {
-              <small class="block text-color-secondary mt-1">+ {{ money(resumo.naoRecebidasValor) }} em receitas não recebidas</small>
-            }
-          </div>
-        </div>
-      </p-card>
+      <mf-stat-card class="block h-full" rotulo="Vencidas" [valor]="money(resumo.vencidasValor)"
+        icone="pi pi-exclamation-triangle" tom="perigo" [corDoValor]="resumo.vencidasQtd > 0 ? 'perigo' : null"
+        [destaque]="resumo.vencidasQtd > 0">
+        <small class="text-color-secondary">{{ resumo.vencidasQtd }} {{ resumo.vencidasQtd === 1 ? 'conta' : 'contas' }}</small>
+        @if (resumo.naoRecebidasQtd > 0) {
+          <small class="block text-color-secondary mt-1">+ {{ money(resumo.naoRecebidasValor) }} em receitas não recebidas</small>
+        }
+      </mf-stat-card>
     </div>
   </div>
 } @else {

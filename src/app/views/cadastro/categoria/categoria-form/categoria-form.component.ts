@@ -6,7 +6,8 @@ import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { CategoriaDto } from 'src/app/core/models/categoria.model';
 import { finalize } from 'rxjs';
-import { DialogModule } from 'primeng/dialog';
+import { FormPanelComponent } from 'src/app/shared/ui/form-panel/form-panel.component';
+import { FieldErrorComponent } from 'src/app/shared/ui/field-error/field-error.component';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
@@ -15,7 +16,7 @@ import { OPCOES_ATIVO } from 'src/app/shared/utils/opcoes-status';
 @Component({
   selector: 'app-categoria-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DialogModule, DropdownModule, InputTextModule, ButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, FormPanelComponent, FieldErrorComponent, DropdownModule, InputTextModule, ButtonModule],
   templateUrl: './categoria-form.component.html'
 })
 export class CategoriaFormComponent implements OnInit {

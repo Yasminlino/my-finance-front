@@ -31,13 +31,13 @@ app-data-grid {
 
     /* Linha com alterações pendentes (não salvas) */
     .p-datatable .p-datatable-tbody > tr.row-dirty > td {
-        background-color: #fef3c7 !important;
+        background-color: var(--mf-edicao) !important;
     }
 
     /* Bordas ao redor do grid; rola na horizontal no celular */
     .p-datatable-wrapper {
         margin: 0 1rem;
-        border: solid 1px #d1d5db;
+        border: solid 1px var(--mf-borda);
         border-bottom: none;
         border-top-left-radius: 6px;
         border-top-right-radius: 6px;
@@ -46,13 +46,13 @@ app-data-grid {
     }
 
     .p-datatable .p-datatable-thead > tr > th {
-        border-bottom: 1px solid #d1d5db !important;
+        border-bottom: 1px solid var(--mf-borda) !important;
         padding: 0.5rem 0.5rem !important;
         font-size: 12px !important;
     }
 
     .p-datatable .p-datatable-tbody > tr > td {
-        border-bottom: 1px solid #d1d5db !important;
+        border-bottom: 1px solid var(--mf-borda) !important;
         padding: 0.5rem !important;
     }
 
@@ -61,15 +61,15 @@ app-data-grid {
     }
 
     .p-datatable .p-datatable-thead > tr.ng-star-inserted > th {
-        background-color: #f0f4fa !important;
-        color: #157c8d !important;
+        background-color: var(--mf-tabela-cabecalho-bg) !important;
+        color: var(--mf-tabela-cabecalho-fg) !important;
         min-height: 2.2rem !important;
         height: 2.2rem !important;
     }
 
     .p-datatable .p-datatable-thead > tr.ng-star-inserted > th > div > .p-element > .p-icon-wrapper > svg {
-        background-color: #f0f4fa !important;
-        color: #157c8d !important;
+        background-color: var(--mf-tabela-cabecalho-bg) !important;
+        color: var(--mf-tabela-cabecalho-fg) !important;
         font-size: 10px;
     }
 
@@ -115,7 +115,7 @@ app-data-grid {
 
     .p-paginator {
         margin: 0 1rem 1rem;
-        border: solid 1px #d1d5db;
+        border: solid 1px var(--mf-borda);
         border-top: none;
         border-bottom-left-radius: 6px;
         border-bottom-right-radius: 6px;
@@ -155,14 +155,14 @@ app-data-grid {
         background: white !important;
         border-bottom-left-radius: 0 !important;
         border-top-left-radius: 0 !important;
-        border: solid 1.5px #d1d5db !important;
-        color: #4b5563;
+        border: solid 1.5px var(--mf-borda) !important;
+        color: var(--mf-texto-controle);
         box-sizing: border-box;
         padding: 0.3rem 0.5rem !important;
     }
 
     .botao-popup > .p-element > button {
-        border: solid 1px #d1d5db;
+        border: solid 1px var(--mf-borda);
         height: 2rem;
         width: 2rem;
         background-color: white;
@@ -177,15 +177,15 @@ app-data-grid {
 
     .p-tag {
         width: 8rem !important;
-        background-color: #d0e1fd !important;
-        color: #295bac !important;
+        background-color: var(--mf-tag-info-bg) !important;
+        color: var(--mf-tag-info-fg) !important;
     }
 
-    .p-tag-secondary { background-color: #f1f5f9 !important; color: #475569 !important; }
-    .p-tag-success { background-color: #caf1d8 !important; color: #188a42 !important; }
-    .p-tag-info { background-color: #d0e1fd !important; color: #295bac !important; }
-    .p-tag-warning { background-color: #feddc7 !important; color: #ae510f !important; }
-    .p-tag-danger { background-color: #ffd0ce !important; color: #b32b23 !important; }
+    .p-tag-secondary { background-color: var(--mf-tag-secondary-bg) !important; color: var(--mf-tag-secondary-fg) !important; }
+    .p-tag-success { background-color: var(--mf-tag-success-bg) !important; color: var(--mf-tag-success-fg) !important; }
+    .p-tag-info { background-color: var(--mf-tag-info-bg) !important; color: var(--mf-tag-info-fg) !important; }
+    .p-tag-warning { background-color: var(--mf-tag-warning-bg) !important; color: var(--mf-tag-warning-fg) !important; }
+    .p-tag-danger { background-color: var(--mf-tag-danger-bg) !important; color: var(--mf-tag-danger-fg) !important; }
 
     /* Painéis que abrem dentro do grid (a paginação), como os do body */
     .p-overlay.p-component.ng-star-inserted {

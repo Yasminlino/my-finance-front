@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { Dialog } from 'primeng/dialog';
+import { FormPanelComponent } from 'src/app/shared/ui/form-panel/form-panel.component';
 import { of, throwError } from 'rxjs';
 
 import { ModalItemChecagemComponent } from './modal-item-checagem.component';
@@ -85,14 +85,14 @@ describe('ModalItemChecagemComponent', () => {
     expect(fechado).not.toHaveBeenCalled();
   });
 
-  it('abre num p-dialog e o X fecha sem recarregar (FE-P2-07)', () => {
+  it('abre no painel lateral e o X fecha sem recarregar (FE-P2-07)', () => {
     abrir();
     const fechado = jasmine.createSpy('closed');
     fixture.componentInstance.closed.subscribe(fechado);
-    const dialogo = fixture.debugElement.query(By.directive(Dialog));
+    const dialogo = fixture.debugElement.query(By.directive(FormPanelComponent));
 
-    expect(dialogo.componentInstance.header).toBe('Novo Item de Checagem');
-    dialogo.componentInstance.close(new Event('click'));
+    expect(dialogo.componentInstance.titulo).toBe('Novo Item de Checagem');
+    dialogo.componentInstance.fechar.emit();
     expect(fechado).toHaveBeenCalledOnceWith(false);
   });
 });

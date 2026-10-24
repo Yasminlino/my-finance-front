@@ -1,4 +1,4 @@
-<div class="pagina">
+<div class="mf-pagina">
   <app-data-grid #grid [dataSource]="listas" [breadcrumb]="breadcrumb" [columns]="gridColumns"  [titulo]="'Cadastro de Listas'"
     [statusOptions]="statusOptions" campoStatus="ativo" [exibeCampos]="exibirCampos"
     [loading]="loading" (edit)="onEdit($event)"  (view)="abrirItemLista($event)" (new)="openCreate()" (delete)="onDelete($event)" (deleteSelected)="onDeleteSelected($event)"></app-data-grid>

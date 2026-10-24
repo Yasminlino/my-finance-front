@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { LayoutComponent } from './layout/layout/layout.component';
 import { ROTAS_ANTIGAS } from './rotas-antigas';
+import { ROTAS_DESENVOLVIMENTO } from './rotas-desenvolvimento';
 
 const routes: Routes = [
   {
@@ -63,6 +64,8 @@ const routes: Routes = [
         loadChildren: () =>
           import('./views/lista/lista.module').then(m => m.ListaModule),
       },
+      // Só em desenvolvimento (a base de UI em /ui): em produção o arquivo vira uma lista vazia.
+      ...ROTAS_DESENVOLVIMENTO,
       { path: '', redirectTo: 'home', pathMatch: 'full' },
     ]
   },

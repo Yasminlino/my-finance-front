@@ -1,12 +1,11 @@
-<p-dialog [header]="registro ? 'Editar Tipo de Movimentação' : 'Novo Tipo de Movimentação'" [visible]="true"
-  [modal]="true" [dismissableMask]="true" [draggable]="false" [style]="{ width: '32rem' }"
-  [breakpoints]="{ '576px': '95vw' }" (visibleChange)="close(false)">
+<mf-form-panel [titulo]="registro ? 'Editar Tipo de Movimentação' : 'Novo Tipo de Movimentação'" [salvando]="saving"
+  (fechar)="close(false)" (salvar)="save()">
   <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
     <div class="flex flex-column gap-2">
       <label for="tipo-mov-nome">Tipo Movimentação <span class="text-red-500">*</span></label>
       <input pInputText id="tipo-mov-nome" maxlength="60" formControlName="nomeTipoMovimentacao"
         [class.ng-dirty]="erro('nomeTipoMovimentacao')" />
-      <small class="p-error" *ngIf="erro('nomeTipoMovimentacao')">Informe um nome válido.</small>
+      <mf-field-error [control]="form.controls.nomeTipoMovimentacao">Informe um nome válido.</mf-field-error>
     </div>
 
     <div class="flex flex-column gap-2">
@@ -14,9 +13,4 @@
       <input pInputText id="tipo-mov-descricao" maxlength="200" formControlName="descricao" />
     </div>
   </form>
-
-  <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
-    <p-button label="Salvar" icon="pi pi-check" [loading]="saving" (onClick)="save()" />
-  </ng-template>
-</p-dialog>
+</mf-form-panel>

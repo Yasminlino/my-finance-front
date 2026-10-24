@@ -2,7 +2,8 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
-import { DialogModule } from 'primeng/dialog';
+import { FormPanelComponent } from 'src/app/shared/ui/form-panel/form-panel.component';
+import { FieldErrorComponent } from 'src/app/shared/ui/field-error/field-error.component';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
@@ -37,7 +38,7 @@ function parcelaDentroDoTotal(grupo: AbstractControl): ValidationErrors | null {
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule, AutoCompleteModule, CurrencyInputDirective,
-    DialogModule, DropdownModule, InputTextModule, InputTextareaModule, CheckboxModule, ButtonModule
+    FormPanelComponent, FieldErrorComponent, DropdownModule, InputTextModule, InputTextareaModule, CheckboxModule, ButtonModule
   ],
   templateUrl: './modal-lancamento-manual.component.html'
 })

@@ -14,8 +14,13 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
 
+import { FieldErrorComponent } from './ui/field-error/field-error.component';
+import { FormPanelComponent } from './ui/form-panel/form-panel.component';
+
 /** Kit de formulário do PrimeNG para os componentes declarados em módulo (FE-P2-07). */
 const KIT_PRIMENG = [DialogModule, DropdownModule, InputTextModule, InputTextareaModule, CheckboxModule, ButtonModule];
+/** Painel e erro de campo da base de UI (card #27), para os formulários declarados em módulo. */
+const KIT_FORMULARIO = [FormPanelComponent, FieldErrorComponent];
 
 @NgModule({
   declarations: [
@@ -27,7 +32,8 @@ const KIT_PRIMENG = [DialogModule, DropdownModule, InputTextModule, InputTextare
     ReactiveFormsModule,
     RouterModule,
     TableModule,
-    CurrencyInputDirective
+    CurrencyInputDirective,
+    ...KIT_FORMULARIO
   ],
   exports: [
     CommonModule,
@@ -37,7 +43,8 @@ const KIT_PRIMENG = [DialogModule, DropdownModule, InputTextModule, InputTextare
     CurrencyInputDirective,
     CalendarComponent,
     TableModule,
-    ...KIT_PRIMENG
+    ...KIT_PRIMENG,
+    ...KIT_FORMULARIO
   ]
 })
 export class SharedModule {}

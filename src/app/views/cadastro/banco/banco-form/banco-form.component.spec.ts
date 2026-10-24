@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { Dialog } from 'primeng/dialog';
+import { FormPanelComponent } from 'src/app/shared/ui/form-panel/form-panel.component';
 import { of } from 'rxjs';
 
 import { BancoFormComponent } from './banco-form.component';
@@ -10,7 +10,7 @@ import { AlertService } from 'src/app/shared/components/alert.service';
 
 /**
  * Saldo inicial com a máscara única (currencyInput): número no formulário, sem parse de texto (FE-P2-10).
- * Modal em p-dialog com campos PrimeNG (FE-P2-07).
+ * Formulário no painel lateral (mf-form-panel, card #27) com campos PrimeNG (FE-P2-07).
  */
 describe('BancoFormComponent', () => {
   let fixture: ComponentFixture<BancoFormComponent>;
@@ -53,12 +53,12 @@ describe('BancoFormComponent', () => {
     expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ saldoInicial: 15.5 }));
   });
 
-  it('abre num p-dialog com o título da operação', () => {
+  it('abre no painel lateral com o título da operação', () => {
     abrir({ id: 5, nomeBanco: 'NuBank', saldoInicial: 0, ativo: true, tipoCartaoId: 2 });
 
-    const dialogo = fixture.debugElement.query(By.directive(Dialog));
+    const dialogo = fixture.debugElement.query(By.directive(FormPanelComponent));
     expect(dialogo).not.toBeNull();
-    expect(dialogo.componentInstance.header).toBe('Editar Banco');
+    expect(dialogo.componentInstance.titulo).toBe('Editar Banco');
   });
 
   it('fechar pelo X avisa sem recarregar', () => {
@@ -66,7 +66,7 @@ describe('BancoFormComponent', () => {
     abrir();
     fixture.componentInstance.closed.subscribe(fechado);
 
-    fixture.debugElement.query(By.directive(Dialog)).componentInstance.close(new Event('click'));
+    fixture.debugElement.query(By.directive(FormPanelComponent)).componentInstance.fechar.emit();
 
     expect(fechado).toHaveBeenCalledOnceWith(false);
   });

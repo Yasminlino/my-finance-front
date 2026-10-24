@@ -1,0 +1,148 @@
+<div class="mf-pagina flex flex-column gap-4">
+  <section>
+    <h6 class="mf-section-title">Cabeçalho</h6>
+    <mf-page-header titulo="Base de UI" subtitulo="Tokens, tipografia e componentes do MyFinance (card #27)"
+      [breadcrumb]="breadcrumb" [home]="home" [mostrarVoltar]="true">
+      <p-button acoes label="Ação principal" icon="pi pi-plus" />
+    </mf-page-header>
+  </section>
+
+  <section>
+    <h6 class="mf-section-title">Cores</h6>
+    <div class="flex flex-wrap gap-3 mb-3">
+      @for (cor of semanticas; track cor) {
+        <div class="flex align-items-center gap-2">
+          <span class="ui-amostra" [style.background]="'var(--mf-' + cor + ')'"></span>
+          <code>--mf-{{ cor }}</code>
+        </div>
+      }
+    </div>
+    <div class="mf-tags-claras flex flex-wrap gap-2">
+      @for (tag of tags; track tag.valor) {
+        <p-tag [value]="tag.valor" [severity]="tag.severidade" />
+      }
+    </div>
+  </section>
+
+  <section>
+    <h6 class="mf-section-title">Tipografia</h6>
+    <div class="mf-page-title">.mf-page-title</div>
+    <div class="mf-page-subtitle">.mf-page-subtitle</div>
+    <div class="mf-section-title mt-2">.mf-section-title</div>
+    <label class="mf-label">.mf-label</label>
+    <div class="mf-hint">.mf-hint</div>
+    <div class="flex gap-4 mt-2">
+      <span class="mf-valor mf-valor--receita">R$ 1.960,00</span>
+      <span class="mf-valor mf-valor--despesa">R$ 1.099,57</span>
+    </div>
+  </section>
+
+  <section>
+    <h6 class="mf-section-title">Cards de resumo</h6>
+    <div class="grid">
+      <div class="col-12 sm:col-6 xl:col-3">
+        <mf-stat-card rotulo="Receitas do mês" valor="R$ 7.313,00" icone="pi pi-arrow-down-left" tom="receita"
+          corDoValor="receita"><small class="text-color-secondary">3 lançamentos</small></mf-stat-card>
+      </div>
+      <div class="col-12 sm:col-6 xl:col-3">
+        <mf-stat-card rotulo="Despesas do mês" valor="R$ 4.577,74" icone="pi pi-arrow-up-right" tom="despesa">
+          <small class="text-color-secondary">19 lançamentos</small></mf-stat-card>
+      </div>
+      <div class="col-12 sm:col-6 xl:col-3">
+        <mf-stat-card rotulo="Já pago" valor="R$ 2.908,75" icone="pi pi-check-circle" tom="info" />
+      </div>
+      <div class="col-12 sm:col-6 xl:col-3">
+        <mf-stat-card rotulo="Vencidas" valor="R$ 1.668,99" icone="pi pi-exclamation-triangle" tom="perigo"
+          corDoValor="perigo" [destaque]="true"><small class="text-color-secondary">11 contas</small></mf-stat-card>
+      </div>
+      <div class="col-12 sm:col-6 xl:col-3">
+        <mf-stat-card rotulo="Neutro" valor="—" icone="pi pi-info-circle" />
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h6 class="mf-section-title">Barra de filtros</h6>
+    <div class="surface-card border-round shadow-1">
+      <mf-filter-bar>
+        <p-selectButton inicio [options]="situacoes" [(ngModel)]="situacao" optionLabel="label" optionValue="value"
+          [allowEmpty]="false" [ngModelOptions]="{ standalone: true }" />
+        <input fim pInputText placeholder="Buscar..." />
+        <p-button fim icon="pi pi-filter-slash" [text]="true" severity="secondary" ariaLabel="Limpar filtros" />
+      </mf-filter-bar>
+    </div>
+  </section>
+
+  <section>
+    <h6 class="mf-section-title">Ícone de categoria</h6>
+    <div class="flex flex-wrap gap-3">
+      @for (n of naturezas; track $index) {
+        <div class="flex align-items-center gap-2">
+          <mf-category-icon [natureza]="n" icone="pi pi-tag" />
+          <span>{{ rotuloNatureza(n) }}</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section>
+    <h6 class="mf-section-title">Estado vazio</h6>
+    <div class="surface-card border-round shadow-1">
+      <mf-empty-state titulo="Nenhuma conta neste mês." texto="Cadastre a primeira para começar.">
+        <p-button label="Nova conta" icon="pi pi-plus" />
+      </mf-empty-state>
+    </div>
+  </section>
+
+  <section>
+    <h6 class="mf-section-title">Erro de campo</h6>
+    <label class="mf-label" for="ui-campo">Nome *</label>
+    <input pInputText id="ui-campo" class="ng-invalid ng-dirty" [formControl]="campoComErro" />
+    <mf-field-error [control]="campoComErro">Informe o nome.</mf-field-error>
+  </section>
+
+  <section>
+    <h6 class="mf-section-title">Botões</h6>
+    <div class="flex flex-wrap align-items-center gap-2">
+      <p-button label="Principal" icon="pi pi-plus" />
+      <p-button label="Secundária" severity="secondary" [outlined]="true" />
+      <p-button label="Excluir" icon="pi pi-trash" severity="danger" [outlined]="true" />
+      <p-button label="Marcar como pago" icon="pi pi-check" severity="success" />
+      <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" pTooltip="Editar" ariaLabel="Editar" />
+      <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Mais ações" />
+    </div>
+    <small class="mf-hint block mt-2">Rodapés: Cancelar · Salvar (a principal sempre à direita). size="small" só em tabela e toolbar.</small>
+  </section>
+
+  <section>
+    <h6 class="mf-section-title">Painel de formulário</h6>
+    <div class="flex gap-2">
+      <p-button label="Abrir (md)" severity="secondary" [outlined]="true" (onClick)="painel = 'md'" />
+      <p-button label="Abrir (lg)" severity="secondary" [outlined]="true" (onClick)="painel = 'lg'" />
+    </div>
+    @if (painel) {
+      <mf-form-panel [titulo]="'Painel ' + painel" [tamanho]="painel" (fechar)="painel = null" (salvar)="painel = null">
+        <label class="mf-label" for="ui-painel-nome">Nome *</label>
+        <input pInputText id="ui-painel-nome" class="w-full" />
+      </mf-form-panel>
+    }
+  </section>
+
+  <section>
+    <h6 class="mf-section-title">Diálogos</h6>
+    <div class="flex gap-2">
+      <p-button label="sm" severity="secondary" [outlined]="true" (onClick)="dialogo = 'sm'" />
+      <p-button label="md" severity="secondary" [outlined]="true" (onClick)="dialogo = 'md'" />
+      <p-button label="lg" severity="secondary" [outlined]="true" (onClick)="dialogo = 'lg'" />
+    </div>
+    <p-dialog [header]="'Diálogo ' + dialogo" [visible]="!!dialogo" (visibleChange)="!$event && (dialogo = null)"
+      [modal]="true" [styleClass]="'mf-dialog-' + dialogo">
+      <p>Conteúdo que não é formulário de cadastro.</p>
+      <ng-template pTemplate="footer">
+        <p-button label="Fechar" severity="secondary" [outlined]="true" (onClick)="dialogo = null" />
+      </ng-template>
+    </p-dialog>
+  </section>
+
+  <mf-fab rotulo="Ação principal" />
+</div>

@@ -1,5 +1,5 @@
 <p-dialog header="Adicionar contas em lote" [visible]="true" [modal]="true" [dismissableMask]="true" [draggable]="false"
-  [style]="{ width: '50vw' }" [breakpoints]="{ '768px': '90vw' }" (visibleChange)="close(false)">
+  styleClass="mf-dialog-md" (visibleChange)="close(false)">
   <app-data-grid #grid [dataSource]="contas" [columns]="gridColumns" [exibeCampos]="exibirCampos" [loading]="loading"
     [disabledRowIds]="disabledIds" (selectionChange)="onSelectionChange($event)">
   </app-data-grid>

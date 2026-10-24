@@ -7,6 +7,7 @@ import { Subject, catchError, concat, concatMap, defaultIfEmpty, finalize, from,
 
 import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
+import { CategoryService } from 'src/app/core/services/category.service';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { formatYearMonth } from 'src/app/core/utils/mask';
@@ -40,6 +41,7 @@ export class ContasAPagarComponent implements OnInit {
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly contaMensalService = inject(ContaMensalService);
+  private readonly categoryService = inject(CategoryService);
   private readonly alertService = inject(AlertService);
   private readonly exclusaoEmLote = inject(ExclusaoEmLoteService);
   private readonly confirmacao = inject(ConfirmationService);
@@ -61,6 +63,8 @@ export class ContasAPagarComponent implements OnInit {
   loading = false;
   hoje = new Date();
   resumo: ResumoMes = resumoDoMes([], this.hoje);
+  /** categoriaId → natureza, para a cor do ícone (card #27). Todas as categorias: lançamento antigo pode usar inativa. */
+  naturezas: ReadonlyMap<number, number> = new Map();
 
   edicao: EdicaoContas | null = null;
   /** Estado do p-inputSwitch; volta a true quando a saída da edição é cancelada. */
@@ -87,6 +91,11 @@ export class ContasAPagarComponent implements OnInit {
         this.resumo = resumoDoMes(contas, this.hoje);
         this.loading = false;
       });
+
+    // Sem as categorias, os ícones ficam na cor neutra: não é motivo para avisar erro na tela.
+    this.categoryService.listar()
+      .pipe(catchError(() => of([])), takeUntilDestroyed(this.destroyRef))
+      .subscribe(categorias => (this.naturezas = new Map(categorias.map(c => [c.id, c.naturezaOperacao]))));
 
     this.loadMonth();
   }

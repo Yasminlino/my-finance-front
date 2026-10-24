@@ -1,0 +1,88 @@
+/* Classes compartilhadas entre telas (card #27). Componentes mf-* têm o próprio estilo; aqui fica o que é
+   global porque o PrimeNG abre no body ou porque desktop e celular usam o mesmo. */
+
+/* Tags com fundo claro (p-tag dentro de .mf-tags-claras). Classe e não global: o painel do dropdown abre no body. */
+.mf-tags-claras {
+  .p-tag { background-color: var(--mf-tag-info-bg); color: var(--mf-tag-info-fg); white-space: nowrap; }
+  .p-tag-secondary { background-color: var(--mf-tag-secondary-bg); color: var(--mf-tag-secondary-fg); }
+  .p-tag-success { background-color: var(--mf-tag-success-bg); color: var(--mf-tag-success-fg); }
+  .p-tag-info { background-color: var(--mf-tag-info-bg); color: var(--mf-tag-info-fg); }
+  .p-tag-warning { background-color: var(--mf-tag-warning-bg); color: var(--mf-tag-warning-fg); }
+  .p-tag-danger { background-color: var(--mf-tag-danger-bg); color: var(--mf-tag-danger-fg); }
+}
+
+/* Tags menores (cards do celular). */
+.tags-compactas .p-tag {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+}
+
+/* Cor pela natureza da categoria (mf-category-icon). */
+@for $n from 0 through 5 {
+  .mf-natureza-#{$n} { background: var(--mf-natureza-#{$n}-bg); color: var(--mf-natureza-#{$n}-fg); }
+}
+.mf-natureza-neutra { background: var(--mf-natureza-neutra-bg); color: var(--mf-natureza-neutra-fg); }
+
+/* Contas a Pagar: tons do vencimento relativo. Global porque a tabela (desktop) e a lista de cards (celular) usam os mesmos. */
+.tom-vermelho { color: var(--red-500); }
+.tom-laranja { color: var(--orange-500); }
+.tom-cinza { color: var(--text-color-secondary); }
+
+/* Filtro de situação no celular: os quatro botões dividem a largura e o badge não encosta na borda.
+   Abaixo de ~340px o contêiner (.filtro-rolavel) ainda rola na horizontal. */
+.filtro-situacao-compacto .p-selectbutton {
+  display: flex;
+  flex-wrap: nowrap;
+  min-width: 100%;
+
+  .p-button {
+    flex: 1 0 auto;
+    justify-content: center;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .p-badge {
+    min-width: 1.1rem;
+    height: 1.1rem;
+    line-height: 1.1rem;
+    font-size: 0.65rem;
+    margin-left: 0.35rem !important;
+  }
+}
+
+/* Painel lateral dos formulários (mf-form-panel). O p-sidebar aplica o styleClass fora do componente. */
+.p-sidebar.mf-form-panel {
+  .p-sidebar-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--surface-border);
+  }
+
+  .p-sidebar-content {
+    padding: 1.25rem;
+    overflow-y: auto;
+  }
+
+  .p-sidebar-footer {
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid var(--surface-border);
+    background: var(--surface-card);
+  }
+
+  &.mf-form-panel--md:not(.p-sidebar-full) { width: 36rem; max-width: 100vw; }
+  &.mf-form-panel--lg:not(.p-sidebar-full) { width: 52rem; max-width: 100vw; }
+}
+
+/* Larguras dos p-dialog que não são formulário de cadastro (card #27). */
+.p-dialog.mf-dialog-sm { width: 32rem; }
+.p-dialog.mf-dialog-md { width: 50rem; }
+.p-dialog.mf-dialog-lg { width: min(1100px, 95vw); }
+
+@media (max-width: 767px) {
+  .p-dialog.mf-dialog-sm,
+  .p-dialog.mf-dialog-md,
+  .p-dialog.mf-dialog-lg {
+    width: 95vw;
+  }
+}

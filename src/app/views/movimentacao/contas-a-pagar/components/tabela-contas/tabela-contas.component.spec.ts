@@ -83,10 +83,15 @@ describe('TabelaContasComponent', () => {
     expect(contas.map(c => c.id)).toEqual([1, 2, 3, 4]);
   });
 
-  it('ícone da categoria com cor própria e tags no estilo claro do app', () => {
-    const icone = el().querySelector('#conta-1 .icone-categoria')!;
-    expect(icone.className).toMatch(/cor-[0-7]/);
-    expect(el().querySelector('.tags-claras')).not.toBeNull();
+  it('ícone da categoria com a cor da natureza e tags no estilo claro do app', () => {
+    const icone = () => el().querySelector('#conta-1 .mf-icone-categoria')!;
+    expect(icone().classList).toContain('mf-natureza-neutra'); // categorias ainda não carregadas
+
+    fixture.componentRef.setInput('naturezas', new Map([[1, 1]]));
+    fixture.detectChanges();
+
+    expect(icone().classList).toContain('mf-natureza-1');
+    expect(el().querySelector('.mf-tags-claras')).not.toBeNull();
   });
 
   it('mostra parcela X / Y, ATRASADA, vencimento relativo e receita com "+"', () => {

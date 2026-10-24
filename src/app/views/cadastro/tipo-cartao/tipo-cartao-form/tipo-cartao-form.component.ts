@@ -6,7 +6,8 @@ import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 import { finalize } from 'rxjs';
-import { DialogModule } from 'primeng/dialog';
+import { FormPanelComponent } from 'src/app/shared/ui/form-panel/form-panel.component';
+import { FieldErrorComponent } from 'src/app/shared/ui/field-error/field-error.component';
 import { InputTextModule } from 'primeng/inputtext';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
@@ -14,7 +15,7 @@ import { ButtonModule } from 'primeng/button';
 @Component({
   selector: 'app-tipo-cartao-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DialogModule, InputTextModule, CheckboxModule, ButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, FormPanelComponent, FieldErrorComponent, InputTextModule, CheckboxModule, ButtonModule],
   templateUrl: './tipo-cartao-form.component.html'
 })
 export class TipoCartaoFormComponent implements OnInit {

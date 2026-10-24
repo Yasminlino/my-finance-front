@@ -1,32 +1,28 @@
-<div class="surface-card border-round shadow-1 tags-claras">
-  <!-- Toolbar: situação, busca, categorias, limpar, exportar -->
-  <p-toolbar styleClass="toolbar-tabela border-none border-bottom-1 surface-border border-noround">
-    <div class="p-toolbar-group-start flex-wrap gap-2">
-      <p-selectButton [options]="opcoesFiltro" [(ngModel)]="filtro" optionLabel="label" optionValue="value"
-        [allowEmpty]="false" (onChange)="aoMudarFiltro()" styleClass="filtro-situacao">
-        <ng-template let-opcao pTemplate="item">
-          <span>{{ opcao.label }}</span>
-          <p-badge [value]="'' + opcao.contagem" styleClass="ml-2"
-            [severity]="opcao.value === 'vencidas' && opcao.contagem > 0 ? 'danger' : (opcao.value === 'alteradas' ? 'warning' : 'secondary')" />
-        </ng-template>
-      </p-selectButton>
-    </div>
+<div class="surface-card border-round shadow-1 mf-tags-claras">
+  <!-- Filtros: situação à esquerda; busca, categorias, limpar e exportar à direita -->
+  <mf-filter-bar>
+    <p-selectButton inicio [options]="opcoesFiltro" [(ngModel)]="filtro" optionLabel="label" optionValue="value"
+      [allowEmpty]="false" (onChange)="aoMudarFiltro()" styleClass="filtro-situacao">
+      <ng-template let-opcao pTemplate="item">
+        <span>{{ opcao.label }}</span>
+        <p-badge [value]="'' + opcao.contagem" styleClass="ml-2"
+          [severity]="opcao.value === 'vencidas' && opcao.contagem > 0 ? 'danger' : (opcao.value === 'alteradas' ? 'warning' : 'secondary')" />
+      </ng-template>
+    </p-selectButton>
 
-    <div class="p-toolbar-group-end flex-wrap gap-2">
-      <p-iconField iconPosition="left">
-        <p-inputIcon styleClass="pi pi-search" />
-        <input pInputText type="text" placeholder="Buscar conta, categoria..." [(ngModel)]="busca"
-          (ngModelChange)="aoMudarFiltro()" aria-label="Buscar" />
-      </p-iconField>
-      <p-multiSelect [options]="categorias" [(ngModel)]="categoriasSelecionadas" placeholder="Categorias"
-        [showHeader]="false" selectedItemsLabel="{0} categorias" [maxSelectedLabels]="1" appendTo="body"
-        (onChange)="aoMudarFiltro()" styleClass="filtro-categorias" />
-      <p-button icon="pi pi-filter-slash" [text]="true" severity="secondary" pTooltip="Limpar filtros"
-        tooltipPosition="top" [disabled]="!temFiltro" (onClick)="limparFiltros()" ariaLabel="Limpar filtros" />
-      <p-button icon="pi pi-upload" [text]="true" severity="secondary" pTooltip="Exportar CSV" tooltipPosition="top"
-        (onClick)="exportar()" ariaLabel="Exportar" />
-    </div>
-  </p-toolbar>
+    <p-iconField fim iconPosition="left">
+      <p-inputIcon styleClass="pi pi-search" />
+      <input pInputText type="text" placeholder="Buscar conta, categoria..." [(ngModel)]="busca"
+        (ngModelChange)="aoMudarFiltro()" aria-label="Buscar" />
+    </p-iconField>
+    <p-multiSelect fim [options]="categorias" [(ngModel)]="categoriasSelecionadas" placeholder="Categorias"
+      [showHeader]="false" selectedItemsLabel="{0} categorias" [maxSelectedLabels]="1" appendTo="body"
+      (onChange)="aoMudarFiltro()" styleClass="filtro-categorias" />
+    <p-button fim icon="pi pi-filter-slash" [text]="true" severity="secondary" pTooltip="Limpar filtros"
+      tooltipPosition="top" [disabled]="!temFiltro" (onClick)="limparFiltros()" ariaLabel="Limpar filtros" />
+    <p-button fim icon="pi pi-upload" [text]="true" severity="secondary" pTooltip="Exportar CSV" tooltipPosition="top"
+      (onClick)="exportar()" ariaLabel="Exportar" />
+  </mf-filter-bar>
 
   <!-- Ações em lote (fora do modo edição) -->
   @if (selecao.length && !edicao) {
@@ -76,7 +72,7 @@
           <tr [attr.id]="'conta-' + conta.id" class="linha-edicao" [class.linha-alterada]="alterado(conta.id)">
             <td>
               <div class="flex align-items-start gap-2">
-                <span class="icone-categoria" [ngClass]="m.cor"><i [class]="m.icone"></i></span>
+                <mf-category-icon [natureza]="m.natureza" [icone]="m.icone" />
                 <div class="flex-grow-1 min-w-0">
                   <div class="font-semibold">{{ conta.nome }}</div>
                   <small class="text-color-secondary">{{ conta.categoriaNome }}</small>
@@ -132,7 +128,7 @@
 
             <td>
               <p-dropdown [options]="statusOptions" [(ngModel)]="rascunho[conta.id].situacao" optionLabel="label"
-                optionValue="value" appendTo="body" panelStyleClass="tags-claras" styleClass="p-inputtext-sm w-full"
+                optionValue="value" appendTo="body" panelStyleClass="mf-tags-claras" styleClass="p-inputtext-sm w-full"
                 [class.campo-alterado]="alterado(conta.id, 'situacao')"
                 (ngModelChange)="alterar(conta, 'situacao', $event)" (keydown.escape)="desfazerCampo(conta, 'situacao')">
                 <ng-template let-opcao pTemplate="selectedItem">
@@ -175,7 +171,7 @@
 
             <td>
               <div class="flex align-items-center gap-2">
-                <span class="icone-categoria" [ngClass]="m.cor"><i [class]="m.icone"></i></span>
+                <mf-category-icon [natureza]="m.natureza" [icone]="m.icone" />
                 <div class="min-w-0">
                   <div class="font-semibold flex align-items-center gap-2">
                     <span class="white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ conta.nome }}</span>
