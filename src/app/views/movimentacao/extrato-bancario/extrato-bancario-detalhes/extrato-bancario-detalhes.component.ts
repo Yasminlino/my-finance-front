@@ -345,7 +345,8 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
 
 
   async onDelete(row: ExtratoItemDto) {
-    const ok = await this.confirmacao.confirmar(`Excluir o lançamento '${row.nomePessoaTransacao}'?`);
+    const lancamento = this.descreverLancamento(row);
+    const ok = await this.confirmacao.confirmar(`Excluir o lançamento ${lancamento}?`);
     if (!ok) return;
 
     // Loading na linha até a API responder.
@@ -354,11 +355,18 @@ export class ExtratoBancarioDetalhesComponent implements OnInit {
       .pipe(finalize(() => (this.deletingId = null)))
       .subscribe({
         next: () => {
-          this.alertService.success(`Lançamento '${row.nomePessoaTransacao}' excluído com sucesso!`);
+          this.alertService.success(`Lançamento ${lancamento} excluído com sucesso!`);
           this.loadMonth();
         },
-        error: e => this.alertService.error(extrairMensagemErro(e, `Falha ao excluir o lançamento '${row.nomePessoaTransacao}'.`))
+        error: e => this.alertService.error(extrairMensagemErro(e, `Falha ao excluir o lançamento ${lancamento}.`))
       });
+  }
+
+  /** "'POSTO' de R$ 12,34 em 01/10/2026": pessoa ou descrição quando há, e sempre valor e data (lançamento manual pode não ter nenhum dos dois). */
+  private descreverLancamento(row: ExtratoItemDto): string {
+    const nome = row.nomePessoaTransacao?.trim() || row.descricao?.trim();
+    const valorEData = `de ${formatCurrencyBR(row.valor)} em ${formatDateBR(row.dataMovimentacao)}`;
+    return nome ? `'${nome}' ${valorEData}` : valorEData;
   }
 
   /** Banco, cartão e mês abertos, mais as listas para resolver categoria e tipo pelo nome. */
