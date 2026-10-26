@@ -30,7 +30,7 @@
 
     <app-resumo-mes class="block mb-3" [resumo]="resumo" />
 
-    <app-tabela-contas [contas]="contasMensais" [hoje]="hoje" [naturezas]="naturezas" [loading]="loading"
+    <app-tabela-contas [contas]="contasMensais" [hoje]="hoje" [aparencias]="aparencias" [loading]="loading"
       [edicao]="edicao" (marcarPago)="marcarComoPago($event)" (excluir)="excluir($event)" (editar)="editar($event)" />
   } @else {
     <!-- Celular: título com ⋮, mês em largura total, resumo em carrossel, cards e botão flutuante -->
@@ -53,12 +53,12 @@
 
     <app-resumo-mes class="block mb-3" [resumo]="resumo" [compacto]="true" />
 
-    <app-lista-contas-movel [contas]="contasMensais" [hoje]="hoje" [naturezas]="naturezas" [loading]="loading"
+    <app-lista-contas-movel [contas]="contasMensais" [hoje]="hoje" [aparencias]="aparencias" [loading]="loading"
       (marcarPago)="marcarComoPago($event)" (excluir)="excluir($event)" (editar)="editar($event)" />
 
     <mf-fab rotulo="Nova conta" (clique)="onOpenCreate()" />
 
-    <app-editar-conta-sheet [conta]="contaEmEdicao" [hoje]="hoje" [naturezas]="naturezas" [salvando]="salvandoConta"
+    <app-editar-conta-sheet [conta]="contaEmEdicao" [hoje]="hoje" [aparencias]="aparencias" [salvando]="salvandoConta"
       (fechar)="contaEmEdicao = null" (salvar)="salvarConta($event)" />
   }
 

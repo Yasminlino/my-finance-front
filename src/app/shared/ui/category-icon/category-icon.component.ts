@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { classeDaNatureza } from '../natureza';
+import { classeDaCor } from '../aparencia';
 
 /**
  * Ícone da categoria num quadrado com a cor da natureza (card #27). Antes cada tela de Contas a Pagar
@@ -26,10 +27,12 @@ import { classeDaNatureza } from '../natureza';
 })
 export class CategoryIconComponent {
   @Input() natureza: number | null | undefined = null;
+  /** Cor escolhida na categoria (card #23); quando há, vale mais que a da natureza. */
+  @Input() cor: string | null | undefined = null;
   @Input() icone = 'pi pi-tag';
   @Input() tamanho: 'md' | 'lg' = 'md';
 
   get classe(): string {
-    return classeDaNatureza(this.natureza);
+    return classeDaCor(this.cor) ?? classeDaNatureza(this.natureza);
   }
 }

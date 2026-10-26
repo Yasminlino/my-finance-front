@@ -10,16 +10,18 @@ import { FormPanelComponent } from './form-panel.component';
   standalone: true,
   imports: [FormPanelComponent],
   template: `
-    <mf-form-panel titulo="Nova Categoria" [salvando]="salvando" [tamanho]="tamanho"
-      (fechar)="fechou = fechou + 1" (salvar)="salvou = salvou + 1">
+    <mf-form-panel titulo="Nova Categoria" [salvando]="salvando" [tamanho]="tamanho" [criarOutra]="criarOutra"
+      (fechar)="fechou = fechou + 1" (salvar)="salvou = salvou + 1" (salvarEOutra)="salvouEOutra = salvouEOutra + 1">
       <input id="campo" />
     </mf-form-panel>`
 })
 class HostComponent {
   salvando = false;
   tamanho: 'md' | 'lg' = 'md';
+  criarOutra = false;
   fechou = 0;
   salvou = 0;
+  salvouEOutra = 0;
 }
 
 /** Painel lateral dos formulários de cadastro e edição (card #27). */
@@ -57,6 +59,19 @@ describe('FormPanelComponent', () => {
     botao('Salvar').click();
 
     expect(host().salvou).toBe(1);
+  });
+
+  it('"Salvar e criar outra" só aparece quando a tela pede, e emite salvarEOutra (card #23)', () => {
+    const rotulos = () => Array.from(el().querySelectorAll('button')).map(b => b.textContent?.trim());
+    expect(rotulos()).not.toContain('Salvar e criar outra');
+
+    host().criarOutra = true;
+    fixture.detectChanges();
+    expect(rotulos()).toEqual(jasmine.arrayContaining(['Cancelar', 'Salvar e criar outra', 'Salvar']));
+
+    Array.from(el().querySelectorAll('button')).find(b => b.textContent?.trim() === 'Salvar e criar outra')!.click();
+    expect(host().salvouEOutra).toBe(1);
+    expect(host().salvou).toBe(0);
   });
 
   it('salvando põe o Salvar em carregando e não deixa fechar (X, Cancelar, Esc, clique fora)', () => {

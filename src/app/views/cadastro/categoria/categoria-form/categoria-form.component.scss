@@ -1,0 +1,33 @@
+:host ::ng-deep .categoria-tipo .p-button { flex: 1; }
+:host ::ng-deep .categoria-tipo { display: flex; }
+
+.categoria-natureza {
+  border-color: var(--surface-border);
+  transition: border-color 0.15s, background-color 0.15s;
+
+  &--marcada { border-color: var(--mf-primary); background: var(--highlight-bg); }
+  &--travada { cursor: default; opacity: 0.85; }
+}
+
+.categoria-icones,
+.categoria-cores {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.25rem, 1fr));
+  gap: 0.5rem;
+}
+
+.categoria-opcao {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--mf-radius);
+  background: var(--surface-card);
+  color: var(--text-color);
+  cursor: pointer;
+
+  &:focus-visible { outline: 2px solid var(--mf-primary); outline-offset: 2px; }
+  &--marcada { border: 2px solid var(--mf-primary); }
+}

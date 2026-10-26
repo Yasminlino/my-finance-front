@@ -20,6 +20,23 @@ describe('CategoryIconComponent', () => {
     expect(icone().querySelector('i')?.className).toBe('pi pi-shopping-cart');
   });
 
+  it('a cor escolhida na categoria vale mais que a da natureza (card #23)', () => {
+    fixture.componentRef.setInput('natureza', 2);
+    fixture.componentRef.setInput('cor', 'laranja');
+    fixture.detectChanges();
+
+    expect(icone().classList).toContain('mf-cor-laranja');
+    expect(icone().classList).not.toContain('mf-natureza-2');
+  });
+
+  it('cor fora da paleta é ignorada e vale a natureza', () => {
+    fixture.componentRef.setInput('natureza', 1);
+    fixture.componentRef.setInput('cor', '#ff0000');
+    fixture.detectChanges();
+
+    expect(icone().classList).toContain('mf-natureza-1');
+  });
+
   it('sem natureza, a cor neutra e o ícone padrão', () => {
     fixture.componentRef.setInput('natureza', null);
     fixture.detectChanges();

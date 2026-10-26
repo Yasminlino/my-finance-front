@@ -169,59 +169,7 @@ export function contarPorSituacao(
   return contagem;
 }
 
-/** Palavra-chave (sem acento, minúscula) -> ícone. A primeira que aparecer no nome vence. */
-const ICONES_POR_PALAVRA: Array<[string, string]> = [
-  ['morad', 'pi pi-home'],
-  ['aluguel', 'pi pi-home'],
-  ['casa', 'pi pi-home'],
-  ['condominio', 'pi pi-building'],
-  ['energia', 'pi pi-bolt'],
-  ['luz', 'pi pi-bolt'],
-  ['internet', 'pi pi-wifi'],
-  ['telefon', 'pi pi-phone'],
-  ['celular', 'pi pi-mobile'],
-  ['cartao', 'pi pi-credit-card'],
-  ['credito', 'pi pi-credit-card'],
-  ['transporte', 'pi pi-car'],
-  ['carro', 'pi pi-car'],
-  ['veiculo', 'pi pi-car'],
-  ['combust', 'pi pi-car'],
-  ['mercado', 'pi pi-shopping-cart'],
-  ['aliment', 'pi pi-shopping-cart'],
-  ['compra', 'pi pi-shopping-cart'],
-  ['saude', 'pi pi-heart'],
-  ['educa', 'pi pi-graduation-cap'],
-  ['escola', 'pi pi-graduation-cap'],
-  ['curso', 'pi pi-book'],
-  ['salario', 'pi pi-briefcase'],
-  ['trabalho', 'pi pi-briefcase'],
-  ['presente', 'pi pi-gift'],
-  ['imposto', 'pi pi-receipt'],
-  ['juros', 'pi pi-percentage'],
-  ['investimento', 'pi pi-chart-line'],
-  ['logistic', 'pi pi-truck'],
-  ['frete', 'pi pi-truck'],
-  ['debito', 'pi pi-sync'],
-  ['assinatura', 'pi pi-sync'],
-  ['lazer', 'pi pi-ticket'],
-  ['viage', 'pi pi-globe'],
-  ['pet', 'pi pi-heart'],
-  ['manutencao', 'pi pi-wrench'],
-  ['seguro', 'pi pi-shield'],
-  ['conta', 'pi pi-receipt'],
-  ['receita', 'pi pi-money-bill'],
-];
-
-const ICONE_PADRAO = 'pi pi-wallet';
-
-function chaveDaCategoria(nome: string | null | undefined): string {
-  return (nome ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-}
-
-export function iconeDaCategoria(nome: string | null | undefined): string {
-  const chave = chaveDaCategoria(nome);
-  if (!chave) return ICONE_PADRAO;
-  return ICONES_POR_PALAVRA.find(([palavra]) => chave.includes(palavra))?.[1] ?? ICONE_PADRAO;
-}
+// O ícone pelo nome mudou para shared/ui/aparencia.ts (card #23): o Cadastro de Categorias usa o mesmo.
+export { iconeDaCategoria } from 'src/app/shared/ui/aparencia';
 
 // A cor do ícone vem da natureza da categoria (mf-category-icon, card #27), não mais do nome.

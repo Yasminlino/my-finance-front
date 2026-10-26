@@ -33,6 +33,7 @@ import {
 } from '../../contas-a-pagar.lista';
 import { CampoEditavel, EdicaoContas, RascunhoConta } from '../../edicao-contas';
 import { ErroCampoDirective } from '../../erro-campo.directive';
+import { AparenciaCategoria } from 'src/app/shared/ui/aparencia';
 
 /**
  * Tabela de Contas a Pagar. Filtros (situação, busca, categorias) são feitos aqui sobre o mês
@@ -57,8 +58,8 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
 
   @Input() contas: LinhaContasMensais[] = [];
   @Input() hoje = new Date();
-  /** categoriaId → natureza (cor do ícone). Vazio enquanto a tela carrega as categorias. */
-  @Input() naturezas: ReadonlyMap<number, number> = new Map();
+  /** categoriaId → natureza, ícone e cor (cards #27 e #23). Vazio enquanto a tela carrega as categorias. */
+  @Input() aparencias: ReadonlyMap<number, AparenciaCategoria> = new Map();
   @Input() loading = false;
   /** Presente quando o modo edição está ligado. */
   @Input() edicao: EdicaoContas | null = null;
@@ -104,8 +105,8 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
   ];
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['contas'] || changes['hoje'] || changes['naturezas']) {
-      this.meta = metaDasContas(this.contas, this.hoje, this.naturezas);
+    if (changes['contas'] || changes['hoje'] || changes['aparencias']) {
+      this.meta = metaDasContas(this.contas, this.hoje, this.aparencias);
     }
     if (changes['contas'] || changes['hoje']) {
       this.contasOrdenadas = ordenarPorVencimento(this.contas);

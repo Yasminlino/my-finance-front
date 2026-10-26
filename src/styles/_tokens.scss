@@ -45,6 +45,18 @@
   --mf-natureza-neutra-bg: var(--surface-200);
   --mf-natureza-neutra-fg: var(--text-color-secondary);
 
+  /* Cor escolhida na categoria (card #23): vale mais que a da natureza. Chaves = PALETA_CATEGORIA */
+  --mf-cor-azul-bg: var(--blue-100);         --mf-cor-azul-fg: var(--blue-700);
+  --mf-cor-roxo-bg: var(--purple-100);       --mf-cor-roxo-fg: var(--purple-700);
+  --mf-cor-verde-agua-bg: var(--teal-100);   --mf-cor-verde-agua-fg: var(--teal-700);
+  --mf-cor-verde-bg: var(--green-100);       --mf-cor-verde-fg: var(--green-700);
+  --mf-cor-laranja-bg: var(--orange-100);    --mf-cor-laranja-fg: var(--orange-700);
+  --mf-cor-indigo-bg: var(--indigo-100);     --mf-cor-indigo-fg: var(--indigo-700);
+  --mf-cor-rosa-bg: var(--pink-100);         --mf-cor-rosa-fg: var(--pink-700);
+  --mf-cor-vermelho-bg: var(--red-100);      --mf-cor-vermelho-fg: var(--red-700);
+  --mf-cor-amarelo-bg: var(--yellow-100);    --mf-cor-amarelo-fg: var(--yellow-800);
+  --mf-cor-cinza-bg: var(--bluegray-100);    --mf-cor-cinza-fg: var(--bluegray-700);
+
   /* Forma */
   --mf-radius: 8px;
   --mf-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);

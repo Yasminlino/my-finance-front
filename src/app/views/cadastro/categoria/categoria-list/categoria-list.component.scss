@@ -1,3 +1,29 @@
-.text-sucess{
-    color: green;
+.barra-natureza {
+  height: 0.75rem;
+  background: var(--surface-200);
+
+  &__fatia { height: 100%; }
+  &__fatia--revisar { background: var(--mf-alerta); }
+}
+
+.legenda-ponto {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  display: inline-block;
+
+  &--revisar { background: var(--mf-alerta); }
+}
+
+:host ::ng-deep .filtro-natureza { min-width: 11rem; }
+:host ::ng-deep .filtro-situacao { min-width: 8rem; }
+:host ::ng-deep .filtro-ordem { min-width: 13rem; }
+
+/* Celular: as abas de tipo e a linha da busca ocupam a largura toda, cada uma na sua linha. */
+@media (max-width: 767.98px) {
+  :host ::ng-deep .mf-filter-bar .mf-filter-bar__inicio,
+  :host ::ng-deep .mf-filter-bar .mf-filter-bar__fim {
+    width: 100%;
+    flex-wrap: nowrap;
+  }
 }

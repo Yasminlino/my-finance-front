@@ -16,6 +16,7 @@ import { CategoryIconComponent } from 'src/app/shared/ui/category-icon/category-
 import { iconeDaCategoria, previaDoEfeito } from '../../contas-a-pagar.regras';
 import { CampoEditavel, EdicaoContas, RascunhoConta } from '../../edicao-contas';
 import { ErroCampoDirective } from '../../erro-campo.directive';
+import { AparenciaCategoria } from 'src/app/shared/ui/aparencia';
 
 /**
  * Edição de uma conta no celular, num bottom sheet (p-sidebar de baixo). Usa a mesma EdicaoContas
@@ -39,8 +40,8 @@ export class EditarContaSheetComponent implements OnChanges {
   /** Conta em edição; null fecha o sheet. */
   @Input() conta: LinhaContasMensais | null = null;
   @Input() hoje = new Date();
-  /** categoriaId → natureza (cor do ícone). */
-  @Input() naturezas: ReadonlyMap<number, number> = new Map();
+  /** categoriaId → natureza, ícone e cor da categoria (cards #27 e #23). */
+  @Input() aparencias: ReadonlyMap<number, AparenciaCategoria> = new Map();
   @Input() salvando = false;
 
   @Output() fechar = new EventEmitter<void>();
@@ -51,15 +52,18 @@ export class EditarContaSheetComponent implements OnChanges {
   rascunho: RascunhoConta | null = null;
   icone = '';
   natureza: number | null = null;
+  cor: string | null = null;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['conta']) {
       this.edicao = this.conta ? new EdicaoContas([this.conta]) : null;
       this.rascunho = this.conta ? this.edicao!.rascunho(this.conta.id) : null;
-      this.icone = iconeDaCategoria(this.conta?.categoriaNome);
     }
-    if (changes['conta'] || changes['naturezas']) {
-      this.natureza = this.conta ? this.naturezas.get(this.conta.categoriaId) ?? null : null;
+    if (changes['conta'] || changes['aparencias']) {
+      const aparencia = this.conta ? this.aparencias.get(this.conta.categoriaId) : undefined;
+      this.natureza = aparencia?.natureza ?? null;
+      this.cor = aparencia?.cor ?? null;
+      this.icone = aparencia?.icone || iconeDaCategoria(this.conta?.categoriaNome);
     }
   }
 

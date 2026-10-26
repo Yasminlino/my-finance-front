@@ -23,6 +23,29 @@
 }
 .mf-natureza-neutra { background: var(--mf-natureza-neutra-bg); color: var(--mf-natureza-neutra-fg); }
 
+/* Linha de cadastro inativo (tabelas e cards): esmaecida, mas legível. */
+.mf-row-inativa > td,
+.mf-row-inativa.mf-list-card { color: var(--text-color-secondary); }
+.mf-row-inativa mf-category-icon,
+.mf-row-inativa .p-tag,
+.mf-row-inativa .chip-natureza { opacity: 0.55; }
+
+/* Chip da natureza da categoria (Cadastro de Categorias; card #23). A cor vem de .mf-natureza-N. */
+.chip-natureza {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Cor escolhida na categoria (card #23): mesmas chaves de PALETA_CATEGORIA (shared/ui/aparencia.ts). */
+@each $cor in azul, roxo, verde-agua, verde, laranja, indigo, rosa, vermelho, amarelo, cinza {
+  .mf-cor-#{$cor} { background: var(--mf-cor-#{$cor}-bg); color: var(--mf-cor-#{$cor}-fg); }
+}
+
 /* Contas a Pagar: tons do vencimento relativo. Global porque a tabela (desktop) e a lista de cards (celular) usam os mesmos. */
 .tom-vermelho { color: var(--red-500); }
 .tom-laranja { color: var(--orange-500); }

@@ -1,10 +1,238 @@
 <div class="mf-pagina">
-  <app-data-grid #grid [dataSource]="registrosExibidos" [breadcrumb]="breadcrumb" [columns]="gridColumns"  [titulo]="'Cadastro de categorias'"
-    [statusOptions]="statusOptions" campoStatus="ativo" [exibeCampos]="exibirCampos"
-    [loading]="loading" (edit)="onEdit($event)" (new)="openCreate()" (delete)="onDelete($event)" (deleteSelected)="onDeleteSelected($event)"></app-data-grid>
+  <mf-page-header class="block mt-2 mb-3" titulo="Categorias" subtitulo="Agrupam as contas e definem se são despesa ou receita"
+    [breadcrumb]="breadcrumb" [home]="home">
+    @if (!movel()) {
+      <p-button acoes label="Nova categoria" icon="pi pi-plus" (onClick)="openCreate()" />
+    }
+  </mf-page-header>
 
-  <!-- Modal Form -->
-  <app-categoria-form *ngIf="showModalForm" [registro]="editing" (closed)="closeForm($event)">
-  </app-categoria-form>
+  <!-- Resumo: contadores e a barra de despesas por natureza -->
+  <div class="resumo-categorias surface-card border-round shadow-1 p-3 mb-3 flex flex-column md:flex-row gap-3">
+    <div class="flex gap-4 flex-shrink-0">
+      <div>
+        <small class="mf-hint block">Despesas</small>
+        <span class="mf-valor text-2xl font-semibold">{{ resumo.despesas }}</span>
+      </div>
+      <div>
+        <small class="mf-hint block">Receitas</small>
+        <span class="mf-valor text-2xl font-semibold">{{ resumo.receitas }}</span>
+      </div>
+    </div>
+    <div class="flex-grow-1 flex flex-column gap-2 min-w-0">
+      <small class="mf-hint">Despesas por natureza (ativas)</small>
+      <div class="barra-natureza flex border-round overflow-hidden" role="img"
+        [attr.aria-label]="'Despesas por natureza'">
+        @for (fatiaNat of resumo.despesasPorNatureza; track fatiaNat.natureza) {
+          <span class="barra-natureza__fatia" [style.width.%]="fatia(fatiaNat.quantidade)"
+            [style.background]="'var(--mf-natureza-' + fatiaNat.natureza + '-fg)'"></span>
+        }
+        @if (resumo.aRevisar) {
+          <span class="barra-natureza__fatia barra-natureza__fatia--revisar" [style.width.%]="fatia(resumo.aRevisar)"></span>
+        }
+      </div>
+      <div class="flex flex-wrap gap-3 text-sm">
+        @for (fatiaNat of resumo.despesasPorNatureza; track fatiaNat.natureza) {
+          <span class="flex align-items-center gap-1">
+            <span class="legenda-ponto" [style.background]="'var(--mf-natureza-' + fatiaNat.natureza + '-fg)'"></span>
+            {{ rotuloNatureza[fatiaNat.natureza] }} · {{ fatiaNat.quantidade }}
+          </span>
+        }
+        @if (resumo.aRevisar) {
+          <span class="flex align-items-center gap-1 text-orange-600">
+            <span class="legenda-ponto legenda-ponto--revisar"></span>
+            A revisar · {{ resumo.aRevisar }}
+          </span>
+        }
+      </div>
+    </div>
+  </div>
 
+  <div class="surface-card border-round shadow-1 mf-tags-claras">
+    <mf-filter-bar>
+      <p-selectButton inicio [options]="opcoesTipo" [(ngModel)]="filtroTipo" optionLabel="label" optionValue="value"
+        [allowEmpty]="false" (onChange)="aoMudarFiltro()" styleClass="filtro-tipo" [class.filtro-situacao-compacto]="movel()" [class.w-full]="movel()">
+        <ng-template let-opcao pTemplate="item">
+          <span>{{ opcao.label }}</span>
+          <p-badge [value]="'' + opcao.contagem" severity="secondary" styleClass="ml-2" />
+        </ng-template>
+      </p-selectButton>
+
+      <p-iconField fim iconPosition="left" [class.flex-grow-1]="movel()" [class.min-w-0]="movel()">
+        <p-inputIcon styleClass="pi pi-search" />
+        <input pInputText type="text" placeholder="Buscar categoria..." [(ngModel)]="busca" [class.w-full]="movel()"
+          (ngModelChange)="aoMudarFiltro()" aria-label="Buscar categoria" />
+      </p-iconField>
+      <!-- Bloco @if com vários elementos não é projetado pelo atributo; o ng-container leva tudo para o lado `fim`. -->
+      <ng-container ngProjectAs="[fim]">
+      @if (!movel()) {
+        <p-multiSelect fim [options]="opcoesNatureza" [(ngModel)]="naturezasSelecionadas" placeholder="Natureza"
+          [showHeader]="false" selectedItemsLabel="{0} naturezas" [maxSelectedLabels]="1" appendTo="body"
+          (onChange)="aoMudarFiltro()" styleClass="filtro-natureza" />
+        <p-dropdown fim [options]="opcoesSituacao" [(ngModel)]="situacao" optionLabel="label" optionValue="value"
+          appendTo="body" (onChange)="aoMudarFiltro()" styleClass="filtro-situacao" ariaLabel="Situação" />
+        <p-dropdown fim [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value"
+          appendTo="body" (onChange)="aoMudarFiltro()" styleClass="filtro-ordem" ariaLabel="Ordenar por"
+          pTooltip="Ordenar por" tooltipPosition="top" />
+        <p-button fim icon="pi pi-filter-slash" [text]="true" severity="secondary" pTooltip="Limpar filtros"
+          tooltipPosition="top" [disabled]="!temFiltro" (onClick)="limparFiltros()" ariaLabel="Limpar filtros" />
+      } @else {
+        <p-button fim icon="pi pi-sliders-h" [text]="true" severity="secondary" ariaLabel="Mais filtros"
+          (onClick)="filtrosMovelAbertos = true" />
+      }
+      </ng-container>
+    </mf-filter-bar>
+
+    @if (!movel()) {
+      <p-table [value]="registrosExibidos" dataKey="id" [loading]="loading" [rowHover]="true" [paginator]="true"
+        [rows]="25" [rowsPerPageOptions]="[25, 50, 100]" [scrollable]="true" styleClass="tabela-categorias">
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="min-width: 16rem">Categoria</th>
+            <th style="min-width: 7rem">Tipo</th>
+            <th style="min-width: 12rem">Natureza</th>
+            <th style="width: 6rem" class="text-center">Ativa</th>
+            <th style="width: 9rem" class="text-center">Ações</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-categoria>
+          <tr [class.mf-row-inativa]="!categoria.ativo">
+            <td>
+              <div class="flex align-items-center gap-2">
+                <mf-category-icon [natureza]="categoria.naturezaOperacao" [cor]="categoria.cor" [icone]="meta[categoria.id].icone" />
+                <div class="min-w-0">
+                  <div class="font-semibold flex align-items-center gap-2">
+                    {{ categoria.nome }}
+                    @if (meta[categoria.id].incompativel) {
+                      <i class="aviso-incompativel pi pi-exclamation-triangle text-orange-500"
+                        [pTooltip]="'A revisar: ' + categoria.subcategoria + ' com natureza ' + rotuloNatureza[categoria.naturezaOperacao] + '.'"
+                        tooltipPosition="top" aria-label="Tipo e natureza não combinam"></i>
+                    }
+                    @if (meta[categoria.id].parecidos.length) {
+                      <i class="aviso-parecido pi pi-clone text-orange-500"
+                        [pTooltip]="'Nome parecido com: ' + meta[categoria.id].parecidos.join(', ')" tooltipPosition="top"
+                        aria-label="Nome parecido com outra categoria"></i>
+                    }
+                  </div>
+                  @if (categoria.quantidadeContas) {
+                    <small class="mf-hint">{{ plural(categoria.quantidadeContas, 'conta', 'contas') }}</small>
+                  }
+                </div>
+              </div>
+            </td>
+            <td>
+              <p-tag [value]="meta[categoria.id].receita ? 'Receita' : 'Despesa'"
+                [severity]="meta[categoria.id].receita ? 'success' : 'danger'" />
+            </td>
+            <td>
+              <span class="chip-natureza" [ngClass]="meta[categoria.id].classeNatureza">
+                {{ rotuloNatureza[categoria.naturezaOperacao] ?? categoria.naturezaOperacao }}
+              </span>
+            </td>
+            <td class="text-center">
+              <p-inputSwitch [ngModel]="categoria.ativo" (onChange)="alternarAtivo(categoria, $event.checked)"
+                [ariaLabel]="(categoria.ativo ? 'Inativar ' : 'Ativar ') + categoria.nome" />
+            </td>
+            <td class="text-center white-space-nowrap">
+              <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="secondary" pTooltip="Editar"
+                tooltipPosition="top" (onClick)="onEdit(categoria)" [ariaLabel]="'Editar ' + categoria.nome" />
+              <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
+                (onClick)="abrirMenu(categoria); menuLinha.toggle($event)" [ariaLabel]="'Mais ações de ' + categoria.nome" />
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="5">
+              <mf-empty-state icone="pi pi-tags" titulo="Nenhuma categoria encontrada"
+                [texto]="temFiltro ? 'Mude ou limpe os filtros.' : 'Crie a primeira categoria.'" />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    } @else {
+      <!-- Celular: cards agrupados por tipo; tocar abre a edição -->
+      <div class="flex flex-column gap-3 p-3">
+        @for (grupo of [{ titulo: 'Receitas', itens: receitasExibidas }, { titulo: 'Despesas', itens: despesasExibidas }]; track grupo.titulo) {
+          @if (grupo.itens.length) {
+            <section class="flex flex-column gap-2">
+              <h6 class="mf-section-title m-0">{{ grupo.titulo }} · {{ grupo.itens.length }}</h6>
+              @for (categoria of grupo.itens; track categoria.id) {
+                <div class="mf-list-card flex align-items-center gap-2 p-2 border-1 surface-border border-round cursor-pointer"
+                  [class.mf-row-inativa]="!categoria.ativo" role="button" tabindex="0"
+                  (click)="onEdit(categoria)" (keydown.enter)="onEdit(categoria)">
+                  <mf-category-icon [natureza]="categoria.naturezaOperacao" [cor]="categoria.cor" [icone]="meta[categoria.id].icone" />
+                  <div class="flex-grow-1 min-w-0 flex flex-column gap-1">
+                    <span class="font-semibold flex align-items-center gap-2">
+                      <span class="white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ categoria.nome }}</span>
+                      @if (meta[categoria.id].incompativel) {
+                        <i class="aviso-incompativel pi pi-exclamation-triangle text-orange-500" aria-label="Tipo e natureza não combinam"></i>
+                      }
+                      @if (meta[categoria.id].parecidos.length) {
+                        <i class="aviso-parecido pi pi-clone text-orange-500" aria-label="Nome parecido com outra categoria"></i>
+                      }
+                    </span>
+                    <span>
+                      <span class="chip-natureza" [ngClass]="meta[categoria.id].classeNatureza">
+                        {{ rotuloNatureza[categoria.naturezaOperacao] ?? categoria.naturezaOperacao }}
+                      </span>
+                    </span>
+                  </div>
+                  <!-- O clique no switch não abre a edição. -->
+                  <div class="card-ativo flex-shrink-0" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+                    <p-inputSwitch [ngModel]="categoria.ativo" (onChange)="alternarAtivo(categoria, $event.checked)"
+                      [ariaLabel]="(categoria.ativo ? 'Inativar ' : 'Ativar ') + categoria.nome" />
+                  </div>
+                </div>
+              }
+            </section>
+          }
+        }
+        @if (!registrosExibidos.length && !loading) {
+          <mf-empty-state icone="pi pi-tags" titulo="Nenhuma categoria encontrada"
+            [texto]="temFiltro ? 'Mude ou limpe os filtros.' : 'Crie a primeira categoria.'" />
+        }
+      </div>
+    }
+  </div>
+
+  @if (movel()) {
+    <p-sidebar [(visible)]="filtrosMovelAbertos" position="bottom" styleClass="filtros-movel h-auto" [blockScroll]="true"
+      header="Filtros">
+      <div class="flex flex-column gap-3">
+        <div class="flex flex-column gap-2">
+          <span class="mf-label">Natureza</span>
+          <p-multiSelect [options]="opcoesNatureza" [(ngModel)]="naturezasSelecionadas" placeholder="Todas"
+            [showHeader]="false" selectedItemsLabel="{0} naturezas" [maxSelectedLabels]="1" appendTo="body"
+            styleClass="w-full" (onChange)="aoMudarFiltro()" />
+        </div>
+        <div class="flex flex-column gap-2">
+          <span class="mf-label">Situação</span>
+          <p-selectButton [options]="opcoesSituacao" [(ngModel)]="situacao" optionLabel="label" optionValue="value"
+            [allowEmpty]="false" (onChange)="aoMudarFiltro()" styleClass="filtro-situacao-movel"
+            class="filtro-situacao-compacto w-full" />
+        </div>
+        <div class="flex flex-column gap-2">
+          <span class="mf-label">Ordenar por</span>
+          <p-dropdown [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value"
+            appendTo="body" styleClass="w-full" (onChange)="aoMudarFiltro()" ariaLabel="Ordenar por" />
+        </div>
+        <div class="flex justify-content-end gap-2">
+          <p-button label="Limpar" severity="secondary" [outlined]="true" [disabled]="!temFiltro" (onClick)="limparFiltros()" />
+          <p-button label="Ver categorias" (onClick)="filtrosMovelAbertos = false" />
+        </div>
+      </div>
+    </p-sidebar>
+  }
+
+  <p-menu #menuLinha [model]="itensMenu" [popup]="true" appendTo="body" />
+
+  @if (movel()) {
+    <mf-fab rotulo="Nova categoria" (clique)="openCreate()" />
+  }
+
+  @if (showModalForm) {
+    <app-categoria-form [registro]="editing" (closed)="closeForm($event)" />
+  }
 </div>

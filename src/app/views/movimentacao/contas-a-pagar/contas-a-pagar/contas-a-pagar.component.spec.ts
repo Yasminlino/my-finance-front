@@ -51,7 +51,7 @@ describe('ContasAPagarComponent', () => {
     const categorias = jasmine.createSpyObj<CategoryService>('CategoryService', ['listarAtivas', 'listar']);
     categorias.listarAtivas.and.returnValue(of([]));
     categorias.listar.and.returnValue(of([
-      { id: 1, nome: 'Moradia', subcategoria: 'Despesa', naturezaOperacao: 1, ativo: true }
+      { id: 1, nome: 'Moradia', subcategoria: 'Despesa', naturezaOperacao: 1, ativo: true, icone: 'pi pi-bolt', cor: null }
     ]));
 
     TestBed.configureTestingModule({
@@ -88,10 +88,11 @@ describe('ContasAPagarComponent', () => {
     expect(location.back).toHaveBeenCalled();
   });
 
-  it('ícone da categoria com a cor da natureza (todas as categorias, inclusive inativas) — card #27', () => {
-    expect(tela.naturezas.get(1)).toBe(1);
-    expect((fixture.nativeElement as HTMLElement).querySelector('#conta-1 .mf-icone-categoria')?.classList)
-      .toContain('mf-natureza-1');
+  it('ícone e cor da categoria (todas as categorias, inclusive inativas) — cards #27 e #23', () => {
+    expect(tela.aparencias.get(1)).toEqual({ natureza: 1, icone: 'pi pi-bolt', cor: null });
+    const icone = (fixture.nativeElement as HTMLElement).querySelector('#conta-1 .mf-icone-categoria')!;
+    expect(icone.classList).toContain('mf-natureza-1');
+    expect(icone.querySelector('i')?.className).toBe('pi pi-bolt');
   });
 
   it('carrega o último mês escolhido e calcula o resumo', () => {

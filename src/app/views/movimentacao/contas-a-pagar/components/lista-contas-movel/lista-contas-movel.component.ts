@@ -20,6 +20,7 @@ import { formatCurrencyBR } from 'src/app/core/utils/mask';
 import { CategoryIconComponent } from 'src/app/shared/ui/category-icon/category-icon.component';
 import { TotaisSelecao, calcularTotaisSelecao, naturezaPorSubCategoria } from 'src/app/shared/utils/totais-selecao';
 import { FiltroSituacao } from '../../contas-a-pagar.regras';
+import { AparenciaCategoria } from 'src/app/shared/ui/aparencia';
 import {
   MetaLinha, OpcaoFiltro, categoriasDe, filtrarContas, metaDasContas, opcoesDeFiltro, ordenarPorVencimento
 } from '../../contas-a-pagar.lista';
@@ -49,8 +50,8 @@ export class ListaContasMovelComponent implements OnChanges, OnDestroy, GridSele
 
   @Input() contas: LinhaContasMensais[] = [];
   @Input() hoje = new Date();
-  /** categoriaId → natureza (cor do ícone). Vazio enquanto a tela carrega as categorias. */
-  @Input() naturezas: ReadonlyMap<number, number> = new Map();
+  /** categoriaId → natureza, ícone e cor (cards #27 e #23). Vazio enquanto a tela carrega as categorias. */
+  @Input() aparencias: ReadonlyMap<number, AparenciaCategoria> = new Map();
   @Input() loading = false;
 
   @Output() marcarPago = new EventEmitter<LinhaContasMensais[]>();
@@ -83,8 +84,8 @@ export class ListaContasMovelComponent implements OnChanges, OnDestroy, GridSele
   ];
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['contas'] || changes['hoje'] || changes['naturezas']) {
-      this.meta = metaDasContas(this.contas, this.hoje, this.naturezas);
+    if (changes['contas'] || changes['hoje'] || changes['aparencias']) {
+      this.meta = metaDasContas(this.contas, this.hoje, this.aparencias);
     }
     if (changes['contas'] || changes['hoje']) {
       this.ordenadas = ordenarPorVencimento(this.contas);

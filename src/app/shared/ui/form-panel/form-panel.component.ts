@@ -5,7 +5,7 @@ import { SidebarModule } from 'primeng/sidebar';
 
 /**
  * Painel lateral dos formulários de cadastro e edição (card #27): abre à direita (tela cheia no celular),
- * com título, aviso de obrigatórios, corpo com rolagem e rodapé fixo Cancelar · Salvar.
+ * com título, aviso de obrigatórios, corpo com rolagem e rodapé fixo Cancelar · (Salvar e criar outra) · Salvar.
  * O formulário vai como conteúdo. X, Cancelar, Esc e clique fora emitem `fechar`; Salvar emite `salvar`.
  * Enquanto `salvando`, nada fecha o painel (como o [closable]="!salvando" dos diálogos de antes).
  * O painel abre ao ser criado: a tela o mostra com *ngIf/@if, como fazia com o p-dialog.
@@ -35,6 +35,10 @@ import { SidebarModule } from 'primeng/sidebar';
         <div class="flex justify-content-end gap-2">
           <p-button label="Cancelar" severity="secondary" [outlined]="true" [disabled]="salvando"
             (onClick)="fechar.emit()" />
+          @if (criarOutra) {
+            <p-button label="Salvar e criar outra" severity="secondary" [outlined]="true" [disabled]="salvando"
+              (onClick)="salvarEOutra.emit()" />
+          }
           <p-button label="Salvar" icon="pi pi-check" [loading]="salvando" (onClick)="salvar.emit()" />
         </div>
       </ng-template>
@@ -47,8 +51,11 @@ export class FormPanelComponent {
   @Input() salvando = false;
   /** md ≈ 500px (padrão); lg ≈ 720px, para formulários com mais campos por linha. */
   @Input() tamanho: 'md' | 'lg' = 'md';
+  /** Mostra "Salvar e criar outra" (card #23): a tela grava, limpa o formulário e deixa o painel aberto. */
+  @Input() criarOutra = false;
   @Output() fechar = new EventEmitter<void>();
   @Output() salvar = new EventEmitter<void>();
+  @Output() salvarEOutra = new EventEmitter<void>();
 
   /** Abaixo de 768px o painel ocupa a tela inteira. */
   readonly movel = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;

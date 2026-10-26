@@ -87,10 +87,15 @@ describe('TabelaContasComponent', () => {
     const icone = () => el().querySelector('#conta-1 .mf-icone-categoria')!;
     expect(icone().classList).toContain('mf-natureza-neutra'); // categorias ainda não carregadas
 
-    fixture.componentRef.setInput('naturezas', new Map([[1, 1]]));
+    fixture.componentRef.setInput('aparencias', new Map([[1, { natureza: 1 }]]));
     fixture.detectChanges();
 
     expect(icone().classList).toContain('mf-natureza-1');
+
+    // Cor escolhida no cadastro da categoria (card #23).
+    fixture.componentRef.setInput('aparencias', new Map([[1, { natureza: 1, cor: 'rosa' }]]));
+    fixture.detectChanges();
+    expect(icone().classList).toContain('mf-cor-rosa');
     expect(el().querySelector('.mf-tags-claras')).not.toBeNull();
   });
 

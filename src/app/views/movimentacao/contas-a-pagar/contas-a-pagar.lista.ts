@@ -1,5 +1,6 @@
 import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import { formatCurrencyBR, formatDateBR } from 'src/app/core/utils/mask';
+import { AparenciaCategoria } from 'src/app/shared/ui/aparencia';
 import {
   FiltroSituacao, Situacao, TagDoStatus, VencimentoRelativo,
   contarPorSituacao, ehReceita, iconeDaCategoria, situacao, tagDoStatus, vencimentoDe,
@@ -16,6 +17,8 @@ export interface MetaLinha {
   icone: string;
   /** Natureza da categoria (cor do ícone, mf-category-icon); null enquanto as categorias não chegam. */
   natureza: number | null;
+  /** Cor escolhida no cadastro da categoria (card #23); vale mais que a da natureza. */
+  cor: string | null;
   situacao: Situacao;
   vencimento: string;
   relativo: VencimentoRelativo;
@@ -59,14 +62,16 @@ function semAcento(texto: string | null | undefined): string {
 }
 
 export function metaDaConta(
-  conta: LinhaContasMensais, hoje: Date, naturezas: ReadonlyMap<number, number> = new Map()
+  conta: LinhaContasMensais, hoje: Date, aparencias: ReadonlyMap<number, AparenciaCategoria> = new Map()
 ): MetaLinha {
   const receita = ehReceita(conta);
   const total = conta.quantidadeParcelas ?? 0;
   const atual = conta.parcelaAtual ?? 0;
+  const aparencia = aparencias.get(conta.categoriaId);
   return {
-    icone: iconeDaCategoria(conta.categoriaNome),
-    natureza: naturezas.get(conta.categoriaId) ?? null,
+    icone: aparencia?.icone || iconeDaCategoria(conta.categoriaNome),
+    natureza: aparencia?.natureza ?? null,
+    cor: aparencia?.cor ?? null,
     situacao: situacao(conta, hoje),
     vencimento: formatDateBR(conta.data),
     relativo: vencimentoRelativo(conta, hoje),
@@ -79,10 +84,10 @@ export function metaDaConta(
 }
 
 export function metaDasContas(
-  contas: LinhaContasMensais[], hoje: Date, naturezas: ReadonlyMap<number, number> = new Map()
+  contas: LinhaContasMensais[], hoje: Date, aparencias: ReadonlyMap<number, AparenciaCategoria> = new Map()
 ): Record<number, MetaLinha> {
   const meta: Record<number, MetaLinha> = {};
-  contas.forEach(conta => (meta[conta.id] = metaDaConta(conta, hoje, naturezas)));
+  contas.forEach(conta => (meta[conta.id] = metaDaConta(conta, hoje, aparencias)));
   return meta;
 }
 

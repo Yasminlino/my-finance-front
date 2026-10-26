@@ -1,30 +1,85 @@
-<mf-form-panel [titulo]="registro ? 'Editar Categoria' : 'Nova Categoria'" [salvando]="saving" (fechar)="close(false)"
-  (salvar)="save()">
-  <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
+<mf-form-panel [titulo]="registro ? 'Editar categoria' : 'Nova categoria'" [salvando]="saving" [criarOutra]="!registro"
+  (fechar)="close()" (salvar)="save()" (salvarEOutra)="salvarEOutra()">
+  <form [formGroup]="form" class="flex flex-column gap-4" (ngSubmit)="save()">
+    @if (incompativel) {
+      <p-message severity="warn" styleClass="w-full justify-content-start"
+        text="Tipo e natureza não combinam: Despesa não pode ser &quot;Rendimento / Entrada&quot;. Escolha a natureza abaixo." />
+    }
+
     <div class="flex flex-column gap-2">
-      <label for="categoria-nome">Nome categoria <span class="text-red-500">*</span></label>
-      <input pInputText id="categoria-nome" maxlength="120" formControlName="name" placeholder="Preencha o nome da categoria."
-        [class.ng-dirty]="erro('name')" />
-      <mf-field-error [control]="form.controls.name">Informe um nome válido.</mf-field-error>
+      <label for="categoria-nome" class="mf-label">Nome <span class="text-red-500">*</span></label>
+      <input pInputText id="categoria-nome" maxlength="120" formControlName="nome" placeholder="Ex.: Mercado"
+        [class.ng-dirty]="form.controls.nome.touched && form.controls.nome.invalid" />
+      <mf-field-error [control]="form.controls.nome">Informe um nome com pelo menos 2 letras.</mf-field-error>
     </div>
 
     <div class="flex flex-column gap-2">
-      <label for="categoria-tipo">Tipo Categoria <span class="text-red-500">*</span></label>
-      <p-dropdown inputId="categoria-tipo" formControlName="subCategory" [options]="opcoesTipo"
-        placeholder="Selecione..." appendTo="body" styleClass="w-full" [class.ng-dirty]="erro('subCategory')" />
-      <mf-field-error [control]="form.controls.subCategory">Selecione um tipo categoria.</mf-field-error>
-    </div>
-
-    <div class="flex flex-column gap-2" *ngIf="perfilEmpresa ?? form.get('subCategory')?.value != 'Receita'">
-      <label for="categoria-natureza">Natureza do gasto</label>
-      <p-dropdown inputId="categoria-natureza" formControlName="naturezaOperacao" [options]="opcoesNatureza"
-        appendTo="body" styleClass="w-full" />
+      <span class="mf-label" id="categoria-tipo">Tipo <span class="text-red-500">*</span></span>
+      <p-selectButton formControlName="tipo" [options]="opcoesTipo" [allowEmpty]="false" ariaLabelledBy="categoria-tipo"
+        styleClass="categoria-tipo" />
     </div>
 
     <div class="flex flex-column gap-2">
-      <label for="categoria-status">Status</label>
-      <p-dropdown inputId="categoria-status" formControlName="status" [options]="opcoesStatus" appendTo="body"
-        styleClass="w-full" />
+      <span class="mf-label">Natureza da operação <span class="text-red-500">*</span></span>
+      <div class="flex flex-column gap-2">
+        @for (opcao of opcoesNatureza; track opcao.value) {
+          <label class="categoria-natureza flex align-items-start gap-2 p-3 border-1 border-round cursor-pointer"
+            [class.categoria-natureza--marcada]="form.controls.natureza.value === opcao.value"
+            [class.categoria-natureza--travada]="form.controls.natureza.disabled">
+            <p-radioButton formControlName="natureza" [value]="opcao.value" [inputId]="'natureza-' + opcao.value" />
+            <span class="flex flex-column gap-1">
+              <span class="font-medium">{{ opcao.label }}</span>
+              <small class="mf-hint">{{ opcao.descricao }}</small>
+            </span>
+          </label>
+        }
+      </div>
+      @if (form.controls.natureza.disabled) {
+        <small class="mf-hint">Receita é sempre "Rendimento / Entrada".</small>
+      }
+      <mf-field-error [control]="form.controls.natureza">Escolha a natureza da despesa.</mf-field-error>
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <span class="mf-label">Aparência</span>
+      <div class="categoria-previa flex align-items-center gap-2 p-2 border-round surface-ground">
+        <mf-category-icon [natureza]="form.controls.natureza.value" [cor]="form.controls.cor.value" [icone]="iconePrevia" />
+        <span class="font-medium">{{ form.controls.nome.value || 'Nome da categoria' }}</span>
+      </div>
+
+      <small class="mf-hint">Ícone</small>
+      <div class="categoria-icones" role="radiogroup" aria-label="Ícone">
+        <button type="button" class="categoria-opcao" [class.categoria-opcao--marcada]="!form.controls.icone.value"
+          pTooltip="Automático (pelo nome)" tooltipPosition="top" aria-label="Automático (pelo nome)"
+          (click)="escolherIcone(null)"><i class="pi pi-sparkles"></i></button>
+        @for (icone of icones; track icone) {
+          <button type="button" class="categoria-opcao" [class.categoria-opcao--marcada]="form.controls.icone.value === icone"
+            [attr.aria-label]="icone" (click)="escolherIcone(icone)"><i [class]="icone"></i></button>
+        }
+      </div>
+
+      <small class="mf-hint">Cor</small>
+      <div class="categoria-cores" role="radiogroup" aria-label="Cor">
+        <button type="button" class="categoria-opcao" [class.categoria-opcao--marcada]="!form.controls.cor.value"
+          pTooltip="Da natureza" tooltipPosition="top" aria-label="Cor da natureza"
+          (click)="escolherCor(null)"><i class="pi pi-ban"></i></button>
+        @for (cor of paleta; track cor.chave) {
+          <button type="button" class="categoria-opcao" [style.background]="'var(--mf-cor-' + cor.chave + '-fg)'"
+            [class.categoria-opcao--marcada]="form.controls.cor.value === cor.chave"
+            [pTooltip]="cor.rotulo" tooltipPosition="top" [attr.aria-label]="cor.rotulo" (click)="escolherCor(cor.chave)"></button>
+        }
+      </div>
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <div class="flex align-items-center gap-2">
+        <p-inputSwitch formControlName="ativo" inputId="categoria-ativo" />
+        <label for="categoria-ativo" class="mf-label m-0">Categoria ativa</label>
+      </div>
+      <small class="mf-hint">Inativas não aparecem para contas novas.</small>
+      @if (registro?.quantidadeContas) {
+        <small class="mf-hint">Usada em {{ registro?.quantidadeContas }} {{ registro?.quantidadeContas === 1 ? 'conta' : 'contas' }}.</small>
+      }
     </div>
   </form>
 </mf-form-panel>

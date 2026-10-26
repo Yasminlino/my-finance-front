@@ -18,6 +18,7 @@ import { ListaContasMovelComponent } from '../components/lista-contas-movel/list
 import { LarguraTelaService } from 'src/app/core/services/largura-tela.service';
 import { ResumoMes, resumoDoMes, statusAoPagar, vencimentoDe } from '../contas-a-pagar.regras';
 import { EdicaoContas } from '../edicao-contas';
+import { AparenciaCategoria, aparenciaDe } from 'src/app/shared/ui/aparencia';
 
 const CHAVE_MES = 'dataFiltroContaMensal';
 
@@ -63,8 +64,8 @@ export class ContasAPagarComponent implements OnInit {
   loading = false;
   hoje = new Date();
   resumo: ResumoMes = resumoDoMes([], this.hoje);
-  /** categoriaId → natureza, para a cor do ícone (card #27). Todas as categorias: lançamento antigo pode usar inativa. */
-  naturezas: ReadonlyMap<number, number> = new Map();
+  /** categoriaId → natureza, ícone e cor (cards #27 e #23). Todas as categorias: lançamento antigo pode usar inativa. */
+  aparencias: ReadonlyMap<number, AparenciaCategoria> = new Map();
 
   edicao: EdicaoContas | null = null;
   /** Estado do p-inputSwitch; volta a true quando a saída da edição é cancelada. */
@@ -95,7 +96,7 @@ export class ContasAPagarComponent implements OnInit {
     // Sem as categorias, os ícones ficam na cor neutra: não é motivo para avisar erro na tela.
     this.categoryService.listar()
       .pipe(catchError(() => of([])), takeUntilDestroyed(this.destroyRef))
-      .subscribe(categorias => (this.naturezas = new Map(categorias.map(c => [c.id, c.naturezaOperacao]))));
+      .subscribe(categorias => (this.aparencias = new Map(categorias.map(c => [c.id, aparenciaDe(c)]))));
 
     this.loadMonth();
   }

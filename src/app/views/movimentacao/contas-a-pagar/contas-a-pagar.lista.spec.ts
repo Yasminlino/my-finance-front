@@ -36,12 +36,22 @@ describe('contas-a-pagar.lista', () => {
   });
 
   it('metaDasContas: a cor vem da natureza da categoria (card #27), e sem natureza conhecida fica null', () => {
-    const naturezas = new Map([[1, 2], [7, 0]]);
-    const comNatureza = metaDasContas([conta({ id: 1, categoriaId: 1 }), conta({ id: 2, categoriaId: 99 })], hoje, naturezas);
+    const aparencias = new Map([[1, { natureza: 2 }], [7, { natureza: 0 }]]);
+    const comNatureza = metaDasContas([conta({ id: 1, categoriaId: 1 }), conta({ id: 2, categoriaId: 99 })], hoje, aparencias);
 
     expect(comNatureza[1].natureza).toBe(2);
     expect(comNatureza[2].natureza).toBeNull();
     expect(meta[1].natureza).toBeNull(); // sem o mapa (categorias ainda carregando)
+  });
+
+  it('metaDasContas: ícone e cor escolhidos no cadastro da categoria valem mais que o do nome (card #23)', () => {
+    const aparencias = new Map([[1, { natureza: 1, icone: 'pi pi-car', cor: 'rosa' }], [2, { natureza: 1 }]]);
+    const resultado = metaDasContas([conta({ id: 1, categoriaId: 1 }), conta({ id: 2, categoriaId: 2 })], hoje, aparencias);
+
+    expect(resultado[1].icone).toBe('pi pi-car');
+    expect(resultado[1].cor).toBe('rosa');
+    expect(resultado[2].icone).toBe('pi pi-home'); // sem escolha: pelo nome ("Moradia")
+    expect(resultado[2].cor).toBeNull();
   });
 
   it('ordenarPorVencimento: por data e, no mesmo dia, por nome, sem mexer na lista original', () => {
