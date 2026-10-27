@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { ContaDto } from '../models/conta.model';
+import { ContaDto, LancamentoDaConta } from '../models/conta.model';
 
 @Injectable({ providedIn: 'root' })
 export class ContaService {
@@ -13,6 +13,11 @@ export class ContaService {
 
   listarAtivas(): Observable<ContaDto[]> {
     return this.api.get<ContaDto[]>('/GetContasAtivas');
+  }
+
+  /** Lançamentos da conta em Contas a Pagar, do mais recente para o mais antigo (card #22). */
+  listarLancamentos(contaId: number): Observable<LancamentoDaConta[]> {
+    return this.api.get<LancamentoDaConta[]>('/GetTransacoesDaConta', contaId);
   }
 
   criar(dto: Partial<ContaDto>): Observable<unknown> {

@@ -1,56 +1,154 @@
-<mf-form-panel [titulo]="registro ? 'Editar Conta' : 'Nova Conta'" [salvando]="saving" (fechar)="close(false)"
-  (salvar)="save()">
-  <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
-    <div class="flex flex-column gap-2">
-      <label for="conta-nome">Descrição <span class="text-red-500">*</span></label>
-      <input pInputText id="conta-nome" maxlength="120" formControlName="name" placeholder="Preencha o nome da conta..."
-        [class.ng-dirty]="erro('name')" />
-      <mf-field-error [control]="form.controls.name">Informe um nome válido.</mf-field-error>
-    </div>
-
-    <div class="flex flex-column gap-2">
-      <label for="conta-valor">Valor</label>
-      <input pInputText id="conta-valor" type="text" inputmode="decimal" formControlName="value" currencyInput
-        placeholder="0,00" [class.ng-dirty]="erro('value')" />
-      <mf-field-error [control]="form.controls.value">Informe um valor.</mf-field-error>
-    </div>
-
-    <div class="flex flex-column gap-2">
-      <label for="conta-dias">Dias Vencimentos</label>
-      <input pInputText id="conta-dias" type="text" formControlName="dataOperacao" placeholder="Ex: 5, 20"
-        (input)="onInputChange(($any($event.target)).value)" (blur)="onDiasChange(($any($event.target)).value)"
-        [class.ng-dirty]="erro('dataOperacao')" />
-      <mf-field-error [control]="form.controls.dataOperacao">Informe ao menos um dia de vencimento.</mf-field-error>
-    </div>
-
-    <div class="flex flex-column gap-2">
-      <label for="conta-categoria">Categoria <span class="text-red-500">*</span></label>
-      <p-dropdown inputId="conta-categoria" formControlName="categoryId" [options]="categories" optionLabel="nome"
-        optionValue="id" placeholder="Selecione..." appendTo="body" styleClass="w-full"
-        [class.ng-dirty]="erro('categoryId')" />
-      <mf-field-error [control]="form.controls.categoryId">Selecione uma categoria.</mf-field-error>
-    </div>
-
-    <div class="flex align-items-center gap-2">
-      <p-checkbox inputId="conta-parcelada" formControlName="ehParcelado" [binary]="true" />
-      <label for="conta-parcelada">Conta parcelada</label>
-    </div>
-
-    <div class="grid" *ngIf="form.get('ehParcelado')?.value">
-      <div class="col-6 flex flex-column gap-2">
-        <label for="conta-total-parcelas">Total de parcelas</label>
-        <input pInputText id="conta-total-parcelas" type="number" min="2" formControlName="quantidadeParcelas" />
-      </div>
-      <div class="col-6 flex flex-column gap-2">
-        <label for="conta-parcela-atual">Parcela atual</label>
-        <input pInputText id="conta-parcela-atual" type="number" min="1" formControlName="parcelaAtual" />
-      </div>
-    </div>
-
-    <div class="flex flex-column gap-2">
-      <label for="conta-status">Status</label>
-      <p-dropdown inputId="conta-status" formControlName="status" [options]="opcoesStatus" appendTo="body"
-        styleClass="w-full" />
-    </div>
-  </form>
+<mf-form-panel [titulo]="editando ? 'Editar conta' : 'Nova conta'" [salvando]="saving" [criarOutra]="!editando"
+  [passos]="passos" [passo]="passo" [rotuloSalvar]="passos > 1 ? 'Salvar conta' : 'Salvar'"
+  (fechar)="close()" (salvar)="save()" (salvarEOutra)="salvarEOutra()" (avancar)="avancar()" (voltar)="voltar()">
+  <ng-container [ngTemplateOutlet]="dados" />
 </mf-form-panel>
+
+<ng-template #dados>
+  <form [formGroup]="form" class="flex flex-column gap-4" (ngSubmit)="save()">
+    @if (mostra(1)) {
+      <section class="flex flex-column gap-3">
+        <h6 class="mf-section-title m-0">Identificação</h6>
+
+        <div class="flex flex-column gap-2">
+          <label for="conta-nome" class="mf-label">Descrição <span class="text-red-500">*</span></label>
+          <input pInputText id="conta-nome" maxlength="120" formControlName="nome" placeholder="Ex.: Internet"
+            [class.ng-dirty]="form.controls.nome.touched && form.controls.nome.invalid" />
+          <mf-field-error [control]="form.controls.nome">Informe uma descrição com pelo menos 2 letras.</mf-field-error>
+          @if (parecidos.length) {
+            <p-message severity="warn" styleClass="w-full justify-content-start conta-parecido"
+              [text]="'Já existe conta com nome parecido: ' + parecidos.join(', ') + '.'" />
+          }
+        </div>
+
+        <div class="flex flex-column gap-2">
+          <label for="conta-categoria" class="mf-label">Categoria <span class="text-red-500">*</span></label>
+          <p-dropdown inputId="conta-categoria" formControlName="categoriaId" [options]="categories" optionLabel="nome"
+            optionValue="id" placeholder="Selecione..." appendTo="body" styleClass="w-full" [filter]="true"
+            filterBy="nome" [class.ng-dirty]="form.controls.categoriaId.touched && form.controls.categoriaId.invalid">
+            <ng-template pTemplate="selectedItem" let-categoria>
+              <span class="flex align-items-center gap-2">
+                <mf-category-icon [natureza]="categoria.naturezaOperacao" [cor]="categoria.cor" [icone]="iconeDe(categoria)" />
+                {{ categoria.nome }}
+              </span>
+            </ng-template>
+            <ng-template pTemplate="item" let-categoria>
+              <span class="flex align-items-center gap-2">
+                <mf-category-icon [natureza]="categoria.naturezaOperacao" [cor]="categoria.cor" [icone]="iconeDe(categoria)" />
+                {{ categoria.nome }}
+              </span>
+            </ng-template>
+          </p-dropdown>
+          <mf-field-error [control]="form.controls.categoriaId">Selecione uma categoria.</mf-field-error>
+        </div>
+      </section>
+
+      <section class="flex flex-column gap-3">
+        <h6 class="mf-section-title m-0">Valor e vencimento</h6>
+
+        <div class="flex flex-column gap-2">
+          <label for="conta-valor" class="mf-label">Valor por mês <span class="text-red-500">*</span></label>
+          <p-inputNumber inputId="conta-valor" formControlName="valor" mode="currency" currency="BRL" locale="pt-BR"
+            styleClass="w-full" [class.ng-dirty]="form.controls.valor.touched && form.controls.valor.invalid" />
+          @if (diasNumeros.length > 1) {
+            <small class="mf-hint">Dividido entre os dias: {{ diasNumeros.length }} lançamentos de
+              {{ moeda((form.controls.valor.value ?? 0) / diasNumeros.length) }} por mês.</small>
+          }
+          <mf-field-error [control]="form.controls.valor">Informe o valor.</mf-field-error>
+        </div>
+
+        <div class="flex flex-column gap-2">
+          <label for="conta-dias" class="mf-label">Dias de vencimento <span class="text-red-500">*</span></label>
+          <p-chips inputId="conta-dias" formControlName="dias" separator="," [addOnBlur]="true" [allowDuplicate]="true"
+            placeholder="Digite o dia e Enter (ex.: 5)" styleClass="w-full" (onAdd)="aoAdicionarDia($event.value)"
+            [class.ng-dirty]="form.controls.dias.touched && form.controls.dias.invalid" />
+          @if (avisoDia) {
+            <small class="text-red-500">{{ avisoDia }}</small>
+          } @else if (diasNumeros.length) {
+            <small class="mf-hint">{{ textoDias }}</small>
+          }
+          <mf-field-error [control]="form.controls.dias">Informe ao menos um dia, de 1 a 31.</mf-field-error>
+        </div>
+      </section>
+    }
+
+    @if (mostra(2)) {
+      <section class="flex flex-column gap-3">
+        <h6 class="mf-section-title m-0">Parcelamento</h6>
+
+        <div class="flex align-items-center gap-2">
+          <p-inputSwitch inputId="conta-parcelada" formControlName="ehParcelado" />
+          <label for="conta-parcelada" class="cursor-pointer">Conta parcelada</label>
+        </div>
+
+        @if (form.controls.ehParcelado.value) {
+          <div class="grid">
+            <div class="col-6 flex flex-column gap-2">
+              <label for="conta-parcela-atual" class="mf-label">Parcela atual</label>
+              <p-inputNumber inputId="conta-parcela-atual" formControlName="parcelaAtual" [showButtons]="true"
+                buttonLayout="horizontal" [min]="0" incrementButtonIcon="pi pi-plus" decrementButtonIcon="pi pi-minus"
+                styleClass="w-full" inputStyleClass="text-center w-full" />
+            </div>
+            <div class="col-6 flex flex-column gap-2">
+              <label for="conta-total-parcelas" class="mf-label">Total</label>
+              <p-inputNumber inputId="conta-total-parcelas" formControlName="quantidadeParcelas" [showButtons]="true"
+                buttonLayout="horizontal" [min]="1" incrementButtonIcon="pi pi-plus" decrementButtonIcon="pi pi-minus"
+                styleClass="w-full" inputStyleClass="text-center w-full" />
+            </div>
+          </div>
+          @if (form.hasError('parcelas')) {
+            <small class="text-red-500">A parcela atual não pode passar do total.</small>
+          }
+          @if (previa; as p) {
+            <div class="conta-previa border-round p-3 flex gap-2 align-items-start">
+              <i class="pi pi-calendar mt-1"></i>
+              <span>
+                Faltam {{ p.faltam }} {{ p.faltam === 1 ? 'parcela' : 'parcelas' }} ({{ p.de }}ª a {{ p.ate }}ª) ·
+                {{ moeda(p.valorMes) }} por mês
+                @if (p.lancamentosPorMes > 1) {
+                  ({{ p.lancamentosPorMes }} lançamentos de {{ moeda(p.valorLancamento) }} {{ textoDias.replace('Dias', 'nos dias') }})
+                }
+                · total restante {{ moeda(p.totalRestante) }} · termina em {{ p.termino }}, se pagar uma por mês.
+              </span>
+            </div>
+          }
+        }
+      </section>
+
+      <section class="flex flex-column gap-3">
+        <h6 class="mf-section-title m-0">Situação</h6>
+
+        <div class="flex flex-column gap-1">
+          <div class="flex align-items-center gap-2">
+            <p-inputSwitch inputId="conta-ativa" formControlName="ativo" />
+            <label for="conta-ativa" class="cursor-pointer">Conta ativa</label>
+          </div>
+          <small class="mf-hint">Inativas não geram lançamentos.</small>
+        </div>
+
+        <div class="flex flex-column gap-2">
+          <label for="conta-observacao" class="mf-label">Observação</label>
+          <textarea pInputTextarea id="conta-observacao" formControlName="observacao" rows="3" maxlength="500"
+            placeholder="Opcional"></textarea>
+        </div>
+      </section>
+
+      @if (passos > 1) {
+        <section class="conta-resumo surface-ground border-round p-3 flex flex-column gap-1">
+          <span class="mf-hint">Resumo</span>
+          <span class="flex align-items-center gap-2 font-semibold">
+            @if (categoriaEscolhida; as categoria) {
+              <mf-category-icon [natureza]="categoria.naturezaOperacao" [cor]="categoria.cor" [icone]="iconeDe(categoria)" />
+            }
+            {{ form.controls.nome.value }}
+          </span>
+          <span>{{ categoriaEscolhida?.nome }} · {{ moeda(form.controls.valor.value ?? 0) }} por mês · {{ textoDias }}</span>
+          @if (form.controls.ehParcelado.value) {
+            <span>Parcela {{ form.controls.parcelaAtual.value }} de {{ form.controls.quantidadeParcelas.value }}</span>
+          }
+          <span>{{ form.controls.ativo.value ? 'Ativa' : 'Inativa' }}</span>
+        </section>
+      }
+    }
+  </form>
+</ng-template>

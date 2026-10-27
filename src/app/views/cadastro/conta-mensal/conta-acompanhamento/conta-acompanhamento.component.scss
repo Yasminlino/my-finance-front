@@ -1,0 +1,18 @@
+.acompanhamento-legenda {
+  list-style: none;
+  color: var(--text-color-secondary);
+}
+
+.acompanhamento-ponto {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.acompanhamento-aviso {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--border-radius);
+  background: var(--orange-50);
+  color: var(--orange-800);
+}

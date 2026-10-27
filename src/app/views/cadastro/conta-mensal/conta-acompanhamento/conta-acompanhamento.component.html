@@ -1,0 +1,25 @@
+<section class="surface-card border-1 surface-border border-round p-3 flex flex-column gap-2">
+  <div>
+    <h6 class="mf-section-title m-0 mb-1">Acompanhamento</h6>
+    <small class="mf-hint">Valor por mês, {{ textoPeriodo }}</small>
+  </div>
+
+  @for (mes of pontos.foraDoPadrao; track mes.mes) {
+    <div class="acompanhamento-aviso flex align-items-start gap-2 text-sm">
+      <i class="pi pi-exclamation-triangle mt-1"></i>
+      <span>{{ mes.mes }} está muito acima dos outros meses ({{ moeda(mes.valor) }}). Confira o lançamento em Contas a Pagar.</span>
+    </div>
+  }
+
+  <ul class="acompanhamento-legenda flex flex-wrap gap-3 m-0 p-0 text-sm">
+    @for (item of legenda; track item.situacao) {
+      <li class="flex align-items-center gap-1">
+        <span class="acompanhamento-ponto" [style.background]="cores[item.situacao]"></span>{{ item.rotulo }}
+      </li>
+    }
+  </ul>
+
+  <apx-chart [series]="opcoes.series" [chart]="opcoes.chart" [dataLabels]="opcoes.dataLabels" [stroke]="opcoes.stroke"
+    [markers]="opcoes.markers" [grid]="opcoes.grid" [xaxis]="opcoes.xaxis" [yaxis]="opcoes.yaxis" [legend]="opcoes.legend"
+    [tooltip]="opcoes.tooltip" [colors]="opcoes.colors" />
+</section>

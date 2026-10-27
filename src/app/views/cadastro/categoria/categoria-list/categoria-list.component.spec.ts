@@ -254,7 +254,8 @@ describe('CategoriaListComponent', () => {
       fixture.detectChanges();
       tick();
 
-      const item = Array.from(document.querySelectorAll('.p-menu .p-menuitem-link, .p-menu .p-menuitem-content'))
+      // O p-menu vai para o body; popups de outros testes ficam lá, então vale só o último aberto.
+      const item = Array.from(Array.from(document.querySelectorAll('.p-menu')).pop()!.querySelectorAll('.p-menuitem-content'))
         .find(e => e.textContent?.includes('Excluir')) as HTMLElement;
       item.click();
       tick();

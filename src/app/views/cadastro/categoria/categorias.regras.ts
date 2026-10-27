@@ -1,5 +1,6 @@
 import { CategoriaDto } from 'src/app/core/models/categoria.model';
 import { NaturezaOperacao } from 'src/app/shared/enums/natureza-operacao.enum';
+import { normalizarNome } from 'src/app/shared/utils/nomes-parecidos';
 
 /**
  * Regras do Cadastro de Categorias (card #23), sem Angular: a tela, o formulário e os specs usam as mesmas.
@@ -28,45 +29,8 @@ export function tipoNaturezaIncompativel(categoria: Pick<CategoriaDto, 'subcateg
   return ehReceita(categoria) !== (categoria.naturezaOperacao === NaturezaOperacao.RendimentoEntrada);
 }
 
-/** Nome para comparar: sem acento, minúsculo e com os espaços normalizados. */
-export function normalizarNome(nome: string | null | undefined): string {
-  return (nome ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim().replace(/\s+/g, ' ');
-}
-
-/** Abaixo disso, uma letra de diferença é comum entre nomes legítimos ("Casa" × "Cara"). */
-const TAMANHO_MINIMO_PARA_ERRO_DE_DIGITACAO = 5;
-
-/** True se dá para ir de a para b com no máximo uma troca, inclusão ou remoção de letra. */
-function umaLetraDeDiferenca(a: string, b: string): boolean {
-  if (Math.abs(a.length - b.length) > 1) return false;
-  let i = 0;
-  while (i < a.length && i < b.length && a[i] === b[i]) i++;
-  if (a.length === b.length) return a.slice(i + 1) === b.slice(i + 1);
-  return a.length > b.length ? a.slice(i + 1) === b.slice(i) : a.slice(i) === b.slice(i + 1);
-}
-
-function parecidos(a: string, b: string): boolean {
-  if (a === b) return true;
-  return Math.min(a.length, b.length) >= TAMANHO_MINIMO_PARA_ERRO_DE_DIGITACAO && umaLetraDeDiferenca(a, b);
-}
-
-/**
- * Para cada categoria com nome parecido com o de outra (igual sem acento, maiúscula e espaços, ou com uma
- * letra de diferença), os nomes das outras. Compara entre tipos também: "Tansferência" (Despesa) ×
- * "Transferência" (Receita). Categoria sem parecida não entra no mapa.
- */
-export function nomesParecidos(categorias: readonly CategoriaDto[]): Map<number, string[]> {
-  const normalizados = categorias.map(c => ({ categoria: c, nome: normalizarNome(c.nome) }));
-  const resultado = new Map<number, string[]>();
-
-  for (const a of normalizados) {
-    const outros = normalizados
-      .filter(b => b.categoria.id !== a.categoria.id && parecidos(a.nome, b.nome))
-      .map(b => b.categoria.nome);
-    if (outros.length) resultado.set(a.categoria.id, outros);
-  }
-  return resultado;
-}
+// A comparação de nomes foi para shared (também usada no Cadastro de Contas, card #22).
+export { normalizarNome, nomesParecidos } from 'src/app/shared/utils/nomes-parecidos';
 
 export type FiltroTipo = 'todas' | 'despesas' | 'receitas';
 export type FiltroSituacao = 'ativas' | 'inativas' | 'todas';

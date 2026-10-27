@@ -11,7 +11,9 @@ import { FormPanelComponent } from './form-panel.component';
   imports: [FormPanelComponent],
   template: `
     <mf-form-panel titulo="Nova Categoria" [salvando]="salvando" [tamanho]="tamanho" [criarOutra]="criarOutra"
-      (fechar)="fechou = fechou + 1" (salvar)="salvou = salvou + 1" (salvarEOutra)="salvouEOutra = salvouEOutra + 1">
+      [passos]="passos" [passo]="passo" [rotuloSalvar]="rotuloSalvar"
+      (fechar)="fechou = fechou + 1" (salvar)="salvou = salvou + 1" (salvarEOutra)="salvouEOutra = salvouEOutra + 1"
+      (avancar)="avancou = avancou + 1" (voltar)="voltou = voltou + 1">
       <input id="campo" />
     </mf-form-panel>`
 })
@@ -22,6 +24,11 @@ class HostComponent {
   fechou = 0;
   salvou = 0;
   salvouEOutra = 0;
+  passos = 1;
+  passo = 1;
+  rotuloSalvar = 'Salvar';
+  avancou = 0;
+  voltou = 0;
 }
 
 /** Painel lateral dos formulários de cadastro e edição (card #27). */
@@ -84,6 +91,42 @@ describe('FormPanelComponent', () => {
     expect(botao('Cancelar').disabled).toBeTrue();
     expect(painel.closeOnEscape).toBeFalse();
     expect(painel.dismissible).toBeFalse();
+  });
+
+  describe('em passos (card #22)', () => {
+    const rotulos = () => Array.from(el().querySelectorAll('.p-sidebar-footer button')).map(b => b.textContent?.trim());
+
+    beforeEach(() => {
+      host().passos = 2;
+      host().criarOutra = true;
+      host().rotuloSalvar = 'Salvar conta';
+      fixture.detectChanges();
+    });
+
+    it('no primeiro passo: Cancelar e Continuar, com "Passo 1 de 2"; Continuar emite avancar', () => {
+      expect(rotulos()).toEqual(['Cancelar', 'Continuar']);
+      expect(el().textContent).toContain('Passo 1 de 2');
+
+      botao('Continuar').click();
+      expect(host().avancou).toBe(1);
+      expect(host().salvou).toBe(0);
+    });
+
+    it('no último passo: Voltar, "Salvar e criar outra" e o Salvar com o rótulo pedido; Voltar emite voltar', () => {
+      host().passo = 2;
+      fixture.detectChanges();
+
+      expect(rotulos()).toEqual(['Voltar', 'Salvar e criar outra', 'Salvar conta']);
+      expect(el().textContent).toContain('Passo 2 de 2');
+
+      botao('Voltar').click();
+      expect(host().voltou).toBe(1);
+      expect(host().fechou).toBe(0);
+    });
+  });
+
+  it('num passo só não mostra contador de passos', () => {
+    expect(el().textContent).not.toContain('Passo');
   });
 
   it('o tamanho grande muda a largura', () => {

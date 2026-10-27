@@ -1,0 +1,12 @@
+.conta-previa {
+  background: var(--highlight-bg);
+  color: var(--highlight-text-color);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+/* O host do p-chips é inline: sem isto o campo de dias fica só do tamanho do placeholder. */
+:host ::ng-deep p-chips { display: block; }
+:host ::ng-deep .p-chips { width: 100%; }
+/* O wrapper é inline-flex: a lista dos dias precisa crescer como item flex. */
+:host ::ng-deep .p-chips .p-chips-multiple-container { flex: 1 1 auto; }

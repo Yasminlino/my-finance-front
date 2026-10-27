@@ -1,13 +1,258 @@
 <div class="mf-pagina">
-  <app-data-grid #grid [dataSource]="registrosExibidos" [breadcrumb]="breadcrumb" [columns]="gridColumns"  [titulo]="'Cadastro de Contas'"
-    [statusOptions]="statusOptions" campoStatus="ativo" [exibeCampos]="exibirCampos"
-    [loading]="loading" (edit)="onEdit($event)" (new)="openCreate()" (delete)="onDelete($event)" (deleteSelected)="onDeleteSelected($event)"></app-data-grid>
+  <mf-page-header class="block mt-2 mb-3" titulo="Contas"
+    subtitulo="Contas recorrentes que geram os lançamentos de cada mês em Contas a Pagar" [breadcrumb]="breadcrumb" [home]="home">
+    <!-- Dois botões dentro do @if: o ng-container leva o bloco para o slot `acoes`. -->
+    <ng-container ngProjectAs="[acoes]">
+    @if (!movel()) {
+      <p-button acoes label="Exportar" icon="pi pi-upload" severity="secondary" [outlined]="true"
+        [disabled]="!registrosExibidos.length" (onClick)="exportar()" />
+      <p-button acoes label="Nova conta" icon="pi pi-plus" (onClick)="openCreate()" />
+    }
+    </ng-container>
+  </mf-page-header>
 
-  <!-- Modal do Form -->
-  <app-conta-mensal-form
-    *ngIf="showModalForm"
-    [registro]="editing"
-    [categories]="categorias"
-    (closed)="closeForm($event)">
-  </app-conta-mensal-form>
+  <!-- Resumo: 4 cards no desktop, 3 mini-cards no celular -->
+  @if (!movel()) {
+    <div class="grid mb-1">
+      <div class="col-12 sm:col-6 lg:col-3">
+        <mf-stat-card rotulo="Contas ativas" [valor]="'' + resumo.ativas" icone="pi pi-check-circle" tom="info" />
+      </div>
+      <div class="col-12 sm:col-6 lg:col-3">
+        <mf-stat-card rotulo="Saldo previsto por mês" [valor]="saldoTexto" icone="pi pi-wallet" tom="info"
+          [corDoValor]="resumo.saldoMes < 0 ? 'perigo' : 'receita'">
+          <small class="mf-hint">Receitas {{ moeda(resumo.receitasMes) }} · Despesas {{ moeda(resumo.despesasMes) }}</small>
+        </mf-stat-card>
+      </div>
+      <div class="col-12 sm:col-6 lg:col-3">
+        <mf-stat-card rotulo="Parceladas em andamento" [valor]="'' + resumo.parceladasEmAndamento" icone="pi pi-list" tom="neutro" />
+      </div>
+      <div class="col-12 sm:col-6 lg:col-3">
+        <mf-stat-card rotulo="Inativas" [valor]="'' + resumo.inativas" icone="pi pi-pause-circle" tom="neutro" />
+      </div>
+    </div>
+  } @else {
+    <!-- Celular: o saldo na largura toda (para caber receitas e despesas), depois ativas e parceladas. -->
+    <div class="resumo-movel grid mb-1">
+      <div class="col-12">
+        <div class="resumo-movel-item surface-card border-round shadow-1 p-2">
+          <small class="mf-hint flex align-items-center gap-1"><i class="pi pi-wallet"></i>Saldo previsto/mês</small>
+          <span class="mf-valor font-semibold white-space-nowrap" [class.text-red-500]="resumo.saldoMes < 0"
+            [class.saldo-positivo]="resumo.saldoMes >= 0">{{ saldoTexto }}</span>
+          <small class="mf-hint block">Receitas {{ moeda(resumo.receitasMes) }} · Despesas {{ moeda(resumo.despesasMes) }}</small>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="resumo-movel-item surface-card border-round shadow-1 p-2">
+          <small class="mf-hint flex align-items-center gap-1"><i class="pi pi-check-circle"></i>Ativas</small>
+          <span class="mf-valor font-semibold">{{ resumo.ativas }}</span>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="resumo-movel-item surface-card border-round shadow-1 p-2">
+          <small class="mf-hint flex align-items-center gap-1"><i class="pi pi-list"></i>Parceladas</small>
+          <span class="mf-valor font-semibold">{{ resumo.parceladasEmAndamento }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="surface-card border-round shadow-1 mf-tags-claras">
+    <mf-filter-bar>
+      <p-selectButton inicio [options]="opcoesSituacao" [(ngModel)]="situacao" optionLabel="label" optionValue="value"
+        [allowEmpty]="false" (onChange)="aoMudarFiltro()" styleClass="filtro-situacao"
+        [class.filtro-situacao-compacto]="movel()" [class.w-full]="movel()">
+        <ng-template let-opcao pTemplate="item">
+          <span>{{ opcao.label }}</span>
+          <p-badge [value]="'' + opcao.contagem" severity="secondary" styleClass="ml-2" />
+        </ng-template>
+      </p-selectButton>
+
+      <p-iconField fim iconPosition="left" [class.flex-grow-1]="movel()" [class.min-w-0]="movel()">
+        <p-inputIcon styleClass="pi pi-search" />
+        <input pInputText type="text" placeholder="Buscar conta ou categoria..." [(ngModel)]="busca" [class.w-full]="movel()"
+          (ngModelChange)="aoMudarFiltro()" aria-label="Buscar conta" />
+      </p-iconField>
+      <!-- Bloco @if com vários elementos não é projetado pelo atributo; o ng-container leva tudo para o lado `fim` (#23). -->
+      <ng-container ngProjectAs="[fim]">
+      @if (!movel()) {
+        <p-multiSelect fim [options]="opcoesCategoria" [(ngModel)]="categoriasSelecionadas" placeholder="Categorias"
+          [filter]="true" selectedItemsLabel="{0} categorias" [maxSelectedLabels]="1" appendTo="body"
+          (onChange)="aoMudarFiltro()" styleClass="filtro-categorias" />
+        <p-dropdown fim [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value"
+          appendTo="body" (onChange)="aoMudarFiltro()" styleClass="filtro-ordem" ariaLabel="Ordenar por"
+          pTooltip="Ordenar por" tooltipPosition="top" />
+        <p-button fim icon="pi pi-filter-slash" [text]="true" severity="secondary" pTooltip="Limpar filtros"
+          tooltipPosition="top" [disabled]="!temFiltro" (onClick)="limparFiltros()" ariaLabel="Limpar filtros" />
+      } @else {
+        <p-button fim icon="pi pi-sliders-h" [text]="true" severity="secondary" ariaLabel="Mais filtros"
+          (onClick)="filtrosMovelAbertos = true" />
+      }
+      </ng-container>
+    </mf-filter-bar>
+
+    @if (!movel()) {
+      <p-table #tabela [value]="registrosExibidos" dataKey="id" [loading]="loading" [rowHover]="true" [paginator]="true"
+        [rows]="25" [rowsPerPageOptions]="[25, 50, 100]" [scrollable]="true" styleClass="tabela-contas"
+        [columns]="colunasExportacao" [exportFunction]="formatarExportacao" exportFilename="contas">
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="min-width: 16rem">Conta</th>
+            <th style="min-width: 8rem" class="text-right">Valor</th>
+            <th style="min-width: 9rem">Vencimento</th>
+            <th style="min-width: 8rem">Parcelas</th>
+            <th style="width: 6rem" class="text-center">Ativa</th>
+            <th style="width: 10rem" class="text-center">Ações</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-conta>
+          <tr [class.mf-row-inativa]="!conta.ativo">
+            <td>
+              <div class="flex align-items-center gap-2">
+                <mf-category-icon [natureza]="meta[conta.id].aparencia.natureza" [cor]="meta[conta.id].aparencia.cor"
+                  [icone]="meta[conta.id].icone" />
+                <div class="min-w-0">
+                  <div class="font-semibold flex align-items-center gap-2">
+                    <span class="conta-nome">{{ conta.nome }}</span>
+                    @if (meta[conta.id].parecidos.length) {
+                      <i class="aviso-parecido pi pi-clone text-orange-500"
+                        [pTooltip]="'Nome parecido com: ' + meta[conta.id].parecidos.join(', ')" tooltipPosition="top"
+                        aria-label="Nome parecido com outra conta"></i>
+                    }
+                  </div>
+                  <small class="mf-hint">{{ conta.categoriaNome }}</small>
+                </div>
+              </div>
+            </td>
+            <td class="text-right mf-valor white-space-nowrap">{{ moeda(conta.valor) }}</td>
+            <td>
+              @if (meta[conta.id].semVencimento) {
+                <span class="aviso-sem-vencimento text-orange-600 flex align-items-center gap-1"
+                  pTooltip="Sem dia de vencimento: não gera lançamento. Edite a conta e informe ao menos um dia." tooltipPosition="top">
+                  <i class="pi pi-exclamation-triangle"></i> Sem vencimento
+                </span>
+              } @else {
+                {{ meta[conta.id].vencimento }}
+              }
+            </td>
+            <td>
+              @if (meta[conta.id].progresso !== null) {
+                <div class="flex flex-column gap-1">
+                  <span class="white-space-nowrap">{{ conta.parcelaAtual }} / {{ conta.quantidadeParcelas }}</span>
+                  <p-progressBar [value]="meta[conta.id].progresso!" [showValue]="false" styleClass="conta-progresso" />
+                </div>
+              } @else {
+                <span class="mf-hint">—</span>
+              }
+            </td>
+            <td class="text-center">
+              <p-inputSwitch [ngModel]="conta.ativo" (onChange)="alternarAtivo(conta, $event.checked)"
+                [ariaLabel]="(conta.ativo ? 'Inativar ' : 'Ativar ') + conta.nome" />
+            </td>
+            <td class="text-center white-space-nowrap">
+              <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="secondary" pTooltip="Editar"
+                tooltipPosition="top" (onClick)="onEdit(conta)" [ariaLabel]="'Editar ' + conta.nome" />
+              <p-button icon="pi pi-copy" [rounded]="true" [text]="true" severity="secondary" pTooltip="Duplicar"
+                tooltipPosition="top" (onClick)="duplicar(conta)" [ariaLabel]="'Duplicar ' + conta.nome" />
+              <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
+                (onClick)="abrirMenu(conta); menuLinha.toggle($event)" [ariaLabel]="'Mais ações de ' + conta.nome" />
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="6">
+              <mf-empty-state icone="pi pi-wallet" titulo="Nenhuma conta encontrada"
+                [texto]="temFiltro ? 'Mude ou limpe os filtros.' : 'Crie a primeira conta.'" />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    } @else {
+      <!-- Celular: cards; tocar abre a edição -->
+      <div class="flex flex-column gap-2 p-3">
+        @for (conta of registrosExibidos; track conta.id) {
+          <div class="mf-list-card flex align-items-center gap-2 p-2 border-1 surface-border border-round cursor-pointer"
+            [class.mf-row-inativa]="!conta.ativo" role="button" tabindex="0"
+            (click)="onEdit(conta)" (keydown.enter)="onEdit(conta)">
+            <mf-category-icon [natureza]="meta[conta.id].aparencia.natureza" [cor]="meta[conta.id].aparencia.cor"
+              [icone]="meta[conta.id].icone" />
+            <div class="flex-grow-1 min-w-0 flex flex-column gap-1">
+              <span class="font-semibold flex align-items-center gap-2">
+                <span class="white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ conta.nome }}</span>
+                @if (meta[conta.id].parecidos.length) {
+                  <i class="aviso-parecido pi pi-clone text-orange-500" aria-label="Nome parecido com outra conta"></i>
+                }
+              </span>
+              <small class="mf-hint white-space-nowrap overflow-hidden text-overflow-ellipsis">
+                {{ conta.categoriaNome }} ·
+                @if (meta[conta.id].semVencimento) {
+                  <span class="aviso-sem-vencimento text-orange-600">sem vencimento</span>
+                } @else {
+                  {{ meta[conta.id].vencimento }}
+                }
+                @if (meta[conta.id].progresso !== null) {
+                  · {{ conta.parcelaAtual }}/{{ conta.quantidadeParcelas }}
+                }
+              </small>
+            </div>
+            <span class="mf-valor font-semibold white-space-nowrap">{{ moeda(conta.valor) }}</span>
+            <!-- O clique no switch e no ⋮ não abre a edição. -->
+            <div class="card-ativo flex-shrink-0" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+              <p-inputSwitch [ngModel]="conta.ativo" (onChange)="alternarAtivo(conta, $event.checked)"
+                [ariaLabel]="(conta.ativo ? 'Inativar ' : 'Ativar ') + conta.nome" />
+            </div>
+            <div class="flex-shrink-0" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+              <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
+                (onClick)="abrirMenu(conta); menuLinha.toggle($event)" [ariaLabel]="'Mais ações de ' + conta.nome" />
+            </div>
+          </div>
+        }
+        @if (!registrosExibidos.length && !loading) {
+          <mf-empty-state icone="pi pi-wallet" titulo="Nenhuma conta encontrada"
+            [texto]="temFiltro ? 'Mude ou limpe os filtros.' : 'Crie a primeira conta.'" />
+        }
+      </div>
+    }
+  </div>
+
+  @if (movel()) {
+    <p-sidebar [(visible)]="filtrosMovelAbertos" position="bottom" styleClass="filtros-movel h-auto" [blockScroll]="true"
+      header="Filtros">
+      <div class="flex flex-column gap-3">
+        <div class="flex flex-column gap-2">
+          <span class="mf-label">Categorias</span>
+          <p-multiSelect [options]="opcoesCategoria" [(ngModel)]="categoriasSelecionadas" placeholder="Todas"
+            [filter]="true" selectedItemsLabel="{0} categorias" [maxSelectedLabels]="1" appendTo="body"
+            styleClass="w-full" (onChange)="aoMudarFiltro()" />
+        </div>
+        <div class="flex flex-column gap-2">
+          <span class="mf-label">Ordenar por</span>
+          <p-dropdown [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value"
+            appendTo="body" styleClass="w-full" (onChange)="aoMudarFiltro()" ariaLabel="Ordenar por" />
+        </div>
+        <div class="flex justify-content-end gap-2">
+          <p-button label="Limpar" severity="secondary" [outlined]="true" [disabled]="!temFiltro" (onClick)="limparFiltros()" />
+          <p-button label="Ver contas" (onClick)="filtrosMovelAbertos = false" />
+        </div>
+      </div>
+    </p-sidebar>
+  }
+
+  <p-menu #menuLinha [model]="itensMenu" [popup]="true" appendTo="body" />
+
+  @if (movel()) {
+    <mf-fab rotulo="Nova conta" (clique)="openCreate()" />
+  }
+
+  @if (contaDosLancamentos; as conta) {
+    <app-conta-lancamentos-painel [conta]="conta" [aparencia]="{ natureza: meta[conta.id].aparencia.natureza, cor: meta[conta.id].aparencia.cor, icone: meta[conta.id].icone }"
+      (fechar)="contaDosLancamentos = null" (editar)="editarDosLancamentos()" />
+  }
+
+  @if (showModalForm) {
+    <app-conta-mensal-form [registro]="editing" [categories]="categoriasDoForm" [contas]="registros"
+      (closed)="closeForm($event)" />
+  }
 </div>

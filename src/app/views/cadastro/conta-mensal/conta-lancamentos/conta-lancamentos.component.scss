@@ -1,0 +1,11 @@
+.lancamentos-chip {
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+  background: var(--surface-100);
+  color: var(--text-color-secondary);
+
+  &--total {
+    background: var(--highlight-bg);
+    color: var(--highlight-text-color);
+  }
+}

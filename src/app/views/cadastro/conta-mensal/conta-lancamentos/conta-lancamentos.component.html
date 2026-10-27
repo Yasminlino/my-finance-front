@@ -1,0 +1,57 @@
+@if (carregando) {
+  <div class="lancamentos-carregando flex justify-content-center p-4">
+    <p-progressSpinner styleClass="w-2rem h-2rem" strokeWidth="4" ariaLabel="Carregando lançamentos" />
+  </div>
+} @else if (erro) {
+  <div class="flex align-items-center gap-2 p-3 text-red-500">
+    <i class="pi pi-exclamation-circle"></i>
+    Não foi possível carregar os lançamentos. Feche e abra a conta de novo.
+  </div>
+} @else if (!lancamentos.length) {
+  <mf-empty-state icone="pi pi-calendar" titulo="Esta conta ainda não gerou lançamentos"
+    texto="Os lançamentos aparecem aqui quando ela entra em Contas a Pagar." />
+} @else {
+  <div class="flex flex-column gap-3">
+    <div class="flex flex-wrap gap-2 text-sm">
+      @if (resumo.pagosNoPrazo) {
+        <span class="lancamentos-chip">{{ contagem(resumo.pagosNoPrazo, 'pago no prazo', 'pagos no prazo') }}</span>
+      }
+      @if (resumo.pagosAtrasados) {
+        <span class="lancamentos-chip">{{ contagem(resumo.pagosAtrasados, 'pago com atraso', 'pagos com atraso') }}</span>
+      }
+      @if (resumo.pendentes) {
+        <span class="lancamentos-chip">{{ contagem(resumo.pendentes, 'pendente', 'pendentes') }}</span>
+      }
+      @if (resumo.aguardando) {
+        <span class="lancamentos-chip">{{ contagem(resumo.aguardando, 'aguardando', 'aguardando') }}</span>
+      }
+      <span class="lancamentos-chip lancamentos-chip--total font-semibold">{{ moeda(resumo.totalPago) }} pago</span>
+    </div>
+
+    <!-- Entre o resumo e a lista: o card Acompanhamento, quando o painel o põe. -->
+    <ng-content />
+
+    @for (grupo of grupos; track grupo.mes) {
+      <section class="flex flex-column gap-1">
+        <h6 class="lancamentos-mes mf-section-title m-0">{{ grupo.mes }}</h6>
+        @for (lancamento of grupo.itens; track lancamento.id) {
+          <div class="lancamento flex align-items-start gap-2 py-2 border-bottom-1 surface-border">
+            <div class="flex-grow-1 min-w-0 flex flex-column gap-1">
+              <span class="flex align-items-center gap-2">
+                <span class="font-medium">Dia {{ dia(lancamento) }}</span>
+                @if (lancamento.ehParcelado && lancamento.parcelaAtual) {
+                  <small class="mf-hint">{{ lancamento.parcelaAtual }}/{{ lancamento.quantidadeParcelas }}</small>
+                }
+              </span>
+              @if (lancamento.observacao) {
+                <small class="mf-hint">{{ lancamento.observacao }}</small>
+              }
+            </div>
+            <span class="mf-valor white-space-nowrap">{{ moeda(lancamento.valor) }}</span>
+            <p-tag [value]="tags[lancamento.id].label" [severity]="tags[lancamento.id].severity" styleClass="white-space-nowrap" />
+          </div>
+        }
+      </section>
+    }
+  </div>
+}

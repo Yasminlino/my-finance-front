@@ -1,0 +1,21 @@
+:host ::ng-deep .filtro-categorias { min-width: 11rem; }
+:host ::ng-deep .filtro-ordem { min-width: 10rem; }
+
+:host ::ng-deep .conta-progresso {
+  height: 0.35rem;
+  width: 5rem;
+}
+
+.resumo-movel-item { min-height: 100%; }
+
+/* Celular: a situação e a linha da busca ocupam a largura toda, cada uma na sua linha (#23). */
+@media (max-width: 767.98px) {
+  :host ::ng-deep .mf-filter-bar .mf-filter-bar__inicio,
+  :host ::ng-deep .mf-filter-bar .mf-filter-bar__fim {
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+}
+
+/* Saldo previsto no mini-card do celular: verde quando positivo (o sinal já vem no texto). */
+.saldo-positivo { color: var(--mf-receita); }
