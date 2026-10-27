@@ -98,6 +98,19 @@ describe('ContaMensalFormComponent', () => {
     expect(alerta.success).toHaveBeenCalled();
   });
 
+  it('valor fixo (card #47): switch na seção de valor, preenchido na edição e enviado ao salvar', () => {
+    abrir({ ...sofa, valorFixo: true });
+    expect(el().querySelector('#conta-valor-fixo')).not.toBeNull();
+    expect(form().controls.valorFixo.value).toBeTrue();
+
+    form().patchValue({ valorFixo: false });
+    comp().save();
+    expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ valorFixo: false }));
+
+    abrir();
+    expect(form().controls.valorFixo.value).toBeFalse();
+  });
+
   it('conta não parcelada vai com parcelas 0/0 e observação vazia como null', () => {
     abrir();
     preencherValida();

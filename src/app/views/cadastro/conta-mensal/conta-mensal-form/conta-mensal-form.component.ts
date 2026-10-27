@@ -74,7 +74,8 @@ export class ContaMensalFormComponent implements OnInit {
     parcelaAtual: this.fb.nonNullable.control(1),
     quantidadeParcelas: this.fb.nonNullable.control(2),
     ativo: this.fb.nonNullable.control(true),
-    observacao: this.fb.nonNullable.control('', Validators.maxLength(500))
+    observacao: this.fb.nonNullable.control('', Validators.maxLength(500)),
+    valorFixo: this.fb.nonNullable.control(false)
   }, { validators: c => this.parcelasValidas(c) });
 
   get editando(): boolean {
@@ -131,7 +132,8 @@ export class ContaMensalFormComponent implements OnInit {
       parcelaAtual: r.ehParcelado ? r.parcelaAtual : 1,
       quantidadeParcelas: r.ehParcelado ? r.quantidadeParcelas : 2,
       ativo: r.ativo,
-      observacao: r.observacao ?? ''
+      observacao: r.observacao ?? '',
+      valorFixo: !!r.valorFixo
     });
   }
 
@@ -201,7 +203,8 @@ export class ContaMensalFormComponent implements OnInit {
       // Não parcelada fica 0/0, como o banco guarda.
       parcelaAtual: v.ehParcelado ? v.parcelaAtual : 0,
       quantidadeParcelas: v.ehParcelado ? v.quantidadeParcelas : 0,
-      observacao: v.observacao.trim() || null
+      observacao: v.observacao.trim() || null,
+      valorFixo: v.valorFixo
     };
 
     this.saving = true;

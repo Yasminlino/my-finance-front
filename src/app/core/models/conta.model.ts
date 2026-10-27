@@ -12,6 +12,8 @@ export type ContaDto = {
   quantidadeParcelas: number;
   /** Anotação livre (card #22); até 500 caracteres. */
   observacao?: string | null;
+  /** Valor igual todo mês (card #47): no lançamento em lote chega como AGUARDANDO; sem isso, PENDENTE. */
+  valorFixo?: boolean;
 
   vencimentos?: ContaVencimentoDto[];
 };

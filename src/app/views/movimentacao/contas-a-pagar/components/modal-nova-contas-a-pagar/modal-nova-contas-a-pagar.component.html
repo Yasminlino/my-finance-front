@@ -32,3 +32,16 @@
     </div>
   </form>
 </mf-form-panel>
+
+<!-- Card #47: antes de gravar, se a conta entra também no Cadastro de Contas. Fechar (X, Esc) volta ao formulário. -->
+<p-dialog header="Cadastrar também em Contas?" [(visible)]="perguntandoCadastro" [modal]="true" [draggable]="false"
+  [style]="{ width: '28rem', maxWidth: '92vw' }" appendTo="body">
+  <p class="m-0 line-height-3">
+    Com o cadastro, <strong>{{ form.value.nomeConta }}</strong> volta nos próximos meses e aparece no
+    "Adicionar em lote". Sem o cadastro, fica só este lançamento, neste mês.
+  </p>
+  <ng-template pTemplate="footer">
+    <p-button label="Não, só este mês" severity="secondary" [outlined]="true" [disabled]="saving" (onClick)="gravar(false)" />
+    <p-button label="Sim, cadastrar" icon="pi pi-check" [loading]="saving" (onClick)="gravar(true)" />
+  </ng-template>
+</p-dialog>

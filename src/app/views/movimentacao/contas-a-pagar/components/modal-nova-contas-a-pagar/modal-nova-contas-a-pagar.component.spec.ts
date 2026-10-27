@@ -33,6 +33,12 @@ describe('ModalNovaContasAPagarComponent', () => {
     fixture.detectChanges();
   });
 
+  /** Salvar e responder "Sim, cadastrar" na pergunta (card #47). */
+  const salvarCadastrando = () => {
+    fixture.componentInstance.save();
+    fixture.componentInstance.gravar(true);
+  };
+
   it('sem valor não salva', () => {
     fixture.componentInstance.form.patchValue({ nomeConta: 'Luz', dataOperacao: '10', categoryId: 6 });
 
@@ -44,7 +50,7 @@ describe('ModalNovaContasAPagarComponent', () => {
   it('salva o valor como número', () => {
     fixture.componentInstance.form.patchValue({ nomeConta: 'Luz', valor: 15.5, dataOperacao: '10', categoryId: 6 });
 
-    fixture.componentInstance.save();
+    salvarCadastrando();
 
     expect(service.criar).toHaveBeenCalledWith(jasmine.objectContaining({ valor: 15.5 }));
   });
@@ -52,7 +58,7 @@ describe('ModalNovaContasAPagarComponent', () => {
   it('aceita vários dias: envia os dias em ordem e a data do primeiro', () => {
     fixture.componentInstance.form.patchValue({ nomeConta: 'Escola', valor: 300, dataOperacao: '20, 5', categoryId: 6 });
 
-    fixture.componentInstance.save();
+    salvarCadastrando();
 
     const payload = service.criar.calls.mostRecent().args[0];
     expect(payload.diasVencimento).toEqual([5, 20]);
@@ -62,7 +68,7 @@ describe('ModalNovaContasAPagarComponent', () => {
   it('um dia só continua funcionando', () => {
     fixture.componentInstance.form.patchValue({ nomeConta: 'Luz', valor: 15.5, dataOperacao: '10', categoryId: 6 });
 
-    fixture.componentInstance.save();
+    salvarCadastrando();
 
     expect(service.criar).toHaveBeenCalledWith(jasmine.objectContaining({ diasVencimento: [10] }));
   });
@@ -74,6 +80,7 @@ describe('ModalNovaContasAPagarComponent', () => {
       fixture.componentInstance.save();
 
       expect(fixture.componentInstance.erro('dataOperacao')).toBeTrue();
+      expect(fixture.componentInstance.perguntandoCadastro).toBeFalse();
     }
     expect(service.criar).not.toHaveBeenCalled();
   });
@@ -87,5 +94,45 @@ describe('ModalNovaContasAPagarComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('p-dropdown[formControlName=categoryId]')).not.toBeNull();
     dialogo.componentInstance.fechar.emit();
     expect(fechado).toHaveBeenCalledOnceWith(false);
+  });
+
+  describe('pergunta "Cadastrar também em Contas?" (card #47)', () => {
+    const el = () => fixture.nativeElement as HTMLElement;
+    beforeEach(() => fixture.componentInstance.form.patchValue({ nomeConta: 'Presente', valor: 300, dataOperacao: '10, 20', categoryId: 6 }));
+
+    it('Salvar válido não grava ainda: abre a pergunta', () => {
+      fixture.componentInstance.save();
+      fixture.detectChanges();
+
+      expect(service.criar).not.toHaveBeenCalled();
+      expect(fixture.componentInstance.perguntandoCadastro).toBeTrue();
+      expect(document.body.textContent).toContain('Cadastrar também em Contas?');
+    });
+
+    it('"Sim, cadastrar" grava como antes, criando a conta', () => {
+      salvarCadastrando();
+
+      expect(service.criar).toHaveBeenCalledWith(jasmine.objectContaining({ cadastrarConta: true, nome: 'Presente' }));
+      expect(fixture.componentInstance.perguntandoCadastro).toBeFalse();
+    });
+
+    it('"Não, só este mês" grava só o lançamento avulso', () => {
+      fixture.componentInstance.save();
+      fixture.componentInstance.gravar(false);
+
+      expect(service.criar).toHaveBeenCalledWith(jasmine.objectContaining({ cadastrarConta: false, diasVencimento: [10, 20] }));
+    });
+
+    it('fechar a pergunta volta ao formulário sem gravar', () => {
+      const fechado = jasmine.createSpy('closed');
+      fixture.componentInstance.closed.subscribe(fechado);
+      fixture.componentInstance.save();
+
+      fixture.componentInstance.perguntandoCadastro = false;
+
+      expect(service.criar).not.toHaveBeenCalled();
+      expect(fechado).not.toHaveBeenCalled();
+      expect(el().querySelector('#cp-nome')).not.toBeNull();
+    });
   });
 });

@@ -44,4 +44,6 @@ export type TransacaoPayload = {
   quantidadeParcelas?: number | null;
   observacao?: string | null;
   diasVencimento?: number[];    // só na criação: uma transação por dia
+  /** Só na criação sem conta (card #47): false = lançamento avulso deste mês; ausente/true = cadastra a conta junto. */
+  cadastrarConta?: boolean;
 };

@@ -57,6 +57,14 @@
           <mf-field-error [control]="form.controls.valor">Informe o valor.</mf-field-error>
         </div>
 
+        <div class="flex flex-column gap-1">
+          <div class="flex align-items-center gap-2">
+            <p-inputSwitch inputId="conta-valor-fixo" formControlName="valorFixo" />
+            <label for="conta-valor-fixo" class="cursor-pointer">Valor fixo</label>
+          </div>
+          <small class="mf-hint">No lançamento em lote, conta de valor fixo chega como Aguardando; sem valor fixo, como Pendente.</small>
+        </div>
+
         <div class="flex flex-column gap-2">
           <label for="conta-dias" class="mf-label">Dias de vencimento <span class="text-red-500">*</span></label>
           <p-chips inputId="conta-dias" formControlName="dias" separator="," [addOnBlur]="true" [allowDuplicate]="true"

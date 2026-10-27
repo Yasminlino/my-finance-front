@@ -170,7 +170,8 @@ export class ModalAdicionarEmLoteComponent implements OnInit, OnDestroy {
         nome: acc.nome,
         contaId: acc.id,
         valor: parseCurrencyBR(acc.valor) ?? 0,
-        situacao: 'PENDENTE',
+        // Valor fixo já chega aguardando pagamento; valor variável fica pendente até alguém informar (card #47).
+        situacao: acc.valorFixo ? 'AGUARDANDO' : 'PENDENTE',
         ehParcelado: acc.ehParcelado,
         parcelaAtual: acc.ehParcelado ? acc.parcelaAtual : null,
         quantidadeParcelas: acc.ehParcelado ? acc.quantidadeParcelas : null,

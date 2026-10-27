@@ -9,4 +9,9 @@
 :host ::ng-deep p-chips { display: block; }
 :host ::ng-deep .p-chips { width: 100%; }
 /* O wrapper é inline-flex: a lista dos dias precisa crescer como item flex. */
-:host ::ng-deep .p-chips .p-chips-multiple-container { flex: 1 1 auto; }
+:host ::ng-deep .p-chips .p-chips-multiple-container {
+  flex: 1 1 auto;
+  // O estilo estrutural do PrimeNG zera o recuo; volta ao dos outros campos (pInputText) e afasta um dia do outro.
+  padding: 0.5rem 0.75rem;
+  gap: 0.5rem;
+}

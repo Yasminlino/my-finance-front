@@ -19,6 +19,8 @@ export class ModalNovaContasAPagarComponent implements OnInit {
 
   saving = false;
   categorias: CategoriaDto[] = [];
+  /** Formulário válido, esperando a resposta de "Cadastrar também em Contas?" (card #47). */
+  perguntandoCadastro = false;
 
 
   form = this.fb.group({
@@ -45,12 +47,18 @@ export class ModalNovaContasAPagarComponent implements OnInit {
     this.closed.emit(reload);
   }
 
+  /** Salvar: com o formulário válido, pergunta antes se a conta entra também no Cadastro de Contas (card #47). */
   save() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
+    this.perguntandoCadastro = true;
+  }
 
+  /** Resposta da pergunta: true = cria a conta junto (como antes); false = lançamento avulso só neste mês. */
+  gravar(cadastrarConta: boolean) {
+    this.perguntandoCadastro = false;
     // Válido pelo diasVencimentoValidator. A data leva o mês e o primeiro dia; a API lança uma transação por dia.
     const dias = lerDiasVencimento(this.form.value.dataOperacao)!;
     const payload = {
@@ -60,6 +68,7 @@ export class ModalNovaContasAPagarComponent implements OnInit {
       categoriaId: Number(this.form.value.categoryId),
       valor: this.form.value.valor!,
       situacao: 'PENDENTE',
+      cadastrarConta,
     };
 
     this.saving = true;
