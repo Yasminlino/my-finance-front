@@ -7,25 +7,27 @@ import { of } from 'rxjs';
 import { ModalNovaContasAPagarComponent } from './modal-nova-contas-a-pagar.component';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { CategoryService } from 'src/app/core/services/category.service';
-import { SharedModule } from 'src/app/shared/shared.module';
+import { AlertService } from 'src/app/shared/components/alert.service';
 
 /** Valor da nova conta com a máscara única (currencyInput): número no formulário (FE-P2-10). */
 describe('ModalNovaContasAPagarComponent', () => {
   let fixture: ComponentFixture<ModalNovaContasAPagarComponent>;
   let service: jasmine.SpyObj<ContaMensalService>;
+  let alertas: jasmine.SpyObj<AlertService>;
 
   beforeEach(() => {
     service = jasmine.createSpyObj<ContaMensalService>('ContaMensalService', ['criar']);
     service.criar.and.returnValue(of({}));
     const categorias = jasmine.createSpyObj<CategoryService>('CategoryService', ['listarAtivas']);
     categorias.listarAtivas.and.returnValue(of([]));
+    alertas = jasmine.createSpyObj<AlertService>('AlertService', ['success']);
     TestBed.configureTestingModule({
-      declarations: [ModalNovaContasAPagarComponent],
-      imports: [SharedModule],
+      imports: [ModalNovaContasAPagarComponent],
       providers: [
         provideNoopAnimations(),
         { provide: ContaMensalService, useValue: service },
-        { provide: CategoryService, useValue: categorias }
+        { provide: CategoryService, useValue: categorias },
+        { provide: AlertService, useValue: alertas }
       ]
     });
     fixture = TestBed.createComponent(ModalNovaContasAPagarComponent);
@@ -90,10 +92,63 @@ describe('ModalNovaContasAPagarComponent', () => {
     fixture.componentInstance.closed.subscribe(fechado);
     const dialogo = fixture.debugElement.query(By.directive(FormPanelComponent));
 
-    expect(dialogo.componentInstance.titulo).toBe('Adicionar nova conta');
+    expect(dialogo.componentInstance.titulo).toBe('Nova conta');
     expect((fixture.nativeElement as HTMLElement).querySelector('p-dropdown[formControlName=categoryId]')).not.toBeNull();
     dialogo.componentInstance.fechar.emit();
     expect(fechado).toHaveBeenCalledOnceWith(false);
+  });
+
+  describe('padrão do Cadastro de Contas (card #49)', () => {
+    const painel = () => fixture.debugElement.query(By.directive(FormPanelComponent)).componentInstance as FormPanelComponent;
+    const texto = () => (document.body.textContent ?? '').replace(/\s+/g, ' ');
+
+    it('seções Identificação e Valor e vencimento', () => {
+      const secoes = Array.from(document.querySelectorAll('.mf-form-panel .mf-section-title')).map(s => s.textContent?.trim());
+      expect(secoes).toContain('Identificação');
+      expect(secoes).toContain('Valor e vencimento');
+    });
+
+    it('categoria escolhida aparece com o ícone e a cor do cadastro', () => {
+      fixture.componentInstance.categorias = [
+        { id: 6, nome: 'Casa', subcategoria: 'Despesa', naturezaOperacao: 1, ativo: true, icone: 'pi pi-home', cor: '#2563eb' }
+      ];
+      fixture.detectChanges();
+      fixture.componentInstance.form.patchValue({ categoryId: 6 });
+      fixture.detectChanges();
+
+      const dropdown = document.querySelector('p-dropdown[formControlName=categoryId]')!;
+      expect(dropdown.querySelector('mf-category-icon')).not.toBeNull();
+      expect(dropdown.textContent).toContain('Casa');
+    });
+
+    it('"Salvar e criar outra": grava, limpa o formulário e continua aberto; ao fechar, recarrega o mês', () => {
+      const fechado = jasmine.createSpy('closed');
+      fixture.componentInstance.closed.subscribe(fechado);
+      expect(painel().criarOutra).toBeTrue();
+      fixture.componentInstance.form.patchValue({ nomeConta: 'Luz', valor: 15.5, dataOperacao: '10', categoryId: 6 });
+
+      painel().salvarEOutra.emit();
+      fixture.detectChanges();
+      expect(texto()).toContain('Cadastrar também em Contas?');
+      fixture.componentInstance.gravar(true);
+      fixture.detectChanges();
+
+      expect(service.criar).toHaveBeenCalledTimes(1);
+      expect(fechado).not.toHaveBeenCalled();
+      expect(fixture.componentInstance.form.value.nomeConta).toBeFalsy();
+      expect(fixture.componentInstance.form.value.valor).toBeNull();
+      expect(alertas.success).toHaveBeenCalledOnceWith('Conta salva com sucesso!');
+
+      painel().fechar.emit();
+      expect(fechado).toHaveBeenCalledOnceWith(true);
+    });
+
+    it('"Salvar e criar outra" com o formulário inválido não pergunta nem grava', () => {
+      painel().salvarEOutra.emit();
+
+      expect(fixture.componentInstance.perguntandoCadastro).toBeFalse();
+      expect(service.criar).not.toHaveBeenCalled();
+    });
   });
 
   describe('pergunta "Cadastrar também em Contas?" (card #47)', () => {
@@ -113,6 +168,7 @@ describe('ModalNovaContasAPagarComponent', () => {
       salvarCadastrando();
 
       expect(service.criar).toHaveBeenCalledWith(jasmine.objectContaining({ cadastrarConta: true, nome: 'Presente' }));
+      expect(alertas.success).toHaveBeenCalledOnceWith('Conta salva com sucesso!');
       expect(fixture.componentInstance.perguntandoCadastro).toBeFalse();
     });
 

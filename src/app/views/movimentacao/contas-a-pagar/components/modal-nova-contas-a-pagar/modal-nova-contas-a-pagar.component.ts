@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { CategoryService } from 'src/app/core/services/category.service';
 import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
@@ -7,9 +7,16 @@ import { CategoriaDto } from 'src/app/core/models/categoria.model';
 import { finalize } from 'rxjs';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { diasVencimentoValidator, lerDiasVencimento } from 'src/app/core/utils/dias-vencimento';
+import { SharedModule } from 'src/app/shared/shared.module';
+import { AlertService } from 'src/app/shared/components/alert.service';
+import { iconeDe } from 'src/app/shared/ui/aparencia';
+import { CategoryIconComponent } from 'src/app/shared/ui/category-icon/category-icon.component';
 
+/** Nova conta em Contas a Pagar, no painel e nas seções do Cadastro de Contas (card #49). */
 @Component({
   selector: 'app-modal-nova-contas-a-pagar',
+  standalone: true,
+  imports: [SharedModule, CategoryIconComponent],
   templateUrl: './modal-nova-contas-a-pagar.component.html'
 })
 export class ModalNovaContasAPagarComponent implements OnInit {
@@ -21,6 +28,12 @@ export class ModalNovaContasAPagarComponent implements OnInit {
   categorias: CategoriaDto[] = [];
   /** Formulário válido, esperando a resposta de "Cadastrar também em Contas?" (card #47). */
   perguntandoCadastro = false;
+  /** O Salvar que abriu a pergunta foi o "Salvar e criar outra": depois de gravar, limpa e continua aberto. */
+  private criandoOutra = false;
+  /** Alguma conta já foi gravada pelo "Salvar e criar outra": ao fechar, o mês recarrega. */
+  private gravouAlguma = false;
+  readonly iconeDe = iconeDe;
+  private readonly alertService = inject(AlertService);
 
 
   form = this.fb.group({
@@ -44,16 +57,21 @@ export class ModalNovaContasAPagarComponent implements OnInit {
   }
 
   close(reload = false) {
-    this.closed.emit(reload);
+    this.closed.emit(reload || this.gravouAlguma);
   }
 
   /** Salvar: com o formulário válido, pergunta antes se a conta entra também no Cadastro de Contas (card #47). */
-  save() {
+  save(criarOutra = false) {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
+    this.criandoOutra = criarOutra;
     this.perguntandoCadastro = true;
+  }
+
+  salvarEOutra() {
+    this.save(true);
   }
 
   /** Resposta da pergunta: true = cria a conta junto (como antes); false = lançamento avulso só neste mês. */
@@ -75,7 +93,12 @@ export class ModalNovaContasAPagarComponent implements OnInit {
     this.contaMensalService.criar(payload)
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
-        next: () => this.close(true),
+        next: () => {
+          this.alertService.success('Conta salva com sucesso!');
+          if (!this.criandoOutra) return this.close(true);
+          this.gravouAlguma = true;
+          this.form.reset();
+        },
         error: e => alert(extrairMensagemErro(e, 'Erro ao salvar conta.'))
       });
   }

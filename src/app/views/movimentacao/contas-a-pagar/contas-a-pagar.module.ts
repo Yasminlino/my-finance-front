@@ -23,7 +23,6 @@ import { FabComponent } from 'src/app/shared/ui/fab/fab.component';
 @NgModule({
   declarations: [
     ContasAPagarComponent,
-    ModalNovaContasAPagarComponent,
   ],
   imports: [
     SharedModule,
@@ -36,6 +35,7 @@ import { FabComponent } from 'src/app/shared/ui/fab/fab.component';
     ToastModule,
     TooltipModule,
     ModalAdicionarEmLoteComponent,
+    ModalNovaContasAPagarComponent,
     ResumoMesComponent,
     BarraEdicaoComponent,
     TabelaContasComponent,

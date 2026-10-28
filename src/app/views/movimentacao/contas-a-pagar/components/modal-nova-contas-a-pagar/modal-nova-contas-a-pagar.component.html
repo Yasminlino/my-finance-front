@@ -1,35 +1,58 @@
-<mf-form-panel titulo="Adicionar nova conta" [salvando]="saving" (fechar)="close(false)" (salvar)="save()">
-  <form [formGroup]="form" class="flex flex-column gap-3" (ngSubmit)="save()">
-    <div class="flex flex-column gap-2">
-      <label for="cp-nome">Nome conta</label>
-      <input pInputText id="cp-nome" maxlength="120" formControlName="nomeConta" [class.ng-dirty]="erro('nomeConta')" />
-      <mf-field-error [control]="form.controls.nomeConta">Informe um nome válido.</mf-field-error>
-    </div>
+<mf-form-panel titulo="Nova conta" [salvando]="saving" [criarOutra]="true" (fechar)="close(false)" (salvar)="save()"
+  (salvarEOutra)="salvarEOutra()">
+  <form [formGroup]="form" class="flex flex-column gap-4" (ngSubmit)="save()">
+    <section class="flex flex-column gap-3">
+      <h6 class="mf-section-title m-0">Identificação</h6>
 
-    <div class="flex flex-column gap-2">
-      <label for="cp-valor">Valor</label>
-      <input pInputText id="cp-valor" type="text" inputmode="decimal" formControlName="valor" currencyInput
-        placeholder="0,00" [class.ng-dirty]="erro('valor')" />
-      <mf-field-error [control]="form.controls.valor">Informe um valor.</mf-field-error>
-    </div>
+      <div class="flex flex-column gap-2">
+        <label for="cp-nome" class="mf-label">Descrição <span class="text-red-500">*</span></label>
+        <input pInputText id="cp-nome" maxlength="120" formControlName="nomeConta" placeholder="Ex.: Internet"
+          [class.ng-dirty]="erro('nomeConta')" />
+        <mf-field-error [control]="form.controls.nomeConta">Informe uma descrição com pelo menos 2 letras.</mf-field-error>
+      </div>
 
-    <div class="flex flex-column gap-2">
-      <label for="cp-dia">Dias Vencimento</label>
-      <input pInputText id="cp-dia" formControlName="dataOperacao" inputmode="numeric" placeholder="Ex: 10 ou 5, 20"
-        [class.ng-dirty]="erro('dataOperacao')" />
-      <small *ngIf="!erro('dataOperacao')" class="mf-hint">
-        Um ou mais dias, separados por vírgula. Com mais de um, o valor é dividido entre eles.
-      </small>
-      <mf-field-error [control]="form.controls.dataOperacao">Informe dias de 1 a 31, sem repetir (ex.: 5, 20).</mf-field-error>
-    </div>
+      <div class="flex flex-column gap-2">
+        <label for="cp-categoria" class="mf-label">Categoria <span class="text-red-500">*</span></label>
+        <p-dropdown inputId="cp-categoria" formControlName="categoryId" [options]="categorias" optionLabel="nome"
+          optionValue="id" placeholder="Selecione..." appendTo="body" styleClass="w-full" [filter]="true"
+          filterBy="nome" [class.ng-dirty]="erro('categoryId')">
+          <ng-template pTemplate="selectedItem" let-categoria>
+            <span class="flex align-items-center gap-2">
+              <mf-category-icon [natureza]="categoria.naturezaOperacao" [cor]="categoria.cor" [icone]="iconeDe(categoria)" />
+              {{ categoria.nome }}
+            </span>
+          </ng-template>
+          <ng-template pTemplate="item" let-categoria>
+            <span class="flex align-items-center gap-2">
+              <mf-category-icon [natureza]="categoria.naturezaOperacao" [cor]="categoria.cor" [icone]="iconeDe(categoria)" />
+              {{ categoria.nome }}
+            </span>
+          </ng-template>
+        </p-dropdown>
+        <mf-field-error [control]="form.controls.categoryId">Selecione uma categoria.</mf-field-error>
+      </div>
+    </section>
 
-    <div class="flex flex-column gap-2">
-      <label for="cp-categoria">Categoria</label>
-      <p-dropdown inputId="cp-categoria" formControlName="categoryId" [options]="categorias" optionLabel="nome"
-        optionValue="id" placeholder="Selecione..." appendTo="body" styleClass="w-full"
-        [class.ng-dirty]="erro('categoryId')" />
-      <mf-field-error [control]="form.controls.categoryId">Selecione uma categoria.</mf-field-error>
-    </div>
+    <section class="flex flex-column gap-3">
+      <h6 class="mf-section-title m-0">Valor e vencimento</h6>
+
+      <div class="flex flex-column gap-2">
+        <label for="cp-valor" class="mf-label">Valor <span class="text-red-500">*</span></label>
+        <input pInputText id="cp-valor" type="text" inputmode="decimal" formControlName="valor" currencyInput
+          placeholder="0,00" [class.ng-dirty]="erro('valor')" />
+        <mf-field-error [control]="form.controls.valor">Informe um valor.</mf-field-error>
+      </div>
+
+      <div class="flex flex-column gap-2">
+        <label for="cp-dia" class="mf-label">Dias de vencimento <span class="text-red-500">*</span></label>
+        <input pInputText id="cp-dia" formControlName="dataOperacao" inputmode="numeric" placeholder="Ex.: 10 ou 5, 20"
+          [class.ng-dirty]="erro('dataOperacao')" />
+        <small *ngIf="!erro('dataOperacao')" class="mf-hint">
+          Um ou mais dias, separados por vírgula. Com mais de um, o valor é dividido entre eles.
+        </small>
+        <mf-field-error [control]="form.controls.dataOperacao">Informe dias de 1 a 31, sem repetir (ex.: 5, 20).</mf-field-error>
+      </div>
+    </section>
   </form>
 </mf-form-panel>
 
