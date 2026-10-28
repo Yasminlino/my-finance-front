@@ -1,7 +1,7 @@
 import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Location } from '@angular/common';
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { InputSwitch } from 'primeng/inputswitch';
 import { Subject, catchError, concat, concatMap, defaultIfEmpty, finalize, from, last, map, of, toArray } from 'rxjs';
 
@@ -18,6 +18,7 @@ import { ListaContasMovelComponent } from '../components/lista-contas-movel/list
 import { LarguraTelaService } from 'src/app/core/services/largura-tela.service';
 import { ResumoMes, resumoDoMes, statusAoPagar, vencimentoDe } from '../contas-a-pagar.regras';
 import { EdicaoContas } from '../edicao-contas';
+import { LoteAdicionado } from '../components/modal-adicionar-em-lote/modal-adicionar-em-lote.component';
 import { AparenciaCategoria, aparenciaDe } from 'src/app/shared/ui/aparencia';
 
 const CHAVE_MES = 'dataFiltroContaMensal';
@@ -30,7 +31,8 @@ const CHAVE_MES = 'dataFiltroContaMensal';
   selector: 'app-contas-a-pagar',
   templateUrl: './contas-a-pagar.component.html',
   styleUrls: ['./contas-a-pagar.component.scss'],
-  providers: [ConfirmationService]
+  // MessageService próprio: o aviso do lote (com Desfazer) sai no p-toast desta tela, não no global.
+  providers: [ConfirmationService, MessageService]
 })
 export class ContasAPagarComponent implements OnInit {
   @ViewChild(TabelaContasComponent) tabela?: TabelaContasComponent;
@@ -47,6 +49,7 @@ export class ContasAPagarComponent implements OnInit {
   private readonly exclusaoEmLote = inject(ExclusaoEmLoteService);
   private readonly confirmacao = inject(ConfirmationService);
   private readonly location = inject(Location);
+  private readonly mensagens = inject(MessageService);
 
   /** Mês pedido ("YYYY-MM"); a carga segue sempre o último. */
   private readonly mes$ = new Subject<string>();
@@ -77,6 +80,8 @@ export class ContasAPagarComponent implements OnInit {
   salvandoConta = false;
 
   showModalAdd = false;
+  /** Ids dos lançamentos que o último lote criou: a tabela e os cards destacam (card #48). */
+  destacados: ReadonlySet<number> = new Set();
   showModalCreate = false;
 
   ngOnInit(): void {
@@ -313,6 +318,39 @@ export class ContasAPagarComponent implements OnInit {
         },
         error: e => this.alertService.error(extrairMensagemErro(e, `Falha ao excluir a conta '${conta.nome}'.`))
       })
+    });
+  }
+
+  /** Lote gravado: recarrega, destaca os novos e oferece Desfazer por alguns segundos. */
+  aoAdicionarEmLote({ contas, ids }: LoteAdicionado): void {
+    this.loadMonth(this.dateFilter);
+    this.destacados = new Set(ids);
+    this.mensagens.clear('lote');
+    this.mensagens.add({
+      key: 'lote',
+      severity: 'success',
+      summary: contas === 1 ? '1 conta adicionada' : `${contas} contas adicionadas`,
+      detail: `Em ${this.nomeDoMes}.`,
+      life: 10000,
+      data: ids
+    });
+  }
+
+  /** Desfazer do aviso: exclui os lançamentos que o lote criou, um por vez, e conta as falhas. */
+  desfazerLote(ids: number[]): void {
+    this.mensagens.clear('lote');
+    from(ids).pipe(
+      concatMap(id => this.contaMensalService.excluir(id).pipe(map(() => true), catchError(() => of(false)))),
+      toArray()
+    ).subscribe(resultados => {
+      const excluidos = resultados.filter(Boolean).length;
+      this.destacados = new Set();
+      this.loadMonth(this.dateFilter);
+      if (excluidos === ids.length) {
+        this.alertService.success(`Lote desfeito: ${excluidos} ${excluidos === 1 ? 'lançamento excluído' : 'lançamentos excluídos'}.`);
+      } else {
+        this.alertService.error(`O lote foi desfeito só em parte: ${excluidos} de ${ids.length} lançamentos excluídos. Confira o mês.`);
+      }
     });
   }
 

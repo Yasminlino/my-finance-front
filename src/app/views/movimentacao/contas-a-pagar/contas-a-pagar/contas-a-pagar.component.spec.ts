@@ -185,6 +185,45 @@ describe('ContasAPagarComponent', () => {
     expect(alert.contrast).toHaveBeenCalledWith('Pagamento parcial', jasmine.stringContaining('1 de 2 contas'));
   });
 
+  describe('depois do Adicionar em lote (card #48)', () => {
+    const toast = () => document.querySelector('.toast-lote');
+
+    beforeEach(() => {
+      service.excluir.and.returnValue(of({}));
+      service.listarDoMes.calls.reset();
+      tela.aoAdicionarEmLote({ contas: 2, ids: [2, 3] });
+      fixture.detectChanges();
+    });
+
+    it('recarrega, destaca os lançamentos novos e avisa com Desfazer', () => {
+      expect(service.listarDoMes).toHaveBeenCalledTimes(1);
+      expect(document.getElementById('conta-2')!.classList).toContain('linha-nova');
+      expect(document.getElementById('conta-1')!.classList).not.toContain('linha-nova');
+      expect(toast()?.textContent).toContain('2 contas adicionadas');
+      expect(Array.from(toast()!.querySelectorAll('button')).some(b => b.textContent?.includes('Desfazer'))).toBeTrue();
+    });
+
+    it('Desfazer exclui os lançamentos criados, tira o destaque e recarrega', () => {
+      service.listarDoMes.calls.reset();
+
+      tela.desfazerLote([2, 3]);
+      fixture.detectChanges();
+
+      expect(service.excluir.calls.allArgs()).toEqual([[2], [3]]);
+      expect(tela.destacados.size).toBe(0);
+      expect(service.listarDoMes).toHaveBeenCalledTimes(1);
+      expect(alert.success).toHaveBeenCalledWith('Lote desfeito: 2 lançamentos excluídos.');
+    });
+
+    it('Desfazer com falha avisa quantos ficaram', () => {
+      service.excluir.and.callFake((id: number) => (id === 3 ? throwError(() => new Error('x')) : of({})));
+
+      tela.desfazerLote([2, 3]);
+
+      expect(alert.error).toHaveBeenCalledWith(jasmine.stringContaining('1 de 2'));
+    });
+  });
+
   describe('celular', () => {
     const el = () => fixture.nativeElement as HTMLElement;
 

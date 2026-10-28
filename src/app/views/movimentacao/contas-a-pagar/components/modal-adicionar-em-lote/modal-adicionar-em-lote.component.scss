@@ -1,0 +1,57 @@
+/* Card #48. O p-dialog fica dentro do host (sem appendTo), então o ::ng-deep alcança o que o PrimeNG desenha. */
+
+:host ::ng-deep .p-dialog.lote-dialog {
+  width: min(900px, 95vw);
+
+  .p-dialog-content { padding-bottom: 0.5rem; }
+  .p-dialog-footer { border-top: 1px solid var(--surface-border); padding-top: 0.75rem; }
+}
+
+/* Celular: tela cheia, rodapé com o resumo sempre à vista. */
+:host ::ng-deep .p-dialog.lote-dialog-movel {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  border-radius: 0;
+
+  .p-dialog-header, .p-dialog-content, .p-dialog-footer { border-radius: 0; }
+  .p-dialog-content { flex: 1 1 auto; padding: 0 0.75rem 0.5rem; }
+  .p-dialog-footer { padding: 0.75rem; }
+  .lote-acoes, .lote-acoes p-button { width: 100%; }
+}
+
+.lote-aviso {
+  background: var(--mf-tag-info-bg);
+  color: var(--mf-tag-info-fg);
+  font-size: 0.875rem;
+}
+
+:host ::ng-deep .lote-filtro-categorias { min-width: 11rem; }
+
+.lote-campo-valor { width: 8.5rem; }
+.lote-campo-dia { width: 9rem; }
+
+:host ::ng-deep .lote-selecionada > td { background: var(--highlight-bg); }
+
+.lote-grupo-desabilitadas {
+  background: var(--surface-ground);
+  border: 1px solid var(--surface-border);
+  color: var(--text-color-secondary);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover { background: var(--surface-hover); }
+}
+
+.lote-card.lote-selecionada {
+  background: var(--highlight-bg);
+  border-color: var(--primary-color) !important;
+}
+
+.lote-marca { font-size: 1.15rem; color: var(--text-color-secondary); }
+.lote-selecionada .lote-marca { color: var(--primary-color); }
+
+.lote-rodape { width: 100%; }

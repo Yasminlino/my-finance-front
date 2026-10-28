@@ -4,6 +4,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { MenuModule } from 'primeng/menu';
 import { SplitButtonModule } from 'primeng/splitbutton';
+import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ContasAPagarRoutingModule } from './contas-a-pagar-routing.module';
@@ -18,13 +19,10 @@ import { EditarContaSheetComponent } from './components/editar-conta-sheet/edita
 import { SharedModule } from 'src/app/shared/shared.module';
 import { PageHeaderComponent } from 'src/app/shared/ui/page-header/page-header.component';
 import { FabComponent } from 'src/app/shared/ui/fab/fab.component';
-// A tela não usa mais o data-grid; a modal "Adicionar em lote" ainda usa.
-import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 
 @NgModule({
   declarations: [
     ContasAPagarComponent,
-    ModalAdicionarEmLoteComponent,
     ModalNovaContasAPagarComponent,
   ],
   imports: [
@@ -35,8 +33,9 @@ import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid
     InputSwitchModule,
     MenuModule,
     SplitButtonModule,
+    ToastModule,
     TooltipModule,
-    DataGridComponent,
+    ModalAdicionarEmLoteComponent,
     ResumoMesComponent,
     BarraEdicaoComponent,
     TabelaContasComponent,

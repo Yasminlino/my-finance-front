@@ -53,6 +53,8 @@ export class ListaContasMovelComponent implements OnChanges, OnDestroy, GridSele
   /** categoriaId → natureza, ícone e cor (cards #27 e #23). Vazio enquanto a tela carrega as categorias. */
   @Input() aparencias: ReadonlyMap<number, AparenciaCategoria> = new Map();
   @Input() loading = false;
+  /** Lançamentos recém-criados pelo lote (card #48): o card aparece destacado. */
+  @Input() destacados: ReadonlySet<number> = new Set();
 
   @Output() marcarPago = new EventEmitter<LinhaContasMensais[]>();
   @Output() excluir = new EventEmitter<LinhaContasMensais[]>();

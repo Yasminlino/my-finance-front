@@ -109,3 +109,12 @@
     width: 95vw;
   }
 }
+
+/* Lançamentos recém-criados pelo "Adicionar em lote" (card #48): destaque que some sozinho, na tabela e nos cards. */
+@keyframes mf-destaque-novo {
+  from { background-color: var(--highlight-bg); }
+  to { background-color: transparent; }
+}
+.linha-nova > td,
+.card-conta.linha-nova { animation: mf-destaque-novo 6s ease-out; }
+.linha-nova > td:first-child { box-shadow: inset 3px 0 0 var(--primary-color); }

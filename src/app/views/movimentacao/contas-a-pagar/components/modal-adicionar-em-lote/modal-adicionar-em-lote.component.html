@@ -1,12 +1,247 @@
-<p-dialog header="Adicionar contas em lote" [visible]="true" [modal]="true" [dismissableMask]="true" [draggable]="false"
-  styleClass="mf-dialog-md" (visibleChange)="close(false)">
-  <app-data-grid #grid [dataSource]="contas" [columns]="gridColumns" [exibeCampos]="exibirCampos" [loading]="loading"
-    [disabledRowIds]="disabledIds" (selectionChange)="onSelectionChange($event)">
-  </app-data-grid>
+<!-- Card #48: desktop num p-dialog de ~900px; celular em tela cheia (lote-dialog-movel). -->
+<p-dialog [header]="titulo" [visible]="true" [modal]="true" [draggable]="false" [resizable]="false"
+  [dismissableMask]="!movel()" [blockScroll]="true" (visibleChange)="close(false)"
+  [styleClass]="movel() ? 'lote-dialog lote-dialog-movel' : 'lote-dialog'">
+
+  <div class="lote-aviso flex align-items-start gap-2 p-2 mb-2 border-round">
+    <i class="pi pi-info-circle mt-1"></i>
+    <span>As contas entram no mês com o valor e o vencimento do cadastro. O que mudar aqui vale só para este mês.</span>
+  </div>
+
+  <div class="mf-tags-claras">
+    <mf-filter-bar>
+      <p-selectButton inicio [options]="opcoesFiltro" [(ngModel)]="filtro" optionLabel="label" optionValue="value"
+        [allowEmpty]="false" (onChange)="aoMudarFiltro()" [class.filtro-situacao-compacto]="movel()"
+        [class.w-full]="movel()">
+        <ng-template let-opcao pTemplate="item">
+          <span>{{ opcao.label }}</span>
+          <p-badge [value]="'' + opcao.contagem" severity="secondary" styleClass="ml-2" />
+        </ng-template>
+      </p-selectButton>
+
+      <p-iconField fim iconPosition="left" [class.flex-grow-1]="movel()" [class.min-w-0]="movel()">
+        <p-inputIcon styleClass="pi pi-search" />
+        <input pInputText type="text" placeholder="Buscar conta ou categoria..." [(ngModel)]="busca"
+          [class.w-full]="movel()" (ngModelChange)="aoMudarFiltro()" aria-label="Buscar conta" />
+      </p-iconField>
+      <ng-container ngProjectAs="[fim]">
+      @if (!movel()) {
+        <p-multiSelect [options]="opcoesCategoria" [(ngModel)]="categoriasSelecionadas" placeholder="Categorias"
+          [filter]="true" selectedItemsLabel="{0} categorias" [maxSelectedLabels]="1" appendTo="body"
+          (onChange)="aoMudarFiltro()" styleClass="lote-filtro-categorias" />
+        <p-button icon="pi pi-filter-slash" [text]="true" severity="secondary" pTooltip="Limpar filtros"
+          tooltipPosition="top" [disabled]="!temFiltro" (onClick)="limparFiltros()" ariaLabel="Limpar filtros" />
+      }
+      </ng-container>
+    </mf-filter-bar>
+
+    <div class="flex align-items-center justify-content-between gap-2 py-2">
+      <p-button [label]="todasValidasSelecionadas ? 'Desmarcar todas' : 'Selecionar todas válidas'"
+        [icon]="todasValidasSelecionadas ? 'pi pi-minus-circle' : 'pi pi-check-square'" [text]="true" size="small"
+        [disabled]="!validasExibidas.length" (onClick)="alternarTodasValidas()" />
+      <small class="mf-hint">{{ selecionadas.size }} selecionada(s)</small>
+    </div>
+
+    @if (!movel()) {
+      <!-- Desktop: tabela; a linha não é recriada ao editar (a regra muda o objeto no lugar). -->
+      <div class="lote-principal">
+        <p-table [value]="exibidas" dataKey="conta.id" [loading]="loading" [scrollable]="true" scrollHeight="45vh"
+          styleClass="p-datatable-sm lote-tabela">
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="width: 3rem"></th>
+              <th>Conta</th>
+              <th style="width: 13rem">Vencimento</th>
+              <th style="width: 9rem">Parcela</th>
+              <th style="width: 10rem" class="text-right">Valor do mês</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-linha>
+            <ng-container *ngTemplateOutlet="linhaTabela; context: { $implicit: linha }" />
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="5">
+                <mf-empty-state icone="pi pi-check-circle" titulo="Nenhuma conta para mostrar"
+                  [texto]="temFiltro ? 'Mude ou limpe os filtros.' : 'Todas as contas deste mês já foram lançadas.'" />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      @if (desabilitadas.length) {
+        <button type="button" class="lote-grupo-desabilitadas flex align-items-center gap-2 w-full p-2 mt-2 border-round"
+          [attr.aria-expanded]="grupoAberto" (click)="grupoAberto = !grupoAberto">
+          <i class="pi" [class.pi-chevron-right]="!grupoAberto" [class.pi-chevron-down]="grupoAberto"></i>
+          <span>Já lançadas e inativas ({{ desabilitadas.length }})</span>
+        </button>
+        @if (grupoAberto) {
+          <div class="lote-desabilitadas">
+            <p-table [value]="desabilitadas" dataKey="conta.id" [scrollable]="true" scrollHeight="25vh"
+              styleClass="p-datatable-sm lote-tabela">
+              <ng-template pTemplate="body" let-linha>
+                <ng-container *ngTemplateOutlet="linhaTabela; context: { $implicit: linha }" />
+              </ng-template>
+            </p-table>
+          </div>
+        }
+      }
+    } @else {
+      <!-- Celular: cards; tocar escolhe, a inválida abre o ajuste. -->
+      <div class="lote-principal flex flex-column gap-2">
+        @for (linha of exibidas; track linha.conta.id) {
+          <ng-container *ngTemplateOutlet="cardMovel; context: { $implicit: linha }" />
+        }
+        @if (!exibidas.length && !loading) {
+          <mf-empty-state icone="pi pi-check-circle" titulo="Nenhuma conta para mostrar"
+            [texto]="temFiltro ? 'Mude ou limpe a busca.' : 'Todas as contas deste mês já foram lançadas.'" />
+        }
+        @if (desabilitadas.length) {
+          <button type="button" class="lote-grupo-desabilitadas flex align-items-center gap-2 w-full p-2 border-round"
+            [attr.aria-expanded]="grupoAberto" (click)="grupoAberto = !grupoAberto">
+            <i class="pi" [class.pi-chevron-right]="!grupoAberto" [class.pi-chevron-down]="grupoAberto"></i>
+            <span>Já lançadas e inativas ({{ desabilitadas.length }})</span>
+          </button>
+          @if (grupoAberto) {
+            <div class="lote-desabilitadas flex flex-column gap-2">
+              @for (linha of desabilitadas; track linha.conta.id) {
+                <ng-container *ngTemplateOutlet="cardMovel; context: { $implicit: linha }" />
+              }
+            </div>
+          }
+        }
+      </div>
+    }
+  </div>
 
   <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
-    <p-button label="Salvar selecionados" icon="pi pi-check" [loading]="saving"
-      [disabled]="saving || selectedIds.size === 0" (onClick)="handleSave()" />
+    <div class="lote-rodape flex align-items-center justify-content-between gap-3 flex-wrap">
+      <div class="lote-totais flex flex-column align-items-start text-left">
+        <span class="font-semibold">Saldo do lote <span class="mf-valor" [class.text-red-500]="totais.saldo < 0">{{ saldoTexto }}</span></span>
+        <small class="mf-hint">Receitas {{ moeda(totais.receitas) }} · Despesas {{ moeda(totais.despesas) }}</small>
+      </div>
+      <div class="flex gap-2 lote-acoes">
+        @if (!movel()) {
+          <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
+        }
+        <p-button [label]="rotuloAdicionar" icon="pi pi-plus" [loading]="saving" [disabled]="saving || !totais.quantidade"
+          (onClick)="adicionar()" [styleClass]="movel() ? 'w-full' : ''" />
+      </div>
+    </div>
   </ng-template>
 </p-dialog>
+
+<!-- Linha da tabela (desktop), usada na lista principal e no grupo das desabilitadas. -->
+<ng-template #linhaTabela let-linha>
+  <tr [class.mf-row-inativa]="!escolhivel(linha)" [class.lote-selecionada]="selecionadas.has(linha.conta.id)">
+    <td>
+      <p-checkbox [binary]="true" [ngModel]="selecionadas.has(linha.conta.id)" (onChange)="alternar(linha)"
+        [disabled]="linha.situacao !== 'disponivel'" [ariaLabel]="'Selecionar ' + linha.conta.nome" />
+    </td>
+    <td>
+      <div class="flex align-items-center gap-2">
+        <mf-category-icon [natureza]="linha.aparencia.natureza" [cor]="linha.aparencia.cor" [icone]="linha.icone" />
+        <div class="min-w-0">
+          <div class="flex align-items-center gap-2">
+            <span class="lote-nome font-semibold">{{ linha.conta.nome }}</span>
+            @if (linha.situacao === 'lancada') { <p-tag value="Já lançada" severity="success" /> }
+            @if (linha.situacao === 'inativa') { <p-tag value="Inativa" severity="secondary" /> }
+          </div>
+          <small class="mf-hint">
+            {{ linha.conta.categoriaNome }} ·
+            <span [class.text-green-600]="linha.receita">{{ linha.receita ? 'Receita' : 'Despesa' }}</span>
+          </small>
+        </div>
+      </div>
+    </td>
+    <td>
+      @if (pedeDia(linha) && escolhivel(linha)) {
+        <input pInputText class="lote-campo-dia" inputmode="numeric" placeholder="Dia (ex.: 10)"
+          [class.ng-invalid]="!linha.dias.length" [class.ng-dirty]="!linha.dias.length"
+          [value]="linha.dias.join(', ')" (change)="informarDias(linha, $any($event.target).value)"
+          [attr.aria-label]="'Dia de vencimento de ' + linha.conta.nome" />
+      } @else if (linha.vencimento) {
+        <div class="flex flex-column">
+          <span>{{ linha.vencimento.dias }}</span>
+          <small [class]="'tom-' + linha.vencimento.tom">{{ linha.vencimento.relativo }}</small>
+        </div>
+      } @else {
+        <span class="mf-hint">—</span>
+      }
+    </td>
+    <td>
+      @if (linha.parcela) { <span class="white-space-nowrap">{{ linha.parcela }}</span> } @else { <span class="mf-hint">—</span> }
+    </td>
+    <td class="text-right">
+      @if (escolhivel(linha)) {
+        <input pInputText currencyInput inputmode="decimal" class="lote-campo-valor text-right"
+          [class.ng-invalid]="!(linha.valor > 0)" [class.ng-dirty]="!(linha.valor > 0)"
+          [ngModel]="linha.valor" (ngModelChange)="informarValor(linha, $event)"
+          [attr.aria-label]="'Valor do mês de ' + linha.conta.nome" />
+        @if (linha.motivo) { <small class="block text-orange-600 mt-1">{{ linha.motivo }}</small> }
+      } @else {
+        <span class="mf-valor">{{ moeda(linha.valor) }}</span>
+      }
+    </td>
+  </tr>
+</ng-template>
+
+<!-- Card do celular, usado na lista principal e no grupo das desabilitadas. -->
+<ng-template #cardMovel let-linha>
+  <div class="mf-list-card lote-card flex align-items-center gap-2 p-2 border-1 surface-border border-round"
+    [class.mf-row-inativa]="!escolhivel(linha)" [class.lote-selecionada]="selecionadas.has(linha.conta.id)"
+    [class.cursor-pointer]="escolhivel(linha)" role="button" [attr.tabindex]="escolhivel(linha) ? 0 : -1"
+    [attr.aria-pressed]="selecionadas.has(linha.conta.id)" (click)="escolhivel(linha) && tocarCard(linha)"
+    (keydown.enter)="escolhivel(linha) && tocarCard(linha)">
+    <i class="pi flex-shrink-0 lote-marca"
+      [class.pi-check-circle]="selecionadas.has(linha.conta.id)" [class.pi-circle]="!selecionadas.has(linha.conta.id)"></i>
+    <mf-category-icon [natureza]="linha.aparencia.natureza" [cor]="linha.aparencia.cor" [icone]="linha.icone" />
+    <div class="flex-grow-1 min-w-0 flex flex-column gap-1">
+      <span class="lote-nome font-semibold white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ linha.conta.nome }}</span>
+      <small class="mf-hint white-space-nowrap overflow-hidden text-overflow-ellipsis">
+        @if (linha.situacao === 'lancada') { Já lançada · }
+        @if (linha.situacao === 'inativa') { Inativa · }
+        @if (linha.motivo) { <span class="text-orange-600">{{ linha.motivo }}</span> · }
+        @if (linha.vencimento) { {{ linha.vencimento.dias }} · <span [class]="'tom-' + linha.vencimento.tom">{{ linha.vencimento.relativo }}</span> }
+        @if (linha.parcela) { · {{ linha.parcela }} }
+      </small>
+    </div>
+    <span class="mf-valor font-semibold white-space-nowrap" [class.text-green-600]="linha.receita">{{ moeda(linha.valor) }}</span>
+    @if (escolhivel(linha)) {
+      <div class="flex-shrink-0" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="secondary" (onClick)="abrirAjuste(linha)"
+          [ariaLabel]="'Ajustar ' + linha.conta.nome" />
+      </div>
+    }
+  </div>
+</ng-template>
+
+<!-- Celular: ajuste de uma conta só para este mês. -->
+<p-sidebar [visible]="!!emAjuste" (visibleChange)="!$event && (emAjuste = null)" position="bottom"
+  styleClass="lote-ajuste h-auto" [blockScroll]="true" appendTo="body">
+  <ng-template pTemplate="header">
+    <span class="font-semibold">{{ emAjuste?.conta?.nome }}</span>
+  </ng-template>
+  @if (emAjuste; as linha) {
+    <div class="flex flex-column gap-3">
+      <small class="mf-hint">Vale só para este mês; o cadastro da conta não muda.</small>
+      <div class="flex flex-column gap-2">
+        <label for="lote-ajuste-valor">Valor do mês</label>
+        <input pInputText id="lote-ajuste-valor" currencyInput inputmode="decimal" placeholder="0,00"
+          [(ngModel)]="valorEmAjuste" />
+      </div>
+      @if (pedeDia(linha)) {
+        <div class="flex flex-column gap-2">
+          <label for="lote-ajuste-dia">Dia de vencimento</label>
+          <input pInputText id="lote-ajuste-dia" inputmode="numeric" placeholder="Ex: 10 ou 5, 20" [(ngModel)]="diasEmAjuste" />
+          <small class="mf-hint">A conta não tem dia no cadastro.</small>
+        </div>
+      }
+      <div class="flex justify-content-end gap-2">
+        <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="emAjuste = null" />
+        <p-button label="Aplicar" icon="pi pi-check" (onClick)="aplicarAjuste()" />
+      </div>
+    </div>
+  }
+</p-sidebar>

@@ -30,7 +30,7 @@
 
     <app-resumo-mes class="block mb-3" [resumo]="resumo" />
 
-    <app-tabela-contas [contas]="contasMensais" [hoje]="hoje" [aparencias]="aparencias" [loading]="loading"
+    <app-tabela-contas [contas]="contasMensais" [hoje]="hoje" [aparencias]="aparencias" [loading]="loading" [destacados]="destacados"
       [edicao]="edicao" (marcarPago)="marcarComoPago($event)" (excluir)="excluir($event)" (editar)="editar($event)" />
   } @else {
     <!-- Celular: título com ⋮, mês em largura total, resumo em carrossel, cards e botão flutuante -->
@@ -53,7 +53,7 @@
 
     <app-resumo-mes class="block mb-3" [resumo]="resumo" [compacto]="true" />
 
-    <app-lista-contas-movel [contas]="contasMensais" [hoje]="hoje" [aparencias]="aparencias" [loading]="loading"
+    <app-lista-contas-movel [contas]="contasMensais" [hoje]="hoje" [aparencias]="aparencias" [loading]="loading" [destacados]="destacados"
       (marcarPago)="marcarComoPago($event)" (excluir)="excluir($event)" (editar)="editar($event)" />
 
     <mf-fab rotulo="Nova conta" (clique)="onOpenCreate()" />
@@ -63,12 +63,27 @@
   }
 
   <app-modal-adicionar-em-lote *ngIf="showModalAdd" [month]="selectedMonth" (closed)="showModalAdd = false"
-    (reload)="loadMonth(dateFilter)">
+    (adicionadas)="aoAdicionarEmLote($event)">
   </app-modal-adicionar-em-lote>
 
   <app-modal-nova-contas-a-pagar *ngIf="showModalCreate" [dataOperacao]="dateFilter"
     (closed)="showModalCreate = false; $event && loadMonth(dateFilter)">
   </app-modal-nova-contas-a-pagar>
+
+  <!-- Aviso do lote com Desfazer (card #48); o MessageService é o da tela. -->
+  <p-toast key="lote" styleClass="toast-lote" position="bottom-center">
+    <ng-template let-mensagem pTemplate="message">
+      <div class="flex align-items-center gap-3 w-full">
+        <i class="pi pi-check-circle text-2xl"></i>
+        <div class="flex-grow-1">
+          <div class="font-semibold">{{ mensagem.summary }}</div>
+          <small>{{ mensagem.detail }}</small>
+        </div>
+        <p-button label="Desfazer" icon="pi pi-undo" size="small" severity="secondary" [outlined]="true"
+          (onClick)="desfazerLote(mensagem.data)" />
+      </div>
+    </ng-template>
+  </p-toast>
 
   <p-confirmDialog [style]="{ width: '28rem' }" [breakpoints]="{ '576px': '95vw' }" />
 </div>

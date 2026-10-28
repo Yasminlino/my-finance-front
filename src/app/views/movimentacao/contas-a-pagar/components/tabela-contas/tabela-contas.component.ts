@@ -61,6 +61,8 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
   /** categoriaId → natureza, ícone e cor (cards #27 e #23). Vazio enquanto a tela carrega as categorias. */
   @Input() aparencias: ReadonlyMap<number, AparenciaCategoria> = new Map();
   @Input() loading = false;
+  /** Lançamentos recém-criados pelo lote (card #48): a linha aparece destacada. */
+  @Input() destacados: ReadonlySet<number> = new Set();
   /** Presente quando o modo edição está ligado. */
   @Input() edicao: EdicaoContas | null = null;
 

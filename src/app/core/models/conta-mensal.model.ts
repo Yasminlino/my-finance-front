@@ -43,7 +43,10 @@ export type TransacaoPayload = {
   parcelaAtual?: number | null;
   quantidadeParcelas?: number | null;
   observacao?: string | null;
-  diasVencimento?: number[];    // só na criação: uma transação por dia
+  /** Só na criação: uma transação por dia. Com contaId (lote, card #48), os dias só deste mês. */
+  diasVencimento?: number[];
+  /** Só na criação com contaId (lote, card #48): valor deste mês no lugar do da conta; o cadastro não muda. */
+  valorDoMes?: number;
   /** Só na criação sem conta (card #47): false = lançamento avulso deste mês; ausente/true = cadastra a conta junto. */
   cadastrarConta?: boolean;
 };

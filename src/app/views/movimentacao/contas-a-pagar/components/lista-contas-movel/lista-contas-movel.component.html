@@ -41,7 +41,7 @@
     @if (meta[conta.id]; as m) {
       <div class="card-conta" [attr.id]="'card-conta-' + conta.id" role="button" tabindex="0"
         [class.borda-atrasada]="m.situacao === 'atrasada'" [class.borda-receita]="m.receita && m.situacao !== 'atrasada'"
-        [class.selecionado]="marcada(conta.id)"
+        [class.selecionado]="marcada(conta.id)" [class.linha-nova]="destacados.has(conta.id)"
         (pointerdown)="iniciarToque(conta)" (pointerup)="cancelarToque()" (pointerleave)="cancelarToque()"
         (pointercancel)="cancelarToque()" (contextmenu)="$event.preventDefault()" (click)="tocar(conta)"
         (keydown.enter)="tocar(conta)">

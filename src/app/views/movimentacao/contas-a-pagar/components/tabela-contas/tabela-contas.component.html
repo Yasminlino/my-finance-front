@@ -163,7 +163,7 @@
           </tr>
         } @else {
           <!-- Linha de visualização (ou conta paga bloqueada no modo edição) -->
-          <tr [attr.id]="'conta-' + conta.id" [class.linha-paga]="m.situacao === 'paga'"
+          <tr [attr.id]="'conta-' + conta.id" [class.linha-paga]="m.situacao === 'paga'" [class.linha-nova]="destacados.has(conta.id)"
             [class.linha-bloqueada]="edicao && bloqueada(conta.id)">
             @if (!edicao) {
               <td><p-tableCheckbox [value]="conta" /></td>
