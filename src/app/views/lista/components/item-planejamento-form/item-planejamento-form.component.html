@@ -1,0 +1,77 @@
+<mf-form-panel [titulo]="titulo" [salvando]="saving" (fechar)="close()" (salvar)="save()">
+  <form [formGroup]="form" class="flex flex-column gap-4" (ngSubmit)="save()">
+    <div class="flex flex-column gap-2">
+      <label for="item-descricao" class="mf-label">Item <span class="text-red-500">*</span></label>
+      <input pInputText id="item-descricao" maxlength="200" formControlName="descricao" placeholder="Ex.: Arroz"
+        [class.ng-dirty]="form.controls.descricao.touched && form.controls.descricao.invalid" />
+      <mf-field-error [control]="form.controls.descricao">Informe o item.</mf-field-error>
+    </div>
+
+    @if (lista.usaQuantidade || lista.usaValor) {
+      <div class="grid">
+        @if (lista.usaQuantidade) {
+          <div class="col-12 sm:col-4 flex flex-column gap-2">
+            <label for="item-quantidade" class="mf-label">Quantidade <span class="text-red-500">*</span></label>
+            <p-inputNumber inputId="item-quantidade" formControlName="quantidade" [min]="1" [showButtons]="true"
+              buttonLayout="horizontal" decrementButtonIcon="pi pi-minus" incrementButtonIcon="pi pi-plus"
+              styleClass="w-full" inputStyleClass="w-full text-center"
+              [class.ng-dirty]="form.controls.quantidade.touched && form.controls.quantidade.invalid" />
+            <mf-field-error [control]="form.controls.quantidade">1 ou mais.</mf-field-error>
+          </div>
+        }
+        @if (lista.usaValor) {
+          <div class="col-12 flex flex-column gap-2" [class.sm:col-8]="lista.usaQuantidade">
+            <label for="item-valor" class="mf-label">{{ rotuloValor }}</label>
+            <p-inputNumber inputId="item-valor" formControlName="valor" mode="currency" currency="BRL" locale="pt-BR"
+              [min]="0" placeholder="Sem valor" styleClass="w-full" inputStyleClass="w-full"
+              [class.ng-dirty]="form.controls.valor.touched && form.controls.valor.invalid" />
+            <mf-field-error [control]="form.controls.valor">R$ 0,00 ou mais.</mf-field-error>
+          </div>
+        }
+      </div>
+      @if (lista.usaValor) {
+        <div class="flex justify-content-between align-items-center p-2 border-round surface-ground">
+          <span class="mf-hint">Total do item</span>
+          <span class="mf-valor font-semibold">{{ total === null ? 'Sem valor (fica fora da soma)' : moeda(total) }}</span>
+        </div>
+      }
+    }
+
+    @if (lista.usaData) {
+      <div class="grid">
+        <div class="col-12 sm:col-7 flex flex-column gap-2">
+          <label for="item-data" class="mf-label">Data</label>
+          <input pInputText type="date" id="item-data" formControlName="data" />
+        </div>
+        <div class="col-12 sm:col-5 flex flex-column gap-2">
+          <label for="item-hora" class="mf-label">Hora</label>
+          <input pInputText type="time" id="item-hora" formControlName="hora" />
+          <small class="mf-hint">Sem hora = dia todo.</small>
+        </div>
+      </div>
+      @if (repete) {
+        <p-message severity="info" styleClass="w-full justify-content-start"
+          text="Este item repete. A repetição continua como está; para mudá-la, use a agenda." />
+      }
+    }
+
+    @if (lista.usaObservacao) {
+      <div class="flex flex-column gap-2">
+        <label for="item-observacao" class="mf-label">Observação</label>
+        <textarea pInputTextarea id="item-observacao" rows="2" maxlength="500" formControlName="observacao" [autoResize]="true"></textarea>
+      </div>
+    }
+
+    <div class="flex align-items-center gap-2">
+      <p-inputSwitch inputId="item-feito" formControlName="feito" />
+      <label for="item-feito" class="m-0">Feito</label>
+    </div>
+
+    @if (item) {
+      <div class="flex justify-content-start">
+        <p-button data-acao="excluir-item" label="Excluir item" icon="pi pi-trash" severity="danger" [text]="true"
+          [disabled]="saving" (onClick)="excluir()" />
+      </div>
+    }
+  </form>
+</mf-form-panel>

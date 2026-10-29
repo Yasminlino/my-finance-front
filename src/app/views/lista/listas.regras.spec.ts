@@ -115,9 +115,8 @@ describe('listas.regras (card #63)', () => {
     });
   });
 
-  it('rotaDaLista abre a tela de hoje em /planejamento', () => {
-    expect(rotaDaLista(lista({ id: 5, usaValor: true }))).toEqual(['/planejamento', '5', 'orcamento']);
-    expect(rotaDaLista(lista({ id: 5, usaData: true }))).toEqual(['/planejamento', '5', 'cronograma']);
-    expect(rotaDaLista(lista({ id: 5 }))).toEqual(['/planejamento', '5', 'checagem']);
+  it('rotaDaLista abre a tela interna única, quaisquer que sejam os campos (card #66)', () => {
+    expect(rotaDaLista(lista({ id: 5, usaValor: true }))).toEqual(['/planejamento', '5']);
+    expect(rotaDaLista(lista({ id: 5, usaData: true }))).toEqual(['/planejamento', '5']);
   });
 });

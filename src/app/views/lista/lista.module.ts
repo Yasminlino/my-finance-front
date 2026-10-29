@@ -1,30 +1,9 @@
 import { NgModule } from '@angular/core';
 
 import { ListaRoutingModule } from './lista-routing.module';
-import { ListaDeChecagemComponent } from './steps/lista-de-checagem/lista-de-checagem.component';
-import { ListaDeCronogramaComponent } from './steps/lista-de-cronograma/lista-de-cronograma.component';
-import { ListaDeOrcamentoComponent } from './steps/lista-de-orcamento/lista-de-orcamento.component';
-import { ModalNovoItemListaComponent } from './components/modal-novo-item-lista/modal-novo-item-lista.component';
-import { SharedModule } from 'src/app/shared/shared.module';
-import { ModalItemChecagemComponent } from './components/modal-item-checagem/modal-item-checagem.component';
-import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
-import { TotaisSelecaoComponent } from 'src/app/shared/components/totais-selecao/totais-selecao.component';
-import { MessageModule } from 'primeng/message';
 
+/** As telas de Planejamento são standalone (cards #63 e #66); o módulo só carrega as rotas sob demanda. */
 @NgModule({
-  declarations: [
-    ListaDeChecagemComponent,
-    ListaDeCronogramaComponent,
-    ListaDeOrcamentoComponent,
-    ModalNovoItemListaComponent,
-    ModalItemChecagemComponent,
-  ],
-  imports: [
-    SharedModule,
-    ListaRoutingModule,    
-    DataGridComponent,
-    TotaisSelecaoComponent,
-    MessageModule
-  ]
+  imports: [ListaRoutingModule]
 })
 export class ListaModule { }

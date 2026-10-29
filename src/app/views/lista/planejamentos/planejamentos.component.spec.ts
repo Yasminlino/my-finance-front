@@ -122,7 +122,7 @@ describe('PlanejamentosComponent', () => {
       tela.abrir(ativos[0]);
       tela.abrirPasta();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/planejamento', '1', 'orcamento']);
+      expect(router.navigate).toHaveBeenCalledWith(['/planejamento', '1']);
       expect(router.navigate).toHaveBeenCalledWith(['/planejamento', 'arquivados']);
     });
 
@@ -183,7 +183,7 @@ describe('PlanejamentosComponent', () => {
       tela.abrirCriado(lista({ id: 9, usaData: true }));
       fixture.detectChanges();
       expect(el().querySelector('app-planejamento-form')).toBeNull();
-      expect(router.navigate).toHaveBeenCalledWith(['/planejamento', '9', 'cronograma']);
+      expect(router.navigate).toHaveBeenCalledWith(['/planejamento', '9']);
     });
   });
 

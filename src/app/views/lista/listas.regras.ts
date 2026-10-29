@@ -35,14 +35,9 @@ export type OrdemPlanejamento = 'RECENTES' | 'NOME';
 /** Qual resumo o card mostra: o primeiro que valer, nesta ordem. */
 export type TipoResumo = 'valor' | 'data' | 'progresso';
 
-/**
- * Tela de hoje que abre a lista, até a tela única do card #66: com Valor, a de orçamento;
- * com Data, a de cronograma; o resto, a de checagem.
- */
-export function rotaDaLista(lista: Pick<ListaDto, 'id' | 'usaValor' | 'usaData'>): string[] {
-  if (lista.usaValor) return ['/planejamento', String(lista.id), 'orcamento'];
-  if (lista.usaData) return ['/planejamento', String(lista.id), 'cronograma'];
-  return ['/planejamento', String(lista.id), 'checagem'];
+/** A tela interna única do planejamento (card #66), qualquer que sejam os campos. */
+export function rotaDaLista(lista: Pick<ListaDto, 'id'>): string[] {
+  return ['/planejamento', String(lista.id)];
 }
 
 /** Chips do card, na ordem do formulário; sem campo extra, "Só itens". */

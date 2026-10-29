@@ -1,0 +1,144 @@
+.planejamento-chip {
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 0.3rem 0.55rem;
+  border-radius: var(--mf-radius);
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  color: var(--text-color-secondary);
+}
+
+.planejamento-resumo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+
+  &--so-progresso { grid-template-columns: minmax(0, 22rem); }
+  @media (max-width: 767.98px) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+}
+
+:host ::ng-deep .planejamento-barra { height: 0.375rem; }
+
+/* Desktop: linhas em grade com as colunas dos campos ligados. */
+.planejamento-linha {
+  display: grid;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--surface-border);
+
+  &--cabecalho {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-color-secondary);
+    background: var(--surface-ground);
+  }
+}
+
+.planejamento-linha--feito .planejamento-linha__item {
+  text-decoration: line-through;
+  color: var(--text-color-secondary);
+}
+
+.planejamento-linha__item { min-width: 0; overflow-wrap: anywhere; }
+
+.planejamento-mais-valor {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--mf-primary);
+  cursor: pointer;
+  font: inherit;
+  &:hover { text-decoration: underline; }
+}
+
+.planejamento-grupo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--surface-ground);
+  color: var(--text-color-secondary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* Celular: cards com círculo de check. */
+.planejamento-card-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.planejamento-check {
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid var(--surface-border);
+  background: var(--surface-card);
+  color: transparent;
+  cursor: pointer;
+
+  &--feito { background: var(--mf-primary); border-color: var(--mf-primary); color: var(--primary-color-text); }
+  &:disabled { cursor: default; opacity: 0.6; }
+  &:focus-visible { outline: 2px solid var(--mf-primary); outline-offset: 2px; }
+}
+
+/* Celular: o adicionar fica fixo embaixo; a página ganha espaço para ele. */
+.planejamento-barra-adicionar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 900;
+}
+
+.planejamento--com-barra { padding-bottom: 5rem; }
+
+:host ::ng-deep .filtro-itens { display: flex; }
+:host ::ng-deep .filtro-itens .p-button { white-space: nowrap; }
+
+@media (max-width: 767.98px) {
+  :host ::ng-deep .mf-filter-bar__inicio { width: 100%; }
+  :host ::ng-deep p-selectbutton[inicio] { display: block; width: 100%; }
+  :host ::ng-deep .filtro-itens { width: 100%; }
+  :host ::ng-deep .filtro-itens .p-button { flex: 1; padding: 0.5rem 0.375rem; min-width: 0; font-size: 0.875rem; }
+  :host ::ng-deep .filtro-itens .p-badge { margin-left: 0.25rem !important; }
+}
+
+:host ::ng-deep .acao-planejamento .p-button-label { flex: 0 1 auto; text-align: left; }
+
+/* Celular: o ⋮ (ou Desarquivar) fica ao lado do título em vez de cair numa linha sozinho. */
+@media (max-width: 767.98px) {
+  /* As classes do PrimeFlex (flex-wrap) são !important. */
+  :host ::ng-deep .mf-page-header { flex-wrap: nowrap !important; align-items: flex-end !important; }
+  :host ::ng-deep .mf-page-header__acoes { flex-wrap: nowrap !important; flex-shrink: 0; }
+}
+
+/* Seleção em lote (parte 2). */
+.planejamento-linha--selecionada { background: var(--highlight-bg); }
+.planejamento-check--selecao { border-radius: var(--mf-radius); }
+
+.planejamento-barra-lote {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 950;
+}
+
+.planejamento-barra-lote__conteudo { max-width: 1200px; margin: 0 auto; }

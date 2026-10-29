@@ -159,7 +159,7 @@ export class PlanejamentoFormComponent implements OnInit {
   }
 
   moeda(valor: number): string {
-    return formatCurrencyBR(valor).replace(/ /g, ' ');
+    return formatCurrencyBR(valor).replace(/\s/g, ' ');
   }
 
   aoEscolherIcone(icone: string | null) {

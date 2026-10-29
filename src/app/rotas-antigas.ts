@@ -12,14 +12,15 @@ export const ROTAS_ANTIGAS: Routes = [
   { path: 'tipo-cartao', redirectTo: 'tipos-cartao', pathMatch: 'full' },
   { path: 'tipo-movimentacao', redirectTo: 'tipos-movimentacao', pathMatch: 'full' },
   { path: 'catalogos-listas', redirectTo: 'planejamento', pathMatch: 'full' },
-  { path: 'catalogos-listas/:id/checagem', redirectTo: 'planejamento/:id/checagem', pathMatch: 'full' },
-  { path: 'catalogos-listas/:id/cronograma', redirectTo: 'planejamento/:id/cronograma', pathMatch: 'full' },
-  { path: 'catalogos-listas/:id/orcamento', redirectTo: 'planejamento/:id/orcamento', pathMatch: 'full' },
-  // "Listas" virou "Planejamento" (card #63); /listas segue sendo o nome da API.
+  { path: 'catalogos-listas/:id/checagem', redirectTo: 'planejamento/:id', pathMatch: 'full' },
+  { path: 'catalogos-listas/:id/cronograma', redirectTo: 'planejamento/:id', pathMatch: 'full' },
+  { path: 'catalogos-listas/:id/orcamento', redirectTo: 'planejamento/:id', pathMatch: 'full' },
+  // "Listas" virou "Planejamento" (card #63) e as telas por tipo viraram uma só (card #66); /listas segue sendo o nome da API.
   { path: 'listas', redirectTo: 'planejamento', pathMatch: 'full' },
-  { path: 'listas/:id/checagem', redirectTo: 'planejamento/:id/checagem', pathMatch: 'full' },
-  { path: 'listas/:id/cronograma', redirectTo: 'planejamento/:id/cronograma', pathMatch: 'full' },
-  { path: 'listas/:id/orcamento', redirectTo: 'planejamento/:id/orcamento', pathMatch: 'full' },
+  { path: 'listas/:id', redirectTo: 'planejamento/:id', pathMatch: 'full' },
+  { path: 'listas/:id/checagem', redirectTo: 'planejamento/:id', pathMatch: 'full' },
+  { path: 'listas/:id/cronograma', redirectTo: 'planejamento/:id', pathMatch: 'full' },
+  { path: 'listas/:id/orcamento', redirectTo: 'planejamento/:id', pathMatch: 'full' },
   { path: 'extrato-bancario/ExtratoBancarioDetalhe', redirectTo: 'extrato-bancario/detalhes', pathMatch: 'full' },
   { path: 'extrato-bancario/RelatorioGastosMensais', redirectTo: 'extrato-bancario/relatorio', pathMatch: 'full' },
 ];

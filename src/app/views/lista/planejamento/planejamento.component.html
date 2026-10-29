@@ -1,0 +1,294 @@
+<div class="mf-pagina" [class.planejamento--com-barra]="(movel() && lista && !somenteLeitura) || selecionando">
+  <mf-page-header class="block mt-2 mb-3" [titulo]="lista?.nome ?? 'Planejamento'" [breadcrumb]="breadcrumb" [home]="home"
+    [mostrarVoltar]="true" (voltar)="voltar()">
+    @if (lista) {
+      <ng-container ngProjectAs="[acoes]">
+        @if (somenteLeitura) {
+          <p-button acoes label="Desarquivar" icon="pi pi-replay" (onClick)="desarquivar()" />
+        } @else if (!movel()) {
+          <p-button acoes label="Desmarcar todos" icon="pi pi-refresh" severity="secondary" [outlined]="true"
+            [disabled]="!resumo.feitos" (onClick)="desmarcarTodos()" />
+          <p-button acoes label="Duplicar" icon="pi pi-copy" severity="secondary" [outlined]="true" (onClick)="duplicar()" />
+          <p-button acoes label="Selecionar" icon="pi pi-check-square" severity="secondary" [outlined]="true"
+            [disabled]="!itens.length || selecionando" (onClick)="entrarSelecao()" />
+          <p-button acoes label="Novo item" icon="pi pi-plus" (onClick)="novoItem()" />
+        }
+        <p-button acoes icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Mais ações"
+          (onClick)="abrirMenu($event, menuPlanejamento)" />
+      </ng-container>
+    }
+  </mf-page-header>
+
+  @if (!lista && loading) {
+    <p-skeleton height="8rem" styleClass="mb-3" />
+    <p-skeleton height="20rem" />
+  }
+
+  @if (lista) {
+    <!-- Identidade: ícone na cor, chips dos campos e o atalho para os campos -->
+    <div class="planejamento-identidade flex flex-wrap align-items-center gap-2 mb-3">
+      <mf-category-icon [cor]="cor" [icone]="icone" />
+      @for (chip of chips; track chip) {
+        <span class="planejamento-chip">{{ chip }}</span>
+      }
+      @if (!somenteLeitura) {
+        <p-button label="Campos" icon="pi pi-sliders-h" [link]="true" size="small" (onClick)="abrirCampos()" />
+      }
+    </div>
+
+    @if (somenteLeitura) {
+      <p-message severity="warn" styleClass="w-full justify-content-start mb-3"
+        text="Planejamento arquivado: abre só para leitura. Desarquive para adicionar, marcar ou editar itens." />
+    }
+
+    <!-- Resumo -->
+    <div class="planejamento-resumo mb-3" [class.planejamento-resumo--so-progresso]="!lista.usaValor">
+      @if (lista.usaValor) {
+        <mf-stat-card rotulo="Total estimado" icone="pi pi-wallet" tom="info" [valor]="moeda(resumo.total)">
+          @if (resumo.semValor) { <small class="mf-hint">{{ resumo.semValor }} sem valor (fora da soma)</small> }
+        </mf-stat-card>
+        <mf-stat-card [rotulo]="'Já ' + rotuloFeitos.toLowerCase()" icone="pi pi-check" tom="receita" [valor]="moeda(resumo.ok)" />
+        <mf-stat-card rotulo="Falta" icone="pi pi-clock" tom="despesa" [valor]="moeda(resumo.falta)" />
+        @if (resumo.disponivel !== null) {
+          <mf-stat-card rotulo="Disponível" icone="pi pi-flag" [tom]="resumo.disponivel < 0 ? 'perigo' : 'neutro'"
+            [corDoValor]="resumo.disponivel < 0 ? 'perigo' : null" [destaque]="resumo.disponivel < 0"
+            [valor]="moeda(resumo.disponivel)">
+            <small class="mf-hint">Limite {{ moeda(lista.limite) }}</small>
+          </mf-stat-card>
+        }
+      }
+      <mf-stat-card rotulo="Progresso" icone="pi pi-chart-pie" tom="neutro" [valor]="resumo.percentual + '%'">
+        <small class="mf-hint block mb-1">{{ resumo.feitos }} de {{ resumo.itens }} {{ rotuloFeitos.toLowerCase() }}</small>
+        <p-progressBar [value]="resumo.percentual" [showValue]="false" styleClass="planejamento-barra" />
+      </mf-stat-card>
+    </div>
+
+    <div class="surface-card border-round shadow-1">
+      @if (!somenteLeitura && !movel()) {
+        <div class="p-3 border-bottom-1 surface-border">
+          <app-adicionar-item [lista]="lista" (adicionado)="aoAdicionar($event)" />
+        </div>
+      }
+
+      <mf-filter-bar>
+        <p-selectButton inicio [options]="opcoesFiltro" [(ngModel)]="filtro" optionLabel="label" optionValue="value"
+          [allowEmpty]="false" (onChange)="aplicar()" styleClass="filtro-itens">
+          <ng-template let-opcao pTemplate="item">
+            <span>{{ opcao.label }}</span>
+            <p-badge [value]="'' + opcao.contagem" severity="secondary" styleClass="ml-2" />
+          </ng-template>
+        </p-selectButton>
+        <p-iconField fim iconPosition="left" [class.flex-grow-1]="movel()" [class.min-w-0]="movel()">
+          <p-inputIcon styleClass="pi pi-search" />
+          <input pInputText type="text" placeholder="Buscar item..." [(ngModel)]="busca" (ngModelChange)="aplicar()"
+            aria-label="Buscar item" [class.w-full]="movel()" />
+        </p-iconField>
+        <span fim class="flex align-items-center gap-2">
+          <p-inputSwitch inputId="ocultar-feitos" [(ngModel)]="ocultarFeitos" (onChange)="aplicar()" />
+          <label for="ocultar-feitos" class="m-0 white-space-nowrap">Ocultar {{ rotuloFeitos.toLowerCase() }}</label>
+        </span>
+      </mf-filter-bar>
+
+      <ng-template #linha let-item>
+        @if (!movel()) {
+          <div class="planejamento-linha" [style.grid-template-columns]="colunas" [class.planejamento-linha--feito]="item.feito"
+            [class.planejamento-linha--selecionada]="selecionados.has(item.id)">
+            @if (selecionando) {
+              <p-checkbox [ngModel]="selecionados.has(item.id)" [binary]="true" (onChange)="alternarSelecao(item)"
+                [ariaLabel]="'Selecionar ' + item.descricao" styleClass="planejamento-selecao" />
+            } @else {
+              <p-checkbox [ngModel]="!!item.feito" [binary]="true" [disabled]="somenteLeitura" (onChange)="alternar(item)"
+                [ariaLabel]="(item.feito ? 'Desmarcar ' : 'Marcar ') + item.descricao" />
+            }
+            <span class="planejamento-linha__item" [class.cursor-pointer]="!somenteLeitura" (click)="tocarItem(item)">
+              {{ item.descricao }}
+              @if (repete(item)) { <i class="pi pi-sync mf-hint ml-1" title="Repete"></i> }
+            </span>
+            @if (lista.usaQuantidade) { <span class="text-center">{{ item.quantidade ?? 1 }}</span> }
+            @if (lista.usaValor) {
+              @if (item.valor === null || item.valor === undefined) {
+                <span class="text-right">
+                  @if (!somenteLeitura) {
+                    <button type="button" class="planejamento-mais-valor" (click)="editarItem(item)">+ valor</button>
+                  } @else { <span class="mf-hint">—</span> }
+                </span>
+                @if (valorUnitario) { <span class="text-right mf-hint">—</span> }
+              } @else {
+                @if (valorUnitario) { <span class="text-right mf-valor">{{ moeda(item.valor) }}</span> }
+                <span class="text-right mf-valor font-semibold">{{ moeda(totalDe(item)) }}</span>
+              }
+            }
+            @if (lista.usaData) { <span>{{ dataDe(item) }}</span> }
+            @if (lista.usaObservacao) {
+              <span class="mf-hint white-space-nowrap overflow-hidden text-overflow-ellipsis" [title]="item.observacao ?? ''">{{ item.observacao }}</span>
+            }
+            <span class="text-right">
+              @if (!somenteLeitura && !selecionando) {
+                <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="secondary" size="small"
+                  [ariaLabel]="'Editar ' + item.descricao" (onClick)="editarItem(item)" />
+              }
+            </span>
+          </div>
+        } @else {
+          <div class="planejamento-card-item" [class.planejamento-linha--feito]="item.feito"
+            [class.planejamento-linha--selecionada]="selecionados.has(item.id)"
+            (pointerdown)="iniciarToqueLongo(item)" (pointerup)="cancelarToqueLongo()" (pointerleave)="cancelarToqueLongo()"
+            (pointercancel)="cancelarToqueLongo()" (contextmenu)="$event.preventDefault()">
+            @if (selecionando) {
+              <button type="button" class="planejamento-check planejamento-check--selecao"
+                [class.planejamento-check--feito]="selecionados.has(item.id)" [attr.aria-label]="'Selecionar ' + item.descricao"
+                [attr.aria-pressed]="selecionados.has(item.id)" (click)="alternarSelecao(item)"><i class="pi pi-check"></i></button>
+            } @else {
+              <button type="button" class="planejamento-check" [class.planejamento-check--feito]="item.feito" [disabled]="somenteLeitura"
+                [attr.aria-label]="(item.feito ? 'Desmarcar ' : 'Marcar ') + item.descricao" [attr.aria-pressed]="!!item.feito"
+                (click)="alternar(item)"><i class="pi pi-check"></i></button>
+            }
+            <div class="flex-grow-1 min-w-0" [class.cursor-pointer]="!somenteLeitura" (click)="tocarItem(item)">
+              <div class="planejamento-linha__item">
+                {{ item.descricao }}
+                @if (repete(item)) { <i class="pi pi-sync mf-hint ml-1"></i> }
+              </div>
+              <small class="mf-hint">
+                @if (lista.usaQuantidade && lista.usaValor && item.valor !== null && item.valor !== undefined && lista.modoValor === 'UNITARIO') {
+                  {{ item.quantidade ?? 1 }} × {{ moeda(item.valor) }}
+                } @else if (lista.usaQuantidade) {
+                  {{ item.quantidade ?? 1 }} un.
+                }
+                @if (lista.usaData && item.data) { · {{ dataDe(item) }} }
+                @if (lista.usaObservacao && item.observacao) { · {{ item.observacao }} }
+              </small>
+            </div>
+            @if (lista.usaValor) {
+              <span class="mf-valor font-semibold white-space-nowrap">
+                @if (totalDe(item) === null) { <span class="mf-hint">+ valor</span> } @else { {{ moeda(totalDe(item)) }} }
+              </span>
+            }
+          </div>
+        }
+      </ng-template>
+
+      @if (!movel() && (pendentes.length || feitos.length)) {
+        <div class="planejamento-linha planejamento-linha--cabecalho" [style.grid-template-columns]="colunas">
+          <span></span>
+          <span>Item</span>
+          @if (lista.usaQuantidade) { <span class="text-center">Qtd</span> }
+          @if (lista.usaValor) {
+            @if (valorUnitario) {
+              <span class="text-right">Valor un.</span>
+              <span class="text-right">Total</span>
+            } @else {
+              <span class="text-right">Valor</span>
+            }
+          }
+          @if (lista.usaData) { <span>Data</span> }
+          @if (lista.usaObservacao) { <span>Observação</span> }
+          <span></span>
+        </div>
+      }
+
+      <div class="planejamento-itens">
+        @for (item of pendentes; track item.id) {
+          <ng-container [ngTemplateOutlet]="linha" [ngTemplateOutletContext]="{ $implicit: item }" />
+        }
+
+        @if (feitos.length) {
+          <button type="button" class="planejamento-grupo" [attr.aria-expanded]="feitosAbertos" (click)="feitosAbertos = !feitosAbertos">
+            <i class="pi" [class.pi-chevron-down]="feitosAbertos" [class.pi-chevron-right]="!feitosAbertos"></i>
+            {{ rotuloFeitos }} ({{ feitos.length }})
+          </button>
+          @if (feitosAbertos) {
+            @for (item of feitos; track item.id) {
+              <ng-container [ngTemplateOutlet]="linha" [ngTemplateOutletContext]="{ $implicit: item }" />
+            }
+          }
+        }
+
+        @if (!loading && !pendentes.length && !feitos.length) {
+          @if (temFiltro) {
+            <mf-empty-state icone="pi pi-search" titulo="Nenhum item encontrado" texto="Mude a busca ou o filtro." />
+            <div class="flex justify-content-center pb-4">
+              <p-button label="Limpar filtros" severity="secondary" [outlined]="true" (onClick)="limparFiltros()" />
+            </div>
+          } @else if (itens.length) {
+            <mf-empty-state icone="pi pi-check-circle" titulo="Tudo feito" texto="Os itens feitos estão ocultos." />
+          } @else {
+            <mf-empty-state icone="pi pi-list" titulo="Nenhum item ainda"
+              [texto]="somenteLeitura ? 'Este planejamento está vazio.' : 'Escreva no campo de adicionar e aperte Enter.'" />
+          }
+        }
+      </div>
+
+      @if (lista.usaValor && itens.length) {
+        <div class="planejamento-rodape flex justify-content-between align-items-center p-3 border-top-1 surface-border">
+          <span class="font-semibold">Total</span>
+          <span class="mf-valor text-xl font-bold">{{ moeda(resumo.total) }}</span>
+        </div>
+      }
+    </div>
+
+    @if (selecionando) {
+      <!-- Barra de lote: fixa embaixo enquanto há seleção (no celular, no lugar do adicionar) -->
+      <div class="planejamento-barra-lote surface-card border-top-1 surface-border shadow-2 p-2" role="toolbar" aria-label="Ações nos selecionados">
+        <div class="planejamento-barra-lote__conteudo flex flex-wrap align-items-center gap-2">
+          <span class="font-semibold">{{ selecionados.size }} {{ selecionados.size === 1 ? 'selecionado' : 'selecionados' }}</span>
+          @if (lista.usaValor && selecionados.size) {
+            <span class="mf-valor mf-hint">· {{ moeda(somaSelecionados) }}</span>
+          }
+          <p-button [label]="movel() ? 'Todos' : 'Selecionar todos'" [link]="true" size="small" (onClick)="selecionarTodos()" />
+          <span class="flex-grow-1"></span>
+          <p-button [label]="movel() ? '' : 'Marcar feito'" ariaLabel="Marcar feito" icon="pi pi-check" size="small" [disabled]="!selecionados.size"
+            (onClick)="marcarSelecionados(true)" />
+          <p-button [label]="movel() ? '' : 'Desmarcar'" ariaLabel="Desmarcar" icon="pi pi-refresh" size="small" severity="secondary" [outlined]="true"
+            [disabled]="!selecionados.size" (onClick)="marcarSelecionados(false)" />
+          <p-button [label]="movel() ? '' : 'Excluir'" ariaLabel="Excluir selecionados" icon="pi pi-trash" size="small" severity="danger" [outlined]="true"
+            [disabled]="!selecionados.size" (onClick)="excluirSelecionados()" />
+          <p-button icon="pi pi-times" size="small" [text]="true" severity="secondary" ariaLabel="Cancelar seleção"
+            (onClick)="sairSelecao()" />
+        </div>
+      </div>
+    } @else if (movel() && !somenteLeitura) {
+      <div class="planejamento-barra-adicionar surface-card border-top-1 surface-border p-2">
+        <app-adicionar-item [lista]="lista" (adicionado)="aoAdicionar($event)" />
+      </div>
+    }
+  }
+
+  <p-menu #menuPlanejamento [model]="itensMenu" [popup]="true" appendTo="body" />
+
+  @if (movel()) {
+    <p-sidebar [(visible)]="acoesAbertas" position="bottom" styleClass="h-auto" [blockScroll]="true">
+      <ng-template pTemplate="header"><span class="font-semibold">{{ lista?.nome }}</span></ng-template>
+      <div class="flex flex-column gap-1">
+        @for (acao of acoes(); track acao.rotulo) {
+          <p-button [label]="acao.rotulo" [icon]="acao.icone" [text]="true" [severity]="acao.perigo ? 'danger' : 'secondary'"
+            styleClass="acao-planejamento w-full justify-content-start" (onClick)="executarNoSheet(acao)" />
+        }
+      </div>
+    </p-sidebar>
+  }
+
+  @if (itemAberto && lista) {
+    <app-item-planejamento-form [lista]="lista" [item]="itemEditando" (closed)="fecharItem($event)" />
+  }
+  @if (camposAbertos && lista) {
+    <app-planejamento-form [registro]="lista" (closed)="fecharCampos($event)" />
+  }
+  @if (duplicando && lista) {
+    <app-duplicar-planejamento [lista]="lista" (fechado)="duplicando = false" (duplicado)="aoDuplicar($event)" />
+  }
+
+  <!-- Aviso com Desfazer (ações em lote, arquivar) ou Abrir (duplicar); o MessageService é o da tela. -->
+  <p-toast key="planejamento" position="bottom-center">
+    <ng-template let-mensagem pTemplate="message">
+      <div class="flex align-items-center gap-3 w-full">
+        <i class="pi pi-check-circle text-2xl"></i>
+        <div class="flex-grow-1">
+          <div class="font-semibold">{{ mensagem.summary }}</div>
+          <small>{{ mensagem.detail }}</small>
+        </div>
+        <p-button [label]="mensagem.data.rotulo" [icon]="mensagem.data.icone" size="small" severity="secondary" [outlined]="true"
+          (onClick)="acionarAviso(mensagem.data)" />
+      </div>
+    </ng-template>
+  </p-toast>
+</div>

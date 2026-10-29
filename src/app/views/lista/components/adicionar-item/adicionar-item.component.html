@@ -1,0 +1,15 @@
+<form [formGroup]="form" class="adicionar-item flex align-items-center gap-2" (ngSubmit)="adicionar()">
+  <span class="adicionar-item__mais"><i class="pi pi-plus"></i></span>
+  <input #campoDescricao pInputText class="flex-grow-1 min-w-0" formControlName="descricao" maxlength="200"
+    [placeholder]="placeholder" aria-label="Novo item" autocomplete="off" />
+  @if (lista.usaQuantidade) {
+    <p-inputNumber formControlName="quantidade" [min]="1" ariaLabel="Quantidade" styleClass="adicionar-item__qtd"
+      inputStyleClass="w-full text-center" prefix="× " (keydown.enter)="adicionar()" />
+  }
+  @if (lista.usaValor) {
+    <p-inputNumber formControlName="valor" mode="currency" currency="BRL" locale="pt-BR" [min]="0" ariaLabel="Valor"
+      placeholder="R$" styleClass="adicionar-item__valor" inputStyleClass="w-full" (keydown.enter)="adicionar()" />
+  }
+  <p-button type="submit" icon="pi pi-arrow-right" [rounded]="true" [loading]="saving" ariaLabel="Adicionar"
+    [disabled]="form.invalid" />
+</form>

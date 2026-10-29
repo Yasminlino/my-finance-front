@@ -1,0 +1,22 @@
+:host { display: block; }
+
+.adicionar-item__mais {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px dashed var(--surface-border);
+  color: var(--text-color-secondary);
+}
+
+:host ::ng-deep .adicionar-item__qtd { width: 5rem; flex-shrink: 0; }
+:host ::ng-deep .adicionar-item__valor { width: 8.5rem; flex-shrink: 0; }
+
+@media (max-width: 767.98px) {
+  .adicionar-item__mais { display: none; }
+  :host ::ng-deep .adicionar-item__qtd { width: 4rem; }
+  :host ::ng-deep .adicionar-item__valor { width: 6.5rem; }
+}
