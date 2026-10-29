@@ -18,7 +18,7 @@ export type TomStatCard = 'receita' | 'despesa' | 'info' | 'perigo' | 'neutro';
         <span class="mf-stat-card__icone" [ngClass]="'mf-stat-card__icone--' + tom"><i [class]="icone"></i></span>
         <div class="flex-grow-1 min-w-0">
           <div class="mf-stat-card__rotulo text-color-secondary text-sm">{{ rotulo }}</div>
-          <div class="mf-stat-card__valor mf-valor font-bold text-2xl"
+          <div class="mf-stat-card__valor mf-valor font-bold"
             [ngClass]="corDoValor ? 'mf-stat-card__valor--' + corDoValor : ''">{{ valor }}</div>
           <ng-content />
         </div>
@@ -41,6 +41,13 @@ export type TomStatCard = 'receita' | 'despesa' | 'info' | 'perigo' | 'neutro';
     .mf-stat-card__icone--info { background: var(--blue-100); color: var(--blue-700); }
     .mf-stat-card__icone--perigo { background: var(--red-100); color: var(--red-600); }
     .mf-stat-card__icone--neutro { background: var(--surface-200); color: var(--text-color-secondary); }
+    /* O valor encolhe com a tela para caber no card (ex.: "R$ 14.300,00" em dois cards por linha no celular). */
+    .mf-stat-card__valor { font-size: clamp(1rem, 4.2vw, 1.5rem); line-height: 1.25; overflow-wrap: anywhere; }
+    @media (max-width: 767.98px) {
+      :host ::ng-deep .mf-stat-card .p-card-body { padding: 0.75rem; }
+      .mf-stat-card__icone { width: 2rem; height: 2rem; font-size: 0.95rem; }
+      .gap-3 { gap: 0.5rem !important; }
+    }
     .mf-stat-card__valor--receita { color: var(--mf-receita); }
     .mf-stat-card__valor--perigo { color: var(--red-500); }
     :host ::ng-deep .mf-stat-card .p-card-body { padding: 1rem; }

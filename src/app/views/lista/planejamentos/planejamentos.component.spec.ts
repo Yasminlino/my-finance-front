@@ -140,7 +140,7 @@ describe('PlanejamentosComponent', () => {
     it('menu: Abrir, Editar, Duplicar, Arquivar e Excluir', () => {
       montar();
 
-      expect(tela.acoes(ativos[0]).map(a => a.rotulo)).toEqual(['Abrir', 'Editar', 'Duplicar', 'Arquivar', 'Excluir']);
+      expect(tela.acoes(ativos[0]).map(a => a.rotulo)).toEqual(['Abrir', 'Editar', 'Duplicar', 'Comparar com anterior', 'Arquivar', 'Excluir']);
     });
 
     it('arquivar recarrega e oferece Desfazer, que desarquiva sem novo aviso', () => {
@@ -208,7 +208,7 @@ describe('PlanejamentosComponent', () => {
     });
 
     it('menu: Abrir, Desarquivar e Excluir; desarquivar oferece Desfazer', () => {
-      expect(tela.acoes(arquivados[0]).map(a => a.rotulo)).toEqual(['Abrir', 'Desarquivar', 'Excluir']);
+      expect(tela.acoes(arquivados[0]).map(a => a.rotulo)).toEqual(['Abrir', 'Comparar com anterior', 'Desarquivar', 'Excluir']);
 
       const mensagens = fixture.debugElement.injector.get(MessageService);
       spyOn(mensagens, 'add').and.callThrough();

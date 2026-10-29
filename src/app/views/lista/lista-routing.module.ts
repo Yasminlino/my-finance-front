@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { PlanejamentoComponent } from './planejamento/planejamento.component';
+import { CompararComponent } from './comparar/comparar.component';
 import { PlanejamentosComponent } from './planejamentos/planejamentos.component';
 
 /**
@@ -11,6 +12,7 @@ const routes: Routes = [
   { path: '', component: PlanejamentosComponent },
   { path: 'arquivados', component: PlanejamentosComponent, data: { arquivados: true } },
   { path: ':id', component: PlanejamentoComponent },
+  { path: ':id/comparar', component: CompararComponent },
   { path: ':id/checagem', redirectTo: ':id', pathMatch: 'full' },
   { path: ':id/cronograma', redirectTo: ':id', pathMatch: 'full' },
   { path: ':id/orcamento', redirectTo: ':id', pathMatch: 'full' },

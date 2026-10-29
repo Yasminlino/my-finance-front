@@ -1,0 +1,76 @@
+.comparar-seletor { min-width: 14rem; flex: 1 1 14rem; max-width: 22rem; }
+.comparar-seta { padding-bottom: 0.75rem; }
+:host ::ng-deep .comparar-ligar__dropdown { min-width: 18rem; }
+
+.comparar-resumo,
+.comparar-destaques {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+
+  @media (max-width: 767.98px) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+}
+
+/* Cascata (desktop). */
+.comparar-cascata { position: relative; }
+.comparar-cascata svg { width: 100%; height: auto; display: block; }
+.comparar-cascata__zero { stroke: var(--surface-border); }
+.comparar-cascata__barra { cursor: default; outline: none; }
+.comparar-cascata__barra--total rect { fill: var(--mf-cor-azul-fg); }
+.comparar-cascata__barra--sobe rect { fill: var(--orange-500); }
+.comparar-cascata__barra--desce rect { fill: var(--green-500); }
+.comparar-cascata__barra--zero rect { fill: var(--surface-400); }
+.comparar-cascata__barra:hover rect,
+.comparar-cascata__barra:focus rect { opacity: 0.8; }
+.comparar-cascata__valor { font-size: 11px; font-weight: 600; fill: var(--text-color); }
+.comparar-cascata__rotulo { font-size: 11px; fill: var(--text-color-secondary); }
+.comparar-cascata__dica { position: absolute; top: 0; right: 0; min-width: 14rem; max-width: 20rem; z-index: 2; }
+
+/* Efeitos (celular): barras horizontais a partir do zero. */
+.comparar-efeito__trilho { height: 0.5rem; border-radius: var(--mf-radius); background: var(--surface-ground); overflow: hidden; }
+.comparar-efeito__barra { display: block; height: 100%; }
+.comparar-efeito__barra--sobe { background: var(--orange-500); }
+.comparar-efeito__barra--desce { background: var(--green-500); }
+.comparar-efeito__barra--zero { background: var(--surface-400); }
+
+/* Item a item. */
+.comparar-linha {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1.4fr) 8rem 8rem 7rem 5.5rem minmax(9rem, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--surface-border);
+
+  &--cabecalho { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-color-secondary); background: var(--surface-ground); }
+  &--rodape { font-weight: 600; background: var(--surface-ground); }
+}
+
+.comparar-card { padding: 0.75rem 1rem; border-bottom: 1px solid var(--surface-border); }
+
+.comparar-tag {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: var(--mf-radius);
+  background: var(--surface-ground);
+  color: var(--text-color-secondary);
+
+  &--sobe { background: var(--orange-100); color: var(--orange-700); }
+  &--desce { background: var(--green-100); color: var(--green-700); }
+  &--novo { background: var(--blue-100); color: var(--blue-700); }
+  &--saiu { background: var(--surface-200); color: var(--text-color); }
+}
+
+:host ::ng-deep .comparar-filtros { display: flex; flex-wrap: wrap; }
+
+@media (max-width: 767.98px) {
+  :host ::ng-deep .mf-filter-bar__inicio { width: 100%; }
+  :host ::ng-deep .comparar-filtros .p-button { padding: 0.4rem 0.5rem; font-size: 0.8rem; }
+  .comparar-seta { display: none; }
+  .comparar-seletor { max-width: none; }
+}
+
+@media print {
+  .comparar-cascata__dica { display: none; }
+  .comparar-linha, .comparar-card { break-inside: avoid; }
+}

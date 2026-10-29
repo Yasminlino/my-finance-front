@@ -248,7 +248,7 @@ describe('PlanejamentoComponent', () => {
     expect(el().querySelector('app-adicionar-item')).toBeNull();
     expect(el().querySelector('.planejamento-mais-valor')).toBeNull();
     expect(texto()).toContain('Desarquivar');
-    expect(tela.acoes().map(a => a.rotulo)).toEqual(['Desarquivar', 'Compartilhar pendentes', 'Exportar CSV', 'Excluir planejamento']);
+    expect(tela.acoes().map(a => a.rotulo)).toEqual(['Desarquivar', 'Comparar com anterior', 'Compartilhar pendentes', 'Exportar CSV', 'Excluir planejamento']);
 
     tela.alternar(tela.itens[0]);
     tela.editarItem(tela.itens[0]);
@@ -264,7 +264,7 @@ describe('PlanejamentoComponent', () => {
     tela.voltar();
 
     expect(router.navigate).toHaveBeenCalledWith(['/planejamento']);
-    expect(tela.acoes().map(a => a.rotulo)).toEqual(['Campos e aparência', 'Selecionar itens', 'Compartilhar pendentes', 'Exportar CSV', 'Excluir concluídos', 'Arquivar', 'Excluir planejamento']);
+    expect(tela.acoes().map(a => a.rotulo)).toEqual(['Campos e aparência', 'Selecionar itens', 'Comparar com anterior', 'Compartilhar pendentes', 'Exportar CSV', 'Excluir concluídos', 'Arquivar', 'Excluir planejamento']);
   });
 
   it('excluir o planejamento confirma com os itens e volta para Meus planejamentos', async () => {

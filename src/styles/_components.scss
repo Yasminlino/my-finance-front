@@ -122,3 +122,10 @@
 /* Item "Excluir" dos menus ⋮ (p-menu popup vai para o body; Categorias e Planejamento). */
 .item-excluir .p-menuitem-text,
 .item-excluir .p-menuitem-icon { color: var(--red-500); }
+
+/* Impressão (Comparar planejamentos, card #68: "Imprimir / salvar PDF"): só o conteúdo da tela. */
+@media print {
+  app-header, p-toast, .nao-imprimir, .mf-page-header .p-button, mf-fab { display: none !important; }
+  body { background: none; }
+  .shadow-1, .shadow-2 { box-shadow: none !important; }
+}

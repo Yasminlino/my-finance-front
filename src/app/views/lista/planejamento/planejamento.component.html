@@ -286,6 +286,10 @@
           <div class="font-semibold">{{ mensagem.summary }}</div>
           <small>{{ mensagem.detail }}</small>
         </div>
+        @if (mensagem.data.segundo; as segundo) {
+          <p-button [label]="segundo.rotulo" [icon]="segundo.icone" size="small" severity="secondary" [text]="true"
+            (onClick)="acionarAviso(segundo)" />
+        }
         <p-button [label]="mensagem.data.rotulo" [icon]="mensagem.data.icone" size="small" severity="secondary" [outlined]="true"
           (onClick)="acionarAviso(mensagem.data)" />
       </div>

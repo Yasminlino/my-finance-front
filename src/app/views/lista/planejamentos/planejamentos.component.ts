@@ -47,6 +47,8 @@ interface BotaoDoAviso {
   rotulo: string;
   icone: string;
   acao: () => void;
+  /** Segundo botão (ex.: "Ver comparação" depois de duplicar, card #68). */
+  segundo?: BotaoDoAviso;
 }
 
 /** Quantos nomes o card da pasta Arquivados mostra. */
@@ -203,15 +205,23 @@ export class PlanejamentosComponent implements OnInit {
   acoes(lista: ListaDto): AcaoPlanejamento[] {
     const abrir: AcaoPlanejamento = { rotulo: 'Abrir', icone: 'pi pi-external-link', executar: l => this.abrir(l) };
     const excluir: AcaoPlanejamento = { rotulo: 'Excluir', icone: 'pi pi-trash', perigo: true, executar: l => this.excluir(l) };
+    // Comparar só lê: vale também nos arquivados (card #68).
+    const comparar: AcaoPlanejamento = { rotulo: 'Comparar com anterior', icone: 'pi pi-chart-bar', executar: l => this.comparar(l) };
     if (this.arquivados || lista.arquivadaEm)
-      return [abrir, { rotulo: 'Desarquivar', icone: 'pi pi-replay', executar: l => this.desarquivar(l) }, excluir];
+      return [abrir, comparar, { rotulo: 'Desarquivar', icone: 'pi pi-replay', executar: l => this.desarquivar(l) }, excluir];
     return [
       abrir,
       { rotulo: 'Editar', icone: 'pi pi-pencil', executar: l => this.editar(l) },
       { rotulo: 'Duplicar', icone: 'pi pi-copy', executar: l => this.duplicar(l) },
+      comparar,
       { rotulo: 'Arquivar', icone: 'pi pi-inbox', executar: l => this.arquivar(l) },
       excluir
     ];
+  }
+
+  /** Comparar planejamentos (card #68): sem `com`, a API escolhe o anterior da série. */
+  comparar(lista: ListaDto) {
+    this.router.navigate(['/planejamento', String(lista.id), 'comparar']);
   }
 
   /** ⋮ no desktop (p-menu popup); no celular, bottom sheet com as mesmas ações. */
@@ -284,7 +294,10 @@ export class PlanejamentosComponent implements OnInit {
   /** A cópia entra em Meus planejamentos; o aviso oferece abrir. */
   aoDuplicar(copia: ListaDto) {
     this.duplicando = null;
-    this.avisar('Planejamento duplicado', `"${copia.nome}" foi criado.`, { rotulo: 'Abrir', icone: 'pi pi-external-link', acao: () => this.abrir(copia) });
+    this.avisar('Planejamento duplicado', `"${copia.nome}" foi criado.`, {
+      rotulo: 'Abrir', icone: 'pi pi-external-link', acao: () => this.abrir(copia),
+      segundo: { rotulo: 'Ver comparação', icone: 'pi pi-chart-bar', acao: () => this.comparar(copia) }
+    });
     this.load();
   }
 

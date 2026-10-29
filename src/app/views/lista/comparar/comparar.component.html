@@ -1,0 +1,196 @@
+<div class="mf-pagina">
+  <mf-page-header class="block mt-2 mb-3" titulo="Comparar" [subtitulo]="lista?.nome" [breadcrumb]="breadcrumb" [home]="home"
+    [mostrarVoltar]="true" (voltar)="voltar()">
+    @if (comparacao) {
+      <ng-container ngProjectAs="[acoes]">
+        <p-button acoes [label]="movel() ? '' : 'Exportar CSV'" icon="pi pi-download" severity="secondary" [outlined]="true"
+          ariaLabel="Exportar CSV" (onClick)="exportarCsv()" styleClass="nao-imprimir" />
+        <p-button acoes [label]="movel() ? '' : 'Imprimir / PDF'" icon="pi pi-print" severity="secondary" [outlined]="true"
+          ariaLabel="Imprimir ou salvar PDF" (onClick)="imprimir()" styleClass="nao-imprimir" />
+      </ng-container>
+    }
+  </mf-page-header>
+
+  @if (loading && !comparacao) {
+    <p-skeleton height="6rem" styleClass="mb-3" />
+    <p-skeleton height="16rem" />
+  }
+
+  @if (semAnterior && !loading) {
+    <div class="surface-card border-round shadow-1 p-3">
+      <mf-empty-state icone="pi pi-chart-bar" titulo="Nada para comparar ainda"
+        texto="Este planejamento não tem um anterior na série. Duplique-o no fim do mês ou ligue-o a um planejamento antigo." />
+      @if (candidatos.length) {
+        <div class="comparar-ligar flex flex-wrap justify-content-center align-items-center gap-2 pb-3">
+          <p-dropdown [options]="candidatos" [(ngModel)]="ligarCom" optionLabel="nome" optionValue="id" placeholder="Escolha o planejamento anterior"
+            [filter]="true" filterBy="nome" appendTo="body" styleClass="comparar-ligar__dropdown" ariaLabel="Planejamento anterior" />
+          <p-button label="Ligar a este" icon="pi pi-link" [disabled]="!ligarCom" (onClick)="ligarSerie()" />
+        </div>
+      }
+    </div>
+  }
+
+  @if (comparacao) {
+    <!-- Seletores -->
+    <div class="comparar-seletores surface-card border-round shadow-1 p-3 mb-3 flex flex-wrap align-items-end gap-3">
+      <div class="flex flex-column gap-1 comparar-seletor">
+        <label class="mf-hint" for="comparar-anterior">Anterior</label>
+        <p-dropdown inputId="comparar-anterior" [options]="opcoesSerie" [ngModel]="com" optionLabel="label" optionValue="value"
+          appendTo="body" styleClass="w-full" (onChange)="trocarAnterior($event.value)" />
+      </div>
+      <i class="pi pi-arrow-right mf-hint comparar-seta"></i>
+      <div class="flex flex-column gap-1 comparar-seletor">
+        <label class="mf-hint" for="comparar-atual">Atual</label>
+        <p-dropdown inputId="comparar-atual" [options]="opcoesSerie" [ngModel]="id" optionLabel="label" optionValue="value"
+          appendTo="body" styleClass="w-full" (onChange)="trocarAtual($event.value)" />
+      </div>
+      <p-selectButton [options]="opcoesBase" [(ngModel)]="base" optionLabel="label" optionValue="value" [allowEmpty]="false"
+        (onChange)="trocarBase()" styleClass="comparar-base" />
+      <span class="flex-grow-1"></span>
+      <p-button label="Sair da série" icon="pi pi-link" [link]="true" size="small" styleClass="nao-imprimir" (onClick)="sairDaSerie()" />
+    </div>
+
+    <!-- Resumo -->
+    <div class="comparar-resumo mb-3">
+      <mf-stat-card [rotulo]="comparacao.anterior.nome" icone="pi pi-history" tom="neutro" [valor]="moeda(comparacao.anterior.total)" />
+      <mf-stat-card [rotulo]="comparacao.atual.nome" icone="pi pi-calendar" tom="info" [valor]="moeda(comparacao.atual.total)" />
+      <mf-stat-card rotulo="Diferença" [icone]="comparacao.diferenca > 0 ? 'pi pi-arrow-up' : comparacao.diferenca < 0 ? 'pi pi-arrow-down' : 'pi pi-minus'"
+        [tom]="comparacao.diferenca > 0 ? 'despesa' : comparacao.diferenca < 0 ? 'receita' : 'neutro'" [valor]="moedaComSinal(comparacao.diferenca)">
+        <small class="mf-hint">{{ percentual(comparacao.percentual) }}</small>
+      </mf-stat-card>
+      <mf-stat-card rotulo="Itens" icone="pi pi-list" tom="neutro" [valor]="'+' + novos + ' / −' + sairam">
+        <small class="mf-hint">novos / saíram</small>
+      </mf-stat-card>
+    </div>
+
+    <!-- O que explica a diferença -->
+    <section class="surface-card border-round shadow-1 p-3 mb-3">
+      <h6 class="mf-section-title mt-0 mb-3">O que explica a diferença</h6>
+      @if (!movel()) {
+        <div class="comparar-cascata">
+          <svg viewBox="0 0 600 250" role="img" [attr.aria-label]="'De ' + moeda(comparacao.anterior.total) + ' para ' + moeda(comparacao.atual.total)">
+            <line x1="0" x2="600" [attr.y1]="y(0)" [attr.y2]="y(0)" class="comparar-cascata__zero" />
+            @for (b of barras; track b.chave; let i = $index) {
+              <g class="comparar-cascata__barra" [class]="'comparar-cascata__barra--' + b.tipo" tabindex="0"
+                (mouseenter)="barraAtiva = b" (mouseleave)="barraAtiva = null" (focus)="barraAtiva = b" (blur)="barraAtiva = null">
+                <rect [attr.x]="22 + i * 96" [attr.y]="topoBarra(b)" width="64" [attr.height]="alturaBarra(b)" rx="4" />
+                <text [attr.x]="54 + i * 96" [attr.y]="topoBarra(b) - 6" text-anchor="middle" class="comparar-cascata__valor">
+                  {{ b.tipo === 'total' ? moeda(b.valor) : moedaComSinal(b.valor) }}
+                </text>
+                <text [attr.x]="54 + i * 96" y="244" text-anchor="middle" class="comparar-cascata__rotulo">{{ b.rotulo }}</text>
+              </g>
+            }
+          </svg>
+          @if (barraAtiva && barraAtiva.tipo !== 'total') {
+            <div class="comparar-cascata__dica surface-card border-1 surface-border border-round shadow-2 p-2" role="status">
+              <div class="font-semibold mb-1">{{ barraAtiva.rotulo }}: {{ moedaComSinal(barraAtiva.valor) }}</div>
+              @for (item of itensDaBarra(barraAtiva).slice(0, 8); track item.descricao) {
+                <div class="flex justify-content-between gap-3 text-sm"><span>{{ item.descricao }}</span><span>{{ moedaComSinal(item.diferenca) }}</span></div>
+              } @empty {
+                <small class="mf-hint">Nenhum item neste grupo.</small>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <!-- Celular: barras horizontais a partir do zero, com sinal -->
+        <div class="flex flex-column gap-2">
+          @for (b of efeitos; track b.chave) {
+            <div class="comparar-efeito">
+              <div class="flex justify-content-between text-sm"><span>{{ b.rotulo }}</span><span class="font-semibold">{{ moedaComSinal(b.valor) }}</span></div>
+              <div class="comparar-efeito__trilho"><span class="comparar-efeito__barra" [class]="'comparar-efeito__barra--' + b.tipo" [style.width.%]="larguraEfeito(b)"></span></div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- Destaques -->
+    <section class="comparar-destaques mb-3">
+      @if (comparacao.destaques.maiorAltaPreco; as d) {
+        <div class="surface-card border-round shadow-1 p-3"><small class="mf-hint">Maior alta de preço</small>
+          <div class="font-semibold">{{ d.descricao }}</div><small>{{ percentual(d.percentual) }} · {{ moedaComSinal(d.diferenca) }}</small></div>
+      }
+      @if (comparacao.destaques.maiorImpacto; as d) {
+        <div class="surface-card border-round shadow-1 p-3"><small class="mf-hint">Maior impacto</small>
+          <div class="font-semibold">{{ d.descricao }}</div><small>{{ moedaComSinal(d.diferenca) }}</small></div>
+      }
+      @if (comparacao.destaques.maiorQueda; as d) {
+        <div class="surface-card border-round shadow-1 p-3"><small class="mf-hint">Maior queda</small>
+          <div class="font-semibold">{{ d.descricao }}</div><small>{{ moedaComSinal(d.diferenca) }}</small></div>
+      }
+      @if (comparacao.semValor.length) {
+        <div class="surface-card border-round shadow-1 p-3"><small class="mf-hint">Fora da conta (sem valor)</small>
+          <div class="text-sm">{{ comparacao.semValor.join(', ') }}</div></div>
+      }
+    </section>
+
+    <!-- Item a item -->
+    <section class="surface-card border-round shadow-1">
+      <mf-filter-bar>
+        <p-selectButton inicio [options]="opcoesFiltro" [(ngModel)]="filtro" optionLabel="label" optionValue="value"
+          [allowEmpty]="false" (onChange)="aplicar()" styleClass="comparar-filtros">
+          <ng-template let-opcao pTemplate="item">
+            <span>{{ opcao.label }}</span><p-badge [value]="'' + opcao.contagem" severity="secondary" styleClass="ml-2" />
+          </ng-template>
+        </p-selectButton>
+        <p-iconField fim iconPosition="left" [class.flex-grow-1]="movel()">
+          <p-inputIcon styleClass="pi pi-search" />
+          <input pInputText type="text" placeholder="Buscar item..." [(ngModel)]="busca" (ngModelChange)="aplicar()" aria-label="Buscar item"
+            [class.w-full]="movel()" />
+        </p-iconField>
+      </mf-filter-bar>
+
+      @if (!movel()) {
+        <div class="comparar-tabela" role="table" aria-label="Item a item">
+          <div class="comparar-linha comparar-linha--cabecalho" role="row">
+            <span role="columnheader">Item</span><span role="columnheader" class="text-right">Anterior</span>
+            <span role="columnheader" class="text-right">Atual</span><span role="columnheader" class="text-right">Diferença</span>
+            <span role="columnheader" class="text-right">%</span><span role="columnheader">Mudança</span>
+          </div>
+          @for (item of exibidos; track item.descricao) {
+            <div class="comparar-linha" role="row">
+              <span role="cell" class="font-medium">{{ item.descricao }}</span>
+              <span role="cell" class="text-right"><span class="block">{{ item.anterior?.total == null ? '—' : moeda(item.anterior?.total) }}</span>
+                <small class="mf-hint">{{ lado(item.anterior) }}</small></span>
+              <span role="cell" class="text-right"><span class="block">{{ item.atual?.total == null ? '—' : moeda(item.atual?.total) }}</span>
+                <small class="mf-hint">{{ lado(item.atual) }}</small></span>
+              <span role="cell" class="text-right font-semibold">{{ moedaComSinal(item.diferenca) }}</span>
+              <span role="cell" class="text-right">{{ percentual(item.percentual) }}</span>
+              <span role="cell" class="flex flex-wrap gap-1">
+                @for (t of tags(item); track t.rotulo) { <span class="comparar-tag" [class]="'comparar-tag--' + t.tom">{{ t.rotulo }}</span> }
+              </span>
+            </div>
+          } @empty {
+            <mf-empty-state icone="pi pi-search" titulo="Nenhum item neste filtro" texto="Troque o filtro ou a busca." />
+          }
+          @if (exibidos.length) {
+            <div class="comparar-linha comparar-linha--rodape" role="row">
+              <span role="cell">Total</span><span role="cell" class="text-right">{{ moeda(comparacao.anterior.total) }}</span>
+              <span role="cell" class="text-right">{{ moeda(comparacao.atual.total) }}</span>
+              <span role="cell" class="text-right">{{ moedaComSinal(comparacao.diferenca) }}</span>
+              <span role="cell" class="text-right">{{ percentual(comparacao.percentual) }}</span><span role="cell"></span>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="flex flex-column">
+          @for (item of exibidos; track item.descricao) {
+            <div class="comparar-card">
+              <div class="flex justify-content-between gap-2">
+                <span class="font-medium">{{ item.descricao }}</span>
+                <span class="font-semibold white-space-nowrap">{{ moedaComSinal(item.diferenca) }}</span>
+              </div>
+              <small class="mf-hint">{{ lado(item.anterior) }} → {{ lado(item.atual) }}</small>
+              <div class="flex flex-wrap gap-1 mt-1">
+                @for (t of tags(item); track t.rotulo) { <span class="comparar-tag" [class]="'comparar-tag--' + t.tom">{{ t.rotulo }}</span> }
+              </div>
+            </div>
+          } @empty {
+            <mf-empty-state icone="pi pi-search" titulo="Nenhum item neste filtro" texto="Troque o filtro ou a busca." />
+          }
+        </div>
+      }
+    </section>
+  }
+</div>

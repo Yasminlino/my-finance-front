@@ -55,6 +55,8 @@ interface BotaoDoAviso {
   rotulo: string;
   icone: string;
   acao: () => void;
+  /** Segundo botão (ex.: "Ver comparação" depois de duplicar, card #68). */
+  segundo?: BotaoDoAviso;
 }
 
 /**
@@ -518,7 +520,10 @@ export class PlanejamentoComponent implements OnInit {
   aoDuplicar(copia: ListaDto) {
     this.duplicando = false;
     this.avisar('Planejamento duplicado', `"${copia.nome}" foi criado.`,
-      { rotulo: 'Abrir', icone: 'pi pi-external-link', acao: () => this.router.navigate(rotaDaLista(copia)) });
+      {
+        rotulo: 'Abrir', icone: 'pi pi-external-link', acao: () => this.router.navigate(rotaDaLista(copia)),
+        segundo: { rotulo: 'Ver comparação', icone: 'pi pi-chart-bar', acao: () => this.router.navigate(['/planejamento', String(copia.id), 'comparar']) }
+      });
     this.load();
   }
 
@@ -573,6 +578,7 @@ export class PlanejamentoComponent implements OnInit {
   acoes(): AcaoDaTela[] {
     // Compartilhar e exportar só leem: valem também no arquivado.
     const leitura: AcaoDaTela[] = [
+      { rotulo: 'Comparar com anterior', icone: 'pi pi-chart-bar', executar: () => this.router.navigate(['/planejamento', String(this.id), 'comparar']) },
       { rotulo: 'Compartilhar pendentes', icone: 'pi pi-share-alt', executar: () => this.compartilharPendentes() },
       { rotulo: 'Exportar CSV', icone: 'pi pi-download', executar: () => this.exportarCsv() }
     ];

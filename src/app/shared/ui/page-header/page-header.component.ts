@@ -40,6 +40,8 @@ import { ButtonModule } from 'primeng/button';
       border: none;
       font-size: 0.8rem;
     }
+    /* Breadcrumb longo (ex.: Planejamento › Meus planejamentos › nome › Comparar) quebra linha no celular, sem rolagem lateral. */
+    :host ::ng-deep .p-breadcrumb .p-breadcrumb-list { flex-wrap: wrap; row-gap: 0.25rem; }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
