@@ -19,7 +19,7 @@ export class ModalItemChecagemComponent implements OnInit {
 
   @Output() closed = new EventEmitter<boolean>();
 
-  /** Formulário Reactive (FE-P2-10); "concluído" é a situação OK/PENDENTE do item. */
+  /** Formulário Reactive (FE-P2-10); "concluído" é o feito do item (card #67). */
   readonly form = this.fb.group({
     descricao: ['', [Validators.required, naoVazio]],
     quantidade: [1 as number | null, [Validators.required, Validators.min(1)]],
@@ -40,7 +40,7 @@ export class ModalItemChecagemComponent implements OnInit {
       this.form.patchValue({
         descricao: this.item.descricao ?? '',
         quantidade: this.item.quantidade ?? 1,
-        concluido: this.item.situacao === 'OK'
+        concluido: !!this.item.feito
       });
     }
   }
@@ -61,12 +61,12 @@ export class ModalItemChecagemComponent implements OnInit {
     }
 
     const { descricao, quantidade, concluido } = this.form.getRawValue();
-    const dados = { descricao: (descricao ?? '').trim(), quantidade: Number(quantidade), situacao: concluido ? 'OK' : 'PENDENTE' };
+    const dados = { descricao: (descricao ?? '').trim(), quantidade: Number(quantidade), feito: !!concluido };
 
     this.loading = true;
     this.errorMsg = '';
     // Fecha só se salvou.
-    (this.item ? this.service.atualizar({ ...this.item, ...dados }) : this.service.criar({ ...dados, listaId: this.listaId }))
+    (this.item ? this.service.atualizar(this.listaId, { ...this.item, ...dados }) : this.service.criar(this.listaId, dados))
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: () => this.fechar(true),

@@ -1,49 +1,42 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ListaService } from 'src/app/core/services/lista.service';
-import { ListaDto } from 'src/app/core/models/lista.model';
-import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
+import { ListaDto, ModeloLista } from 'src/app/core/models/lista.model';
 import { finalize } from 'rxjs';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
-import { OPCOES_ATIVO } from 'src/app/shared/utils/opcoes-status';
+import { CAMPOS_DO_MODELO } from '../../listas.regras';
 
-
-type AlertState = { type: 'success' | 'error' | ''; message: string };
+/**
+ * Nova/editar lista, provisório até o card #63: o tipo virou modelo, que pré-marca os campos dos itens.
+ * Editar sem trocar o modelo mantém os campos da lista; arquivar sai daqui (vai para o ⋮ no #63).
+ */
 @Component({
   selector: 'app-modal-nova-lista',
   templateUrl: './modal-nova-lista.component.html',
 })
 export class ModalNovaListaComponent implements OnInit {
   @Input() lista: ListaDto | null = null;
-  @Input() tiposCartao: TipoCartaoDto[] = []; 
   @Output() closed = new EventEmitter<boolean>();
 
-  
-  alert: AlertState = { type: '', message: '' };
-
   saving = false;
-  readonly opcoesStatus = OPCOES_ATIVO;
-  /** Cronograma (2) fica fora da criação, como antes. */
-  readonly opcoesTipo = [
-    { label: 'Checklist', value: 1 },
-    { label: 'Orçamento', value: 3 },
+  readonly opcoesModelo: { label: string; value: ModeloLista }[] = [
+    { label: 'Compras (quantidade + valor)', value: 'COMPRAS' },
+    { label: 'Orçamento (valor + limite)', value: 'ORCAMENTO' },
+    { label: 'Tarefas (só itens)', value: 'TAREFAS' },
+    { label: 'Agenda (data)', value: 'AGENDA' },
+    { label: 'Em branco', value: 'BRANCO' }
   ];
 
   form = this.fb.group({
     nome: ['', [Validators.required, Validators.minLength(2)]],
-    status: [true, [Validators.required]],
-    tipoMovimentacao: [null as number | null, [Validators.required]],
+    modelo: [null as ModeloLista | null, [Validators.required]],
   });
 
   constructor(private fb: FormBuilder, private listaService: ListaService) {}
 
   ngOnInit(): void {
     if (this.lista) {
-      this.form.patchValue({
-        nome: this.lista.nome,
-        status: this.lista.ativo,
-        tipoMovimentacao: this.lista.tipoMovimentacao ?? null,
-      });
+      this.form.patchValue({ nome: this.lista.nome, modelo: this.lista.modelo });
     }
   }
 
@@ -63,12 +56,13 @@ export class ModalNovaListaComponent implements OnInit {
       return;
     }
 
-    const payload = {
-      id: this.lista?.id || 0,
-      nome: this.form.value.nome!,
-      tipoMovimentacao: Number(this.form.value.tipoMovimentacao),
-      ativo: !!this.form.value.status,
-    };
+    const nome = this.form.value.nome!;
+    const modelo = this.form.value.modelo!;
+    // Modelo novo pré-marca os campos. O limite fica desligado: este formulário não pede o valor dele,
+    // e a API recusa limite ligado sem valor.
+    const payload = this.lista?.modelo === modelo
+      ? { ...this.lista, nome }
+      : { ...this.lista, ...CAMPOS_DO_MODELO[modelo], usaLimite: false, nome, modelo, id: this.lista?.id ?? 0 };
 
     this.saving = true;
     // Fecha só se salvou; antes o erro do create era engolido e o modal fechava igual.

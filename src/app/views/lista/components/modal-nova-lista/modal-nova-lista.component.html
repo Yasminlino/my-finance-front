@@ -8,16 +8,10 @@
     </div>
 
     <div class="flex flex-column gap-2">
-      <label for="lista-tipo">Tipo Lista</label>
-      <p-dropdown inputId="lista-tipo" formControlName="tipoMovimentacao" [options]="opcoesTipo"
-        placeholder="Selecione..." appendTo="body" styleClass="w-full" [class.ng-dirty]="erro('tipoMovimentacao')" />
-      <mf-field-error [control]="form.controls.tipoMovimentacao">Selecione um tipo de Lista.</mf-field-error>
-    </div>
-
-    <div class="flex flex-column gap-2">
-      <label for="lista-status">Status</label>
-      <p-dropdown inputId="lista-status" formControlName="status" [options]="opcoesStatus" appendTo="body"
-        styleClass="w-full" />
+      <label for="lista-modelo">Modelo</label>
+      <p-dropdown inputId="lista-modelo" formControlName="modelo" [options]="opcoesModelo"
+        placeholder="Selecione..." appendTo="body" styleClass="w-full" [class.ng-dirty]="erro('modelo')" />
+      <mf-field-error [control]="form.controls.modelo">Selecione um modelo.</mf-field-error>
     </div>
   </form>
 </mf-form-panel>

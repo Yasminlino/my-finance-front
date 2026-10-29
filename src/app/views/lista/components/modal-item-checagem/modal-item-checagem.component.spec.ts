@@ -29,7 +29,7 @@ describe('ModalItemChecagemComponent', () => {
   beforeEach(() => {
     service = jasmine.createSpyObj<ItemListaService>('ItemListaService', ['criar', 'atualizar']);
     service.criar.and.returnValue(of({ id: 30, listaId: 31, descricao: 'X' } as any));
-    service.atualizar.and.returnValue(of({}));
+    service.atualizar.and.returnValue(of({} as any));
     TestBed.configureTestingModule({
       declarations: [ModalItemChecagemComponent],
       imports: [SharedModule],
@@ -57,18 +57,18 @@ describe('ModalItemChecagemComponent', () => {
 
     modal.salvar();
 
-    expect(service.criar).toHaveBeenCalledOnceWith({ descricao: 'Pão', quantidade: 2, situacao: 'PENDENTE', listaId: 31 });
+    expect(service.criar).toHaveBeenCalledOnceWith(31, { descricao: 'Pão', quantidade: 2, feito: false });
     expect(fechado).toHaveBeenCalledOnceWith(true);
   });
 
-  it('editar um item concluído abre marcado e mantém OK ao salvar', () => {
-    abrir({ id: 7, listaId: 31, descricao: 'Pão', quantidade: 1, situacao: 'OK' });
+  it('editar um item concluído abre marcado e continua feito ao salvar', () => {
+    abrir({ id: 7, listaId: 31, descricao: 'Pão', quantidade: 1, feito: true });
 
     expect(modal.form.value.concluido).toBeTrue();
     modal.form.patchValue({ quantidade: 3 });
     modal.salvar();
 
-    expect(service.atualizar).toHaveBeenCalledOnceWith(jasmine.objectContaining({ id: 7, quantidade: 3, situacao: 'OK' }));
+    expect(service.atualizar).toHaveBeenCalledOnceWith(31, jasmine.objectContaining({ id: 7, quantidade: 3, feito: true }));
   });
 
   it('erro da API aparece no modal, que continua aberto', () => {

@@ -7,7 +7,7 @@ import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.se
 import { ListaService } from 'src/app/core/services/lista.service';
 import { ActivatedRoute } from '@angular/router';
 import { ItemListaService } from 'src/app/core/services/item-lista.service';
-import { TipoLista } from 'src/app/shared/enums/tipo-lista.enum';
+import { CamposDoItem } from '../../components/modal-novo-item-lista/modal-novo-item-lista.component';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { formatCurrencyBR } from 'src/app/core/utils/mask';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
@@ -33,18 +33,18 @@ export class ListaDeOrcamentoComponent implements OnInit {
   
   exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO, buttonViewLine: true };
   gridColumns: GridColumn<ItemListaDto>[] = [];
-  tipoLista = TipoLista.Orcamento;
+  /** Vem da lista (card #67); provisório até a tela única do card #66. */
+  campos: CamposDoItem = { usaQuantidade: false, usaData: false };
   lista: ItemListaDto[] = [];
   listaId: number = 0;
   titulo: string = 'Orçamento';
   breadcrumb = [{ label: 'Listas' }, { label: 'Orçamento' }]
 
   loading = false;
-  statusU: string[] = [];
+  /** AGUARDANDO não existe mais: virou pendente com "(aguardando)" na observação. */
   statusOptions: GridColumnOption[] = [
-    { label: 'OK', value: 'OK', classe: TagStatus.Success },
-    { label: 'AGUARDANDO', value: 'AGUARDANDO', classe: TagStatus.Warning },
-    { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Danger }
+    { label: 'OK', value: true, classe: TagStatus.Success },
+    { label: 'PENDENTE', value: false, classe: TagStatus.Danger }
   ];
 
   selectedTotals = { receita: 0, despesa: 0, saldo: 0, count: 0 };
@@ -54,8 +54,6 @@ export class ListaDeOrcamentoComponent implements OnInit {
 
 
   editing: ItemListaDto | null = null;
-  situacoes: string[] = [];
-  totalPorSituacao: { situacao: string | undefined; valorTotal: number; }[] = [];
 
   constructor(private itemListaService: ItemListaService, private listaService: ListaService, private readonly alertService: AlertService, private readonly exclusaoEmLote: ExclusaoEmLoteService, private readonly route: ActivatedRoute) { }
 
@@ -83,7 +81,7 @@ export class ListaDeOrcamentoComponent implements OnInit {
         width: "25%"
       },
       {
-        field: "situacao",
+        field: "feito",
         header: "STATUS",
         type: GridColumnTypeEnum.Select,
         options: this.statusOptions,
@@ -104,25 +102,11 @@ export class ListaDeOrcamentoComponent implements OnInit {
           this.itensLista = itens;
           this.lista = [...itens];
           this.titulo = lista?.nome ?? 'Orçamento';
+          this.campos = { usaQuantidade: !!lista?.usaQuantidade, usaData: !!lista?.usaData };
           this.applyFilters();
         },
         error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar os itens do orçamento.'))
       });
-  }
-
-  calculaTotal() {
-    const situacoesUnicas = Array.from(new Set(this.itensLista.map(i => i.situacao).filter(Boolean))) as string[];
-    this.statusU = situacoesUnicas;
-
-
-    this.totalPorSituacao = this.itensLista.some(item => item.valor)
-      ? situacoesUnicas.map(situacao => {
-        const valorTotal = this.itensLista
-          .filter(item => item.situacao === situacao)
-          .reduce((total, item) => total + (item.valor ?? 0), 0);
-        return { situacao, valorTotal };
-      })
-      : [];
   }
 
   applyFilters() {
@@ -135,9 +119,8 @@ export class ListaDeOrcamentoComponent implements OnInit {
 
     selectedItems.forEach((item) => {
       const val = item.valor || 0;
-      const sub = String(item.situacao || '').toLowerCase();
-      if (sub === 'ok') receita += val;
-      if (sub === "aguardando" || sub === "pendente") despesa += val;
+      if (item.feito) receita += val;
+      else despesa += val;
     });
 
     this.selectedTotals = { receita, despesa, saldo: receita - despesa, count: selectedItems.length };
@@ -169,7 +152,7 @@ export class ListaDeOrcamentoComponent implements OnInit {
     const ok = await this.confirmacao.confirmar(`Excluir o item "${c.descricao}"?`);
     if (!ok) return;
 
-    this.itemListaService.excluir(c.id).subscribe({
+    this.itemListaService.excluir(this.listaId, c.id).subscribe({
       next: () => {
         this.alertService.success('Item excluído com sucesso!');
         this.load();
@@ -180,7 +163,7 @@ export class ListaDeOrcamentoComponent implements OnInit {
 
   onDeleteSelected(rows: ItemListaDto[]) {
     this.exclusaoEmLote
-      .confirmarEExcluir(this.grid, rows, row => this.itemListaService.excluir(row.id), { singular: 'item', plural: 'itens' })
+      .confirmarEExcluir(this.grid, rows, row => this.itemListaService.excluir(this.listaId, row.id), { singular: 'item', plural: 'itens' })
       .subscribe(excluiu => {
         if (excluiu) this.load();
       });

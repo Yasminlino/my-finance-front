@@ -12,7 +12,7 @@
       <mf-field-error [control]="form.controls.descricao">Informe uma descrição válida.</mf-field-error>
     </div>
 
-    <div class="flex flex-column gap-2" *ngIf="tipoLista === 1 || tipoLista === 2">
+    <div class="flex flex-column gap-2" *ngIf="campos.usaQuantidade">
       <label for="item-quantidade">Quantidade</label>
       <input pInputText id="item-quantidade" type="number" min="1" formControlName="quantidade"
         [class.ng-dirty]="erro('quantidade')" />
@@ -33,20 +33,20 @@
     </div>
 
     <div class="flex flex-column gap-2">
-      <label for="item-status">Status</label>
-      <!-- Mesmo domínio do CHECK de ItemLista.Status (DB-P1-03). -->
-      <p-dropdown inputId="item-status" formControlName="status" [options]="opcoesStatus" appendTo="body"
+      <label for="item-feito">Status</label>
+      <!-- Feito ou pendente (card #67: AGUARDANDO virou "(aguardando)" na observação). -->
+      <p-dropdown inputId="item-feito" formControlName="feito" [options]="opcoesFeito" appendTo="body"
         styleClass="w-full" />
     </div>
 
-    <div class="grid" *ngIf="tipoLista === 2">
+    <div class="grid" *ngIf="campos.usaData">
       <div class="col-6 flex flex-column gap-2">
         <label for="item-data">Data Tarefa (opcional)</label>
-        <input pInputText id="item-data" type="date" formControlName="dataTarefa" />
+        <input pInputText id="item-data" type="date" formControlName="data" />
       </div>
       <div class="col-6 flex flex-column gap-2">
         <label for="item-horario">Horário (opcional)</label>
-        <input pInputText id="item-horario" type="time" formControlName="horarioTarefa" />
+        <input pInputText id="item-horario" type="time" formControlName="hora" />
       </div>
     </div>
   </form>

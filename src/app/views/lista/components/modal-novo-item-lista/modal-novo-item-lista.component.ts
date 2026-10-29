@@ -1,14 +1,15 @@
-import { Time } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 
-// Ajuste esses imports para o seu projeto
 import { ItemListaService } from 'src/app/core/services/item-lista.service';
-import { ItemListaDto } from 'src/app/core/models/lista.model';
+import { ItemListaDto, ListaDto } from 'src/app/core/models/lista.model';
 import { finalize } from 'rxjs';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 type AlertState = { type: 'success' | 'error' | ''; message: string };
+
+/** Campos da lista que este formulário respeita (provisório até o formulário dinâmico do card #66). */
+export type CamposDoItem = Pick<ListaDto, 'usaQuantidade' | 'usaData'>;
 
 @Component({
   selector: 'app-modal-novo-item-lista',
@@ -16,7 +17,8 @@ type AlertState = { type: 'success' | 'error' | ''; message: string };
 })
 export class ModalNovoItemListaComponent implements OnInit {
   @Input() listaId!: number;
-  @Input() tipoLista: number = 0;
+  /** Quantidade e data só aparecem se a lista usa esses campos. */
+  @Input() campos: CamposDoItem = { usaQuantidade: false, usaData: false };
 
   /** Se vier preenchido, a modal vira "Editar Item" */
   @Input() item: ItemListaDto | null = null;
@@ -25,11 +27,9 @@ export class ModalNovoItemListaComponent implements OnInit {
 
   alert: AlertState = { type: '', message: '' };
   saving = false;
-  /** Mesmo domínio do CHECK de ItemLista.Status (DB-P1-03). */
-  readonly opcoesStatus = [
-    { label: 'Pendente', value: 'PENDENTE' },
-    { label: 'Aguardando', value: 'AGUARDANDO' },
-    { label: 'Ok', value: 'OK' },
+  readonly opcoesFeito = [
+    { label: 'Pendente', value: false },
+    { label: 'Ok', value: true },
   ];
 
   form = this.fb.group({
@@ -37,9 +37,9 @@ export class ModalNovoItemListaComponent implements OnInit {
     quantidade: [1, [Validators.required, Validators.min(1)]],
     valor: [null as number | null], // opcional; número direto do currencyInput (FE-P2-10)
     observacao: [''],
-    status: ['PENDENTE', [Validators.required]], // PENDENTE | AGUARDANDO | OK
-    dataTarefa: [null as Date | null], // yyyy-mm-dd
-    horarioTarefa: [null as Time | null], // HH:mm
+    feito: [false],
+    data: [null as string | null], // yyyy-mm-dd
+    hora: [null as string | null], // HH:mm
   });
 
   constructor(private fb: FormBuilder, private itemListaService: ItemListaService) { }
@@ -52,12 +52,12 @@ export class ModalNovoItemListaComponent implements OnInit {
     if (this.item) {
       this.form.patchValue({
         descricao: this.item.descricao,
-        quantidade: this.item.quantidade,
+        quantidade: this.item.quantidade ?? 1,
         valor: this.item.valor ?? null,
-        observacao: this.item.observacao,
-        status: this.item.situacao ?? 'PENDENTE',
-        dataTarefa: this.item.dataTarefa ?? null,
-        horarioTarefa: this.item.horarioTarefa ?? null,
+        observacao: this.item.observacao ?? '',
+        feito: !!this.item.feito,
+        data: this.item.data ?? null,
+        hora: this.item.hora ?? null,
       });
     }
   }
@@ -83,18 +83,17 @@ export class ModalNovoItemListaComponent implements OnInit {
 
     const payload = {
       id: this.item?.id ?? 0,
-      listaId: this.listaId,
       descricao: this.form.value.descricao!,
       quantidade: Number(this.form.value.quantidade),
-      situacao: this.form.value.status!,
+      feito: !!this.form.value.feito,
       valor: this.form.value.valor ?? undefined,
       observacao: this.form.value.observacao!,
-      dataTarefa: this.form.value.dataTarefa ?? undefined,
-      horarioTarefa: this.form.value.horarioTarefa ?? undefined,
+      data: this.form.value.data ?? undefined,
+      hora: this.form.value.hora ?? undefined,
     };
 
     // Fecha só se salvou; antes o erro era engolido pelo .catch e o modal fechava igual.
-    (this.item ? this.itemListaService.atualizar(payload) : this.itemListaService.criar(payload))
+    (this.item ? this.itemListaService.atualizar(this.listaId, payload) : this.itemListaService.criar(this.listaId, payload))
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
         next: () => this.close(true),

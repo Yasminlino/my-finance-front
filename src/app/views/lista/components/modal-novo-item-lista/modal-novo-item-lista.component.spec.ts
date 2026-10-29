@@ -24,7 +24,7 @@ describe('ModalNovoItemListaComponent', () => {
   beforeEach(() => {
     service = jasmine.createSpyObj<ItemListaService>('ItemListaService', ['criar', 'atualizar']);
     service.criar.and.returnValue(of({ id: 30, listaId: 31, descricao: 'X' } as any));
-    service.atualizar.and.returnValue(of({}));
+    service.atualizar.and.returnValue(of({} as any));
     TestBed.configureTestingModule({
       declarations: [ModalNovoItemListaComponent],
       imports: [SharedModule],
@@ -33,7 +33,7 @@ describe('ModalNovoItemListaComponent', () => {
   });
 
   it('na edição mostra o valor formatado a partir do número', async () => {
-    abrir({ id: 1, listaId: 30, descricao: 'Pão', quantidade: 1, valor: 25.5, situacao: 'PENDENTE' });
+    abrir({ id: 1, listaId: 30, descricao: 'Pão', quantidade: 1, valor: 25.5, feito: false });
     await fixture.whenStable();
 
     expect(valor().value).toBe('25,50');
@@ -43,11 +43,11 @@ describe('ModalNovoItemListaComponent', () => {
     abrir();
     fixture.componentInstance.form.patchValue({ descricao: 'Pão', valor: 15.5 });
     fixture.componentInstance.save();
-    expect(service.criar).toHaveBeenCalledWith(jasmine.objectContaining({ valor: 15.5 }));
+    expect(service.criar).toHaveBeenCalledWith(30, jasmine.objectContaining({ valor: 15.5 }));
 
     fixture.componentInstance.form.patchValue({ valor: null });
     fixture.componentInstance.save();
-    expect(service.criar.calls.mostRecent().args[0].valor).toBeUndefined();
+    expect(service.criar.calls.mostRecent().args[1].valor).toBeUndefined();
   });
 
   it('abre no painel lateral e o X fecha sem recarregar (FE-P2-07)', () => {

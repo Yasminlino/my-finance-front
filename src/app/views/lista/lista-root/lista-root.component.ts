@@ -4,7 +4,7 @@ import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { GridColumn, GridColumnOption } from 'src/app/shared/components/data-grid/data-grid.interface';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
-import { TagStatus } from 'src/app/shared/enums/status.enum';
+import { rotaDaLista } from '../listas.regras';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { ListaService } from 'src/app/core/services/lista.service';
@@ -25,14 +25,14 @@ export class ListaRootComponent implements OnInit {
   exibirCampos: ExibirCamposConfig = { ...EXIBIR_CAMPOS_CADASTRO, buttonViewLine: true };
   gridColumns: GridColumn<ListaDto>[] = [];
 
-  statusOptions: GridColumnOption[] = [
-    { label: 'Ativo', value: true, classe: TagStatus.Success },
-    { label: 'Inativo', value: false, classe: TagStatus.Secondary }
+  /** Tela provisória até o card #63: o tipo virou modelo, e as arquivadas não aparecem aqui. */
+  readonly opcoesModelo: GridColumnOption[] = [
+    { label: 'Compras', value: 'COMPRAS' },
+    { label: 'Orçamento', value: 'ORCAMENTO' },
+    { label: 'Tarefas', value: 'TAREFAS' },
+    { label: 'Agenda', value: 'AGENDA' },
+    { label: 'Em branco', value: 'BRANCO' }
   ];
-
-  statusLabel(value: boolean): string {
-    return value === true ? 'Ativo' : 'Inativo';
-  }
 
   lista: ListaDto[] = [];
   breadcrumb = [{ label: 'Listas' }, { label: 'Listas' }]
@@ -58,22 +58,17 @@ export class ListaRootComponent implements OnInit {
     this.gridColumns = [
       { field: 'nome', header: 'NOME', type: GridColumnTypeEnum.Text, width: "40%" },
       {
-        field: 'tipoMovimentacao',
-        header: 'TIPO',
+        field: 'modelo',
+        header: 'MODELO',
         type: GridColumnTypeEnum.Select,
-        options: [
-          { label: 'Checklist', value: 1 },
-          { label: 'Cronograma', value: 2 },
-          { label: 'Orçamento', value: 3 }
-        ],
+        options: this.opcoesModelo,
         width: "30%"
       },
       {
-        field: 'ativo',
-        header: 'STATUS',
-        type: GridColumnTypeEnum.Select,
-        options: this.statusOptions,
-        formatter: (row) => this.statusLabel(row.ativo),
+        field: 'resumo',
+        header: 'ITENS',
+        type: GridColumnTypeEnum.Text,
+        formatter: (row) => `${row.resumo?.feitos ?? 0} de ${row.resumo?.itens ?? 0}`,
         width: "20%"
       },
       { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['view', 'edit', 'delete'] },
@@ -108,16 +103,7 @@ export class ListaRootComponent implements OnInit {
   }
 
   abrirItemLista(item: ListaDto) {
-    if (!item.tipoMovimentacao) return;
-    if (item.tipoMovimentacao === 1) {
-      this.router.navigate([`/listas/${item.id}/checagem`]);
-    } else if (item.tipoMovimentacao === 2) {
-      window.open(`/#/listas/${item.id}/cronograma`, '_blank');
-    } else if (item.tipoMovimentacao === 3) {
-      this.router.navigate([`/listas/${item.id}/orcamento`]);
-    }
-    // Outros tipos não têm tela. Antes abria "/catalogos-listas/:id" sem o "#", que saía do app.
-
+    this.router.navigate(rotaDaLista(item));
   }
 
   fecharModalCriar(reload: boolean) {

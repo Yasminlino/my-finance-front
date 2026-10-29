@@ -30,13 +30,13 @@ export class ListaDeChecagemComponent implements OnInit {
   gridColumns: GridColumn<ItemChecagemLinha>[] = [];
 
   statusOptions: GridColumnOption[] = [
-    { label: 'OK', value: 'OK', classe: TagStatus.Success },
-    { label: 'PENDENTE', value: 'PENDENTE', classe: TagStatus.Warning }
+    { label: 'OK', value: true, classe: TagStatus.Success },
+    { label: 'PENDENTE', value: false, classe: TagStatus.Warning }
   ];
   listaId: number = 0;
 
-  statusLabel(value?: string): boolean {
-    return value === 'OK' ? true : false;
+  statusLabel(value?: boolean): boolean {
+    return !!value;
   }
 
   lista: ItemChecagemLinha[] = [];
@@ -66,12 +66,12 @@ export class ListaDeChecagemComponent implements OnInit {
       {
         field: 'statusBoolean',
         header: 'STATUS',
-        formatter: (row) => this.statusLabel(row.situacao),
+        formatter: (row) => this.statusLabel(row.feito),
         type: GridColumnTypeEnum.Checkbox,
         width: '5%'
       },
-      { field: 'descricao', header: 'DESCRIÇÃO', type: GridColumnTypeEnum.Text, width: "35%", classe: (row) => row.situacao == "OK" ? 'text-green-600' : 'text-red-500' },
-      { field: 'quantidade', header: 'QUANTIDADE', type: GridColumnTypeEnum.Number, width: "30%", classe: (row) => row.situacao == "OK" ? 'text-green-600' : 'text-red-500' },
+      { field: 'descricao', header: 'DESCRIÇÃO', type: GridColumnTypeEnum.Text, width: "35%", classe: (row) => row.feito ? 'text-green-600' : 'text-red-500' },
+      { field: 'quantidade', header: 'QUANTIDADE', type: GridColumnTypeEnum.Number, width: "30%", classe: (row) => row.feito ? 'text-green-600' : 'text-red-500' },
       { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions, functions: ['edit', 'delete'] },
     ]
   }
@@ -94,7 +94,7 @@ export class ListaDeChecagemComponent implements OnInit {
       .pipe(finalize(() => (this.loading = false)), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ itens, lista }) => {
-          this.itemListas = itens.map(i => ({ ...i, statusBoolean: i.situacao === 'OK' }));
+          this.itemListas = itens.map(i => ({ ...i, statusBoolean: !!i.feito }));
           this.titulo = lista.nome;
           this.applyFilters();
         },
@@ -108,12 +108,12 @@ export class ListaDeChecagemComponent implements OnInit {
 
   toggleConcluido(linha: ItemListaDto) {
     const anteriores = this.itemListas;
-    const situacao = linha.situacao === 'OK' ? 'PENDENTE' : 'OK';
-    const item = { ...(anteriores.find(i => i.id === linha.id) ?? linha), situacao, statusBoolean: situacao === 'OK' };
+    const feito = !linha.feito;
+    const item = { ...(anteriores.find(i => i.id === linha.id) ?? linha), feito, statusBoolean: feito };
 
     // Array novo: o grid (OnPush) remonta a linha com o status e a cor novos (FE-P2-09).
     this.itemListas = anteriores.map(i => (i.id === item.id ? item : i));
-    this.itemListaService.atualizar(item).subscribe({
+    this.itemListaService.atualizar(this.listaId, item).subscribe({
       error: () => (this.itemListas = anteriores) // desfaz na tela, inclusive o checkbox
     });
   }
@@ -143,7 +143,7 @@ export class ListaDeChecagemComponent implements OnInit {
     const ok = await this.confirmacao.confirmar(`Excluir o item "${c.descricao}"?`);
     if (!ok) return;
 
-    this.itemListaService.excluir(c.id).subscribe({
+    this.itemListaService.excluir(this.listaId, c.id).subscribe({
       next: () => {
         this.alertService.success('Item excluído com sucesso!');
         this.load();
@@ -154,7 +154,7 @@ export class ListaDeChecagemComponent implements OnInit {
 
   onDeleteSelected(rows: ItemListaDto[]) {
     this.exclusaoEmLote
-      .confirmarEExcluir(this.grid, rows, row => this.itemListaService.excluir(row.id), { singular: 'item', plural: 'itens' })
+      .confirmarEExcluir(this.grid, rows, row => this.itemListaService.excluir(this.listaId, row.id), { singular: 'item', plural: 'itens' })
       .subscribe(excluiu => {
         if (excluiu) this.load();
       });
