@@ -1,0 +1,101 @@
+<mf-form-panel [titulo]="titulo" [salvando]="saving" [criarOutra]="!registro" rotuloCriarOutra="Criar e abrir"
+  (fechar)="close()" (salvar)="save()" (salvarEOutra)="criarEAbrir()">
+  <form [formGroup]="form" class="flex flex-column gap-4" (ngSubmit)="save()">
+    <div class="flex flex-column gap-2">
+      <label for="planejamento-nome" class="mf-label">Nome <span class="text-red-500">*</span></label>
+      <input pInputText id="planejamento-nome" maxlength="120" formControlName="nome" placeholder="Ex.: Lista de compras"
+        [class.ng-dirty]="form.controls.nome.touched && form.controls.nome.invalid" />
+      <mf-field-error [control]="form.controls.nome">Informe um nome com pelo menos 2 letras.</mf-field-error>
+    </div>
+
+    @if (!registro) {
+      <div class="flex flex-column gap-2">
+        <span class="mf-label" id="planejamento-modelo">Modelo</span>
+        <p-selectButton formControlName="modelo" [options]="opcoesModelo" optionLabel="label" optionValue="value"
+          [allowEmpty]="false" ariaLabelledBy="planejamento-modelo" styleClass="planejamento-modelos">
+          <ng-template let-opcao pTemplate="item">
+            <i [class]="opcao.icone" class="mr-2"></i><span>{{ opcao.label }}</span>
+          </ng-template>
+        </p-selectButton>
+        <small class="mf-hint">O modelo só pré-marca os campos abaixo; dá para ajustar.</small>
+      </div>
+    }
+
+    <div class="flex flex-column gap-2">
+      <span class="mf-label">Campos dos itens</span>
+      <div class="planejamento-campos border-1 surface-border border-round">
+        <div class="planejamento-campo planejamento-campo--fixo">
+          <span>Item</span>
+          <i class="pi pi-lock mf-hint" aria-label="Sempre ligado"></i>
+        </div>
+        <div class="planejamento-campo planejamento-campo--fixo">
+          <span>Feito / pendente</span>
+          <i class="pi pi-lock mf-hint" aria-label="Sempre ligado"></i>
+        </div>
+        <div class="planejamento-campo">
+          <label for="campo-quantidade">Quantidade</label>
+          <p-inputSwitch inputId="campo-quantidade" formControlName="usaQuantidade" />
+        </div>
+        <div class="planejamento-campo planejamento-campo--com-detalhe">
+          <div class="flex align-items-center justify-content-between gap-2 w-full">
+            <label for="campo-valor">Valor</label>
+            <p-inputSwitch inputId="campo-valor" formControlName="usaValor" />
+          </div>
+          @if (form.controls.usaValor.value) {
+            <p-selectButton formControlName="modoValor" [options]="opcoesModoValor" optionLabel="label" optionValue="value"
+              [allowEmpty]="false" styleClass="planejamento-modo-valor" ariaLabelledBy="campo-valor" />
+          }
+        </div>
+        <div class="planejamento-campo planejamento-campo--com-detalhe">
+          <div class="flex align-items-center justify-content-between gap-2 w-full">
+            <span class="flex flex-column">
+              <label for="campo-limite" [class.mf-hint]="!form.controls.usaValor.value">Limite de gasto</label>
+              @if (!form.controls.usaValor.value) { <small class="mf-hint">Ligue o Valor para usar o limite.</small> }
+            </span>
+            <p-inputSwitch inputId="campo-limite" formControlName="usaLimite" />
+          </div>
+          @if (form.controls.usaLimite.value) {
+            <div class="flex flex-column gap-1 w-full">
+              <p-inputNumber inputId="planejamento-limite" formControlName="limite" mode="currency" currency="BRL" locale="pt-BR"
+                [min]="0" placeholder="R$ 0,00" styleClass="w-full" inputStyleClass="w-full" ariaLabel="Valor do limite"
+                [class.ng-dirty]="form.controls.limite.touched && form.controls.limite.invalid" />
+              <mf-field-error [control]="form.controls.limite">Informe o limite (R$ 0,00 ou mais).</mf-field-error>
+            </div>
+          }
+        </div>
+        <div class="planejamento-campo">
+          <label for="campo-data">Data</label>
+          <p-inputSwitch inputId="campo-data" formControlName="usaData" />
+        </div>
+        <div class="planejamento-campo">
+          <label for="campo-observacao">Observação</label>
+          <p-inputSwitch inputId="campo-observacao" formControlName="usaObservacao" />
+        </div>
+      </div>
+      @if (desligouCampo) {
+        <p-message severity="info" styleClass="w-full justify-content-start"
+          text="Desligar um campo só o esconde: os dados dos itens continuam guardados e voltam ao religar." />
+      }
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <span class="mf-label">Prévia</span>
+      <div class="planejamento-previa flex align-items-center gap-2 p-2 border-round surface-ground">
+        <mf-category-icon [cor]="corPrevia" [icone]="iconePrevia" />
+        <span class="font-medium white-space-nowrap overflow-hidden text-overflow-ellipsis">
+          {{ form.controls.nome.value || 'Nome do planejamento' }}
+        </span>
+      </div>
+      <div class="planejamento-previa-item flex align-items-center gap-2 p-2 border-1 surface-border border-round">
+        <i class="pi pi-stop mf-hint"></i><span>{{ previa }}</span>
+      </div>
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <span class="mf-label">Aparência</span>
+      <mf-icon-picker [icones]="icones" [icone]="form.controls.icone.value" [cor]="form.controls.cor.value"
+        rotuloIconeAutomatico="Automático (do modelo)" rotuloCorAutomatica="Cor automática (dos campos)"
+        (iconeChange)="aoEscolherIcone($event)" (corChange)="aoEscolherCor($event)" />
+    </div>
+  </form>
+</mf-form-panel>

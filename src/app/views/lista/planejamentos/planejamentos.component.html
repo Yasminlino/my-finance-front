@@ -1,0 +1,119 @@
+<div class="mf-pagina">
+  <mf-page-header class="block mt-2 mb-3" [titulo]="arquivados ? 'Arquivados' : 'Meus planejamentos'"
+    [subtitulo]="arquivados ? undefined : 'Compras, orçamentos, tarefas e agenda, cada um com os campos que precisa'"
+    [breadcrumb]="breadcrumb" [home]="home" [mostrarVoltar]="true" (voltar)="voltar()">
+    @if (!arquivados && !movel()) {
+      <p-button acoes label="Novo planejamento" icon="pi pi-plus" (onClick)="novo()" />
+    }
+  </mf-page-header>
+
+  @if (arquivados) {
+    <p-message severity="info" styleClass="w-full justify-content-start mb-3"
+      text="Planejamentos arquivados ficam guardados e não aparecem nos filtros de Meus planejamentos. Desarquive para voltar a usar." />
+  }
+
+  <div class="surface-card border-round shadow-1">
+    <mf-filter-bar>
+      @if (!arquivados) {
+        <p-selectButton inicio [options]="opcoesFiltro" [(ngModel)]="filtro" optionLabel="label" optionValue="value"
+          [allowEmpty]="false" (onChange)="aplicarFiltros()" styleClass="filtro-campos" [class.w-full]="movel()">
+          <ng-template let-opcao pTemplate="item">
+            <span>{{ opcao.label }}</span>
+            <p-badge [value]="'' + opcao.contagem" severity="secondary" styleClass="ml-2" />
+          </ng-template>
+        </p-selectButton>
+      }
+
+      <p-iconField fim iconPosition="left" [class.flex-grow-1]="movel()" [class.min-w-0]="movel()">
+        <p-inputIcon styleClass="pi pi-search" />
+        <input pInputText type="text" placeholder="Buscar planejamento..." [(ngModel)]="busca" [class.w-full]="movel()"
+          (ngModelChange)="aplicarFiltros()" aria-label="Buscar planejamento" />
+      </p-iconField>
+      <p-dropdown fim [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value" appendTo="body"
+        (onChange)="aplicarFiltros()" styleClass="filtro-ordem" ariaLabel="Ordenar por" />
+    </mf-filter-bar>
+
+    <div class="planejamentos-grade p-3">
+      @if (loading && !listas.length) {
+        @for (i of [1, 2, 3]; track i) {
+          <p-skeleton height="11rem" />
+        }
+      } @else {
+        @for (lista of exibidas; track lista.id) {
+          <app-planejamento-card [lista]="lista" (abrir)="abrir(lista)" (menu)="abrirMenu(lista, $event, menuPlanejamento)" />
+        }
+
+        @if (!arquivados && arquivadosNaPasta.length && !temFiltro) {
+          <article class="planejamentos-pasta border-1 border-round p-3 flex flex-column gap-2 cursor-pointer" role="button"
+            tabindex="0" aria-label="Abrir Arquivados" (click)="abrirPasta()" (keydown.enter)="abrirPasta()">
+            <div class="flex align-items-center gap-2">
+              <span class="planejamentos-pasta__icone mf-cor-amarelo"><i class="pi pi-inbox"></i></span>
+              <span class="font-semibold">Arquivados ({{ arquivadosNaPasta.length }})</span>
+            </div>
+            <small class="mf-hint">{{ nomesNaPasta }}</small>
+          </article>
+        }
+      }
+    </div>
+
+    @if (!loading && !exibidas.length) {
+      @if (temFiltro) {
+        <mf-empty-state icone="pi pi-search" titulo="Nenhum planejamento encontrado" texto="Mude a busca ou limpe os filtros." />
+        <div class="flex justify-content-center pb-4">
+          <p-button label="Limpar filtros" severity="secondary" [outlined]="true" (onClick)="limparFiltros()" />
+        </div>
+      } @else if (arquivados) {
+        <mf-empty-state icone="pi pi-inbox" titulo="Nada arquivado" texto="Planejamentos arquivados aparecem aqui." />
+      } @else {
+        <mf-empty-state icone="pi pi-clipboard" titulo="Nenhum planejamento ainda"
+          texto="Crie um para a lista de compras, o orçamento do mês, as tarefas ou a agenda." />
+        <div class="flex justify-content-center pb-4">
+          <p-button label="Novo planejamento" icon="pi pi-plus" (onClick)="novo()" />
+        </div>
+      }
+    }
+  </div>
+
+  <p-menu #menuPlanejamento [model]="itensMenu" [popup]="true" appendTo="body" />
+
+  @if (movel()) {
+    <p-sidebar [(visible)]="acoesAbertas" position="bottom" styleClass="h-auto" [blockScroll]="true">
+      <ng-template pTemplate="header"><span class="font-semibold">{{ doMenu?.nome }}</span></ng-template>
+      @if (doMenu) {
+        <div class="flex flex-column gap-1">
+          @for (acao of acoes(doMenu); track acao.rotulo) {
+            <p-button [label]="acao.rotulo" [icon]="acao.icone" [text]="true" [severity]="acao.perigo ? 'danger' : 'secondary'"
+              styleClass="acao-planejamento w-full justify-content-start" (onClick)="executarNoSheet(acao)" />
+          }
+        </div>
+      }
+    </p-sidebar>
+  }
+
+  @if (!arquivados && movel()) {
+    <mf-fab rotulo="Novo planejamento" (clique)="novo()" />
+  }
+
+  @if (formAberto) {
+    <app-planejamento-form [registro]="editando" (closed)="fecharForm($event)" (abrir)="abrirCriado($event)" />
+  }
+
+  @if (duplicando) {
+    <app-duplicar-planejamento [lista]="duplicando" (fechado)="duplicando = null" (duplicado)="aoDuplicar($event)" />
+  }
+
+  <!-- Aviso com Desfazer (arquivar/desarquivar) ou Abrir (duplicar); o MessageService é o da tela. -->
+  <p-toast key="planejamento" position="bottom-center">
+    <ng-template let-mensagem pTemplate="message">
+      <div class="flex align-items-center gap-3 w-full">
+        <i class="pi pi-check-circle text-2xl"></i>
+        <div class="flex-grow-1">
+          <div class="font-semibold">{{ mensagem.summary }}</div>
+          <small>{{ mensagem.detail }}</small>
+        </div>
+        <p-button [label]="mensagem.data.rotulo" [icon]="mensagem.data.icone" size="small" severity="secondary" [outlined]="true"
+          (onClick)="acionarAviso(mensagem.data)" />
+      </div>
+    </ng-template>
+  </p-toast>
+</div>

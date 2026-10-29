@@ -60,7 +60,7 @@ const routes: Routes = [
           import('./views/movimentacao/extrato-bancario/extrato-bancario.module').then(m => m.ExtratoBancarioModule),
       },
       {
-        path: 'listas',
+        path: 'planejamento',
         loadChildren: () =>
           import('./views/lista/lista.module').then(m => m.ListaModule),
       },

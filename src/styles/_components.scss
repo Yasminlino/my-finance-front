@@ -118,3 +118,7 @@
 .linha-nova > td,
 .card-conta.linha-nova { animation: mf-destaque-novo 6s ease-out; }
 .linha-nova > td:first-child { box-shadow: inset 3px 0 0 var(--primary-color); }
+
+/* Item "Excluir" dos menus ⋮ (p-menu popup vai para o body; Categorias e Planejamento). */
+.item-excluir .p-menuitem-text,
+.item-excluir .p-menuitem-icon { color: var(--red-500); }

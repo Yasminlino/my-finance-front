@@ -1,0 +1,46 @@
+<div class="flex flex-column gap-2">
+  <small class="mf-hint">Ícone</small>
+  <div class="mf-icon-picker__grade" role="radiogroup" aria-label="Ícone">
+    <button type="button" class="mf-opcao" [class.mf-opcao--marcada]="!icone"
+      [pTooltip]="rotuloIconeAutomatico" tooltipPosition="top" [attr.aria-label]="rotuloIconeAutomatico"
+      (click)="escolherIcone(null)"><i class="pi pi-sparkles"></i></button>
+    @for (item of grade; track item) {
+      <button type="button" class="mf-opcao" [class.mf-opcao--marcada]="icone === item"
+        [attr.aria-label]="item" (click)="escolherIcone(item)"><i [class]="item"></i></button>
+    }
+    <button type="button" class="mf-opcao" data-acao="mais-icones" [class.mf-opcao--marcada]="buscaAberta"
+      [pTooltip]="buscaAberta ? 'Fechar a busca' : 'Mais ícones'" tooltipPosition="top"
+      [attr.aria-label]="buscaAberta ? 'Fechar a busca' : 'Mais ícones'" [attr.aria-expanded]="buscaAberta"
+      (click)="alternarBusca()"><i class="pi" [class.pi-search]="!buscaAberta" [class.pi-times]="buscaAberta"></i></button>
+  </div>
+
+  @if (buscaAberta) {
+    <div class="mf-icon-picker__busca flex flex-column gap-2">
+      <input #campoBusca pInputText type="search" class="w-full" placeholder="Buscar ícone (em inglês: cart, heart, car...)"
+        aria-label="Buscar ícone" [(ngModel)]="busca" />
+      @if (resultados.length) {
+        <div class="mf-icon-picker__grade mf-icon-picker__resultados">
+          @for (item of resultados; track item) {
+            <button type="button" class="mf-opcao" [class.mf-opcao--marcada]="icone === item"
+              [pTooltip]="item.replace('pi pi-', '')" tooltipPosition="top" [attr.aria-label]="item"
+              (click)="escolherIcone(item)"><i [class]="item"></i></button>
+          }
+        </div>
+      } @else {
+        <small class="mf-hint">Nenhum ícone com "{{ busca }}".</small>
+      }
+    </div>
+  }
+
+  <small class="mf-hint">Cor</small>
+  <div class="mf-icon-picker__grade" role="radiogroup" aria-label="Cor">
+    <button type="button" class="mf-opcao" [class.mf-opcao--marcada]="!cor"
+      [pTooltip]="rotuloCorAutomatica" tooltipPosition="top" [attr.aria-label]="rotuloCorAutomatica"
+      (click)="escolherCor(null)"><i class="pi pi-ban"></i></button>
+    @for (item of paleta; track item.chave) {
+      <button type="button" class="mf-opcao" [style.background]="'var(--mf-cor-' + item.chave + '-fg)'"
+        [class.mf-opcao--marcada]="cor === item.chave"
+        [pTooltip]="item.rotulo" tooltipPosition="top" [attr.aria-label]="item.rotulo" (click)="escolherCor(item.chave)"></button>
+    }
+  </div>
+</div>

@@ -23,6 +23,8 @@ export type ListaDto = {
   nome: string;
   /** "pi pi-<nome>" */
   icone?: string | null;
+  /** Chave da paleta (shared/ui/aparencia.ts); null = derivada dos campos (corDaLista, card #63). */
+  cor?: string | null;
   usaQuantidade: boolean;
   usaValor: boolean;
   modoValor: ModoValorLista;

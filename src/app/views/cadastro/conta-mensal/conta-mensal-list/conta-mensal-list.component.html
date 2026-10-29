@@ -1,6 +1,7 @@
 <div class="mf-pagina">
   <mf-page-header class="block mt-2 mb-3" titulo="Contas"
-    subtitulo="Contas recorrentes que geram os lançamentos de cada mês em Contas a Pagar" [breadcrumb]="breadcrumb" [home]="home">
+    subtitulo="Contas recorrentes que geram os lançamentos de cada mês em Contas a Pagar" [breadcrumb]="breadcrumb" [home]="home"
+    [mostrarVoltar]="true" (voltar)="navegacao.voltar()">
     <!-- Dois botões dentro do @if: o ng-container leva o bloco para o slot `acoes`. -->
     <ng-container ngProjectAs="[acoes]">
     @if (!movel()) {

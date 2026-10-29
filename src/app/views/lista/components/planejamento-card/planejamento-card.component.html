@@ -1,0 +1,51 @@
+<article class="planejamento-card surface-card border-1 surface-border border-round p-3 flex flex-column gap-3 h-full cursor-pointer"
+  role="button" tabindex="0" [attr.aria-label]="'Abrir ' + lista.nome" (click)="abrir.emit()" (keydown.enter)="abrir.emit()">
+  <div class="flex align-items-start gap-2">
+    <mf-category-icon [cor]="cor" [icone]="icone" tamanho="lg" />
+    <div class="flex-grow-1 min-w-0">
+      <div class="planejamento-card__nome font-semibold white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ lista.nome }}</div>
+      <small class="mf-hint">{{ itens }} {{ itens === 1 ? 'item' : 'itens' }}</small>
+    </div>
+    <button type="button" class="p-button p-button-text p-button-rounded p-button-secondary p-button-icon-only planejamento-card__menu"
+      [attr.aria-label]="'Mais ações de ' + lista.nome" (click)="abrirMenu($event)" (keydown.enter)="$event.stopPropagation()">
+      <span class="pi pi-ellipsis-v"></span>
+    </button>
+  </div>
+
+  <div class="flex flex-wrap gap-1">
+    @for (chip of chips; track chip) {
+      <span class="planejamento-card__chip">{{ chip }}</span>
+    }
+  </div>
+
+  <div class="mt-auto flex flex-column gap-2">
+    @switch (tipo) {
+      @case ('valor') {
+        <div class="flex justify-content-between align-items-baseline gap-2">
+          <span class="mf-valor text-xl font-semibold">{{ moeda(total) }}</span>
+          <small class="mf-hint">{{ moeda(totalFeito) }} ok</small>
+        </div>
+        <p-progressBar [value]="percentualValor" [showValue]="false" styleClass="planejamento-card__barra" />
+        @if (disponivel !== null) {
+          <small class="planejamento-card__disponivel" [class.planejamento-card__disponivel--negativo]="disponivel < 0">
+            Disponível {{ moeda(disponivel) }}
+          </small>
+        }
+      }
+      @case ('data') {
+        <span class="flex align-items-center gap-2">
+          <i class="pi pi-calendar mf-hint"></i>
+          @if (proximaData) { <span class="font-medium">Próximo: {{ proximaData }}</span> } @else { <span class="mf-hint">Nada pendente</span> }
+        </span>
+        <small class="mf-hint">{{ feitos }} de {{ itens }} feitos</small>
+      }
+      @default {
+        <div class="flex justify-content-between align-items-baseline gap-2">
+          <small class="mf-hint">{{ feitos }} de {{ itens }} concluídos</small>
+          <small class="font-medium">{{ percentual }}%</small>
+        </div>
+        <p-progressBar [value]="percentual" [showValue]="false" styleClass="planejamento-card__barra" />
+      }
+    }
+  </div>
+</article>

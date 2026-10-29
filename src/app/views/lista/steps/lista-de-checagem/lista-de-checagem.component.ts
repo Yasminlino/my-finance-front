@@ -41,7 +41,9 @@ export class ListaDeChecagemComponent implements OnInit {
 
   lista: ItemChecagemLinha[] = [];
   titulo: string = "Checklist"
-  breadcrumb = [{ label: 'Listas' }, { label: 'Checklist' }]
+  /** Arquivado abre só com a faixa; bloquear a edição fica com a tela única do card #66. */
+  arquivado = false;
+  breadcrumb = [{ label: 'Planejamento' }, { label: 'Checklist' }]
 
   loading = false;
 
@@ -96,9 +98,10 @@ export class ListaDeChecagemComponent implements OnInit {
         next: ({ itens, lista }) => {
           this.itemListas = itens.map(i => ({ ...i, statusBoolean: !!i.feito }));
           this.titulo = lista.nome;
+          this.arquivado = !!lista.arquivadaEm;
           this.applyFilters();
         },
-        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar os itens da lista.'))
+        error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar os itens do planejamento.'))
       });
   }
 

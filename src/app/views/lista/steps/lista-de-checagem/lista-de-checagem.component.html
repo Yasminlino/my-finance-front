@@ -1,4 +1,7 @@
 <div class="mf-pagina">
+  @if (arquivado) {
+    <p-message severity="warn" styleClass="w-full justify-content-start mb-3" text="Planejamento arquivado — desarquive para editar." />
+  }
   <app-data-grid #grid [dataSource]="itemListas" [breadcrumb]="breadcrumb" [columns]="gridColumns"  [titulo]="titulo"
     [statusOptions]="statusOptions" campoStatus="feito" [exibeCampos]="exibirCampos" (checkbox)="toggleConcluido($event)"
     [loading]="loading" (edit)="onEdit($event)" (new)="openCreate()" (delete)="onDelete($event)" (deleteSelected)="onDeleteSelected($event)"></app-data-grid>

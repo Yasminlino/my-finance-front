@@ -10,7 +10,8 @@ import { finalize } from 'rxjs';
 import { FormPanelComponent } from 'src/app/shared/ui/form-panel/form-panel.component';
 import { FieldErrorComponent } from 'src/app/shared/ui/field-error/field-error.component';
 import { CategoryIconComponent } from 'src/app/shared/ui/category-icon/category-icon.component';
-import { ICONES_CATEGORIA, PALETA_CATEGORIA, iconeDe } from 'src/app/shared/ui/aparencia';
+import { IconPickerComponent } from 'src/app/shared/ui/icon-picker/icon-picker.component';
+import { ICONES_CATEGORIA, iconeDe } from 'src/app/shared/ui/aparencia';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { RadioButtonModule } from 'primeng/radiobutton';
@@ -34,7 +35,7 @@ const NATUREZAS: Record<number, { label: string; descricao: string }> = {
   selector: 'app-categoria-form',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, FormPanelComponent, FieldErrorComponent, CategoryIconComponent, InputTextModule,
+    CommonModule, ReactiveFormsModule, FormPanelComponent, FieldErrorComponent, CategoryIconComponent, IconPickerComponent, InputTextModule,
     SelectButtonModule, RadioButtonModule, InputSwitchModule, MessageModule, TooltipModule
   ],
   templateUrl: './categoria-form.component.html',
@@ -60,7 +61,6 @@ export class CategoriaFormComponent implements OnInit {
     { label: 'Receita', value: 'Receita' }
   ];
   readonly icones = ICONES_CATEGORIA;
-  readonly paleta = PALETA_CATEGORIA;
 
   readonly perfilEmpresa = localStorage.getItem('usuarioRole') === 'Empresa';
 

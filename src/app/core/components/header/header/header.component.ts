@@ -30,8 +30,8 @@ export class HeaderComponent {
     { path: '/extrato-bancario', label: 'Extrato Bancário', icon: 'pi pi-chart-line' },
   ];
 
-  listasItems: NavItem[] = [
-    { path: '/listas', label: 'Listas', icon: 'pi pi-shopping-cart' },
+  planejamentoItems: NavItem[] = [
+    { path: '/planejamento', label: 'Meus planejamentos', icon: 'pi pi-clipboard' },
     // { path: '/item-lista', label: 'Item Lista', icon: 'pi pi-list' },
   ];
 
@@ -40,7 +40,7 @@ export class HeaderComponent {
     { label: 'Página Inicial', icon: 'pi pi-home', routerLink: '/home', routerLinkActiveOptions: { exact: true } },
     { label: 'Cadastros', icon: 'pi pi-folder', items: this.itensDoMenu(this.cadastrosItems) },
     { label: 'Movimentações', icon: 'pi pi-wallet', items: this.itensDoMenu(this.movimentacoesItems) },
-    { label: 'Listas', icon: 'pi pi-list', items: this.itensDoMenu(this.listasItems) },
+    { label: 'Planejamento', icon: 'pi pi-list-check', items: this.itensDoMenu(this.planejamentoItems) },
   ];
 
   constructor(private router: Router, public auth: AuthService) {}

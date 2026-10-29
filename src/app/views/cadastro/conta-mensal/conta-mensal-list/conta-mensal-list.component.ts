@@ -5,6 +5,7 @@ import { Table } from 'primeng/table';
 import { ContaService } from 'src/app/core/services/contas.service';
 import { CategoryService } from 'src/app/core/services/category.service';
 import { LarguraTelaService } from 'src/app/core/services/largura-tela.service';
+import { NavegacaoService } from 'src/app/core/services/navegacao.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { formatCurrencyBR } from 'src/app/core/utils/mask';
 import { CadastroListBase } from 'src/app/shared/base/cadastro-list.base';
@@ -44,6 +45,8 @@ export class ContaMensalListComponent extends CadastroListBase<ContaDto> {
   private readonly contaService = inject(ContaService);
   private readonly categoryService = inject(CategoryService);
   readonly movel = inject(LarguraTelaService).movel;
+  /** ‹ voltar do cabeçalho: tela anterior ou a Página Inicial. */
+  readonly navegacao = inject(NavegacaoService);
 
   @ViewChild('tabela') tabela?: Table;
 

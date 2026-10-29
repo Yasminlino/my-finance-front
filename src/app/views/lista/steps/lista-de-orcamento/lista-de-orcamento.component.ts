@@ -38,7 +38,9 @@ export class ListaDeOrcamentoComponent implements OnInit {
   lista: ItemListaDto[] = [];
   listaId: number = 0;
   titulo: string = 'Orçamento';
-  breadcrumb = [{ label: 'Listas' }, { label: 'Orçamento' }]
+  /** Arquivado abre só com a faixa; bloquear a edição fica com a tela única do card #66. */
+  arquivado = false;
+  breadcrumb = [{ label: 'Planejamento' }, { label: 'Orçamento' }]
 
   loading = false;
   /** AGUARDANDO não existe mais: virou pendente com "(aguardando)" na observação. */
@@ -103,6 +105,7 @@ export class ListaDeOrcamentoComponent implements OnInit {
           this.lista = [...itens];
           this.titulo = lista?.nome ?? 'Orçamento';
           this.campos = { usaQuantidade: !!lista?.usaQuantidade, usaData: !!lista?.usaData };
+          this.arquivado = !!lista?.arquivadaEm;
           this.applyFilters();
         },
         error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar os itens do orçamento.'))

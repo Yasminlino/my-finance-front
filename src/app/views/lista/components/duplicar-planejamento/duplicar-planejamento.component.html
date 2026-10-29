@@ -1,0 +1,51 @@
+<ng-template #corpo>
+  <form [formGroup]="form" class="flex flex-column gap-4" (ngSubmit)="duplicar()">
+    <div class="flex flex-column gap-2">
+      <label for="duplicar-nome" class="mf-label">Nome da cópia <span class="text-red-500">*</span></label>
+      <input pInputText id="duplicar-nome" maxlength="120" formControlName="nome"
+        [class.ng-dirty]="form.controls.nome.touched && form.controls.nome.invalid" />
+      <mf-field-error [control]="form.controls.nome">Informe o nome da cópia.</mf-field-error>
+    </div>
+
+    <div class="flex flex-column gap-3">
+      <div class="flex align-items-center justify-content-between gap-3">
+        <label for="duplicar-itens">Copiar os itens <small class="mf-hint block">Todos voltam como pendentes.</small></label>
+        <p-inputSwitch inputId="duplicar-itens" formControlName="copiarItens" />
+      </div>
+      @if (lista.usaValor && form.controls.copiarItens.value) {
+        <div class="flex align-items-center justify-content-between gap-3">
+          <label for="duplicar-valores">Manter os valores <small class="mf-hint block">Desligado, os itens vêm sem valor.</small></label>
+          <p-inputSwitch inputId="duplicar-valores" formControlName="manterValores" />
+        </div>
+      }
+      <div class="flex align-items-center justify-content-between gap-3">
+        <label for="duplicar-arquivar">Arquivar o original <small class="mf-hint block">"{{ lista.nome }}" vai para Arquivados.</small></label>
+        <p-inputSwitch inputId="duplicar-arquivar" formControlName="arquivarOriginal" />
+      </div>
+    </div>
+  </form>
+</ng-template>
+
+<ng-template #botoes>
+  <div class="flex justify-content-end gap-2 w-full">
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" [disabled]="saving" (onClick)="fechar()" />
+    <p-button label="Duplicar" icon="pi pi-copy" [loading]="saving" (onClick)="duplicar()" />
+  </div>
+</ng-template>
+
+@if (movel()) {
+  <p-sidebar [visible]="visivel" position="bottom" styleClass="h-auto" [blockScroll]="true"
+    [dismissible]="!saving" (visibleChange)="!$event && fechar()">
+    <ng-template pTemplate="header"><span class="font-semibold">Duplicar planejamento</span></ng-template>
+    <div class="flex flex-column gap-4">
+      <ng-container [ngTemplateOutlet]="corpo" />
+      <ng-container [ngTemplateOutlet]="botoes" />
+    </div>
+  </p-sidebar>
+} @else {
+  <p-dialog [visible]="visivel" header="Duplicar planejamento" [modal]="true" [draggable]="false" [resizable]="false"
+    [style]="{ width: '30rem' }" [closable]="!saving" (visibleChange)="!$event && fechar()">
+    <ng-container [ngTemplateOutlet]="corpo" />
+    <ng-template pTemplate="footer"><ng-container [ngTemplateOutlet]="botoes" /></ng-template>
+  </p-dialog>
+}

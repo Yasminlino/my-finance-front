@@ -1,0 +1,17 @@
+:host ::ng-deep .planejamento-modelos { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+:host ::ng-deep .planejamento-modelos .p-button { border-radius: var(--mf-radius) !important; flex: 0 0 auto; }
+:host ::ng-deep .planejamento-modo-valor { display: flex; width: 100%; }
+:host ::ng-deep .planejamento-modo-valor .p-button { flex: 1; }
+
+.planejamento-campo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+
+  & + & { border-top: 1px solid var(--surface-border); }
+
+  &--fixo { color: var(--text-color-secondary); }
+  &--com-detalhe { flex-direction: column; align-items: stretch; }
+}

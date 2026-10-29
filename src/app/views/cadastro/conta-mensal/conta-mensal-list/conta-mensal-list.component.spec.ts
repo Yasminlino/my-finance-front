@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { NavegacaoService } from 'src/app/core/services/navegacao.service';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
@@ -74,6 +75,15 @@ describe('ContaMensalListComponent', () => {
     });
     fixture = TestBed.createComponent(ContaMensalListComponent);
     fixture.detectChanges();
+  });
+
+  it('o ‹ voltar do cabeçalho volta para a tela anterior', () => {
+    const navegacao = TestBed.inject(NavegacaoService);
+    spyOn(navegacao, 'voltar');
+
+    (el().querySelector('mf-page-header button[aria-label="Voltar"]') as HTMLElement).click();
+
+    expect(navegacao.voltar).toHaveBeenCalled();
   });
 
   it('cabeçalho com título, subtítulo, Exportar e Nova conta', () => {

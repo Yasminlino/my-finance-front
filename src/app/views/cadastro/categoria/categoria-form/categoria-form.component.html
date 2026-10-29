@@ -47,28 +47,9 @@
         <span class="font-medium">{{ form.controls.nome.value || 'Nome da categoria' }}</span>
       </div>
 
-      <small class="mf-hint">Ícone</small>
-      <div class="categoria-icones" role="radiogroup" aria-label="Ícone">
-        <button type="button" class="categoria-opcao" [class.categoria-opcao--marcada]="!form.controls.icone.value"
-          pTooltip="Automático (pelo nome)" tooltipPosition="top" aria-label="Automático (pelo nome)"
-          (click)="escolherIcone(null)"><i class="pi pi-sparkles"></i></button>
-        @for (icone of icones; track icone) {
-          <button type="button" class="categoria-opcao" [class.categoria-opcao--marcada]="form.controls.icone.value === icone"
-            [attr.aria-label]="icone" (click)="escolherIcone(icone)"><i [class]="icone"></i></button>
-        }
-      </div>
-
-      <small class="mf-hint">Cor</small>
-      <div class="categoria-cores" role="radiogroup" aria-label="Cor">
-        <button type="button" class="categoria-opcao" [class.categoria-opcao--marcada]="!form.controls.cor.value"
-          pTooltip="Da natureza" tooltipPosition="top" aria-label="Cor da natureza"
-          (click)="escolherCor(null)"><i class="pi pi-ban"></i></button>
-        @for (cor of paleta; track cor.chave) {
-          <button type="button" class="categoria-opcao" [style.background]="'var(--mf-cor-' + cor.chave + '-fg)'"
-            [class.categoria-opcao--marcada]="form.controls.cor.value === cor.chave"
-            [pTooltip]="cor.rotulo" tooltipPosition="top" [attr.aria-label]="cor.rotulo" (click)="escolherCor(cor.chave)"></button>
-        }
-      </div>
+      <mf-icon-picker [icones]="icones" [icone]="form.controls.icone.value" [cor]="form.controls.cor.value"
+        rotuloIconeAutomatico="Automático (pelo nome)" rotuloCorAutomatica="Cor da natureza"
+        (iconeChange)="escolherIcone($event)" (corChange)="escolherCor($event)" />
     </div>
 
     <div class="flex flex-column gap-2">

@@ -13,7 +13,8 @@ describe('ROTAS_ANTIGAS', () => {
 
   const novas = [
     'categorias', 'contas', 'tipos-cartao', 'tipos-movimentacao',
-    'listas', 'listas/:id/checagem', 'listas/:id/cronograma', 'listas/:id/orcamento',
+    'planejamento', 'planejamento/arquivados',
+    'planejamento/:id/checagem', 'planejamento/:id/cronograma', 'planejamento/:id/orcamento',
     'extrato-bancario/detalhes', 'extrato-bancario/relatorio'
   ].map(path => ({ path, component: TelaFalsa }));
 
@@ -27,10 +28,15 @@ describe('ROTAS_ANTIGAS', () => {
     ['/account', '/contas'],
     ['/tipo-cartao', '/tipos-cartao'],
     ['/tipo-movimentacao', '/tipos-movimentacao'],
-    ['/catalogos-listas', '/listas'],
-    ['/catalogos-listas/31/checagem', '/listas/31/checagem'],
-    ['/catalogos-listas/31/cronograma', '/listas/31/cronograma'],
-    ['/catalogos-listas/31/orcamento', '/listas/31/orcamento'],
+    ['/catalogos-listas', '/planejamento'],
+    ['/catalogos-listas/31/checagem', '/planejamento/31/checagem'],
+    ['/catalogos-listas/31/cronograma', '/planejamento/31/cronograma'],
+    ['/catalogos-listas/31/orcamento', '/planejamento/31/orcamento'],
+    // "Listas" virou "Planejamento" (card #63).
+    ['/listas', '/planejamento'],
+    ['/listas/31/checagem', '/planejamento/31/checagem'],
+    ['/listas/31/cronograma', '/planejamento/31/cronograma'],
+    ['/listas/31/orcamento', '/planejamento/31/orcamento'],
     ['/extrato-bancario/ExtratoBancarioDetalhe?month=2026-12&bancoId=5&tipoContaId=2',
       '/extrato-bancario/detalhes?month=2026-12&bancoId=5&tipoContaId=2'],
     ['/extrato-bancario/RelatorioGastosMensais?month=2026-09', '/extrato-bancario/relatorio?month=2026-09']

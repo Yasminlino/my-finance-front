@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { signal } from '@angular/core';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
+import { NavegacaoService } from 'src/app/core/services/navegacao.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
 
@@ -56,6 +57,15 @@ describe('CategoriaListComponent', () => {
     });
     fixture = TestBed.createComponent(CategoriaListComponent);
     fixture.detectChanges();
+  });
+
+  it('o ‹ voltar do cabeçalho volta para a tela anterior', () => {
+    const navegacao = TestBed.inject(NavegacaoService);
+    spyOn(navegacao, 'voltar');
+
+    (el().querySelector('mf-page-header button[aria-label="Voltar"]') as HTMLElement).click();
+
+    expect(navegacao.voltar).toHaveBeenCalled();
   });
 
   it('cabeçalho com título, subtítulo e "Nova categoria"', () => {

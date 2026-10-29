@@ -46,7 +46,7 @@ import { SidebarModule } from 'primeng/sidebar';
             <p-button label="Continuar" icon="pi pi-arrow-right" iconPos="right" (onClick)="avancar.emit()" />
           } @else {
             @if (criarOutra) {
-              <p-button label="Salvar e criar outra" severity="secondary" [outlined]="true" [disabled]="salvando"
+              <p-button [label]="rotuloCriarOutra" severity="secondary" [outlined]="true" [disabled]="salvando"
                 (onClick)="salvarEOutra.emit()" />
             }
             <p-button [label]="rotuloSalvar" icon="pi pi-check" [loading]="salvando" (onClick)="salvar.emit()" />
@@ -64,6 +64,8 @@ export class FormPanelComponent {
   @Input() tamanho: 'md' | 'lg' = 'md';
   /** Mostra "Salvar e criar outra" (card #23): a tela grava, limpa o formulário e deixa o painel aberto. */
   @Input() criarOutra = false;
+  /** Rótulo do botão de `criarOutra`; o Planejamento (#63) usa "Criar e abrir" (a tela decide o que vem depois). */
+  @Input() rotuloCriarOutra = 'Salvar e criar outra';
   /**
    * Formulário em passos (card #22): antes do último, o rodapé troca Salvar por Continuar (emite `avancar`) e,
    * depois do primeiro, Cancelar por Voltar (emite `voltar`). A tela controla `passo` e decide se pode avançar.

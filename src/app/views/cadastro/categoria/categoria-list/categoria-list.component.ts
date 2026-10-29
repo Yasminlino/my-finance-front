@@ -4,6 +4,7 @@ import { MenuItem } from 'primeng/api';
 import { CategoryService } from 'src/app/core/services/category.service';
 import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { LarguraTelaService } from 'src/app/core/services/largura-tela.service';
+import { NavegacaoService } from 'src/app/core/services/navegacao.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { CadastroListBase } from 'src/app/shared/base/cadastro-list.base';
 import { CategoriaDto } from 'src/app/core/models/categoria.model';
@@ -50,6 +51,8 @@ export class CategoriaListComponent extends CadastroListBase<CategoriaDto> {
   private readonly categoryService = inject(CategoryService);
   private readonly confirmacaoAtivo = inject(ConfirmacaoService);
   readonly movel = inject(LarguraTelaService).movel;
+  /** ‹ voltar do cabeçalho: tela anterior ou a Página Inicial. */
+  readonly navegacao = inject(NavegacaoService);
 
   readonly breadcrumb: MenuItem[] = [{ label: 'Cadastros' }, { label: 'Categorias' }];
   readonly home: MenuItem = { icon: 'pi pi-home', routerLink: '/home' };

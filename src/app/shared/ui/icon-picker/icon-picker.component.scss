@@ -1,0 +1,29 @@
+:host { display: block; }
+
+.mf-icon-picker__grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.25rem, 1fr));
+  gap: 0.5rem;
+}
+
+.mf-icon-picker__resultados {
+  max-height: 12rem;
+  overflow-y: auto;
+  padding: 0.25rem;
+}
+
+.mf-opcao {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--mf-radius);
+  background: var(--surface-card);
+  color: var(--text-color);
+  cursor: pointer;
+
+  &:focus-visible { outline: 2px solid var(--mf-primary); outline-offset: 2px; }
+  &--marcada { border: 2px solid var(--mf-primary); }
+}

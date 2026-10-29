@@ -4,18 +4,15 @@ import { ListaRoutingModule } from './lista-routing.module';
 import { ListaDeChecagemComponent } from './steps/lista-de-checagem/lista-de-checagem.component';
 import { ListaDeCronogramaComponent } from './steps/lista-de-cronograma/lista-de-cronograma.component';
 import { ListaDeOrcamentoComponent } from './steps/lista-de-orcamento/lista-de-orcamento.component';
-import { ModalNovaListaComponent } from './components/modal-nova-lista/modal-nova-lista.component';
-import { ListaRootComponent } from './lista-root/lista-root.component';
 import { ModalNovoItemListaComponent } from './components/modal-novo-item-lista/modal-novo-item-lista.component';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { ModalItemChecagemComponent } from './components/modal-item-checagem/modal-item-checagem.component';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { TotaisSelecaoComponent } from 'src/app/shared/components/totais-selecao/totais-selecao.component';
+import { MessageModule } from 'primeng/message';
 
 @NgModule({
   declarations: [
-    ListaRootComponent,
-    ModalNovaListaComponent,
     ListaDeChecagemComponent,
     ListaDeCronogramaComponent,
     ListaDeOrcamentoComponent,
@@ -26,7 +23,8 @@ import { TotaisSelecaoComponent } from 'src/app/shared/components/totais-selecao
     SharedModule,
     ListaRoutingModule,    
     DataGridComponent,
-    TotaisSelecaoComponent
+    TotaisSelecaoComponent,
+    MessageModule
   ]
 })
 export class ListaModule { }
