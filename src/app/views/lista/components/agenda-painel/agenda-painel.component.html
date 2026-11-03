@@ -1,0 +1,32 @@
+<aside class="painel flex flex-column gap-3" aria-label="Resumo da agenda">
+  <app-agenda-mini-mes [mes]="mes" [hoje]="hoje" [marcados]="marcados" [realcados]="dias" (escolher)="irPara.emit($event)"
+    (trocarMes)="trocarMes($event)" />
+
+  <section class="painel__bloco">
+    <div class="flex justify-content-between align-items-baseline">
+      <span class="painel__rotulo">{{ rotuloDoPeriodo }}</span>
+      <span class="painel__valor">{{ feitos }} de {{ ocorrencias.length }} feitos</span>
+    </div>
+    <p-progressBar [value]="percentual" [showValue]="false" styleClass="painel__barra" />
+  </section>
+
+  <section class="painel__bloco flex justify-content-between align-items-baseline">
+    <span class="painel__rotulo">Atrasados</span>
+    <span class="painel__valor" [class.painel__valor--atrasado]="atrasados > 0">{{ atrasados }}</span>
+  </section>
+
+  <section class="painel__bloco flex flex-column gap-2">
+    <span class="painel__rotulo">Próximos</span>
+    @for (o of proximas; track o.itemId + '-' + o.dataOriginal) {
+      <button type="button" class="painel__proxima" (click)="escolherProxima(o)" [attr.aria-label]="'Abrir ' + o.descricao">
+        <span class="painel__selo"><small>{{ selo(o).semana }}</small><strong>{{ selo(o).dia }}</strong></span>
+        <span class="painel__texto">
+          <span class="painel__descricao">{{ o.descricao }}</span>
+          <small class="mf-hint">{{ detalhe(o) }}</small>
+        </span>
+      </button>
+    } @empty {
+      <small class="mf-hint">Nada pendente nos próximos 30 dias.</small>
+    }
+  </section>
+</aside>

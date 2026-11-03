@@ -1,7 +1,7 @@
 import { OcorrenciaDto } from 'src/app/core/models/lista.model';
 import {
   agruparPorDia, atrasada, diaRelativo, diasDaSemana, inicioDaSemana, isoDe, periodoPtBr, resumoCurto, resumoDaRegra, rotuloDoDia,
-  tituloDoDia
+  diasDoMes, doMes, proximasPendentes, tituloDoDia, tituloDoMes
 } from './agenda.regras';
 
 function ocorrencia(ajuste: Partial<OcorrenciaDto>): OcorrenciaDto {
@@ -115,6 +115,34 @@ describe('agenda.regras (card #69)', () => {
       expect(tituloDoDia('2026-11-11', hoje)).toBe('qua, 11 nov');
       expect(tituloDoDia('2027-01-01', hoje)).toBe('sex, 1 jan 2027');
       expect(tituloDoDia('2026-12-31', '2027-01-01')).toBe('Ontem · qui, 31 dez 2026');
+    });
+  });
+
+  describe('mês (parte 2)', () => {
+    it('grade da segunda da 1ª semana ao domingo da última', () => {
+      const nov = diasDoMes(new Date(2026, 10, 18));
+      expect(nov[0]).toBe('2026-10-26');
+      expect(nov[nov.length - 1]).toBe('2026-12-06');
+      expect(nov.length).toBe(42);
+      expect(diasDoMes(new Date(2027, 1, 1)).length).toBe(28);
+      expect(diasDoMes(new Date(2026, 1, 10)).length).toBe(35);
+      expect(doMes('2026-10-31', new Date(2026, 10, 1))).toBeFalse();
+      expect(doMes('2026-11-30', new Date(2026, 10, 1))).toBeTrue();
+      expect(tituloDoMes(new Date(2026, 2, 1))).toBe('março de 2026');
+    });
+
+    it('próximas pendentes a partir de agora, em ordem, só as primeiras', () => {
+      const agora = new Date(2026, 10, 3, 12, 0);
+      const lista = [
+        ocorrencia({ itemId: 1, data: '2026-11-05', hora: '08:00:00' }),
+        ocorrencia({ itemId: 2, data: '2026-11-03', hora: '09:00:00' }),
+        ocorrencia({ itemId: 3, data: '2026-11-03', hora: '18:00:00' }),
+        ocorrencia({ itemId: 4, data: '2026-11-03', hora: null }),
+        ocorrencia({ itemId: 5, data: '2026-11-04', hora: '07:00:00', feito: true }),
+        ocorrencia({ itemId: 6, data: '2026-11-04', hora: '10:00:00' })
+      ];
+      expect(proximasPendentes(lista, agora).map(o => o.itemId)).toEqual([4, 3, 6]);
+      expect(proximasPendentes(lista, agora, 10).map(o => o.itemId)).toEqual([4, 3, 6, 1]);
     });
   });
 });

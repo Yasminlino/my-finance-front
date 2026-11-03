@@ -1,0 +1,61 @@
+// Cores vêm da agenda (--agenda-cor / --agenda-cor-fundo, herdadas do host da agenda); fora dela, o primário.
+:host { display: block; }
+
+.mini-mes { display: flex; flex-direction: column; gap: 0.25rem; }
+
+.mini-mes__topo { display: flex; align-items: center; justify-content: space-between; }
+.mini-mes__titulo { font-weight: 700; font-size: 0.9rem; }
+
+.mini-mes__grade {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  row-gap: 0.125rem;
+  text-align: center;
+}
+
+.mini-mes__semana { font-size: 0.7rem; font-weight: 600; color: var(--text-color-secondary); padding: 0.25rem 0; }
+
+.mini-mes__dia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.25rem 0 0.2rem;
+  border: 0;
+  border-radius: var(--mf-radius);
+  background: none;
+  font: inherit;
+  font-size: 0.8rem;
+  color: inherit;
+  cursor: pointer;
+
+  &:hover { background: var(--surface-hover); }
+  &--fora { color: var(--text-color-secondary); opacity: 0.55; }
+  &--realce { background: var(--agenda-cor-fundo, var(--highlight-bg)); }
+
+  &--hoje {
+    background: var(--agenda-cor, var(--mf-primary));
+    color: var(--primary-color-text);
+    font-weight: 700;
+    opacity: 1;
+
+    &:hover { background: var(--agenda-cor, var(--mf-primary)); }
+    .mini-mes__ponto--tem { background: var(--primary-color-text); }
+  }
+}
+
+.mini-mes__ponto {
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+  background: transparent;
+
+  &--tem { background: var(--agenda-cor, var(--mf-primary)); }
+}
+
+// Mês do celular: maior, para o dedo.
+.mini-mes--grande {
+  .mini-mes__titulo { font-size: 1rem; }
+  .mini-mes__dia { font-size: 0.95rem; padding: 0.5rem 0 0.35rem; }
+  .mini-mes__dia--realce:not(.mini-mes__dia--hoje) { box-shadow: inset 0 0 0 2px var(--agenda-cor, var(--mf-primary)); background: none; }
+}

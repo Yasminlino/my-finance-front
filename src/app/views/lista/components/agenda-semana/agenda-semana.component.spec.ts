@@ -3,12 +3,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
 
-import { AgendaSemanaComponent, ModoAgenda, OcorrenciaEscolhida } from './agenda-semana.component';
+import { AgendaSemanaComponent, ModoAgenda, OcorrenciaEscolhida, OcorrenciaMovida } from './agenda-semana.component';
 import { ItemListaService } from 'src/app/core/services/item-lista.service';
 import { LarguraTelaService } from 'src/app/core/services/largura-tela.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ListaDto, OcorrenciaDto } from 'src/app/core/models/lista.model';
-import { diasDaSemana, inicioDaSemana, isoDe, somarDias } from '../../agenda.regras';
+import { diasDaSemana, diasDoMes, doMes, inicioDaSemana, isoDe, somarDias } from '../../agenda.regras';
 
 /** Agenda do planejamento (card #69): visões Semana e Dia, feito por ocorrência, layout dos mockups (parte 1b). */
 describe('AgendaSemanaComponent', () => {
@@ -301,6 +301,121 @@ describe('AgendaSemanaComponent', () => {
       service.listarPeriodo.and.returnValue(of([dentista]));
       abrir();
       expect(el().textContent).toContain('Nada pendente nesta semana.');
+    });
+  });
+
+  describe('Mês no desktop (parte 2)', () => {
+    const grade = diasDoMes(new Date());
+    const muitos = [1, 2, 3, 4, 5].map(i => ocorrencia({ itemId: 10 + i, data: hoje, dataOriginal: hoje, hora: `0${i}:00:00`, descricao: `Item ${i}` }));
+    const foraDoMes = grade.find(d => !doMes(d, new Date()));
+
+    it('grade do mês com até 3 itens por dia e "+N mais"; só os dias do mês contam', () => {
+      const lista = [...muitos, ...(foraDoMes ? [ocorrencia({ itemId: 30, data: foraDoMes, dataOriginal: foraDoMes, feito: true, descricao: 'Fora' })] : [])];
+      service.listarPeriodo.and.returnValue(of(lista));
+      abrir({ modo: 'MES' });
+      expect(service.listarPeriodo).toHaveBeenCalledWith(11, grade[0], grade[grade.length - 1]);
+      expect(el().querySelectorAll('.agenda-mes__dia').length).toBe(grade.length);
+      expect(el().querySelectorAll('.agenda-mes__semana').length).toBe(7);
+      const deHoje = el().querySelector('.agenda-mes__dia--hoje')!;
+      expect(deHoje.querySelectorAll('.agenda-mes__item').length).toBe(3);
+      expect(deHoje.querySelector('.agenda-mes__mais')!.textContent).toContain('+2 mais');
+      expect(el().querySelector('.agenda-contagem')!.textContent).toContain('0 de 5 feitos neste mês');
+      if (foraDoMes) expect(el().querySelector('.agenda-mes__dia--fora')).not.toBeNull();
+      expect(el().querySelector('app-agenda-painel')).toBeNull();
+    });
+
+    it('‹ › anda um mês; o número do dia abre o Dia', () => {
+      service.listarPeriodo.and.returnValue(of([]));
+      abrir({ modo: 'MES' });
+      const agora = new Date();
+      tela().proxima();
+      const proximo = diasDoMes(new Date(agora.getFullYear(), agora.getMonth() + 1, 1));
+      expect(service.listarPeriodo).toHaveBeenCalledWith(11, proximo[0], proximo[proximo.length - 1]);
+      expect(tela().noPeriodoDeHoje).toBeFalse();
+      tela().irParaHoje();
+      fixture.detectChanges();
+      const modos: ModoAgenda[] = [];
+      tela().modoChange.subscribe(m => modos.push(m));
+      (el().querySelector('.agenda-mes__dia--hoje .agenda-mes__numero') as HTMLButtonElement).click();
+      expect(modos).toEqual(['DIA']);
+      expect(isoDe(tela().referencia)).toBe(hoje);
+    });
+  });
+
+  describe('Mês no celular (parte 2)', () => {
+    beforeEach(() => movel.set(true));
+
+    it('calendário com pontos e os itens do dia escolhido embaixo', () => {
+      service.listarPeriodo.and.returnValue(of([
+        ocorrencia({ itemId: 1, data: hoje, dataOriginal: hoje, hora: '07:00:00', descricao: 'Academia' }),
+        ocorrencia({ itemId: 2, data: isoDe(somarDias(new Date(), 1)), dataOriginal: isoDe(somarDias(new Date(), 1)), descricao: 'Feira' })
+      ]));
+      abrir({ modo: 'MES' });
+      expect(el().querySelector('app-agenda-mini-mes')).not.toBeNull();
+      expect(tela().marcados.has(hoje)).toBeTrue();
+      expect(el().querySelector('.agenda-grupo__titulo')!.textContent).toContain('Hoje');
+      expect(el().querySelector('.agenda-grupo__titulo')!.textContent).toContain('1 item');
+      expect(textos('.agenda-cartao__descricao')).toEqual(['Academia']);
+
+      const amanha = isoDe(somarDias(new Date(), 1));
+      tela().escolherNoMes(amanha);
+      fixture.detectChanges();
+      expect(tela().diaParaNovo).toBe(amanha);
+      const adicionados: string[] = [];
+      tela().adicionar.subscribe(d => adicionados.push(d));
+      (el().querySelector('.agenda-link-adicionar') as HTMLButtonElement).click();
+      expect(adicionados).toEqual([amanha]);
+    });
+
+    it('escolher um dia de outro mês troca o mês', () => {
+      service.listarPeriodo.and.returnValue(of([]));
+      abrir({ modo: 'MES' });
+      const agora = new Date();
+      const doProximo = isoDe(new Date(agora.getFullYear(), agora.getMonth() + 1, 3));
+      tela().escolherNoMes(doProximo);
+      expect(doMes(doProximo, tela().referencia)).toBeTrue();
+      expect(tela().diaEscolhido).toBe(doProximo);
+    });
+  });
+
+  describe('painel lateral e arrastar (parte 2)', () => {
+    const arrasto = () => ({ preventDefault: () => undefined, dataTransfer: null }) as unknown as DragEvent;
+
+    it('painel só no desktop, no Dia e na Semana', () => {
+      abrir();
+      expect(el().querySelector('app-agenda-painel')).not.toBeNull();
+      mudarModo('DIA');
+      expect(el().querySelector('app-agenda-painel')).not.toBeNull();
+      expect(tela().rotuloDoPainel).toBe(tela().dias[0] === hoje ? 'Hoje' : 'Neste dia');
+      movel.set(true);
+      fixture.detectChanges();
+      expect(el().querySelector('app-agenda-painel')).toBeNull();
+    });
+
+    it('arrastar para outro dia muda na hora e avisa a tela', () => {
+      abrir();
+      const movidas: OcorrenciaMovida[] = [];
+      tela().mover.subscribe(m => movidas.push(m));
+      tela().arrastar(arrasto(), academia);
+      tela().sobre(arrasto(), dias[1]);
+      expect(tela().alvo).toBe(dias[1]);
+      tela().soltar(arrasto(), dias[1]);
+      expect(movidas).toEqual([{ ocorrencia: academia, para: dias[1] }]);
+      expect(tela().porDia[dias[1]].map(o => o.descricao)).toEqual(['Academia']);
+      expect(tela().porDia[dias[0]].length).toBe(0);
+      expect(tela().alvo).toBeNull();
+    });
+
+    it('soltar no mesmo dia, sem arrastar ou só leitura não faz nada', () => {
+      abrir({ somenteLeitura: true });
+      const movidas: OcorrenciaMovida[] = [];
+      tela().mover.subscribe(m => movidas.push(m));
+      tela().arrastar(arrasto(), academia);
+      tela().soltar(arrasto(), dias[3]);
+      fixture.componentRef.setInput('somenteLeitura', false);
+      tela().arrastar(arrasto(), academia);
+      tela().soltar(arrasto(), dias[0]);
+      expect(movidas.length).toBe(0);
     });
   });
 });

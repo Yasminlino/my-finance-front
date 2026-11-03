@@ -33,9 +33,8 @@ import { FilterBarComponent } from 'src/app/shared/ui/filter-bar/filter-bar.comp
 import { PageHeaderComponent } from 'src/app/shared/ui/page-header/page-header.component';
 import { StatCardComponent } from 'src/app/shared/ui/stat-card/stat-card.component';
 import { AdicionarItemComponent } from '../components/adicionar-item/adicionar-item.component';
-import { AgendaSemanaComponent, ModoAgenda, OcorrenciaEscolhida } from '../components/agenda-semana/agenda-semana.component';
+import { AgendaSemanaComponent, ModoAgenda, OcorrenciaEscolhida, OcorrenciaMovida } from '../components/agenda-semana/agenda-semana.component';
 import { isoDe, resumoCurto } from '../agenda.regras';
-import { FabComponent } from 'src/app/shared/ui/fab/fab.component';
 import { DuplicarPlanejamentoComponent } from '../components/duplicar-planejamento/duplicar-planejamento.component';
 import { ItemPlanejamentoFormComponent } from '../components/item-planejamento-form/item-planejamento-form.component';
 import { PlanejamentoFormComponent } from '../components/planejamento-form/planejamento-form.component';
@@ -46,7 +45,7 @@ import {
 } from '../planejamento.regras';
 
 type VisaoPlanejamento = 'DIA' | 'SEMANA' | 'MES' | 'ITENS';
-const VISOES_SALVAS: VisaoPlanejamento[] = ['DIA', 'SEMANA', 'ITENS'];
+const VISOES_SALVAS: VisaoPlanejamento[] = ['DIA', 'SEMANA', 'MES', 'ITENS'];
 
 /** A visão escolhida fica neste navegador, por planejamento (conveniência: sem ela, vale a Semana). */
 const CHAVE_VISAO = (id: number) => `planejamento-visao-${id}`;
@@ -79,7 +78,7 @@ interface BotaoDoAviso {
     NgTemplateOutlet, FormsModule, BadgeModule, ButtonModule, CheckboxModule, IconFieldModule, InputIconModule, InputSwitchModule, InputTextModule,
     MenuModule, MessageModule, ProgressBarModule, SelectButtonModule, SidebarModule, SkeletonModule, ToastModule,
     CategoryIconComponent, EmptyStateComponent, FilterBarComponent, PageHeaderComponent, StatCardComponent,
-    FabComponent, AdicionarItemComponent, AgendaSemanaComponent, DuplicarPlanejamentoComponent, ItemPlanejamentoFormComponent, PlanejamentoFormComponent
+    AdicionarItemComponent, AgendaSemanaComponent, DuplicarPlanejamentoComponent, ItemPlanejamentoFormComponent, PlanejamentoFormComponent
   ],
   templateUrl: './planejamento.component.html',
   styleUrls: ['./planejamento.component.scss'],
@@ -125,11 +124,11 @@ export class PlanejamentoComponent implements OnInit {
   /** O toque longo terminou com um clique: esse clique não deve desfazer a seleção recém-feita. */
   private ignorarProximoToque = false;
 
-  /** Agenda (card #69): só para planejamento com Data. Mês entra na parte 2. */
+  /** Agenda (card #69): só para planejamento com Data. */
   readonly opcoesVisao: { label: string; value: VisaoPlanejamento; desabilitada?: boolean }[] = [
     { label: 'Dia', value: 'DIA' },
     { label: 'Semana', value: 'SEMANA' },
-    { label: 'Mês', value: 'MES', desabilitada: true },
+    { label: 'Mês', value: 'MES' },
     { label: 'Itens', value: 'ITENS' }
   ];
   visao: VisaoPlanejamento = 'SEMANA';
@@ -335,13 +334,35 @@ export class PlanejamentoComponent implements OnInit {
     this.itemAberto = true;
   }
 
-  /** Dia ou Semana de um planejamento com Data. */
+  /** Dia, Semana ou Mês de um planejamento com Data. */
   get mostrandoAgenda(): boolean {
-    return !!this.lista?.usaData && (this.visao === 'DIA' || this.visao === 'SEMANA');
+    return !!this.lista?.usaData && this.visao !== 'ITENS';
   }
 
   get modoAgenda(): ModoAgenda {
-    return this.visao === 'DIA' ? 'DIA' : 'SEMANA';
+    return this.visao === 'ITENS' ? 'SEMANA' : this.visao;
+  }
+
+  /**
+   * Arrastou na agenda (desktop): item que não repete muda a data; item que repete, só aquela ocorrência
+   * (decisão do #67). A agenda já mudou na tela; a recarga confirma ou, se falhar, devolve ao lugar.
+   */
+  moverOcorrencia({ ocorrencia: o, para }: OcorrenciaMovida) {
+    const item = this.itens.find(i => i.id === o.itemId);
+    if (!item || this.somenteLeitura) {
+      this.load();
+      return;
+    }
+    const acao$ = o.repete
+      ? this.itemService.alterarOcorrencia(this.id, o.itemId, o.dataOriginal, { data: para })
+      : this.itemService.atualizar(this.id, { ...item, data: para });
+    acao$.subscribe({
+      next: () => this.load(),
+      error: e => {
+        this.alertService.error(extrairMensagemErro(e, 'Não deu para mudar o dia.'));
+        this.load();
+      }
+    });
   }
 
   /** Só com Data (sem Valor), a agenda já diz "x de y feitos": o card de Progresso sai (mockup). */

@@ -79,13 +79,11 @@
     @if (mostrandoAgenda) {
       <div class="surface-card border-round shadow-1 p-3">
         <app-agenda-semana [lista]="lista" [modo]="modoAgenda" [cor]="cor" [regras]="regras" [somenteLeitura]="somenteLeitura"
-          (adicionar)="novoItem($event)" (abrir)="abrirOcorrencia($event)" (mudou)="load()" (modoChange)="trocarModo($event)">
+          (adicionar)="novoItem($event)" (abrir)="abrirOcorrencia($event)" (mudou)="load()" (modoChange)="trocarModo($event)"
+          (mover)="moverOcorrencia($event)">
           <ng-container ngProjectAs="[visoes]" [ngTemplateOutlet]="seletorVisao" />
         </app-agenda-semana>
       </div>
-      @if (movel() && !somenteLeitura) {
-        <mf-fab rotulo="Novo item" (clique)="novoItem()" />
-      }
     } @else {
     @if (lista.usaData) {
       <div class="flex mb-3"><ng-container [ngTemplateOutlet]="seletorVisao" /></div>

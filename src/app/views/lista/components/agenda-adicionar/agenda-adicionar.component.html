@@ -1,0 +1,24 @@
+@if (!movel()) {
+  <!-- Desktop (mockup): texto + data + hora + repetir + Adicionar -->
+  <form class="adicionar" (ngSubmit)="adicionar()" aria-label="Adicionar rápido">
+    <span class="adicionar__mais" aria-hidden="true"><i class="pi pi-plus"></i></span>
+    <input #campoTexto pInputText name="texto" class="adicionar__texto" [(ngModel)]="texto" (ngModelChange)="aoDigitar()"
+      placeholder="Adicionar… (ex.: dentista sex 14h30, feira toda quinta 8h)" aria-label="O que adicionar" autocomplete="off" />
+    <input pInputText type="date" name="data" class="adicionar__data" [(ngModel)]="data" (ngModelChange)="mexeu('data')" aria-label="Data" />
+    <input pInputText type="time" name="hora" class="adicionar__hora" [(ngModel)]="hora" (ngModelChange)="mexeu('hora')" aria-label="Hora" />
+    <p-dropdown name="repeticao" [options]="opcoesRepeticao" optionLabel="label" optionValue="value" [(ngModel)]="repeticao"
+      (onChange)="mexeu('repeticao')" appendTo="body" ariaLabel="Repetir" styleClass="adicionar__repetir" />
+    <p-button type="submit" label="Adicionar" [disabled]="!podeAdicionar" [loading]="salvando" />
+  </form>
+} @else {
+  <!-- Celular (mockup): barra fixa embaixo; o + com texto adiciona, vazio abre o formulário -->
+  <form class="adicionar-barra" (ngSubmit)="adicionar()" aria-label="Adicionar rápido">
+    <div class="adicionar-barra__campo">
+      <input #campoTexto pInputText name="texto" class="w-full" [(ngModel)]="texto" (ngModelChange)="aoDigitar()"
+        placeholder="Adicionar… (ex.: dentista sex 14h30)" aria-label="O que adicionar" autocomplete="off" enterkeyhint="done" />
+      @if (entendido) { <small class="adicionar-barra__entendido" aria-live="polite">{{ entendido }}</small> }
+    </div>
+    <p-button type="submit" icon="pi pi-plus" [rounded]="true" [loading]="salvando"
+      [ariaLabel]="descricao ? 'Adicionar ' + descricao : 'Novo item'" styleClass="adicionar-barra__botao" />
+  </form>
+}

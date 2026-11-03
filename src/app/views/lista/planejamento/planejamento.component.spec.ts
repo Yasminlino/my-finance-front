@@ -56,7 +56,7 @@ describe('PlanejamentoComponent', () => {
     listas.desarquivar.and.returnValue(of(null));
     listas.excluir.and.returnValue(of(null));
     itens = jasmine.createSpyObj<ItemListaService>('ItemListaService',
-      ['listarDaLista', 'listarPeriodo', 'marcarFeito', 'desmarcarTodos', 'excluirConcluidos', 'criar', 'atualizar', 'excluir']);
+      ['listarDaLista', 'listarPeriodo', 'alterarOcorrencia', 'marcarFeito', 'desmarcarTodos', 'excluirConcluidos', 'criar', 'atualizar', 'excluir']);
     itens.listarPeriodo.and.returnValue(of([]));
     itens.marcarFeito.and.returnValue(of({ afetados: 1 }));
     itens.desmarcarTodos.and.returnValue(of({ afetados: 2 }));
@@ -442,6 +442,41 @@ describe('PlanejamentoComponent', () => {
       montar({ ...agenda, usaValor: true }, daAgenda);
       expect(el().querySelector('app-agenda-semana')).not.toBeNull();
       expect(el().querySelector('mf-stat-card')).not.toBeNull();
+    });
+
+    it('Mês é uma visão de verdade agora e fica lembrado', () => {
+      montar(agenda, daAgenda);
+      tela.visao = 'MES';
+      tela.lembrarVisao();
+      fixture.detectChanges();
+      expect(tela.modoAgenda).toBe('MES');
+      expect(el().querySelector('app-agenda-semana')).not.toBeNull();
+      montar(agenda, daAgenda);
+      expect(tela.visao).toBe('MES');
+    });
+
+    it('arrastar para outro dia: item que não repete muda a data; o que repete, só aquela ocorrência', () => {
+      itens.atualizar.and.callFake((_l, dto) => of(dto as ItemListaDto));
+      itens.alterarOcorrencia.and.returnValue(of(null));
+      montar(agenda, daAgenda);
+      itens.listarDaLista.calls.reset();
+      const ocorrencia = (id: number, repete: boolean) => ({
+        itemId: id, dataOriginal: '2026-11-04', data: '2026-11-04', feito: false, repete, descricao: 'X'
+      });
+      tela.moverOcorrencia({ ocorrencia: ocorrencia(6, false), para: '2026-11-06' });
+      expect(itens.atualizar).toHaveBeenCalledWith(8, jasmine.objectContaining({ id: 6, descricao: 'Dentista', data: '2026-11-06' }));
+      tela.moverOcorrencia({ ocorrencia: ocorrencia(5, true), para: '2026-11-06' });
+      expect(itens.alterarOcorrencia).toHaveBeenCalledWith(8, 5, '2026-11-04', { data: '2026-11-06' });
+      expect(itens.listarDaLista).toHaveBeenCalledTimes(2);
+    });
+
+    it('arrastar que falha avisa e recarrega (o item volta ao lugar)', () => {
+      itens.atualizar.and.returnValue(throwError(() => ({ error: { message: 'Fora do ar' } })));
+      montar(agenda, daAgenda);
+      itens.listarDaLista.calls.reset();
+      tela.moverOcorrencia({ ocorrencia: { itemId: 6, dataOriginal: '2026-11-05', data: '2026-11-05', feito: false, repete: false, descricao: 'Dentista' }, para: '2026-11-07' });
+      expect(alerta.error).toHaveBeenCalled();
+      expect(itens.listarDaLista).toHaveBeenCalledTimes(1);
     });
   });
 });

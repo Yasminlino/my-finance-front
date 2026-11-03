@@ -144,3 +144,37 @@ export function tituloDoDia(iso: string, hoje: string): string {
   const relativo = diaRelativo(iso, hoje);
   return relativo ? `${relativo} · ${texto}` : texto;
 }
+
+const MESES_LONGOS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+/** Grade do mês (parte 2): da segunda da 1ª semana ao domingo da última — 4, 5 ou 6 semanas. */
+export function diasDoMes(referencia: Date): string[] {
+  const primeiro = new Date(referencia.getFullYear(), referencia.getMonth(), 1);
+  const ultimo = new Date(referencia.getFullYear(), referencia.getMonth() + 1, 0);
+  const inicio = inicioDaSemana(primeiro);
+  const fim = somarDias(inicioDaSemana(ultimo), 6);
+  const dias: string[] = [];
+  for (let d = inicio; d <= fim; d = somarDias(d, 1)) dias.push(isoDe(d));
+  return dias;
+}
+
+/** O dia é do mês da referência (os de fora da grade ficam apagados). */
+export function doMes(iso: string, referencia: Date): boolean {
+  const d = dataDe(iso);
+  return d.getFullYear() === referencia.getFullYear() && d.getMonth() === referencia.getMonth();
+}
+
+/** "novembro de 2026". */
+export function tituloDoMes(referencia: Date): string {
+  return `${MESES_LONGOS[referencia.getMonth()]} de ${referencia.getFullYear()}`;
+}
+
+/** Pendentes a partir de agora (dia todo de hoje conta), em ordem de dia e hora; as `quantas` primeiras. */
+export function proximasPendentes(ocorrencias: OcorrenciaDto[], agora: Date, quantas = 3): OcorrenciaDto[] {
+  const hoje = isoDe(agora);
+  const horaAgora = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`;
+  return ocorrencias
+    .filter(o => !o.feito && (o.data > hoje || (o.data === hoje && (!o.hora || o.hora.slice(0, 5) >= horaAgora))))
+    .sort((x, y) => x.data.localeCompare(y.data) || porHora(x, y))
+    .slice(0, quantas);
+}

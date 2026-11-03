@@ -1,0 +1,26 @@
+<div class="mini-mes" [class.mini-mes--grande]="tamanho === 'grande'">
+  @if (comTopo) {
+  <div class="mini-mes__topo">
+    <span class="mini-mes__titulo">{{ titulo }}</span>
+    <span class="flex">
+      <p-button icon="pi pi-chevron-left" size="small" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Mês anterior"
+        (onClick)="trocarMes.emit(-1)" />
+      <p-button icon="pi pi-chevron-right" size="small" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Próximo mês"
+        (onClick)="trocarMes.emit(1)" />
+    </span>
+  </div>
+  }
+  <div class="mini-mes__grade" role="grid" [attr.aria-label]="titulo">
+    @for (letra of letras; track $index) {
+      <span class="mini-mes__semana" role="columnheader" [attr.aria-label]="nomes[$index]">{{ letra }}</span>
+    }
+    @for (dia of dias; track dia) {
+      <button type="button" class="mini-mes__dia" role="gridcell" [class.mini-mes__dia--fora]="foraDoMes(dia)"
+        [class.mini-mes__dia--hoje]="dia === hoje" [class.mini-mes__dia--realce]="realcados.includes(dia)"
+        [attr.aria-label]="rotulo(dia)" [attr.aria-selected]="realcados.includes(dia)" (click)="escolher.emit(dia)">
+        <span>{{ numero(dia) }}</span>
+        <span class="mini-mes__ponto" [class.mini-mes__ponto--tem]="marcados.has(dia)"></span>
+      </button>
+    }
+  </div>
+</div>

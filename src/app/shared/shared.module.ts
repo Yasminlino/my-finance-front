@@ -4,7 +4,6 @@ import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { CurrencyInputDirective } from './directives/currency-input.directive';
-import { CalendarComponent } from '../core/components/calendar/calendar.component';
 
 import { TableModule } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
@@ -23,9 +22,6 @@ const KIT_PRIMENG = [DialogModule, DropdownModule, InputTextModule, InputTextare
 const KIT_FORMULARIO = [FormPanelComponent, FieldErrorComponent];
 
 @NgModule({
-  declarations: [
-    CalendarComponent
-  ],
   imports: [
     CommonModule,
     FormsModule,
@@ -41,7 +37,6 @@ const KIT_FORMULARIO = [FormPanelComponent, FieldErrorComponent];
     ReactiveFormsModule,
     RouterModule,
     CurrencyInputDirective,
-    CalendarComponent,
     TableModule,
     ...KIT_PRIMENG,
     ...KIT_FORMULARIO

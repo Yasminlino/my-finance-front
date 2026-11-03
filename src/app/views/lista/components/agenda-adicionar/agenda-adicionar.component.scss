@@ -1,0 +1,36 @@
+:host { display: block; }
+
+/* Desktop: uma linha como no mockup. */
+.adicionar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.adicionar__mais { color: var(--agenda-cor, var(--mf-primary)); font-size: 1rem; padding: 0 0.125rem; }
+.adicionar__texto { flex: 1 1 16rem; min-width: 12rem; }
+.adicionar__data { width: 9.5rem; }
+.adicionar__hora { width: 7rem; }
+:host ::ng-deep .adicionar__repetir { width: 11.5rem; }
+
+/* Celular: barra fixa embaixo, acima do conteúdo (a tela reserva o espaço com planejamento--com-fab). */
+.adicionar-barra {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 900;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem calc(0.625rem + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--surface-border);
+  background: var(--surface-card);
+  box-shadow: 0 -2px 8px color-mix(in srgb, var(--text-color) 8%, transparent);
+}
+
+.adicionar-barra__campo { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; min-width: 0; }
+.adicionar-barra__entendido { color: var(--text-color-secondary); padding-left: 0.25rem; }
+
+:host ::ng-deep .adicionar-barra__botao { width: 2.75rem; height: 2.75rem; flex: 0 0 auto; }

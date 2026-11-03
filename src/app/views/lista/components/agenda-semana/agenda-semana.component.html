@@ -19,7 +19,9 @@
 
   <!-- Item compacto das colunas da semana (desktop) -->
   <ng-template #itemDaColuna let-o>
-    <div class="agenda-item" [class.agenda-item--feito]="o.feito" [class.agenda-item--atrasado]="atrasada(o)">
+    <div class="agenda-item" [class.agenda-item--feito]="o.feito" [class.agenda-item--atrasado]="atrasada(o)"
+      [class.agenda-item--arrastando]="arrastando === o" [attr.draggable]="!somenteLeitura" (dragstart)="arrastar($event, o)"
+      (dragend)="fimDoArrasto()">
       <div class="agenda-item__topo">
         <span class="agenda-item__hora">{{ hora(o) }}@if (atrasada(o)) { · atrasado }</span>
         @if (o.repete) { <i class="pi pi-sync" title="Repete" aria-hidden="true"></i> }
@@ -59,6 +61,12 @@
     </div>
   </ng-template>
 
+  <div class="agenda-corpo" [class.agenda-corpo--com-painel]="mostrarPainel">
+  <div class="agenda-principal flex flex-column gap-3">
+  @if (!somenteLeitura) {
+    <app-agenda-adicionar [lista]="lista" [padrao]="diaParaNovo" (previa)="previa = $event" (adicionado)="mudou.emit()"
+      (abrirFormulario)="adicionar.emit($event)" />
+  }
   @if (ehDia) {
     <!-- Visão Dia (desktop e celular) -->
     <section class="agenda-do-dia flex flex-column gap-2" [attr.aria-label]="periodo">
@@ -68,7 +76,13 @@
         @for (o of porDia[dias[0]]; track o.itemId + '-' + o.dataOriginal) {
           <ng-container [ngTemplateOutlet]="cartao" [ngTemplateOutletContext]="{ $implicit: o }" />
         } @empty {
-          <p class="mf-hint m-0 agenda-vazio">Nada neste dia.</p>
+          @if (previa?.data !== dias[0]) { <p class="mf-hint m-0 agenda-vazio">Nada neste dia.</p> }
+        }
+        @if (previa && previa.data === dias[0]) {
+          <div class="agenda-cartao agenda-cartao--previa" aria-hidden="true">
+            <span class="agenda-cartao__hora"><span>{{ previa.hora ?? 'Dia todo' }}</span></span>
+            <span class="agenda-cartao__descricao">{{ previa.descricao }}</span>
+          </div>
         }
       }
       @if (!somenteLeitura) {
@@ -76,11 +90,55 @@
           [attr.aria-label]="'Adicionar em ' + diaMes(dias[0])"><i class="pi pi-plus"></i> adicionar neste dia</button>
       }
     </section>
+  } @else if (ehMes && !movel()) {
+    <!-- Mês no desktop: grade da segunda ao domingo, até 3 itens por dia; arrastar muda o dia -->
+    <div class="agenda-mes" role="grid" [attr.aria-label]="periodo">
+      @for (dia of dias.slice(0, 7); track dia) {
+        <span class="agenda-mes__semana" role="columnheader">{{ rotulo(dia).semana }}</span>
+      }
+      @for (dia of dias; track dia) {
+        <section class="agenda-mes__dia" role="gridcell" [class.agenda-mes__dia--fora]="foraDoMes(dia)" [class.agenda-mes__dia--hoje]="dia === hoje"
+          [class.agenda-dia--alvo]="alvo === dia" [attr.aria-label]="rotulo(dia).semana + ' ' + diaMes(dia)"
+          (dragover)="sobre($event, dia)" (dragleave)="sair(dia)" (drop)="soltar($event, dia)">
+          <button type="button" class="agenda-mes__numero" (click)="verDia(dia)" [attr.aria-label]="'Ver o dia ' + diaMes(dia)">
+            {{ rotulo(dia).dia }}
+          </button>
+          @for (o of primeiros(dia); track o.itemId + '-' + o.dataOriginal) {
+            <button type="button" class="agenda-mes__item" [class.agenda-mes__item--feito]="o.feito"
+              [class.agenda-mes__item--atrasado]="atrasada(o)" [disabled]="somenteLeitura" [attr.draggable]="!somenteLeitura"
+              (dragstart)="arrastar($event, o)" (dragend)="fimDoArrasto()" (click)="escolher(o)"
+              [attr.aria-label]="'Abrir ' + o.descricao + ' em ' + diaMes(o.data)">
+              @if (o.hora) { <span class="agenda-mes__hora">{{ hora(o) }}</span> }
+              <span class="agenda-mes__descricao">{{ o.descricao }}</span>
+            </button>
+          }
+          @if (restantes(dia)) {
+            <button type="button" class="agenda-mes__mais" (click)="verDia(dia)">+{{ restantes(dia) }} mais</button>
+          }
+        </section>
+      }
+    </div>
+  } @else if (ehMes) {
+    <!-- Mês no celular (mockup B): calendário com pontos e os itens do dia escolhido -->
+    <app-agenda-mini-mes [mes]="referencia" [hoje]="hoje" [marcados]="marcados" [realcados]="escolhidos" tamanho="grande" [comTopo]="false"
+      (escolher)="escolherNoMes($event)" (trocarMes)="trocarMes($event)" />
+    <section class="agenda-grupo flex flex-column gap-2" [attr.aria-label]="tituloDoEscolhido">
+      <h6 class="agenda-grupo__titulo m-0" [class.agenda-grupo__titulo--hoje]="diaEscolhido === hoje">{{ tituloDoEscolhido }}</h6>
+      @for (o of porDia[diaEscolhido] ?? []; track o.itemId + '-' + o.dataOriginal) {
+        <ng-container [ngTemplateOutlet]="cartao" [ngTemplateOutletContext]="{ $implicit: o }" />
+      }
+      @if (!somenteLeitura) {
+        <button type="button" class="agenda-link-adicionar" (click)="adicionar.emit(diaEscolhido)"
+          [attr.aria-label]="'Adicionar em ' + diaMes(diaEscolhido)"><i class="pi pi-plus"></i> adicionar em {{ diaCurto(diaEscolhido) }}</button>
+      }
+    </section>
   } @else if (!movel()) {
-    <!-- Semana no desktop: 7 colunas numa grade só -->
+    <!-- Semana no desktop: 7 colunas numa grade só; arrastar um item para outro dia muda a data -->
     <div class="agenda-semana">
       @for (dia of dias; track dia) {
-        <section class="agenda-dia" [class.agenda-dia--hoje]="dia === hoje" [attr.aria-label]="rotulo(dia).semana + ' ' + diaMes(dia)">
+        <section class="agenda-dia" [class.agenda-dia--hoje]="dia === hoje" [class.agenda-dia--alvo]="alvo === dia"
+          [attr.aria-label]="rotulo(dia).semana + ' ' + diaMes(dia)"
+          (dragover)="sobre($event, dia)" (dragleave)="sair(dia)" (drop)="soltar($event, dia)">
           <button type="button" class="agenda-dia__cabecalho" (click)="verDia(dia)" [attr.aria-label]="'Ver o dia ' + diaMes(dia)">
             <span class="agenda-dia__semana">{{ rotulo(dia).semana }}@if (dia === hoje) { · hoje }</span>
             <span class="agenda-dia__numero">{{ rotulo(dia).dia }}</span>
@@ -92,7 +150,13 @@
               @for (o of porDia[dia]; track o.itemId + '-' + o.dataOriginal) {
                 <ng-container [ngTemplateOutlet]="itemDaColuna" [ngTemplateOutletContext]="{ $implicit: o }" />
               } @empty {
-                <span class="agenda-dia__livre">Livre</span>
+                @if (previa?.data !== dia) { <span class="agenda-dia__livre">Livre</span> }
+              }
+              @if (previa && previa.data === dia) {
+                <div class="agenda-item agenda-item--previa" aria-hidden="true">
+                  <span class="agenda-item__hora">{{ previa.hora ?? 'Dia todo' }}</span>
+                  <span class="agenda-item__descricao">{{ previa.descricao }}</span>
+                </div>
               }
             }
             @if (!somenteLeitura) {
@@ -146,4 +210,10 @@
       }
     }
   }
+  </div>
+  @if (mostrarPainel) {
+    <app-agenda-painel [lista]="lista" [ocorrencias]="ocorrencias" [dias]="dias" [rotuloDoPeriodo]="rotuloDoPainel" [regras]="regras"
+      (irPara)="irParaDia($event)" (abrir)="abrir.emit($event)" />
+  }
+  </div>
 </div>
