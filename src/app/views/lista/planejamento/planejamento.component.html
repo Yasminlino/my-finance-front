@@ -1,4 +1,5 @@
-<div class="mf-pagina" [class.planejamento--com-barra]="(movel() && lista && !somenteLeitura) || selecionando">
+<div class="mf-pagina" [class.planejamento--com-barra]="(movel() && lista && !somenteLeitura && !mostrandoAgenda) || selecionando"
+  [class.planejamento--com-fab]="movel() && mostrandoAgenda && !somenteLeitura && !selecionando">
   <mf-page-header class="block mt-2 mb-3" [titulo]="lista?.nome ?? 'Planejamento'" [breadcrumb]="breadcrumb" [home]="home"
     [mostrarVoltar]="true" (voltar)="voltar()">
     @if (lista) {
@@ -41,7 +42,8 @@
         text="Planejamento arquivado: abre só para leitura. Desarquive para adicionar, marcar ou editar itens." />
     }
 
-    <!-- Resumo -->
+    <!-- Resumo (na agenda de um planejamento só com Data, a navegação já diz "x de y feitos") -->
+    @if (mostrarResumo) {
     <div class="planejamento-resumo mb-3" [class.planejamento-resumo--so-progresso]="!lista.usaValor">
       @if (lista.usaValor) {
         <mf-stat-card rotulo="Total estimado" icone="pi pi-wallet" tom="info" [valor]="moeda(resumo.total)">
@@ -62,7 +64,32 @@
         <p-progressBar [value]="resumo.percentual" [showValue]="false" styleClass="planejamento-barra" />
       </mf-stat-card>
     </div>
+    }
 
+    <!-- Agenda (card #69): Dia / Semana / Mês / Itens, lembrado por planejamento. Na agenda vai para a navegação dela. -->
+    <ng-template #seletorVisao>
+      <p-selectButton [options]="opcoesVisao" [(ngModel)]="visao" optionLabel="label" optionValue="value" optionDisabled="desabilitada"
+        [allowEmpty]="false" (onChange)="lembrarVisao()" styleClass="planejamento-visoes" ariaLabel="Visão">
+        <ng-template let-opcao pTemplate="item">
+          <span [title]="opcao.desabilitada ? 'Em breve' : ''">{{ opcao.label }}</span>
+        </ng-template>
+      </p-selectButton>
+    </ng-template>
+
+    @if (mostrandoAgenda) {
+      <div class="surface-card border-round shadow-1 p-3">
+        <app-agenda-semana [lista]="lista" [modo]="modoAgenda" [cor]="cor" [regras]="regras" [somenteLeitura]="somenteLeitura"
+          (adicionar)="novoItem($event)" (abrir)="abrirOcorrencia($event)" (mudou)="load()" (modoChange)="trocarModo($event)">
+          <ng-container ngProjectAs="[visoes]" [ngTemplateOutlet]="seletorVisao" />
+        </app-agenda-semana>
+      </div>
+      @if (movel() && !somenteLeitura) {
+        <mf-fab rotulo="Novo item" (clique)="novoItem()" />
+      }
+    } @else {
+    @if (lista.usaData) {
+      <div class="flex mb-3"><ng-container [ngTemplateOutlet]="seletorVisao" /></div>
+    }
     <div class="surface-card border-round shadow-1">
       @if (!somenteLeitura && !movel()) {
         <div class="p-3 border-bottom-1 surface-border">
@@ -225,6 +252,7 @@
         </div>
       }
     </div>
+    }
 
     @if (selecionando) {
       <!-- Barra de lote: fixa embaixo enquanto há seleção (no celular, no lugar do adicionar) -->
@@ -246,7 +274,7 @@
             (onClick)="sairSelecao()" />
         </div>
       </div>
-    } @else if (movel() && !somenteLeitura) {
+    } @else if (movel() && !somenteLeitura && !mostrandoAgenda) {
       <div class="planejamento-barra-adicionar surface-card border-top-1 surface-border p-2">
         <app-adicionar-item [lista]="lista" (adicionado)="aoAdicionar($event)" />
       </div>
@@ -268,7 +296,8 @@
   }
 
   @if (itemAberto && lista) {
-    <app-item-planejamento-form [lista]="lista" [item]="itemEditando" (closed)="fecharItem($event)" />
+    <app-item-planejamento-form [lista]="lista" [item]="itemEditando" [dataOriginal]="dataOriginal" [dataInicial]="dataInicial"
+      (closed)="fecharItem($event)" (salvo)="load()" />
   }
   @if (camposAbertos && lista) {
     <app-planejamento-form [registro]="lista" (closed)="fecharCampos($event)" />

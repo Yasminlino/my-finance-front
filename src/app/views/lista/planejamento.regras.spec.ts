@@ -1,6 +1,6 @@
 import { ItemListaDto, ListaDto } from 'src/app/core/models/lista.model';
 import {
-  contarItens, csvDosItens, filtrarItens, ordenarItens, resumoDosItens, rotuloDosFeitos, separarPorFeito, textoDosPendentes, totalDoItem
+  contarItens, csvDosItens, exemploDoItem, filtrarItens, ordenarItens, resumoDosItens, rotuloDosFeitos, separarPorFeito, textoDosPendentes, totalDoItem
 } from './planejamento.regras';
 
 function lista(ajuste: Partial<ListaDto> = {}): ListaDto {
@@ -161,5 +161,14 @@ describe('planejamento.regras — compartilhar e exportar (card #66, parte 2)', 
         'Luz;Não;1.234,50;10/11/2026;;"conta ""verde"""'
       ]);
     });
+  });
+});
+
+describe('planejamento.regras — exemplo do item (card #69)', () => {
+  it('o exemplo segue o que o planejamento usa; Data pesa mais', () => {
+    expect(exemploDoItem(lista({ usaData: true, usaQuantidade: true }))).toBe('Ex.: Consulta no dentista');
+    expect(exemploDoItem(lista())).toBe('Ex.: Arroz');
+    expect(exemploDoItem(lista({ usaQuantidade: false }))).toBe('Ex.: Conta de luz');
+    expect(exemploDoItem(lista({ usaQuantidade: false, usaValor: false }))).toBe('Ex.: Ligar para o banco');
   });
 });

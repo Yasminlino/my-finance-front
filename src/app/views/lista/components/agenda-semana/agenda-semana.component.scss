@@ -1,0 +1,290 @@
+// Agenda (card #69, parte 1b): layout dos mockups. --agenda-cor e --agenda-cor-fundo vêm da cor do planejamento (host binding).
+:host {
+  display: block;
+  --agenda-feito: var(--green-500);
+  --agenda-feito-fundo: var(--green-50);
+  --agenda-atrasado: var(--orange-500);
+  --agenda-atrasado-fundo: var(--orange-50);
+  --agenda-atrasado-texto: var(--orange-700);
+}
+
+/* ---- Navegação ---- */
+.agenda-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.agenda-nav__visoes { order: 10; margin-left: auto; }
+.agenda-nav__visoes:empty { display: none; }
+.agenda-periodo { text-transform: none; }
+
+.agenda-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: -0.5rem;
+}
+
+@media (max-width: 767.98px) {
+  // Celular: as visões em cima, na largura toda.
+  .agenda-nav__visoes { order: -1; flex-basis: 100%; margin-left: 0; }
+}
+
+/* ---- Semana no desktop ---- */
+.agenda-semana {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border: 1px solid var(--surface-border);
+  border-radius: var(--mf-radius);
+  overflow: hidden;
+  background: var(--surface-card);
+}
+
+.agenda-dia {
+  display: flex;
+  flex-direction: column;
+  min-height: 18rem;
+  min-width: 0;
+
+  & + & { border-left: 1px solid var(--surface-border); }
+
+  &--hoje { background: color-mix(in srgb, var(--agenda-cor-fundo) 45%, transparent); }
+}
+
+.agenda-dia__cabecalho {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.625rem 0.25rem 0.5rem;
+  border: 0;
+  border-bottom: 1px solid var(--surface-border);
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+
+  &:hover .agenda-dia__numero { background: var(--surface-hover); }
+}
+
+.agenda-dia__semana { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-color-secondary); }
+
+.agenda-dia__numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.agenda-dia--hoje {
+  .agenda-dia__semana { color: var(--agenda-cor); }
+  .agenda-dia__numero,
+  .agenda-dia__cabecalho:hover .agenda-dia__numero { background: var(--agenda-cor); color: var(--primary-color-text); }
+}
+
+.agenda-dia__itens { display: flex; flex-direction: column; gap: 0.375rem; padding: 0.5rem 0.375rem; flex-grow: 1; }
+.agenda-dia__livre { font-size: 0.8rem; color: var(--text-color-secondary); padding: 0.25rem 0.375rem; }
+
+.agenda-link-adicionar {
+  align-self: flex-start;
+  border: 0;
+  background: none;
+  padding: 0.25rem 0.375rem;
+  color: var(--text-color-secondary);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  .pi { font-size: 0.7rem; margin-right: 0.125rem; }
+  &:hover { color: var(--agenda-cor); }
+}
+
+/* Item compacto da coluna */
+.agenda-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--surface-border);
+  border-left: 3px solid var(--agenda-cor);
+  border-radius: var(--mf-radius);
+  background: var(--surface-card);
+  min-width: 0;
+
+  &:hover { background: var(--surface-hover); }
+
+  &--feito {
+    border-left-color: var(--agenda-feito);
+    background: var(--agenda-feito-fundo);
+    .agenda-item__descricao { text-decoration: line-through; color: var(--text-color-secondary); }
+  }
+
+  &--atrasado {
+    border-left-color: var(--agenda-atrasado);
+    background: var(--agenda-atrasado-fundo);
+    .agenda-item__hora { color: var(--agenda-atrasado-texto); font-weight: 600; }
+  }
+}
+
+.agenda-item__topo { display: flex; align-items: center; justify-content: space-between; gap: 0.25rem; }
+.agenda-item__topo .pi { font-size: 0.7rem; color: var(--text-color-secondary); }
+.agenda-item__hora { font-size: 0.72rem; color: var(--text-color-secondary); white-space: nowrap; }
+.agenda-item__linha { display: flex; align-items: flex-start; gap: 0.375rem; min-width: 0; }
+
+.agenda-item__corpo {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+
+  &:disabled { cursor: default; }
+}
+
+.agenda-item__descricao { font-size: 0.85rem; font-weight: 600; overflow-wrap: anywhere; }
+
+/* ---- Cartão (celular e visão Dia) ---- */
+.agenda-do-dia { max-width: 44rem; }
+
+.agenda-cartao {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--surface-border);
+  border-left: 3px solid var(--agenda-cor);
+  border-radius: var(--mf-radius);
+  background: var(--surface-card);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text-color) 8%, transparent);
+
+  &--feito {
+    border-left-color: var(--agenda-feito);
+    background: var(--agenda-feito-fundo);
+    .agenda-cartao__descricao { text-decoration: line-through; color: var(--text-color-secondary); }
+  }
+
+  &--atrasado { border-left-color: var(--agenda-atrasado); }
+}
+
+.agenda-cartao__corpo { align-items: center; gap: 0.75rem; }
+
+.agenda-cartao__hora {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 3.5rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.agenda-cartao__hora--dia-todo > span:first-child { font-size: 0.75rem; white-space: nowrap; }
+.agenda-cartao__atrasado { color: var(--agenda-atrasado-texto); font-weight: 600; }
+.agenda-cartao--atrasado .agenda-cartao__hora > span { color: var(--agenda-atrasado-texto); }
+
+.agenda-cartao__texto { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; }
+.agenda-cartao__descricao { font-weight: 600; overflow-wrap: anywhere; }
+.agenda-cartao__regra { color: var(--text-color-secondary); }
+.agenda-cartao__regra .pi { font-size: 0.7rem; margin-right: 0.25rem; }
+
+.agenda-cartao__marcar {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-left: auto;
+  border: 2px solid var(--surface-400);
+  border-radius: 50%;
+  background: var(--surface-card);
+  color: var(--primary-color-text);
+  cursor: pointer;
+
+  .pi { font-size: 0.8rem; font-weight: 700; }
+  &:hover:not(:disabled) { border-color: var(--agenda-cor); }
+  &:disabled { cursor: default; opacity: 0.6; }
+  &[aria-checked='true'] { border-color: var(--agenda-feito); background: var(--agenda-feito); }
+}
+
+.agenda-vazio { padding: 0.5rem 0; }
+
+/* ---- Semana no celular ---- */
+.agenda-faixa {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.25rem;
+  touch-action: pan-y;
+}
+
+.agenda-faixa__dia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.375rem 0 0.3rem;
+  border: 0;
+  border-radius: var(--mf-radius);
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+
+  .agenda-dia__numero { min-width: 0; height: auto; font-size: 1rem; }
+
+  &--hoje {
+    background: var(--agenda-cor);
+    color: var(--primary-color-text);
+    .agenda-dia__semana { color: inherit; }
+    .agenda-faixa__ponto--tem { background: var(--primary-color-text); }
+  }
+}
+
+.agenda-faixa__ponto {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: transparent;
+
+  &--tem { background: var(--agenda-cor); }
+}
+
+.agenda-grupo { scroll-margin-top: 4rem; }
+
+.agenda-grupo__titulo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-color-secondary);
+
+  &--hoje { color: var(--agenda-cor); }
+}
+
+.agenda-feitos__alternar {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+}

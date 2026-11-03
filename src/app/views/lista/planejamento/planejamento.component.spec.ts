@@ -56,7 +56,8 @@ describe('PlanejamentoComponent', () => {
     listas.desarquivar.and.returnValue(of(null));
     listas.excluir.and.returnValue(of(null));
     itens = jasmine.createSpyObj<ItemListaService>('ItemListaService',
-      ['listarDaLista', 'marcarFeito', 'desmarcarTodos', 'excluirConcluidos', 'criar', 'atualizar', 'excluir']);
+      ['listarDaLista', 'listarPeriodo', 'marcarFeito', 'desmarcarTodos', 'excluirConcluidos', 'criar', 'atualizar', 'excluir']);
+    itens.listarPeriodo.and.returnValue(of([]));
     itens.marcarFeito.and.returnValue(of({ afetados: 1 }));
     itens.desmarcarTodos.and.returnValue(of({ afetados: 2 }));
     itens.excluirConcluidos.and.returnValue(of({ afetados: 2 }));
@@ -383,6 +384,64 @@ describe('PlanejamentoComponent', () => {
       tela.exportarCsv();
 
       expect(cliques).toEqual(['planejamento-lista-de-compras.csv']);
+    });
+  });
+
+  describe('agenda (card #69)', () => {
+    const agenda: ListaDto = {
+      id: 8, nome: 'Agenda semanal', usaQuantidade: false, usaValor: false, modoValor: 'TOTAL', usaLimite: false,
+      usaData: true, usaObservacao: true, modelo: 'AGENDA', cor: 'roxo'
+    };
+    const daAgenda: ItemListaDto[] = [
+      { id: 5, descricao: 'Academia', feito: false, data: '2026-11-02', hora: '07:00:00', repeticao: 'SEMANAL', diasSemana: [1, 3, 5] },
+      { id: 6, descricao: 'Dentista', feito: false, data: '2026-11-05', repeticao: 'NENHUMA' }
+    ];
+    const chave = 'planejamento-visao-8';
+    const limpar = () => { try { localStorage.removeItem(chave); } catch { /* sem armazenamento */ } };
+    const rotulosDasVisoes = () => Array.from(el().querySelectorAll('.planejamento-visoes .p-button')).map(b => b.textContent!.trim());
+
+    beforeEach(limpar);
+    afterEach(limpar);
+
+    it('abre na Semana, com o seletor Dia · Semana · Mês · Itens dentro da navegação e sem o card de Progresso', () => {
+      montar(agenda, daAgenda);
+      expect(el().querySelector('app-agenda-semana')).not.toBeNull();
+      expect(el().querySelector('.agenda-nav__visoes .planejamento-visoes')).not.toBeNull();
+      expect(rotulosDasVisoes()).toEqual(['Dia', 'Semana', 'Mês', 'Itens']);
+      expect(el().querySelector('mf-stat-card')).toBeNull();
+      expect(tela.regras).toEqual({ 5: 'seg, qua e sex', 6: 'não repete' });
+    });
+
+    it('a agenda pedir o Dia troca a visão e lembra neste navegador', () => {
+      montar(agenda, daAgenda);
+      tela.trocarModo('DIA');
+      fixture.detectChanges();
+      expect(tela.modoAgenda).toBe('DIA');
+      expect(localStorage.getItem(chave)).toBe('DIA');
+
+      montar(agenda, daAgenda);
+      expect(tela.visao).toBe('DIA');
+    });
+
+    it('em Itens: o seletor fica em cima da lista e o resumo volta', () => {
+      montar(agenda, daAgenda);
+      tela.visao = 'ITENS';
+      fixture.detectChanges();
+      expect(el().querySelector('app-agenda-semana')).toBeNull();
+      expect(el().querySelector('.planejamento-visoes')).not.toBeNull();
+      expect(el().querySelector('mf-stat-card')).not.toBeNull();
+    });
+
+    it('"Novo item" do cabeçalho na agenda já vem com o dia mostrado', () => {
+      montar(agenda, daAgenda);
+      tela.novoItem();
+      expect(tela.dataInicial).toBe(new Date().toLocaleDateString('sv-SE'));
+    });
+
+    it('com Valor, o resumo continua na agenda', () => {
+      montar({ ...agenda, usaValor: true }, daAgenda);
+      expect(el().querySelector('app-agenda-semana')).not.toBeNull();
+      expect(el().querySelector('mf-stat-card')).not.toBeNull();
     });
   });
 });

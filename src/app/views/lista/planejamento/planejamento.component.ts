@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -33,6 +33,9 @@ import { FilterBarComponent } from 'src/app/shared/ui/filter-bar/filter-bar.comp
 import { PageHeaderComponent } from 'src/app/shared/ui/page-header/page-header.component';
 import { StatCardComponent } from 'src/app/shared/ui/stat-card/stat-card.component';
 import { AdicionarItemComponent } from '../components/adicionar-item/adicionar-item.component';
+import { AgendaSemanaComponent, ModoAgenda, OcorrenciaEscolhida } from '../components/agenda-semana/agenda-semana.component';
+import { isoDe, resumoCurto } from '../agenda.regras';
+import { FabComponent } from 'src/app/shared/ui/fab/fab.component';
 import { DuplicarPlanejamentoComponent } from '../components/duplicar-planejamento/duplicar-planejamento.component';
 import { ItemPlanejamentoFormComponent } from '../components/item-planejamento-form/item-planejamento-form.component';
 import { PlanejamentoFormComponent } from '../components/planejamento-form/planejamento-form.component';
@@ -41,6 +44,12 @@ import {
   FiltroItens, ResumoDosItens, contarItens, csvDosItens, filtrarItens, resumoDosItens, rotuloDosFeitos, separarPorFeito, textoDosPendentes,
   totalDoItem
 } from '../planejamento.regras';
+
+type VisaoPlanejamento = 'DIA' | 'SEMANA' | 'MES' | 'ITENS';
+const VISOES_SALVAS: VisaoPlanejamento[] = ['DIA', 'SEMANA', 'ITENS'];
+
+/** A visão escolhida fica neste navegador, por planejamento (conveniência: sem ela, vale a Semana). */
+const CHAVE_VISAO = (id: number) => `planejamento-visao-${id}`;
 
 /** Ação do ⋮ (desktop) e do bottom sheet (celular). */
 interface AcaoDaTela {
@@ -70,7 +79,7 @@ interface BotaoDoAviso {
     NgTemplateOutlet, FormsModule, BadgeModule, ButtonModule, CheckboxModule, IconFieldModule, InputIconModule, InputSwitchModule, InputTextModule,
     MenuModule, MessageModule, ProgressBarModule, SelectButtonModule, SidebarModule, SkeletonModule, ToastModule,
     CategoryIconComponent, EmptyStateComponent, FilterBarComponent, PageHeaderComponent, StatCardComponent,
-    AdicionarItemComponent, DuplicarPlanejamentoComponent, ItemPlanejamentoFormComponent, PlanejamentoFormComponent
+    FabComponent, AdicionarItemComponent, AgendaSemanaComponent, DuplicarPlanejamentoComponent, ItemPlanejamentoFormComponent, PlanejamentoFormComponent
   ],
   templateUrl: './planejamento.component.html',
   styleUrls: ['./planejamento.component.scss'],
@@ -116,8 +125,23 @@ export class PlanejamentoComponent implements OnInit {
   /** O toque longo terminou com um clique: esse clique não deve desfazer a seleção recém-feita. */
   private ignorarProximoToque = false;
 
+  /** Agenda (card #69): só para planejamento com Data. Mês entra na parte 2. */
+  readonly opcoesVisao: { label: string; value: VisaoPlanejamento; desabilitada?: boolean }[] = [
+    { label: 'Dia', value: 'DIA' },
+    { label: 'Semana', value: 'SEMANA' },
+    { label: 'Mês', value: 'MES', desabilitada: true },
+    { label: 'Itens', value: 'ITENS' }
+  ];
+  visao: VisaoPlanejamento = 'SEMANA';
+  /** Regra curta por item, embaixo da descrição na agenda. */
+  regras: Record<number, string> = {};
+  @ViewChild(AgendaSemanaComponent) private agenda?: AgendaSemanaComponent;
+
   itemAberto = false;
   itemEditando: ItemListaDto | null = null;
+  /** Do dia da agenda: a ocorrência aberta (item que repete) e a data do item novo. */
+  dataOriginal: string | null = null;
+  dataInicial: string | null = null;
   camposAbertos = false;
   duplicando = false;
   itensMenu: MenuItem[] = [];
@@ -186,6 +210,7 @@ export class PlanejamentoComponent implements OnInit {
       this.itens = [];
       this.limparFiltros();
       this.sairSelecao();
+      this.visao = this.lerVisao();
       this.load();
     });
   }
@@ -222,6 +247,7 @@ export class PlanejamentoComponent implements OnInit {
       { label: this.rotuloFeitos, value: 'FEITOS', contagem: contagem.FEITOS }
     ];
     this.resumo = resumoDosItens(this.itens, this.lista);
+    this.regras = Object.fromEntries(this.itens.map(i => [i.id, resumoCurto(i)]));
     const grupos = separarPorFeito(filtrarItens(this.itens, this.filtro, this.busca));
     this.pendentes = grupos.pendentes;
     this.feitos = this.ocultarFeitos && this.filtro !== 'FEITOS' ? [] : grupos.feitos;
@@ -283,15 +309,67 @@ export class PlanejamentoComponent implements OnInit {
     this.aplicar();
   }
 
-  novoItem() {
+  /** Na agenda, "+ adicionar" de um dia traz a data; o botão do cabeçalho, a do dia mostrado (ou hoje). */
+  novoItem(data?: string) {
     this.itemEditando = null;
+    this.dataOriginal = null;
+    this.dataInicial = data ?? (this.mostrandoAgenda ? this.agenda?.diaParaNovo ?? isoDe(new Date()) : null);
     this.itemAberto = true;
   }
 
   editarItem(item: ItemListaDto) {
     if (this.somenteLeitura) return;
     this.itemEditando = item;
+    this.dataOriginal = null;
+    this.dataInicial = null;
     this.itemAberto = true;
+  }
+
+  /** Item clicado num dia da agenda: quem repete abre na ocorrência (salvar e excluir perguntam o alcance). */
+  abrirOcorrencia(o: OcorrenciaEscolhida) {
+    const item = this.itens.find(i => i.id === o.itemId);
+    if (!item || this.somenteLeitura) return;
+    this.itemEditando = item;
+    this.dataOriginal = o.repete ? o.dataOriginal : null;
+    this.dataInicial = null;
+    this.itemAberto = true;
+  }
+
+  /** Dia ou Semana de um planejamento com Data. */
+  get mostrandoAgenda(): boolean {
+    return !!this.lista?.usaData && (this.visao === 'DIA' || this.visao === 'SEMANA');
+  }
+
+  get modoAgenda(): ModoAgenda {
+    return this.visao === 'DIA' ? 'DIA' : 'SEMANA';
+  }
+
+  /** Só com Data (sem Valor), a agenda já diz "x de y feitos": o card de Progresso sai (mockup). */
+  get mostrarResumo(): boolean {
+    return !this.mostrandoAgenda || !!this.lista?.usaValor;
+  }
+
+  /** A agenda pediu um dia (clique no dia da semana ou dia sem pendentes no celular). */
+  trocarModo(modo: ModoAgenda) {
+    this.visao = modo;
+    this.lembrarVisao();
+  }
+
+  lembrarVisao() {
+    try {
+      localStorage.setItem(CHAVE_VISAO(this.id), this.visao);
+    } catch {
+      // Sem armazenamento (janela privada etc.): só não lembra.
+    }
+  }
+
+  private lerVisao(): VisaoPlanejamento {
+    try {
+      const salva = localStorage.getItem(CHAVE_VISAO(this.id));
+      return VISOES_SALVAS.includes(salva as VisaoPlanejamento) ? (salva as VisaoPlanejamento) : 'SEMANA';
+    } catch {
+      return 'SEMANA';
+    }
   }
 
   fecharItem(recarregar: boolean) {
@@ -319,6 +397,8 @@ export class PlanejamentoComponent implements OnInit {
 
   entrarSelecao(item?: ItemListaDto) {
     if (this.somenteLeitura) return;
+    // A seleção é da lista de itens; na agenda, troca para ela.
+    if (this.mostrandoAgenda) this.visao = 'ITENS';
     this.selecionando = true;
     if (item) this.selecionados.add(item.id);
   }

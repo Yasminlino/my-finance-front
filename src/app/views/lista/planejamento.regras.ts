@@ -73,6 +73,14 @@ export function rotuloDosFeitos(modelo: ModeloLista): string {
   }
 }
 
+/** Exemplo do campo Item pelo que o planejamento usa (o modelo só pré-marca os campos); Data pesa mais. */
+export function exemploDoItem(lista: Pick<ListaDto, 'usaData' | 'usaQuantidade' | 'usaValor'>): string {
+  if (lista.usaData) return 'Ex.: Consulta no dentista';
+  if (lista.usaQuantidade) return 'Ex.: Arroz';
+  if (lista.usaValor) return 'Ex.: Conta de luz';
+  return 'Ex.: Ligar para o banco';
+}
+
 /** Ordem de inclusão: `ordem` quando há; sem ela, a ordem de criação (id). */
 export function ordenarItens(itens: ItemListaDto[]): ItemListaDto[] {
   return [...itens].sort((a, b) =>

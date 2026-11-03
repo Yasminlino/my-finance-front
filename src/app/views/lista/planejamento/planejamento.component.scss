@@ -142,3 +142,16 @@
 }
 
 .planejamento-barra-lote__conteudo { max-width: 1200px; margin: 0 auto; }
+
+// Agenda no celular: o + flutuante não cobre o último cartão.
+.planejamento--com-fab { padding-bottom: 5.5rem; }
+
+// Seletor Dia · Semana · Mês · Itens: no celular, na largura toda e em partes iguais.
+@media (max-width: 767.98px) {
+  :host ::ng-deep .planejamento-visoes {
+    display: flex;
+    width: 100%;
+
+    .p-button { flex: 1 1 0; justify-content: center; padding-left: 0.25rem; padding-right: 0.25rem; }
+  }
+}

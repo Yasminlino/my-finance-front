@@ -1,0 +1,149 @@
+<div class="agenda flex flex-column gap-3">
+  <!-- Navegação: Hoje ‹ › período · visões (projetadas pela tela) -->
+  <div class="agenda-nav">
+    <div class="agenda-nav__visoes"><ng-content select="[visoes]" /></div>
+    <p-button label="Hoje" size="small" severity="secondary" [outlined]="true" [disabled]="noPeriodoDeHoje" (onClick)="irParaHoje()" />
+    <p-button icon="pi pi-chevron-left" size="small" [rounded]="true" [text]="true" severity="secondary"
+      [ariaLabel]="ehDia ? 'Dia anterior' : 'Semana anterior'" (onClick)="anterior()" />
+    <p-button icon="pi pi-chevron-right" size="small" [rounded]="true" [text]="true" severity="secondary"
+      [ariaLabel]="ehDia ? 'Próximo dia' : 'Próxima semana'" (onClick)="proxima()" />
+    <span class="agenda-periodo font-semibold">{{ periodo }}</span>
+  </div>
+  <div class="agenda-subnav">
+    <small class="mf-hint agenda-contagem">{{ contagem }}</small>
+    <span class="flex align-items-center gap-2">
+      <p-inputSwitch inputId="agenda-ocultar" [(ngModel)]="ocultarFeitos" (onChange)="aoOcultar()" />
+      <label for="agenda-ocultar" class="m-0 white-space-nowrap">Ocultar feitos</label>
+    </span>
+  </div>
+
+  <!-- Item compacto das colunas da semana (desktop) -->
+  <ng-template #itemDaColuna let-o>
+    <div class="agenda-item" [class.agenda-item--feito]="o.feito" [class.agenda-item--atrasado]="atrasada(o)">
+      <div class="agenda-item__topo">
+        <span class="agenda-item__hora">{{ hora(o) }}@if (atrasada(o)) { · atrasado }</span>
+        @if (o.repete) { <i class="pi pi-sync" title="Repete" aria-hidden="true"></i> }
+      </div>
+      <div class="agenda-item__linha">
+        <p-checkbox [ngModel]="o.feito" [binary]="true" [disabled]="somenteLeitura" (onChange)="alternar(o)"
+          [ariaLabel]="(o.feito ? 'Desmarcar ' : 'Marcar ') + o.descricao" />
+        <button type="button" class="agenda-item__corpo" [disabled]="somenteLeitura" (click)="escolher(o)"
+          [attr.aria-label]="'Abrir ' + o.descricao + ' em ' + diaMes(o.data)">
+          <span class="agenda-item__descricao">{{ o.descricao }}</span>
+        </button>
+      </div>
+    </div>
+  </ng-template>
+
+  <!-- Cartão do celular e da visão Dia: hora à esquerda, regra embaixo, círculo para marcar -->
+  <ng-template #cartao let-o let-comData="comData">
+    <div class="agenda-cartao" [class.agenda-cartao--feito]="o.feito" [class.agenda-cartao--atrasado]="atrasada(o)">
+      <button type="button" class="agenda-cartao__corpo agenda-item__corpo" [disabled]="somenteLeitura" (click)="escolher(o)"
+        [attr.aria-label]="'Abrir ' + o.descricao + ' em ' + diaMes(o.data)">
+        <span class="agenda-cartao__hora" [class.agenda-cartao__hora--dia-todo]="!o.hora">
+          <span>{{ hora(o) }}</span>
+          @if (atrasada(o)) { <small class="agenda-cartao__atrasado">atrasado</small> }
+          @else if (comData) { <small class="mf-hint">{{ diaCurto(o.data) }}</small> }
+        </span>
+        <span class="agenda-cartao__texto">
+          <span class="agenda-cartao__descricao">{{ o.descricao }}</span>
+          <small class="agenda-cartao__regra">
+            @if (o.repete) { <i class="pi pi-sync" aria-hidden="true"></i> }{{ regra(o) }}
+          </small>
+        </span>
+      </button>
+      <button type="button" class="agenda-cartao__marcar" role="checkbox" [attr.aria-checked]="o.feito" [disabled]="somenteLeitura"
+        (click)="alternar(o)" [attr.aria-label]="(o.feito ? 'Desmarcar ' : 'Marcar ') + o.descricao">
+        @if (o.feito) { <i class="pi pi-check" aria-hidden="true"></i> }
+      </button>
+    </div>
+  </ng-template>
+
+  @if (ehDia) {
+    <!-- Visão Dia (desktop e celular) -->
+    <section class="agenda-do-dia flex flex-column gap-2" [attr.aria-label]="periodo">
+      @if (loading && !ocorrencias.length) {
+        <p-skeleton height="3.5rem" />
+      } @else {
+        @for (o of porDia[dias[0]]; track o.itemId + '-' + o.dataOriginal) {
+          <ng-container [ngTemplateOutlet]="cartao" [ngTemplateOutletContext]="{ $implicit: o }" />
+        } @empty {
+          <p class="mf-hint m-0 agenda-vazio">Nada neste dia.</p>
+        }
+      }
+      @if (!somenteLeitura) {
+        <button type="button" class="agenda-link-adicionar" (click)="adicionar.emit(dias[0])"
+          [attr.aria-label]="'Adicionar em ' + diaMes(dias[0])"><i class="pi pi-plus"></i> adicionar neste dia</button>
+      }
+    </section>
+  } @else if (!movel()) {
+    <!-- Semana no desktop: 7 colunas numa grade só -->
+    <div class="agenda-semana">
+      @for (dia of dias; track dia) {
+        <section class="agenda-dia" [class.agenda-dia--hoje]="dia === hoje" [attr.aria-label]="rotulo(dia).semana + ' ' + diaMes(dia)">
+          <button type="button" class="agenda-dia__cabecalho" (click)="verDia(dia)" [attr.aria-label]="'Ver o dia ' + diaMes(dia)">
+            <span class="agenda-dia__semana">{{ rotulo(dia).semana }}@if (dia === hoje) { · hoje }</span>
+            <span class="agenda-dia__numero">{{ rotulo(dia).dia }}</span>
+          </button>
+          <div class="agenda-dia__itens">
+            @if (loading && !ocorrencias.length) {
+              <p-skeleton height="2.75rem" />
+            } @else {
+              @for (o of porDia[dia]; track o.itemId + '-' + o.dataOriginal) {
+                <ng-container [ngTemplateOutlet]="itemDaColuna" [ngTemplateOutletContext]="{ $implicit: o }" />
+              } @empty {
+                <span class="agenda-dia__livre">Livre</span>
+              }
+            }
+            @if (!somenteLeitura) {
+              <button type="button" class="agenda-link-adicionar agenda-dia__adicionar" (click)="adicionar.emit(dia)"
+                [attr.aria-label]="'Adicionar em ' + diaMes(dia)"><i class="pi pi-plus"></i> adicionar</button>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  } @else {
+    <!-- Semana no celular: faixa (arrastar troca a semana), dias com pendentes e os feitos recolhidos -->
+    <div class="agenda-faixa" role="group" aria-label="Dias da semana" (touchstart)="inicioDoToque($event)"
+      (touchend)="fimDoToque($event)">
+      @for (dia of dias; track dia) {
+        <button type="button" class="agenda-faixa__dia" [class.agenda-faixa__dia--hoje]="dia === hoje" (click)="tocarDia(dia)"
+          [attr.aria-label]="rotulo(dia).semana + ' ' + diaMes(dia)">
+          <span class="agenda-dia__semana">{{ rotulo(dia).semana }}</span>
+          <span class="agenda-dia__numero">{{ rotulo(dia).dia }}</span>
+          <span class="agenda-faixa__ponto" [class.agenda-faixa__ponto--tem]="temItens(dia)"></span>
+        </button>
+      }
+    </div>
+
+    @if (loading && !ocorrencias.length) {
+      <p-skeleton height="3.5rem" />
+    } @else {
+      @for (dia of diasComPendentes; track dia) {
+        <section class="agenda-grupo flex flex-column gap-2" [id]="'agenda-dia-' + dia">
+          <h6 class="agenda-grupo__titulo m-0" [class.agenda-grupo__titulo--hoje]="dia === hoje">{{ cabecalhoDoGrupo(dia) }}</h6>
+          @for (o of pendentesPorDia[dia]; track o.itemId + '-' + o.dataOriginal) {
+            <ng-container [ngTemplateOutlet]="cartao" [ngTemplateOutletContext]="{ $implicit: o }" />
+          }
+        </section>
+      } @empty {
+        <p class="mf-hint m-0 agenda-vazio">Nada pendente nesta semana.</p>
+      }
+
+      @if (feitosDaSemana.length) {
+        <section class="agenda-grupo flex flex-column gap-2">
+          <button type="button" class="agenda-feitos__alternar" [attr.aria-expanded]="feitosAbertos" (click)="feitosAbertos = !feitosAbertos">
+            Feitos nesta semana · {{ feitosDaSemana.length }}
+            <i class="pi" [class.pi-chevron-down]="!feitosAbertos" [class.pi-chevron-up]="feitosAbertos" aria-hidden="true"></i>
+          </button>
+          @if (feitosAbertos) {
+            @for (o of feitosDaSemana; track o.itemId + '-' + o.dataOriginal) {
+              <ng-container [ngTemplateOutlet]="cartao" [ngTemplateOutletContext]="{ $implicit: o, comData: true }" />
+            }
+          }
+        </section>
+      }
+    }
+  }
+</div>

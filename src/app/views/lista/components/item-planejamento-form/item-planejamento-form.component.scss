@@ -1,0 +1,22 @@
+// Dias da semana em botões redondos S T Q Q S S D (card #69, mockup do formulário).
+:host ::ng-deep .item-dias-semana {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  .p-button {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50% !important;
+    border-width: 1px !important;
+    font-weight: 600;
+  }
+}
+
+.item-alcance { border-color: var(--mf-primary); background: var(--highlight-bg); }
+
+// O autoResize do PrimeNG mede o campo com o painel ainda abrindo e grava height: 0px; sem isto a Observação
+// aparecia cortada (só a borda). Duas linhas no mínimo; continua crescendo com o texto.
+textarea { min-height: 4.25rem; }

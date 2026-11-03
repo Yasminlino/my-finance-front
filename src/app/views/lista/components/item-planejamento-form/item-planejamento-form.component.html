@@ -1,8 +1,9 @@
-<mf-form-panel [titulo]="titulo" [salvando]="saving" (fechar)="close()" (salvar)="save()">
+<mf-form-panel [titulo]="titulo" [salvando]="saving" [criarOutra]="!item" rotuloCriarOutra="Salvar e outro"
+  (fechar)="close()" (salvar)="save()" (salvarEOutra)="salvarEOutro()">
   <form [formGroup]="form" class="flex flex-column gap-4" (ngSubmit)="save()">
     <div class="flex flex-column gap-2">
       <label for="item-descricao" class="mf-label">Item <span class="text-red-500">*</span></label>
-      <input pInputText id="item-descricao" maxlength="200" formControlName="descricao" placeholder="Ex.: Arroz"
+      <input #campoDescricao pInputText id="item-descricao" maxlength="200" formControlName="descricao" [placeholder]="exemplo"
         [class.ng-dirty]="form.controls.descricao.touched && form.controls.descricao.invalid" />
       <mf-field-error [control]="form.controls.descricao">Informe o item.</mf-field-error>
     </div>
@@ -39,26 +40,55 @@
 
     @if (lista.usaData) {
       <div class="grid">
-        <div class="col-12 sm:col-7 flex flex-column gap-2">
+        <!-- Lado a lado também no celular: cabem e ficam como no mockup -->
+        <div class="col-7 flex flex-column gap-2">
           <label for="item-data" class="mf-label">Data</label>
-          <input pInputText type="date" id="item-data" formControlName="data" />
+          <input pInputText type="date" id="item-data" formControlName="data" class="w-full" />
         </div>
-        <div class="col-12 sm:col-5 flex flex-column gap-2">
+        <div class="col-5 flex flex-column gap-2">
           <label for="item-hora" class="mf-label">Hora</label>
-          <input pInputText type="time" id="item-hora" formControlName="hora" />
-          <small class="mf-hint">Sem hora = dia todo.</small>
+          <input pInputText type="time" id="item-hora" formControlName="hora" class="w-full"
+            [class.ng-dirty]="erroRegra('semHora')" />
         </div>
       </div>
-      @if (repete) {
-        <p-message severity="info" styleClass="w-full justify-content-start"
-          text="Este item repete. A repetição continua como está; para mudá-la, use a agenda." />
-      }
+      <div class="flex align-items-center justify-content-between gap-2 -mt-2">
+        <label for="item-dia-todo" class="m-0">Dia todo</label>
+        <p-inputSwitch inputId="item-dia-todo" formControlName="diaTodo" />
+      </div>
+      @if (erroRegra('semHora')) { <small class="p-error -mt-3">Informe a hora ou ligue "Dia todo".</small> }
+      <div class="flex flex-column gap-2">
+        <label for="item-repetir" class="mf-label">Repetir</label>
+        <p-dropdown inputId="item-repetir" formControlName="repeticao" [options]="opcoesRepeticao" optionLabel="label"
+          optionValue="value" appendTo="body" styleClass="w-full" />
+        @if (repeticao === 'SEMANAL') {
+          <!-- Redondos S T Q Q S S D; o leitor de tela lê o nome inteiro (optionLabel) -->
+          <p-selectButton formControlName="diasSemana" [options]="opcoesDias" optionLabel="label" optionValue="value"
+            [multiple]="true" ariaLabelledBy="item-repetir" styleClass="item-dias-semana">
+            <ng-template let-dia pTemplate="item"><span aria-hidden="true" [title]="dia.label">{{ dia.letra }}</span></ng-template>
+          </p-selectButton>
+          @if (erroRegra('semanaSemDias')) { <small class="p-error">Escolha ao menos um dia da semana.</small> }
+        }
+        @if (repeticao !== 'NENHUMA') {
+          <div class="flex flex-column gap-2">
+            <label for="item-repetir-ate" class="mf-label">Repetir até <small class="mf-hint">(opcional)</small></label>
+            <input pInputText type="date" id="item-repetir-ate" formControlName="repetirAte" />
+          </div>
+          @if (erroRegra('repeticaoSemData')) { <small class="p-error">Para repetir, informe a data de início.</small> }
+          @if (erroRegra('ateAntesDaData')) { <small class="p-error">"Repetir até" não pode ser antes da data.</small> }
+          @if (resumoRegra) {
+            <div class="item-resumo-regra flex align-items-center gap-2 p-2 border-round surface-ground">
+              <i class="pi pi-sync mf-hint"></i><span>{{ resumoRegra }}</span>
+            </div>
+          }
+        }
+      </div>
     }
 
     @if (lista.usaObservacao) {
       <div class="flex flex-column gap-2">
-        <label for="item-observacao" class="mf-label">Observação</label>
-        <textarea pInputTextarea id="item-observacao" rows="2" maxlength="500" formControlName="observacao" [autoResize]="true"></textarea>
+        <label for="item-observacao" class="mf-label">Observação <small class="mf-hint">(opcional)</small></label>
+        <textarea pInputTextarea id="item-observacao" rows="2" maxlength="500" formControlName="observacao" [autoResize]="true"
+          [placeholder]="exemploObservacao"></textarea>
       </div>
     }
 
@@ -66,6 +96,23 @@
       <p-inputSwitch inputId="item-feito" formControlName="feito" />
       <label for="item-feito" class="m-0">Feito</label>
     </div>
+
+    @if (escolhendo) {
+      <!-- Item que repete, aberto de um dia da agenda: o alcance da mudança -->
+      <div class="item-alcance flex flex-column gap-2 p-3 border-1 border-round" role="group"
+        [attr.aria-label]="escolhendo === 'excluir' ? 'Excluir qual?' : 'Salvar em qual?'">
+        <span class="font-semibold">{{ escolhendo === 'excluir' ? 'Excluir este item que repete:' : 'Este item repete. Aplicar a mudança em:' }}</span>
+        @if (escolhendo === 'salvar') {
+          <small class="mf-hint">"Só esta" muda a data, a hora e o feito deste dia. O nome e a regra mudam só em "Esta e as próximas".</small>
+        }
+        <div class="flex flex-wrap gap-2">
+          <p-button data-acao="so-esta" label="Só esta" [disabled]="saving" (onClick)="aplicarAlcance(true)" />
+          <p-button data-acao="esta-e-proximas" label="Esta e as próximas" severity="secondary" [outlined]="true"
+            [disabled]="saving" (onClick)="aplicarAlcance(false)" />
+          <p-button label="Cancelar" [text]="true" severity="secondary" [disabled]="saving" (onClick)="cancelarAlcance()" />
+        </div>
+      </div>
+    }
 
     @if (item) {
       <div class="flex justify-content-start">

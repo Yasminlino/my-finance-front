@@ -79,7 +79,13 @@ describe('ContaLancamentosPainelComponent', () => {
       { id: 1, data: '2025-01-05', nome: 'Cabelo', valor: 25000, situacao: 'PAGO NO PRAZO', ehParcelado: false }
     ];
 
-    beforeEach(() => service.listarLancamentos.and.returnValue(of(varios)));
+    // O período padrão termina no maior entre "este mês" e o lançamento mais recente: o teste fixa hoje em out/2026.
+    beforeEach(() => {
+      service.listarLancamentos.and.returnValue(of(varios));
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 9, 15));
+    });
+    afterEach(() => jasmine.clock().uninstall());
 
     it('abre nos 12 meses até o mais recente: o que é mais antigo fica de fora do resumo e da lista', () => {
       abrir();
