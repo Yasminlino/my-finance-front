@@ -40,7 +40,8 @@ function parcelaDentroDoTotal(grupo: AbstractControl): ValidationErrors | null {
     CommonModule, ReactiveFormsModule, AutoCompleteModule, CurrencyInputDirective,
     FormPanelComponent, FieldErrorComponent, DropdownModule, InputTextModule, InputTextareaModule, CheckboxModule, ButtonModule
   ],
-  templateUrl: './modal-lancamento-manual.component.html'
+  templateUrl: './modal-lancamento-manual.component.html',
+  styles: [`.lm-secao { margin: 0.5rem 0 0.5rem; }`]
 })
 export class ModalLancamentoManualComponent implements OnInit {
   /** Mês da tela ("YYYY-MM"): data padrão e fatura sugerida. */

@@ -11,14 +11,13 @@ import { ChartsModule } from 'src/app/core/components/charts/charts.module';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 import { ModalLancamentoManualComponent } from './components/modal-lancamento-manual/modal-lancamento-manual.component';
 import { ModalImportarExtratoComponent } from './components/modal-importar-extrato/modal-importar-extrato.component';
+import { ExtratoMesComponent } from './extrato-mes/extrato-mes.component';
 import { TotaisSelecaoComponent } from 'src/app/shared/components/totais-selecao/totais-selecao.component';
 
 @NgModule({
   declarations: [
     ExtratoBancarioDetalhesComponent,
     ExtratoBancarioResumoComponent,
-    ModalConfiguracaoVinculoPessoaComponent,
-    ModalImportacoesMensaisComponent,
     RelatorioGastosMensaisComponent
   ],
   imports: [
@@ -28,7 +27,10 @@ import { TotaisSelecaoComponent } from 'src/app/shared/components/totais-selecao
     DataGridComponent,
     ModalLancamentoManualComponent,
     ModalImportarExtratoComponent,
-    TotaisSelecaoComponent
+    TotaisSelecaoComponent,
+    ModalConfiguracaoVinculoPessoaComponent,
+    ModalImportacoesMensaisComponent,
+    ExtratoMesComponent
   ]
 })
 export class ExtratoBancarioModule { }

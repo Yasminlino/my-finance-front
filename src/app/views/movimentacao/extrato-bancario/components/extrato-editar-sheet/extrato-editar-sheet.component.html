@@ -1,0 +1,62 @@
+<p-sidebar [visible]="aberta" (visibleChange)="aoMudarVisivel($event)" position="bottom" styleClass="extrato-sheet h-auto"
+  [blockScroll]="true" [dismissible]="!salvando && !excluindo" [closeOnEscape]="!salvando && !excluindo">
+  <ng-template pTemplate="header">
+    <span class="font-semibold flex-grow-1">{{ titulo }}</span>
+  </ng-template>
+
+  @if (rascunho; as r) {
+    <form class="flex flex-column gap-3" (ngSubmit)="confirmar()">
+      <div class="grid">
+        <div class="col-6 flex flex-column gap-1">
+          <label for="sheet-data" class="mf-label">Data</label>
+          <input pInputText type="date" id="sheet-data" name="data" class="w-full" [(ngModel)]="r.dataMovimentacao" />
+        </div>
+        <div class="col-6 flex flex-column gap-1">
+          <label for="sheet-valor" class="mf-label">Valor</label>
+          <input pInputText type="text" id="sheet-valor" name="valor" inputmode="decimal" currencyInput class="w-full text-right"
+            [(ngModel)]="r.valor" [class.extrato-valor--entrada]="entrada" />
+        </div>
+      </div>
+      <div class="flex flex-column gap-1">
+        <label for="sheet-descricao" class="mf-label">Descrição</label>
+        <input pInputText id="sheet-descricao" name="descricao" maxlength="500" class="w-full" [(ngModel)]="r.descricao" />
+      </div>
+      <div class="flex flex-column gap-1">
+        <label for="sheet-pessoa" class="mf-label">Pessoa</label>
+        <input pInputText id="sheet-pessoa" name="pessoa" class="w-full" list="sheet-pessoas" autocomplete="off" placeholder="Sem pessoa"
+          [ngModel]="r.nomePessoaTransacao ?? ''" (ngModelChange)="editarPessoa($event)" />
+        <datalist id="sheet-pessoas">
+          @for (nome of nomesPessoas; track nome) { <option [value]="nome"></option> }
+        </datalist>
+      </div>
+      <div class="flex flex-column gap-1">
+        <label for="sheet-categoria" class="mf-label">Categoria</label>
+        <p-dropdown inputId="sheet-categoria" name="categoria" [options]="opcoesCategoria" optionLabel="label" optionValue="value"
+          [(ngModel)]="r.categoriaId" [filter]="true" [showClear]="true" placeholder="Sem categoria" appendTo="body" styleClass="w-full" />
+      </div>
+      <div class="flex flex-column gap-1">
+        <label for="sheet-tipo" class="mf-label">Tipo de movimentação</label>
+        <p-dropdown inputId="sheet-tipo" name="tipo" [options]="opcoesTipoMov" optionLabel="label" optionValue="value"
+          [(ngModel)]="r.tipoMovimentacaoId" [filter]="true" [showClear]="true" placeholder="Sem tipo" appendTo="body" styleClass="w-full" />
+      </div>
+      @if (item?.ehParcelado) {
+        <div class="flex flex-column gap-1">
+          <span class="mf-label">Parcela</span>
+          <span class="flex align-items-center gap-2">
+            <input pInputText type="number" min="1" name="parcelaAtual" class="sheet-parcela" [(ngModel)]="r.parcelaAtual" aria-label="Parcela atual" />
+            <span class="mf-hint">de</span>
+            <input pInputText type="number" min="1" name="quantidadeParcelas" class="sheet-parcela" [(ngModel)]="r.quantidadeParcelas"
+              aria-label="Total de parcelas" />
+          </span>
+        </div>
+      }
+
+      <div class="flex gap-2 pt-2">
+        <p-button label="Excluir" icon="pi pi-trash" severity="danger" [outlined]="true" [loading]="excluindo"
+          [disabled]="salvando || excluindo" (onClick)="item && excluir.emit(item)" />
+        <span class="flex-grow-1"></span>
+        <p-button label="Salvar" icon="pi pi-check" type="submit" [loading]="salvando" [disabled]="!alterou || salvando || excluindo" />
+      </div>
+    </form>
+  }
+</p-sidebar>

@@ -4,6 +4,7 @@ import { GridColumn } from 'src/app/shared/components/data-grid/data-grid.interf
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
+import { SharedModule } from 'src/app/shared/shared.module';
 import { formatCurrencyBR, formatDateBR } from 'src/app/core/utils/mask';
 import { ExtratoBancarioService } from 'src/app/core/services/extrato-bancario.service';
 import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.constants';
@@ -14,6 +15,8 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 @Component({
   selector: 'app-modal-importacoes-mensais',
+  standalone: true,
+  imports: [SharedModule, DataGridComponent],
   templateUrl: './modal-importacoes-mensais.component.html',
 })
 export class ModalImportacoesMensaisComponent implements OnInit {

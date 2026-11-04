@@ -15,6 +15,8 @@ export class BarraEdicaoComponent {
   /** Ex.: "outubro de 2026". */
   @Input({ required: true }) mes = '';
   /** Linhas alteradas. */
+  /** O que está sendo editado: "as contas" em Contas a Pagar, "os lançamentos" no Extrato (card #45). */
+  @Input() oQue = 'as contas';
   @Input() contagem = 0;
   @Input() temErros = false;
   @Input() salvando = false;

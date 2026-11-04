@@ -8,8 +8,6 @@ import { of } from 'rxjs';
 import { ModalImportacoesMensaisComponent } from './modal-importacoes-mensais.component';
 import { ExtratoBancarioService } from 'src/app/core/services/extrato-bancario.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
-import { SharedModule } from 'src/app/shared/shared.module';
-import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 
 /** Importações do mês num p-dialog (FE-P2-07). */
 describe('ModalImportacoesMensaisComponent', () => {
@@ -20,8 +18,7 @@ describe('ModalImportacoesMensaisComponent', () => {
     const extratos = jasmine.createSpyObj<ExtratoBancarioService>('ExtratoBancarioService', ['listarDoMes', 'excluir']);
     extratos.listarDoMes.and.returnValue(of([]));
     TestBed.configureTestingModule({
-      declarations: [ModalImportacoesMensaisComponent],
-      imports: [SharedModule, DataGridComponent],
+      imports: [ModalImportacoesMensaisComponent],
       providers: [
         // O ConfirmacaoService (data-grid, exclusões) usa o do root; no app vem do AppModule.
         ConfirmationService,

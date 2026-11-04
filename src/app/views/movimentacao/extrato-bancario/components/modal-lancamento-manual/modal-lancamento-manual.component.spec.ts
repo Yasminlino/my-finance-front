@@ -194,7 +194,9 @@ describe('ModalLancamentoManualComponent', () => {
     modal.fechado.subscribe(fechado);
     const painel = fixture.debugElement.query(By.directive(FormPanelComponent)).componentInstance as FormPanelComponent;
 
-    expect(painel.titulo).toBe('Adicionar lançamento manual');
+    expect(painel.titulo).toBe('Novo lançamento');
+    // Card #45, item 5: em seções, como os outros formulários.
+    expect(Array.from(document.querySelectorAll('.lm-secao')).map(e => e.textContent?.trim())).toEqual(['Lançamento', 'Conta ou cartão', 'Classificação']);
     expect(painel.tamanho).toBe('lg');
 
     modal.salvando = true;

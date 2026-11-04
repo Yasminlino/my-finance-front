@@ -1,12 +1,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { ExtratoBancarioResumoComponent } from './extrato-bancario-resumo/extrato-bancario-resumo.component';
-import { ExtratoBancarioDetalhesComponent } from './extrato-bancario-detalhes/extrato-bancario-detalhes.component';
+import { ExtratoMesComponent } from './extrato-mes/extrato-mes.component';
 import { RelatorioGastosMensaisComponent } from './components/relatorio-gastos-mensais/relatorio-gastos-mensais.component';
 
 const routes: Routes = [
-  { path: '', component: ExtratoBancarioResumoComponent },
-  { path: 'detalhes', component: ExtratoBancarioDetalhesComponent },
+  // Tela única do card #45; o antigo /detalhes?month=…&bancoId=… cai nela com os mesmos parâmetros.
+  { path: '', component: ExtratoMesComponent },
+  { path: 'detalhes', redirectTo: '', pathMatch: 'full' },
   { path: 'relatorio', component: RelatorioGastosMensaisComponent },
 ];
 

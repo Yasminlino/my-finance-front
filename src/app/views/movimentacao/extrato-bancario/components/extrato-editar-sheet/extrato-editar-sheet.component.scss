@@ -1,0 +1,6 @@
+// Folha de baixo do Extrato no celular (card #45, item 4).
+:host ::ng-deep .extrato-sheet { max-height: 90vh; border-radius: var(--mf-radius) var(--mf-radius) 0 0; }
+:host ::ng-deep .extrato-sheet .p-sidebar-content { overflow-y: auto; }
+
+.sheet-parcela { width: 4.5rem; }
+.extrato-valor--entrada { color: var(--mf-receita); }

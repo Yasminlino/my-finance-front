@@ -11,8 +11,6 @@ import { CategoryService } from 'src/app/core/services/category.service';
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
 import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
-import { SharedModule } from 'src/app/shared/shared.module';
-import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
 
 /** Vínculos de pessoa num p-dialog (FE-P2-07). */
 describe('ModalConfiguracaoVinculoPessoaComponent', () => {
@@ -29,8 +27,7 @@ describe('ModalConfiguracaoVinculoPessoaComponent', () => {
     const tipos = jasmine.createSpyObj<TipoMovimentacaoService>('TipoMovimentacaoService', ['listar']);
     tipos.listar.and.returnValue(of([]));
     TestBed.configureTestingModule({
-      declarations: [ModalConfiguracaoVinculoPessoaComponent],
-      imports: [SharedModule, DataGridComponent],
+      imports: [ModalConfiguracaoVinculoPessoaComponent],
       providers: [
         // O ConfirmacaoService (data-grid, exclusões) usa o do root; no app vem do AppModule.
         ConfirmationService,

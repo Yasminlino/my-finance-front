@@ -1,0 +1,83 @@
+/* Extrato no layout novo (card #45, parte 1). */
+
+.extrato-card {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--border-radius);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
+}
+
+.extrato-card--ativo { border-color: var(--primary-color); }
+
+:host ::ng-deep .extrato-filtro { min-width: 10rem; }
+
+:host ::ng-deep .tabela-extrato .extrato-dia > td {
+  background: var(--surface-ground);
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.extrato-pessoa {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 1rem;
+  background: var(--mf-tag-info-bg);
+  color: var(--mf-tag-info-fg);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.extrato-pessoa--vazia {
+  background: var(--surface-200);
+  color: var(--text-color-secondary);
+}
+
+:host ::ng-deep .extrato-parcela { height: 0.35rem; max-width: 6rem; }
+
+.extrato-valor--entrada { color: var(--mf-receita); }
+
+/* Modo edição (item 3): campo mexido destacado, como em Contas a Pagar. */
+.campo-alterado,
+:host ::ng-deep .campo-alterado.p-dropdown,
+:host ::ng-deep .campo-alterado .p-dropdown {
+  border-color: var(--orange-400) !important;
+  background: var(--orange-50) !important;
+}
+
+.extrato-parcela-campo { width: 3.5rem; }
+.extrato-selecao { border-top: 1px solid var(--surface-border); background: var(--highlight-bg); }
+:host ::ng-deep .tabela-extrato .extrato-linha--edicao > td { vertical-align: top; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+
+/* Celular (item 4): cards por dia; o + flutuante não cobre o último. */
+.extrato-movel { padding-bottom: 5rem; }
+.extrato-movel__dia { background: var(--surface-ground); border-top: 1px solid var(--surface-border); }
+
+.extrato-movel__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-top: 1px solid var(--surface-border);
+  background: var(--surface-card);
+  color: var(--text-color);
+  font: inherit;
+  cursor: pointer;
+
+  &:active { background: var(--surface-hover); }
+  .extrato-pessoa { display: inline-block; }
+}
+
+/* Modo edição: tabela com larguras fixas; os campos encolhem e o texto longo corta com reticências. */
+:host ::ng-deep .extrato-tabela--edicao { table-layout: fixed; width: 100%; min-width: 56rem; }
+:host ::ng-deep .extrato-tabela--edicao .p-dropdown { width: 100%; min-width: 0; }
+:host ::ng-deep .extrato-tabela--edicao .p-dropdown-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

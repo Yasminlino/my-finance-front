@@ -1,7 +1,10 @@
-<mf-form-panel [titulo]="'Adicionar lançamento manual' + (ehCredito ? ' (Cartão de crédito)' : '')" tamanho="lg"
+<mf-form-panel [titulo]="'Novo lançamento' + (ehCredito ? ' no cartão de crédito' : '')" tamanho="lg"
   [salvando]="salvando" (fechar)="cancelar()" (salvar)="salvar()">
   <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+    <!-- Em seções, como os outros formulários (card #45, item 5): o quê, onde e de quem -->
     <div class="formgrid grid">
+      <div class="col-12"><h6 class="mf-section-title lm-secao">Lançamento</h6></div>
+
       <div class="field col-12 md:col-4">
         <label for="lm-data">Data</label>
         <input pInputText id="lm-data" type="date" class="w-full" formControlName="dataMovimentacao"
@@ -21,6 +24,8 @@
           formControlName="valor" placeholder="0,00" [class.ng-dirty]="invalido('valor')" />
         <mf-field-error [control]="form.controls.valor">Informe um valor maior que zero.</mf-field-error>
       </div>
+
+      <div class="col-12"><h6 class="mf-section-title lm-secao">Conta ou cartão</h6></div>
 
       <div class="field col-12 md:col-6">
         <label for="lm-banco">Banco</label>
@@ -74,6 +79,8 @@
           </div>
         </ng-container>
       </ng-container>
+
+      <div class="col-12"><h6 class="mf-section-title lm-secao">Classificação</h6></div>
 
       <div class="field col-12 md:col-6">
         <label for="lm-categoria">Categoria (opcional)</label>

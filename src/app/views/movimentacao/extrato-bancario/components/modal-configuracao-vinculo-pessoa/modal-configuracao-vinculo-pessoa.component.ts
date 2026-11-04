@@ -4,6 +4,7 @@ import { GridColumn, GridColumnOption, GridRowChange } from 'src/app/shared/comp
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { GridColumnTypeEnum } from 'src/app/shared/components/data-grid/enum/grid-column.enum';
 import { DataGridComponent } from 'src/app/shared/components/data-grid/data-grid.component';
+import { SharedModule } from 'src/app/shared/shared.module';
 import { formatCurrencyBR} from 'src/app/core/utils/mask';
 import { PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
 import { CategoryService } from 'src/app/core/services/category.service';
@@ -16,6 +17,8 @@ import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 @Component({
   selector: 'app-modal-configuracao-vinculo-pessoa',
+  standalone: true,
+  imports: [SharedModule, DataGridComponent],
   templateUrl: './modal-configuracao-vinculo-pessoa.component.html',
 })
 export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
