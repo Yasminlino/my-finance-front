@@ -7,6 +7,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
 import { ContaService } from 'src/app/core/services/contas.service';
 import { CategoryService } from 'src/app/core/services/category.service';
+import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
+import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { LarguraTelaService } from 'src/app/core/services/largura-tela.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
@@ -22,6 +24,7 @@ describe('ContaMensalListComponent', () => {
   let contas: jasmine.SpyObj<ContaService>;
   let confirmacao: jasmine.SpyObj<ConfirmacaoService>;
   let alerta: jasmine.SpyObj<AlertService>;
+  let doMes: jasmine.SpyObj<ContaMensalService>;
   const movel = signal(false);
 
   const venc = (contaId: number, ...dias: number[]) => dias.map((dia, i) => ({ id: i, contaId, dia, diasVencimentoString: '' }));
@@ -57,6 +60,14 @@ describe('ContaMensalListComponent', () => {
     contas.atualizar.and.returnValue(of({}));
     contas.excluir.and.returnValue(of({}));
     const categoriasService = jasmine.createSpyObj<CategoryService>('CategoryService', ['listar']);
+    // Card #61: lançamentos do mês atual, para o filtro de status. Internet paga; Sofá em aberto, um dia vencido e outro não.
+    const hoje = new Date();
+    const dia = (d: number) => new Date(hoje.getFullYear(), hoje.getMonth(), d);
+    const amanha = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + 1);
+    const ontem = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - 1);
+    const lanc = (contaId: number, situacao: string, data: Date) => ({ id: contaId * 10 + data.getDate(), contaId, situacao, data } as unknown as LinhaContasMensais);
+    doMes = jasmine.createSpyObj<ContaMensalService>('ContaMensalService', ['listarDoMes']);
+    doMes.listarDoMes.and.returnValue(of([lanc(10, 'PAGO NO PRAZO', dia(1)), lanc(11, 'PENDENTE', ontem), lanc(11, 'PENDENTE', amanha)]));
     categoriasService.listar.and.returnValue(of(categorias()));
     confirmacao = jasmine.createSpyObj<ConfirmacaoService>('ConfirmacaoService', ['confirmar']);
     confirmacao.confirmar.and.resolveTo(true);
@@ -68,6 +79,7 @@ describe('ContaMensalListComponent', () => {
         provideRouter([]), provideNoopAnimations(), ConfirmationService, MessageService,
         { provide: ContaService, useValue: contas },
         { provide: CategoryService, useValue: categoriasService },
+        { provide: ContaMensalService, useValue: doMes },
         { provide: ConfirmacaoService, useValue: confirmacao },
         { provide: AlertService, useValue: alerta },
         { provide: LarguraTelaService, useValue: { movel } }
@@ -128,6 +140,33 @@ describe('ContaMensalListComponent', () => {
     comp().aoMudarFiltro();
     fixture.detectChanges();
     expect(linhas().length).toBe(5);
+  });
+
+  it('filtro de status pelo lançamento do mês atual (card #61); sem lançamento no mês fica fora', () => {
+    const agora = new Date();
+    const mes = agora.getFullYear() + '-' + String(agora.getMonth() + 1).padStart(2, '0');
+    expect(doMes.listarDoMes).toHaveBeenCalledWith(mes, false);
+
+    comp().statusSelecionados = ['PAGO NO PRAZO'];
+    comp().aoMudarFiltro();
+    fixture.detectChanges();
+    expect(linhas().length).toBe(1);
+    expect(linhas()[0].textContent).toContain('Internet');
+    expect(comp().temFiltro).toBeTrue();
+
+    comp().statusSelecionados = ['ATRASADO'];
+    comp().aoMudarFiltro();
+    fixture.detectChanges();
+    expect(linhas().length).toBe(1);
+    expect(linhas()[0].textContent).toContain('Sofá');
+
+    comp().statusSelecionados = ['AGUARDANDO'];
+    comp().aoMudarFiltro();
+    fixture.detectChanges();
+    expect(comp().registrosExibidos.length).toBe(0);
+
+    comp().limparFiltros();
+    expect(comp().statusSelecionados).toEqual([]);
   });
 
   it('filtra por categoria e pela busca; ordena pelo maior valor', () => {

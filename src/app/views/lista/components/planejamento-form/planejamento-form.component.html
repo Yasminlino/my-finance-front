@@ -1,4 +1,4 @@
-<mf-form-panel [titulo]="titulo" [salvando]="saving" [criarOutra]="!registro" rotuloCriarOutra="Criar e abrir"
+<mf-form-panel [titulo]="titulo" [salvando]="saving" [criarOutra]="!registro" rotuloCriarOutra="Criar e abrir" rotuloAlternarCriarOutra="Abrir depois de criar"
   (fechar)="close()" (salvar)="save()" (salvarEOutra)="criarEAbrir()">
   <form [formGroup]="form" class="flex flex-column gap-4" (ngSubmit)="save()">
     <div class="flex flex-column gap-2">
@@ -70,6 +70,10 @@
         <div class="planejamento-campo">
           <label for="campo-observacao">Observação</label>
           <p-inputSwitch inputId="campo-observacao" formControlName="usaObservacao" />
+        </div>
+        <div class="planejamento-campo">
+          <label for="campo-tipo">Tipo <small class="mf-hint">(texto livre para agrupar e filtrar)</small></label>
+          <p-inputSwitch inputId="campo-tipo" formControlName="usaTipo" />
         </div>
       </div>
       @if (desligouCampo) {

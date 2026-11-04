@@ -18,6 +18,32 @@
     <p-multiSelect fim [options]="categorias" [(ngModel)]="categoriasSelecionadas" placeholder="Categorias"
       [showHeader]="false" selectedItemsLabel="{0} categorias" [maxSelectedLabels]="1" appendTo="body"
       (onChange)="aoMudarFiltro()" styleClass="filtro-categorias" />
+    @if (subcategorias.length) {
+      <p-multiSelect fim [options]="subcategorias" [(ngModel)]="subcategoriasSelecionadas" placeholder="Subcategorias"
+        [showHeader]="false" selectedItemsLabel="{0} subcategorias" [maxSelectedLabels]="1" appendTo="body"
+        (onChange)="aoMudarFiltro()" styleClass="filtro-subcategorias" ariaLabel="Filtrar por subcategoria" />
+    }
+    <p-multiSelect fim [options]="opcoesStatusFiltro" optionLabel="label" optionValue="value" [(ngModel)]="statusSelecionados"
+      placeholder="Status" [showHeader]="false" selectedItemsLabel="{0} status" [maxSelectedLabels]="1" appendTo="body"
+      (onChange)="aoMudarFiltro()" styleClass="filtro-status" ariaLabel="Filtrar por status" />
+    <p-button fim [label]="rotuloValor" icon="pi pi-dollar" severity="secondary" [outlined]="!temFiltroDeValor" size="small"
+      styleClass="filtro-valor" (onClick)="painelValor.toggle($event)" ariaLabel="Filtrar por valor" />
+    <p-overlayPanel #painelValor appendTo="body" styleClass="painel-valor">
+      <div class="flex flex-column gap-2">
+        <span class="font-semibold">Valor</span>
+        <div class="flex align-items-center gap-2">
+          <p-inputNumber [(ngModel)]="valorMin" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="De"
+            inputStyleClass="w-8rem" ariaLabel="Valor a partir de" (ngModelChange)="aoMudarFiltro()" />
+          <span class="text-color-secondary">até</span>
+          <p-inputNumber [(ngModel)]="valorMax" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="Até"
+            inputStyleClass="w-8rem" ariaLabel="Valor até" (ngModelChange)="aoMudarFiltro()" />
+        </div>
+        <p-button label="Limpar valor" [text]="true" size="small" severity="secondary" [disabled]="!temFiltroDeValor"
+          (onClick)="limparValor()" />
+      </div>
+    </p-overlayPanel>
+    <p-dropdown fim [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value" appendTo="body"
+      (onChange)="aoMudarOrdem()" styleClass="filtro-ordem" ariaLabel="Ordenar por" />
     <p-button fim icon="pi pi-filter-slash" [text]="true" severity="secondary" pTooltip="Limpar filtros"
       tooltipPosition="top" [disabled]="!temFiltro" (onClick)="limparFiltros()" ariaLabel="Limpar filtros" />
     <p-button fim icon="pi pi-upload" [text]="true" severity="secondary" pTooltip="Exportar CSV" tooltipPosition="top"
@@ -34,9 +60,10 @@
         <span><span class="text-color-secondary text-sm mr-1">Saldo</span><b [class.text-red-500]="totaisSelecao.saldo < 0"
           [class.text-green-600]="totaisSelecao.saldo >= 0">{{ money(totaisSelecao.saldo) }}</b></span>
       </div>
-      <p-button label="Marcar como pago" icon="pi pi-check" severity="success" [disabled]="!selecaoTemAbertas"
+      <p-button [label]="rotuloMarcar" icon="pi pi-check" severity="success" [disabled]="!selecaoTemAbertas || excluindo"
         (onClick)="pagarSelecionadas()" />
-      <p-button label="Excluir" icon="pi pi-trash" severity="danger" [outlined]="true" (onClick)="excluirSelecionadas()" />
+      <p-button label="Excluir" icon="pi pi-trash" severity="danger" [outlined]="true" [loading]="excluindo" [disabled]="excluindo"
+        (onClick)="excluirSelecionadas()" />
       <p-button icon="pi pi-times" [text]="true" severity="secondary" pTooltip="Limpar seleção"
         (onClick)="limparSelecao()" ariaLabel="Limpar seleção" />
     </div>
@@ -127,7 +154,7 @@
             </td>
 
             <td>
-              <p-dropdown [options]="statusOptions" [(ngModel)]="rascunho[conta.id].situacao" optionLabel="label"
+              <p-dropdown [options]="m.receita ? statusOptionsReceita : statusOptions" [(ngModel)]="rascunho[conta.id].situacao" optionLabel="label"
                 optionValue="value" appendTo="body" panelStyleClass="mf-tags-claras" styleClass="p-inputtext-sm w-full"
                 [class.campo-alterado]="alterado(conta.id, 'situacao')"
                 (ngModelChange)="alterar(conta, 'situacao', $event)" (keydown.escape)="desfazerCampo(conta, 'situacao')">
@@ -216,8 +243,8 @@
               } @else {
                 @if (m.situacao !== 'paga') {
                   <p-button class="acao-pagar" icon="pi pi-check" [rounded]="true" [text]="true" severity="success"
-                    pTooltip="Marcar como pago" tooltipPosition="top" (onClick)="marcarPago.emit([conta])"
-                    ariaLabel="Marcar como pago" />
+                    [pTooltip]="m.receita ? 'Marcar como recebido' : 'Marcar como pago'" tooltipPosition="top"
+                  (onClick)="marcarPago.emit([conta])" [ariaLabel]="m.receita ? 'Marcar como recebido' : 'Marcar como pago'" />
                 } @else {
                   <!-- Mesmo espaço do ✓, para os botões ficarem alinhados entre as linhas. -->
                   <span class="acao-vazia"></span>

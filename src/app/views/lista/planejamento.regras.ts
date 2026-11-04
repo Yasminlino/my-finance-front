@@ -81,6 +81,16 @@ export function exemploDoItem(lista: Pick<ListaDto, 'usaData' | 'usaQuantidade' 
   return 'Ex.: Ligar para o banco';
 }
 
+/** Os tipos usados nos itens, sem repetir (sem diferenciar maiúscula/acento), em ordem alfabética (card #61). */
+export function tiposDosItens(itens: ItemListaDto[]): string[] {
+  const vistos = new Map<string, string>();
+  for (const i of itens) {
+    const tipo = i.tipo?.trim();
+    if (tipo && !vistos.has(normalizar(tipo))) vistos.set(normalizar(tipo), tipo);
+  }
+  return [...vistos.values()].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
 /** Ordem de inclusão: `ordem` quando há; sem ela, a ordem de criação (id). */
 export function ordenarItens(itens: ItemListaDto[]): ItemListaDto[] {
   return [...itens].sort((a, b) =>
@@ -92,12 +102,17 @@ export function contarItens(itens: ItemListaDto[]): Record<FiltroItens, number> 
   return { TODOS: itens.length, FALTA: itens.length - feitos, FEITOS: feitos };
 }
 
-/** Filtro por feito e busca na descrição e na observação (sem acento nem maiúscula). Mantém a ordem recebida. */
-export function filtrarItens(itens: ItemListaDto[], filtro: FiltroItens, busca: string): ItemListaDto[] {
+/**
+ * Filtro por feito, por tipo (um ou mais; card #61) e busca na descrição, na observação e no tipo (sem acento nem
+ * maiúscula). Mantém a ordem recebida.
+ */
+export function filtrarItens(itens: ItemListaDto[], filtro: FiltroItens, busca: string, tipos: readonly string[] = []): ItemListaDto[] {
   const termo = normalizar(busca);
+  const escolhidos = new Set(tipos.map(t => normalizar(t)));
   return itens.filter(i =>
     (filtro === 'TODOS' || (filtro === 'FEITOS') === !!i.feito)
-    && (!termo || normalizar(i.descricao).includes(termo) || normalizar(i.observacao).includes(termo)));
+    && (!escolhidos.size || escolhidos.has(normalizar(i.tipo)))
+    && (!termo || [i.descricao, i.observacao, i.tipo].some(t => normalizar(t).includes(termo))));
 }
 
 /** Pendentes em cima e feitos no grupo de baixo, cada lado na ordem de inclusão. */
@@ -158,6 +173,7 @@ export function csvDosItens(lista: ListaDto, itens: ItemListaDto[]): string {
   if (lista.usaQuantidade) cabecalho.push('Quantidade');
   if (lista.usaValor) cabecalho.push(...(unitario ? ['Valor unitário', 'Total'] : ['Valor']));
   if (lista.usaData) cabecalho.push('Data', 'Hora');
+  if (lista.usaTipo) cabecalho.push('Tipo');
   if (lista.usaObservacao) cabecalho.push('Observação');
 
   const { pendentes, feitos } = separarPorFeito(itens);
@@ -170,6 +186,7 @@ export function csvDosItens(lista: ListaDto, itens: ItemListaDto[]): string {
       campos.push(...(unitario ? [valor, total === null ? '' : numeroBR(total)] : [valor]));
     }
     if (lista.usaData) campos.push(i.data ? diaMes(i.data, true) : '', i.hora ? i.hora.slice(0, 5) : '');
+    if (lista.usaTipo) campos.push(i.tipo ?? '');
     if (lista.usaObservacao) campos.push(i.observacao ?? '');
     return campos.map(campoCsv).join(';');
   });

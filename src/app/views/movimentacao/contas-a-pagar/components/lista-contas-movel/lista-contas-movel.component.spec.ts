@@ -81,7 +81,7 @@ describe('ListaContasMovelComponent', () => {
       expect(ids()).toEqual([1]);
     });
 
-    it('categorias ficam no painel de filtros; o botão mostra quantas estão ativas', () => {
+    it('categorias ficam no painel de filtros; o botão mostra quantos filtros do painel estão em uso', () => {
       expect(lista.categorias).toEqual(['Moradia', 'Renda', 'Transporte']);
       expect(el().querySelector('.botao-filtros .p-badge')).toBeNull();
 
@@ -90,6 +90,10 @@ describe('ListaContasMovelComponent', () => {
       fixture.detectChanges();
 
       expect(ids()).toEqual([4, 3]);
+      // Card #61: conta filtros em uso (categorias, subcategorias, status, valor), não as categorias marcadas.
+      expect(el().querySelector('.botao-filtros .p-badge')?.textContent?.trim()).toBe('1');
+      lista.statusSelecionados = ['PENDENTE'];
+      fixture.detectChanges();
       expect(el().querySelector('.botao-filtros .p-badge')?.textContent?.trim()).toBe('2');
 
       lista.limparFiltros();

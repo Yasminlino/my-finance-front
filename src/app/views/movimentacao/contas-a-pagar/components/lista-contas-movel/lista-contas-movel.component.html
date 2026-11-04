@@ -29,8 +29,8 @@
   <span class="botao-filtros p-overlay-badge">
     <p-button icon="pi pi-sliders-h" [outlined]="true" severity="secondary" (onClick)="filtrosAbertos = true"
       ariaLabel="Filtros" />
-    @if (categoriasSelecionadas.length) {
-      <span class="p-badge p-component p-badge-no-gutter">{{ categoriasSelecionadas.length }}</span>
+    @if (filtrosNoPainel) {
+      <span class="p-badge p-component p-badge-no-gutter">{{ filtrosNoPainel }}</span>
     }
   </span>
 </div>
@@ -81,7 +81,7 @@
               <span class="acoes-card" (click)="$event.stopPropagation()" (pointerdown)="$event.stopPropagation()">
                 @if (m.situacao !== 'paga') {
                   <p-button class="acao-pagar" icon="pi pi-check" [rounded]="true" [text]="true" severity="success"
-                    (onClick)="marcarPago.emit([conta])" ariaLabel="Marcar como pago" />
+                    (onClick)="marcarPago.emit([conta])" [ariaLabel]="m.receita ? 'Marcar como recebido' : 'Marcar como pago'" />
                 }
                 <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
                   (onClick)="abrirMenu($event, conta)" ariaLabel="Mais ações" />
@@ -108,9 +108,10 @@
         [class.text-green-600]="totaisSelecao.saldo >= 0">{{ money(totaisSelecao.saldo) }}</b></span>
     </div>
     <div class="flex gap-2">
-      <p-button label="Marcar como pago" icon="pi pi-check" severity="success" class="flex-grow-1" styleClass="w-full"
-        [disabled]="!selecaoTemAbertas" (onClick)="pagarSelecionadas()" />
-      <p-button icon="pi pi-trash" severity="danger" [outlined]="true" (onClick)="excluirSelecionadas()" ariaLabel="Excluir" />
+      <p-button [label]="rotuloMarcar" icon="pi pi-check" severity="success" class="flex-grow-1" styleClass="w-full"
+        [disabled]="!selecaoTemAbertas || excluindo" (onClick)="pagarSelecionadas()" />
+      <p-button icon="pi pi-trash" severity="danger" [outlined]="true" [loading]="excluindo" [disabled]="excluindo"
+        (onClick)="excluirSelecionadas()" ariaLabel="Excluir" />
     </div>
   </div>
 }
@@ -120,6 +121,27 @@
   <p-multiSelect inputId="filtro-categorias" [options]="categorias" [(ngModel)]="categoriasSelecionadas"
     placeholder="Todas as categorias" display="chip" [showHeader]="false" appendTo="body" styleClass="w-full"
     (onChange)="aplicarFiltros()" />
+  @if (subcategorias.length) {
+    <label class="block text-sm text-color-secondary mb-1 mt-3" for="filtro-subcategorias">Subcategorias</label>
+    <p-multiSelect inputId="filtro-subcategorias" [options]="subcategorias" [(ngModel)]="subcategoriasSelecionadas"
+      placeholder="Todas as subcategorias" display="chip" [showHeader]="false" appendTo="body" styleClass="w-full"
+      (onChange)="aplicarFiltros()" />
+  }
+  <label class="block text-sm text-color-secondary mb-1 mt-3" for="filtro-status">Status</label>
+  <p-multiSelect inputId="filtro-status" [options]="opcoesStatusFiltro" optionLabel="label" optionValue="value"
+    [(ngModel)]="statusSelecionados" placeholder="Todos os status" display="chip" [showHeader]="false" appendTo="body"
+    styleClass="w-full" (onChange)="aplicarFiltros()" />
+  <span class="block text-sm text-color-secondary mb-1 mt-3">Valor</span>
+  <div class="flex align-items-center gap-2">
+    <p-inputNumber [(ngModel)]="valorMin" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="De"
+      class="flex-1" styleClass="w-full" inputStyleClass="w-full" ariaLabel="Valor a partir de" (ngModelChange)="aplicarFiltros()" />
+    <span class="text-color-secondary">até</span>
+    <p-inputNumber [(ngModel)]="valorMax" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="Até"
+      class="flex-1" styleClass="w-full" inputStyleClass="w-full" ariaLabel="Valor até" (ngModelChange)="aplicarFiltros()" />
+  </div>
+  <label class="block text-sm text-color-secondary mb-1 mt-3" for="filtro-ordem">Ordenar por</label>
+  <p-dropdown inputId="filtro-ordem" [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value"
+    appendTo="body" styleClass="w-full" (onChange)="aoMudarOrdem()" />
   <div class="flex gap-2 mt-3">
     <p-button label="Limpar filtros" icon="pi pi-filter-slash" [outlined]="true" severity="secondary" styleClass="w-full"
       class="flex-1" (onClick)="limparFiltros()" />

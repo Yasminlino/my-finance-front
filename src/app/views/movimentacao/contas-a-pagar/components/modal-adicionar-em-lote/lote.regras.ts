@@ -113,7 +113,7 @@ function lancadasPorConta(lancamentos: readonly { contaId?: number | null }[]): 
 const porNome = (a: LinhaLote, b: LinhaLote) =>
   normalizarNome(a.conta.nome).localeCompare(normalizarNome(b.conta.nome), 'pt-BR');
 
-/** Uma linha por conta (ativas e inativas), em ordem alfabética sem acento. `mes` = "YYYY-MM". */
+/** Uma linha por conta ativa, em ordem alfabética sem acento (inativa não entra no lote; card #61). `mes` = "YYYY-MM". */
 export function montarLinhas(
   contas: readonly ContaDto[],
   lancamentosDoMes: readonly { contaId?: number | null }[],
@@ -124,6 +124,7 @@ export function montarLinhas(
   const porCategoria = new Map(categorias.map(c => [c.id, c]));
   const lancadas = lancadasPorConta(lancamentosDoMes);
   return contas
+    .filter(conta => conta.ativo)
     .map(conta => {
       const categoria = porCategoria.get(conta.categoriaId);
       const dias = diasDaConta(conta);

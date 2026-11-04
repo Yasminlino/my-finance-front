@@ -17,6 +17,5 @@
 
 .item-alcance { border-color: var(--mf-primary); background: var(--highlight-bg); }
 
-// O autoResize do PrimeNG mede o campo com o painel ainda abrindo e grava height: 0px; sem isto a Observação
-// aparecia cortada (só a borda). Duas linhas no mínimo; continua crescendo com o texto.
-textarea { min-height: 4.25rem; }
+// Observação com 3 linhas fixas (card #61): não abre cortada nem cresce ao editar; texto maior rola por dentro.
+textarea { height: 5.5rem; min-height: 5.5rem; resize: vertical; }

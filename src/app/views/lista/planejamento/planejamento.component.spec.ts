@@ -82,13 +82,14 @@ describe('PlanejamentoComponent', () => {
     spyOn(router, 'navigate').and.resolveTo(true);
   });
 
-  it('carrega o planejamento da rota e mostra nome, chips e breadcrumb real', () => {
+  it('carrega o planejamento da rota e mostra nome, ícone no título e breadcrumb real (sem a linha dos chips, card #61)', () => {
     montar();
 
     expect(listas.obterPorId).toHaveBeenCalledWith(8);
     expect(itens.listarDaLista).toHaveBeenCalledWith(8);
     expect(el().querySelector('.mf-page-title')?.textContent).toContain('Lista de compras');
-    expect(Array.from(el().querySelectorAll('.planejamento-chip')).map(c => c.textContent?.trim())).toEqual(['Qtd', 'Valor', 'Limite']);
+    expect(el().querySelector('mf-page-header mf-category-icon')).not.toBeNull();
+    expect(el().querySelector('.planejamento-chip')).toBeNull();
     expect(tela.breadcrumb.map(b => b.label)).toEqual(['Planejamento', 'Meus planejamentos', 'Lista de compras']);
   });
 
@@ -282,6 +283,62 @@ describe('PlanejamentoComponent', () => {
     montar({ ...compras, nome: 'Mercado' });
 
     expect(texto()).not.toMatch(/\blistas?\b/i);
+  });
+
+  describe('ajustes encontrados (card #61)', () => {
+    it('concluir pelo botão ✓ da linha (como em Contas a Pagar); clicar de novo desmarca', () => {
+      montar();
+      const botoes = () => Array.from(el().querySelectorAll<HTMLButtonElement>('.planejamento-linha .planejamento-check'));
+      expect(el().querySelector('.planejamento-linha p-checkbox')).toBeNull();
+      const leite = botoes().find(b => b.getAttribute('aria-label') === 'Concluir Leite')!;
+      leite.click();
+      expect(itens.marcarFeito).toHaveBeenCalledWith(8, [3], true);
+      fixture.detectChanges();
+      const deNovo = botoes().find(b => b.getAttribute('aria-label') === 'Desmarcar Leite')!;
+      expect(deNovo.getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('excluir pela lixeira da linha, sem abrir a edição; confirma e o aviso tem Desfazer', async () => {
+      itens.excluir.and.returnValue(of(null));
+      montar();
+      const lixeira = el().querySelector<HTMLElement>('[aria-label="Excluir Leite"] button, button[aria-label="Excluir Leite"]')!;
+      expect(lixeira).not.toBeNull();
+      await tela.excluirItem(doMercado[0]);
+      expect(confirmacao.confirmar).toHaveBeenCalledWith('Excluir o item "Leite"?', jasmine.objectContaining({ titulo: 'Excluir item' }));
+      expect(itens.excluir).toHaveBeenCalledWith(8, 3);
+      expect(tela.itemAberto).toBeFalse();
+    });
+
+    it('cancelar a exclusão da linha não exclui', async () => {
+      confirmacao.confirmar.and.resolveTo(false);
+      montar();
+      await tela.excluirItem(doMercado[0]);
+      expect(itens.excluir).not.toHaveBeenCalled();
+    });
+
+    it('campo Tipo: coluna depois do Item, filtro pelos tipos usados e sugestões no formulário', () => {
+      const comTipo = doMercado.map((i, n) => ({ ...i, tipo: n % 2 ? 'Mercado' : 'Feira' }));
+      montar({ ...compras, usaTipo: true }, comTipo);
+      const cabecalho = Array.from(el().querySelectorAll('.planejamento-linha--cabecalho span')).map(e => e.textContent?.trim());
+      expect(cabecalho.slice(0, 3)).toEqual(['', 'Item', 'Tipo']);
+      expect(tela.tiposDisponiveis).toEqual(['Feira', 'Mercado']);
+      expect(el().querySelector('.filtro-tipos, p-multiSelect')).not.toBeNull();
+      tela.tiposEscolhidos = ['Feira'];
+      tela.aplicar();
+      expect([...tela.pendentes, ...tela.feitos].every(i => i.tipo === 'Feira')).toBeTrue();
+      expect(tela.temFiltro).toBeTrue();
+      tela.limparFiltros();
+      expect(tela.tiposEscolhidos).toEqual([]);
+    });
+
+    it('com Data, a Data é a primeira coluna depois do ✓', () => {
+      montar({ ...compras, usaData: true }, doMercado.map(i => ({ ...i, data: '2026-11-04' })));
+      tela.visao = 'ITENS';
+      fixture.detectChanges();
+      const cabecalho = Array.from(el().querySelectorAll('.planejamento-linha--cabecalho span')).map(e => e.textContent?.trim());
+      expect(cabecalho.slice(0, 3)).toEqual(['', 'Data', 'Item']);
+      expect(tela.colunas.startsWith('2.5rem 8rem minmax(10rem, 1fr)')).toBeTrue();
+    });
   });
 
   describe('seleção em lote (parte 2)', () => {

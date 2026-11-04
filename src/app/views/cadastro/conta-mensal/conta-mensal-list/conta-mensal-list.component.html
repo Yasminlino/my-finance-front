@@ -79,6 +79,9 @@
         <p-multiSelect fim [options]="opcoesCategoria" [(ngModel)]="categoriasSelecionadas" placeholder="Categorias"
           [filter]="true" selectedItemsLabel="{0} categorias" [maxSelectedLabels]="1" appendTo="body"
           (onChange)="aoMudarFiltro()" styleClass="filtro-categorias" />
+        <p-multiSelect fim [options]="opcoesStatus" optionLabel="label" optionValue="value" [(ngModel)]="statusSelecionados"
+          placeholder="Status do mês" [showHeader]="false" selectedItemsLabel="{0} status" [maxSelectedLabels]="1"
+          appendTo="body" (onChange)="aoMudarFiltro()" styleClass="filtro-status" ariaLabel="Filtrar pelo status do mês" />
         <p-dropdown fim [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value"
           appendTo="body" (onChange)="aoMudarFiltro()" styleClass="filtro-ordem" ariaLabel="Ordenar por"
           pTooltip="Ordenar por" tooltipPosition="top" />
@@ -227,6 +230,12 @@
           <p-multiSelect [options]="opcoesCategoria" [(ngModel)]="categoriasSelecionadas" placeholder="Todas"
             [filter]="true" selectedItemsLabel="{0} categorias" [maxSelectedLabels]="1" appendTo="body"
             styleClass="w-full" (onChange)="aoMudarFiltro()" />
+        </div>
+        <div class="flex flex-column gap-2">
+          <span class="mf-label">Status do mês</span>
+          <p-multiSelect [options]="opcoesStatus" optionLabel="label" optionValue="value" [(ngModel)]="statusSelecionados"
+            placeholder="Todos" display="chip" [showHeader]="false" appendTo="body" styleClass="w-full"
+            (onChange)="aoMudarFiltro()" ariaLabel="Filtrar pelo status do mês" />
         </div>
         <div class="flex flex-column gap-2">
           <span class="mf-label">Ordenar por</span>

@@ -76,7 +76,7 @@ export class ModalAdicionarEmLoteComponent implements OnInit {
   titulo = '';
   linhas: LinhaLote[] = [];
   exibidas: LinhaLote[] = [];
-  /** Só no filtro Disponíveis: as lançadas e inativas, no grupo recolhível. */
+  /** Só no filtro Disponíveis: as já lançadas, no grupo recolhível (inativas não entram no lote, card #61). */
   desabilitadas: LinhaLote[] = [];
   grupoAberto = false;
   /** Ids das contas escolhidas. */

@@ -1,6 +1,7 @@
 import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import { TagStatus } from 'src/app/shared/enums/status.enum';
 import {
+  opcoesDeStatus, rotuloDeMarcar,
   contarPorSituacao,
   iconeDaCategoria,
   previaDoEfeito,
@@ -96,6 +97,24 @@ describe('contas-a-pagar.regras', () => {
     it('receita em aberto e vencida vira NÃO RECEBIDO', () => {
       expect(tagDoStatus(conta({ data: '2026-10-10' as any, subcategoriaNome: 'Receita' }), hoje))
         .toEqual({ label: 'NÃO RECEBIDO', severity: TagStatus.Danger });
+    });
+
+    it('receita fala em recebimento também no status gravado (card #61)', () => {
+      const receita = { subcategoriaNome: 'Receita' };
+      expect(tagDoStatus(conta({ ...receita, situacao: 'PAGO NO PRAZO' }), hoje)).toEqual({ label: 'RECEBIDO NO PRAZO', severity: TagStatus.Success });
+      expect(tagDoStatus(conta({ ...receita, data: '2026-10-01' as any, situacao: 'PAGO ATRASADO' }), hoje).label).toBe('RECEBIDO ATRASADO');
+      expect(tagDoStatus(conta({ ...receita, situacao: 'PENDENTE' }), hoje).label).toBe('A RECEBER');
+      expect(tagDoStatus(conta({ ...receita, situacao: 'AGUARDANDO' }), hoje).label).toBe('AGUARDANDO');
+      expect(opcoesDeStatus(true).map(o => o.label)).toEqual(['A RECEBER', 'RECEBIDO NO PRAZO', 'AGUARDANDO', 'RECEBIDO ATRASADO']);
+      expect(opcoesDeStatus(true).map(o => o.value)).toEqual(['PENDENTE', 'PAGO NO PRAZO', 'AGUARDANDO', 'PAGO ATRASADO']);
+      expect(opcoesDeStatus(false)[0].label).toBe('PENDENTE');
+    });
+
+    it('rótulo do botão de marcar pelo que está selecionado (card #61)', () => {
+      expect(rotuloDeMarcar([true, true])).toBe('Marcar como recebido');
+      expect(rotuloDeMarcar([false])).toBe('Marcar como pago');
+      expect(rotuloDeMarcar([true, false])).toBe('Marcar como pago/recebido');
+      expect(rotuloDeMarcar([])).toBe('Marcar como pago');
     });
 
     it('os demais usam o rótulo e a cor do status salvo', () => {

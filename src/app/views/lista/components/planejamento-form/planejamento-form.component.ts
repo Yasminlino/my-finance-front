@@ -19,7 +19,7 @@ import { IconPickerComponent } from 'src/app/shared/ui/icon-picker/icon-picker.c
 import { CAMPOS_DO_MODELO, corDaLista, iconeDaLista } from '../../listas.regras';
 
 /** Campos que se ligam e desligam; desligar só esconde (os dados dos itens continuam gravados). */
-const CAMPOS = ['usaQuantidade', 'usaValor', 'usaLimite', 'usaData', 'usaObservacao'] as const;
+const CAMPOS = ['usaQuantidade', 'usaValor', 'usaLimite', 'usaData', 'usaObservacao', 'usaTipo'] as const;
 
 /** Grade curta do seletor; os outros vêm pela busca. */
 const ICONES_PLANEJAMENTO: readonly string[] = [
@@ -82,7 +82,8 @@ export class PlanejamentoFormComponent implements OnInit {
     usaLimite: this.fb.nonNullable.control(false),
     limite: this.fb.control<number | null>(null, Validators.min(0)),
     usaData: this.fb.nonNullable.control(false),
-    usaObservacao: this.fb.nonNullable.control(false)
+    usaObservacao: this.fb.nonNullable.control(false),
+    usaTipo: this.fb.nonNullable.control(false)
   });
 
   get titulo(): string {
@@ -109,6 +110,7 @@ export class PlanejamentoFormComponent implements OnInit {
         : this.moeda(13));
     }
     if (v.usaData) partes.push('30/10');
+    if (v.usaTipo) partes.push('Grãos');
     if (v.usaObservacao) partes.push('integral');
     return partes.join(' · ');
   }
@@ -132,7 +134,7 @@ export class PlanejamentoFormComponent implements OnInit {
       this.form.patchValue({
         nome: r.nome, icone: r.icone ?? null, cor: r.cor ?? null, modelo: r.modelo,
         usaQuantidade: r.usaQuantidade, usaValor: r.usaValor, modoValor: r.modoValor, usaLimite: r.usaLimite,
-        limite: r.limite ?? null, usaData: r.usaData, usaObservacao: r.usaObservacao
+        limite: r.limite ?? null, usaData: r.usaData, usaObservacao: r.usaObservacao, usaTipo: !!r.usaTipo
       }, { emitEvent: false });
     } else {
       this.aplicarModelo(controls.modelo.value);
@@ -204,6 +206,7 @@ export class PlanejamentoFormComponent implements OnInit {
       limite: v.limite,
       usaData: v.usaData,
       usaObservacao: v.usaObservacao,
+      usaTipo: v.usaTipo,
       resumo: undefined
     };
 

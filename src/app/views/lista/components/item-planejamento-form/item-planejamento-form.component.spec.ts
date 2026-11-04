@@ -279,6 +279,38 @@ describe('ItemPlanejamentoFormComponent', () => {
     });
   });
 
+  describe('campo Tipo (card #61)', () => {
+    const comTipo: ListaDto = { ...compras, usaTipo: true };
+
+    it('só aparece com o campo ligado, com os tipos já usados como sugestão', () => {
+      abrir(compras);
+      expect(el().querySelector('#item-tipo')).toBeNull();
+      fixture = TestBed.createComponent(ItemPlanejamentoFormComponent);
+      fixture.componentRef.setInput('lista', comTipo);
+      fixture.componentRef.setInput('tipos', ['Farmácia', 'Mercado']);
+      fixture.detectChanges();
+      expect(el().querySelector('#item-tipo')).not.toBeNull();
+      expect(Array.from(el().querySelectorAll('#item-tipos option')).map(o => o.getAttribute('value'))).toEqual(['Farmácia', 'Mercado']);
+    });
+
+    it('grava sem espaços nas pontas; vazio vai como sem tipo', () => {
+      abrir(comTipo);
+      form().patchValue({ descricao: 'Arroz', tipo: '  Mercado ' });
+      painel().salvar.emit();
+      expect(service.criar).toHaveBeenCalledWith(8, jasmine.objectContaining({ tipo: 'Mercado' }));
+      abrir(comTipo);
+      form().patchValue({ descricao: 'Pilhas', tipo: '   ' });
+      painel().salvar.emit();
+      expect(service.criar).toHaveBeenCalledWith(8, jasmine.objectContaining({ descricao: 'Pilhas', tipo: null }));
+    });
+
+    it('com o campo desligado, o tipo guardado continua como estava', () => {
+      abrir(compras, { id: 5, listaId: 8, descricao: 'Arroz', feito: false, tipo: 'Mercado' } as ItemListaDto);
+      painel().salvar.emit();
+      expect(service.atualizar).toHaveBeenCalledWith(8, jasmine.objectContaining({ id: 5, tipo: 'Mercado' }));
+    });
+  });
+
   describe('layout do mockup (card #69, parte 1b)', () => {
     it('o exemplo do campo Item segue o planejamento', () => {
       abrir(agenda);

@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { InputSwitchModule } from 'primeng/inputswitch';
 import { SidebarModule } from 'primeng/sidebar';
 
 /**
@@ -13,7 +15,7 @@ import { SidebarModule } from 'primeng/sidebar';
 @Component({
   selector: 'mf-form-panel',
   standalone: true,
-  imports: [SidebarModule, ButtonModule, PrimeTemplate],
+  imports: [FormsModule, SidebarModule, ButtonModule, InputSwitchModule, PrimeTemplate],
   template: `
     <p-sidebar [visible]="true" position="right" [fullScreen]="movel" [showCloseIcon]="false" [blockScroll]="true"
       [dismissible]="!salvando" [closeOnEscape]="!salvando"
@@ -33,6 +35,14 @@ import { SidebarModule } from 'primeng/sidebar';
 
       <ng-content />
 
+      <!-- Celular (card #61): no lugar do 3º botão do rodapé, um switch no fim do formulário -->
+      @if (criarOutra && movel && passo === passos) {
+        <div class="mf-form-panel__outra flex align-items-center justify-content-between gap-2 mt-4 pt-3 border-top-1 surface-border">
+          <label for="mf-criar-outra" class="m-0">{{ rotuloAlternarCriarOutra }}</label>
+          <p-inputSwitch inputId="mf-criar-outra" [(ngModel)]="continuar" [disabled]="salvando" />
+        </div>
+      }
+
       <ng-template pTemplate="footer">
         <div class="flex justify-content-end gap-2">
           @if (passo > 1) {
@@ -45,11 +55,11 @@ import { SidebarModule } from 'primeng/sidebar';
           @if (passo < passos) {
             <p-button label="Continuar" icon="pi pi-arrow-right" iconPos="right" (onClick)="avancar.emit()" />
           } @else {
-            @if (criarOutra) {
+            @if (criarOutra && !movel) {
               <p-button [label]="rotuloCriarOutra" severity="secondary" [outlined]="true" [disabled]="salvando"
                 (onClick)="salvarEOutra.emit()" />
             }
-            <p-button [label]="rotuloSalvar" icon="pi pi-check" [loading]="salvando" (onClick)="salvar.emit()" />
+            <p-button [label]="rotuloSalvar" icon="pi pi-check" [loading]="salvando" (onClick)="aoSalvar()" />
           }
         </div>
       </ng-template>
@@ -66,6 +76,8 @@ export class FormPanelComponent {
   @Input() criarOutra = false;
   /** Rótulo do botão de `criarOutra`; o Planejamento (#63) usa "Criar e abrir" (a tela decide o que vem depois). */
   @Input() rotuloCriarOutra = 'Salvar e criar outra';
+  /** Celular: texto do switch que faz o Salvar se comportar como o "criar outra" (card #61). */
+  @Input() rotuloAlternarCriarOutra = 'Criar outra depois de salvar';
   /**
    * Formulário em passos (card #22): antes do último, o rodapé troca Salvar por Continuar (emite `avancar`) e,
    * depois do primeiro, Cancelar por Voltar (emite `voltar`). A tela controla `passo` e decide se pode avançar.
@@ -81,4 +93,12 @@ export class FormPanelComponent {
 
   /** Abaixo de 768px o painel ocupa a tela inteira. */
   readonly movel = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+  /** Celular: o switch "criar outra" ligado; vale enquanto o painel está aberto. */
+  continuar = false;
+
+  /** Salvar: no celular, com o switch ligado, faz o mesmo que o "Salvar e criar outra" do desktop. */
+  aoSalvar(): void {
+    if (this.criarOutra && this.movel && this.continuar) this.salvarEOutra.emit();
+    else this.salvar.emit();
+  }
 }

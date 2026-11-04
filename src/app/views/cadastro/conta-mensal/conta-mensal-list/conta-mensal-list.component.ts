@@ -1,9 +1,11 @@
 import { Component, ViewChild, inject } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, catchError, forkJoin, of, tap } from 'rxjs';
 import { MenuItem } from 'primeng/api';
 import { Table } from 'primeng/table';
 import { ContaService } from 'src/app/core/services/contas.service';
 import { CategoryService } from 'src/app/core/services/category.service';
+import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
+import { OPCOES_STATUS_FILTRO, StatusFiltro } from '../../../movimentacao/contas-a-pagar/contas-a-pagar.lista';
 import { LarguraTelaService } from 'src/app/core/services/largura-tela.service';
 import { NavegacaoService } from 'src/app/core/services/navegacao.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
@@ -16,7 +18,7 @@ import { nomesParecidos } from 'src/app/shared/utils/nomes-parecidos';
 import { ehReceita } from '../../categoria/categorias.regras';
 import {
   FiltroContas, FiltroSituacao, OrdemContas, ResumoContas, contarPorSituacao, diasDaConta, duplicarConta, filtrarContas,
-  resumoDasContas, textoVencimento
+  resumoDasContas, statusDoMesPorConta, textoVencimento
 } from '../contas.regras';
 
 /** O que a linha mostra além do registro, calculado uma vez por carga. */
@@ -44,6 +46,12 @@ export class ContaMensalListComponent extends CadastroListBase<ContaDto> {
 
   private readonly contaService = inject(ContaService);
   private readonly categoryService = inject(CategoryService);
+  private readonly contaMensalService = inject(ContaMensalService);
+
+  /** Card #61: status do lançamento do mês atual de cada conta, e os escolhidos no filtro. */
+  readonly opcoesStatus = OPCOES_STATUS_FILTRO;
+  statusSelecionados: StatusFiltro[] = [];
+  private statusPorConta: ReadonlyMap<number, ReadonlySet<StatusFiltro>> = new Map();
   readonly movel = inject(LarguraTelaService).movel;
   /** ‹ voltar do cabeçalho: tela anterior ou a Página Inicial. */
   readonly navegacao = inject(NavegacaoService);
@@ -94,7 +102,7 @@ export class ContaMensalListComponent extends CadastroListBase<ContaDto> {
   contaDosLancamentos: ContaDto | null = null;
 
   get temFiltro(): boolean {
-    return this.situacao !== 'ativas' || !!this.busca || this.categoriasSelecionadas.length > 0;
+    return this.situacao !== 'ativas' || !!this.busca || this.categoriasSelecionadas.length > 0 || this.statusSelecionados.length > 0;
   }
 
   /** Categorias que o formulário oferece: as ativas e, na edição, a da própria conta mesmo inativa. */
@@ -104,11 +112,18 @@ export class ContaMensalListComponent extends CadastroListBase<ContaDto> {
   }
 
   protected override antesDeCarregar(): Observable<unknown> {
-    return this.categoryService.listar().pipe(tap(categorias => {
+    const hoje = new Date();
+    const mes = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+    return forkJoin({
+      categorias: this.categoryService.listar(),
+      // Sem os lançamentos do mês, só o filtro de status fica sem efeito.
+      doMes: this.contaMensalService.listarDoMes(mes, false).pipe(catchError(() => of([])))
+    }).pipe(tap(({ categorias, doMes }) => {
       this.categorias = categorias;
       this.opcoesCategoria = [...categorias]
         .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
         .map(c => ({ label: c.nome, value: c.id }));
+      this.statusPorConta = statusDoMesPorConta(doMes ?? [], hoje);
     }));
   }
 
@@ -125,7 +140,10 @@ export class ContaMensalListComponent extends CadastroListBase<ContaDto> {
   }
 
   private get filtro(): FiltroContas {
-    return { situacao: this.situacao, busca: this.busca, categorias: this.categoriasSelecionadas, ordem: this.ordem };
+    return {
+      situacao: this.situacao, busca: this.busca, categorias: this.categoriasSelecionadas, ordem: this.ordem,
+      status: this.statusSelecionados, statusPorConta: this.statusPorConta
+    };
   }
 
   override applyFilters() {
@@ -164,6 +182,7 @@ export class ContaMensalListComponent extends CadastroListBase<ContaDto> {
     this.situacao = 'ativas';
     this.busca = '';
     this.categoriasSelecionadas = [];
+    this.statusSelecionados = [];
     this.applyFilters();
   }
 

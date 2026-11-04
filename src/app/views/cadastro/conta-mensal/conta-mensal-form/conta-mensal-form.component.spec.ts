@@ -239,40 +239,49 @@ describe('ContaMensalFormComponent', () => {
     expect(fechado).toHaveBeenCalledOnceWith(false);
   });
 
-  describe('celular: dois passos', () => {
+  describe('celular: duas abas (card #61)', () => {
+    const abas = () => Array.from(el().querySelectorAll<HTMLButtonElement>('.conta-aba'));
+
     beforeEach(() => {
       movel.set(true);
       abrir();
     });
 
-    it('passo 1 com identificação, valor e dias; passo 2 com parcelamento, situação e resumo', () => {
-      expect(painel().passos).toBe(2);
+    it('aba Dados com identificação, valor e dias; aba Parcelas e situação com parcelamento, situação e resumo', () => {
+      expect(painel().passos).toBe(1);
+      expect(abas().map(a => a.textContent?.trim())).toEqual(['Dados', 'Parcelas e situação']);
       expect(el().querySelector('#conta-nome')).not.toBeNull();
       expect(el().querySelector('#conta-parcelada')).toBeNull();
 
       preencherValida();
-      comp().avancar();
+      abas()[1].click();
       fixture.detectChanges();
 
-      expect(comp().passo).toBe(2);
+      expect(comp().aba).toBe(2);
+      expect(abas()[1].getAttribute('aria-selected')).toBe('true');
       expect(el().querySelector('#conta-nome')).toBeNull();
       expect(el().querySelector('#conta-parcelada')).not.toBeNull();
       expect(el().querySelector('.conta-resumo')?.textContent).toContain('Internet');
     });
 
-    it('erro no passo 1 impede avançar', () => {
-      comp().avancar();
-
-      expect(comp().passo).toBe(1);
-      expect(form().controls.nome.touched).toBeTrue();
+    it('vai e volta livre entre as abas, mesmo com a primeira incompleta', () => {
+      abas()[1].click();
+      fixture.detectChanges();
+      expect(comp().aba).toBe(2);
+      abas()[0].click();
+      fixture.detectChanges();
+      expect(comp().aba).toBe(1);
     });
 
-    it('Voltar volta ao passo 1', () => {
-      preencherValida();
-      comp().avancar();
-      comp().voltar();
+    it('Salvar com erro na aba Dados volta para ela e marca a aba', () => {
+      abas()[1].click();
+      fixture.detectChanges();
+      painel().salvar.emit();
+      fixture.detectChanges();
 
-      expect(comp().passo).toBe(1);
+      expect(comp().aba).toBe(1);
+      expect(form().controls.nome.touched).toBeTrue();
+      expect(abas()[0].querySelector('.conta-aba__erro')).not.toBeNull();
     });
   });
 
@@ -283,10 +292,11 @@ describe('ContaMensalFormComponent', () => {
     expect(service.listarLancamentos).not.toHaveBeenCalled();
   });
 
-  it('no desktop é um passo só, com tudo visível', () => {
+  it('no desktop é um passo só, sem abas, com tudo visível', () => {
     abrir();
 
     expect(painel().passos).toBe(1);
+    expect(el().querySelector('.conta-abas')).toBeNull();
     expect(el().querySelector('#conta-nome')).not.toBeNull();
     expect(el().querySelector('#conta-parcelada')).not.toBeNull();
   });

@@ -1,5 +1,5 @@
 import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
-import { formatCurrencyBR, formatDateBR } from 'src/app/core/utils/mask';
+import { formatCurrencyBR, formatDateBR, parseCurrencyBR } from 'src/app/core/utils/mask';
 import { AparenciaCategoria } from 'src/app/shared/ui/aparencia';
 import {
   FiltroSituacao, Situacao, TagDoStatus, VencimentoRelativo,
@@ -35,10 +35,36 @@ export interface OpcaoFiltro {
   contagem: number;
 }
 
+/** Status do filtro (card #61): os gravados mais o "Atrasado" (em aberto e vencida). */
+export type StatusFiltro = 'PENDENTE' | 'PAGO NO PRAZO' | 'AGUARDANDO' | 'PAGO ATRASADO' | 'ATRASADO';
+
+export const OPCOES_STATUS_FILTRO: { label: string; value: StatusFiltro }[] = [
+  { label: 'Pendente', value: 'PENDENTE' },
+  { label: 'Pago no prazo', value: 'PAGO NO PRAZO' },
+  { label: 'Aguardando', value: 'AGUARDANDO' },
+  { label: 'Pago atrasado', value: 'PAGO ATRASADO' },
+  { label: 'Atrasado', value: 'ATRASADO' }
+];
+
+/** "Ordenar por" (card #61); vencimento é o padrão. */
+export type OrdemContas = 'vencimento' | 'receitas' | 'valor' | 'nome';
+
+export const OPCOES_ORDEM: { label: string; value: OrdemContas }[] = [
+  { label: 'Vencimento', value: 'vencimento' },
+  { label: 'Receitas primeiro', value: 'receitas' },
+  { label: 'Maior valor', value: 'valor' },
+  { label: 'Nome', value: 'nome' }
+];
+
 export interface CriterioFiltro {
   filtro: FiltroSituacao;
   busca: string;
   categorias: string[];
+  /** Card #61: subcategorias e status escolhidos (vazio = todos) e a faixa de valor (null = sem limite). */
+  subcategorias?: string[];
+  status?: StatusFiltro[];
+  valorMin?: number | null;
+  valorMax?: number | null;
   /** Ids alterados no modo edição, para o filtro "alteradas". */
   alteradas?: Set<number>;
 }
@@ -106,11 +132,19 @@ export function filtrarContas(
   const categorias = new Set(criterio.categorias);
   const situacaoAlvo = SITUACAO_DO_FILTRO[criterio.filtro];
   const alteradas = criterio.filtro === 'alteradas' ? criterio.alteradas ?? new Set<number>() : null;
+  const subcategorias = new Set(criterio.subcategorias ?? []);
+  const status = new Set(criterio.status ?? []);
+  const min = criterio.valorMin ?? null;
+  const max = criterio.valorMax ?? null;
 
   return contas.filter(conta =>
     (!situacaoAlvo || meta[conta.id]?.situacao === situacaoAlvo) &&
     (!alteradas || alteradas.has(conta.id)) &&
     (!categorias.size || categorias.has(conta.categoriaNome)) &&
+    (!subcategorias.size || subcategorias.has(conta.subcategoriaNome ?? '')) &&
+    (!status.size || status.has(statusParaFiltro(conta, meta[conta.id]))) &&
+    (min === null || valorDe(conta) >= min) &&
+    (max === null || valorDe(conta) <= max) &&
     (!termo || [conta.nome, conta.categoriaNome, conta.observacao].some(t => semAcento(t).includes(termo)))
   );
 }
@@ -125,6 +159,39 @@ export function opcoesDeFiltro(contas: LinhaContasMensais[], hoje: Date, alterad
     opcoes.push({ label: ROTULOS_FILTRO.alteradas, value: 'alteradas', contagem: alteradas });
   }
   return opcoes;
+}
+
+/** O status da conta para o filtro: em aberto e vencida conta como "Atrasado". */
+export function statusParaFiltro(conta: LinhaContasMensais, meta: MetaLinha | undefined): StatusFiltro {
+  if (meta?.situacao === 'atrasada') return 'ATRASADO';
+  return (conta.situacao as StatusFiltro) || 'PENDENTE';
+}
+
+/** Valor em número (a linha pode trazer o valor formatado do modo edição). */
+export function valorDe(conta: LinhaContasMensais): number {
+  return Math.abs(parseCurrencyBR(conta.valor) ?? 0);
+}
+
+/** Subcategorias do mês, sem repetir, em ordem alfabética (filtro do card #61). */
+export function subcategoriasDe(contas: LinhaContasMensais[]): string[] {
+  return [...new Set(contas.map(c => c.subcategoriaNome ?? '').filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
+/** "Ordenar por" (card #61). Sempre desempata por vencimento e nome. Devolve uma cópia. */
+export function ordenarContas(contas: LinhaContasMensais[], ordem: OrdemContas, meta: Record<number, MetaLinha>): LinhaContasMensais[] {
+  const porVencimento = ordenarPorVencimento(contas);
+  const posicao = new Map(porVencimento.map((c, i) => [c.id, i]));
+  const desempate = (a: LinhaContasMensais, b: LinhaContasMensais) => (posicao.get(a.id) ?? 0) - (posicao.get(b.id) ?? 0);
+  switch (ordem) {
+    case 'receitas':
+      return porVencimento.sort((a, b) => Number(!!meta[b.id]?.receita) - Number(!!meta[a.id]?.receita) || desempate(a, b));
+    case 'valor':
+      return porVencimento.sort((a, b) => valorDe(b) - valorDe(a) || desempate(a, b));
+    case 'nome':
+      return porVencimento.sort((a, b) => (a.nome ?? '').localeCompare(b.nome ?? '', 'pt-BR') || desempate(a, b));
+    default:
+      return porVencimento;
+  }
 }
 
 export function categoriasDe(contas: LinhaContasMensais[]): string[] {

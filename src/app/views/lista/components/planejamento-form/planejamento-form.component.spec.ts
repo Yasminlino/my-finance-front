@@ -170,6 +170,15 @@ describe('PlanejamentoFormComponent', () => {
       }));
     });
 
+    it('liga o campo Tipo e grava (card #61)', () => {
+      expect(form().controls.usaTipo.value).toBeFalse();
+      form().controls.usaTipo.setValue(true);
+      fixture.detectChanges();
+      expect(texto()).toContain('Grãos');
+      fixture.componentInstance.save();
+      expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ id: 20, usaTipo: true }));
+    });
+
     it('desligar um campo que estava ligado avisa que os dados continuam guardados', () => {
       expect(texto()).not.toContain('continuam guardados');
 

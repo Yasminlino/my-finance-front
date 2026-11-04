@@ -24,7 +24,7 @@
         <!-- Conta paga: só leitura -->
         <div class="aviso-paga flex align-items-center gap-2 mb-3">
           <i class="pi pi-lock"></i>
-          <span class="flex-grow-1 text-sm">Conta paga: os campos ficam bloqueados.</span>
+          <span class="flex-grow-1 text-sm">{{ receita ? 'Conta recebida' : 'Conta paga' }}: os campos ficam bloqueados.</span>
           <p-button label="Desbloquear" icon="pi pi-lock-open" size="small" [outlined]="true" severity="secondary"
             (onClick)="desbloquear()" />
         </div>
@@ -51,7 +51,7 @@
 
           <div class="col-6">
             <label class="rotulo" for="sheet-status">Status</label>
-            <p-dropdown inputId="sheet-status" [options]="statusOptions" [(ngModel)]="rascunho.situacao" optionLabel="label"
+            <p-dropdown inputId="sheet-status" [options]="receita ? statusOptionsReceita : statusOptions" [(ngModel)]="rascunho.situacao" optionLabel="label"
               optionValue="value" appendTo="body" panelStyleClass="mf-tags-claras" styleClass="w-full mf-tags-claras"
               [class.campo-alterado]="alterado('situacao')" (ngModelChange)="alterar('situacao', $event)">
               <ng-template let-opcao pTemplate="selectedItem"><p-tag [value]="opcao.label" [severity]="opcao.classe" /></ng-template>

@@ -48,6 +48,8 @@ export class ItemPlanejamentoFormComponent implements OnInit {
   /** Aberto de um dia da agenda: a ocorrência (AAAA-MM-DD original) e, no novo, a data já preenchida. */
   @Input() dataOriginal: string | null = null;
   @Input() dataInicial: string | null = null;
+  /** Tipos já usados no planejamento: sugestões do campo Tipo (card #61). */
+  @Input() tipos: string[] = [];
   /** true = gravou ou excluiu (a tela recarrega). */
   @Output() closed = new EventEmitter<boolean>();
   /** "Salvar e outro": gravou e o painel continua aberto (a tela recarrega por trás). */
@@ -90,6 +92,7 @@ export class ItemPlanejamentoFormComponent implements OnInit {
     diasSemana: this.fb.control<number[]>([]),
     repetirAte: this.fb.control<string | null>(null),
     observacao: this.fb.control<string | null>(null, [Validators.maxLength(500)]),
+    tipo: this.fb.control<string | null>(null, [Validators.maxLength(60)]),
     feito: this.fb.nonNullable.control(false)
   }, { validators: g => this.regraValida(g) });
 
@@ -145,7 +148,7 @@ export class ItemPlanejamentoFormComponent implements OnInit {
         // Aberto de um dia da agenda: a data mostrada é a da ocorrência.
         data: this.dataOriginal ?? i.data ?? null,
         hora: i.hora ? i.hora.slice(0, 5) : null, diaTodo: !i.hora, repeticao: i.repeticao ?? 'NENHUMA', diasSemana: i.diasSemana ?? [],
-        repetirAte: i.repetirAte ?? null, observacao: i.observacao ?? null, feito: !!i.feito
+        repetirAte: i.repetirAte ?? null, observacao: i.observacao ?? null, tipo: i.tipo ?? null, feito: !!i.feito
       });
     } else if (this.dataInicial) {
       this.form.patchValue({ data: this.dataInicial });
@@ -222,7 +225,8 @@ export class ItemPlanejamentoFormComponent implements OnInit {
       repeticao,
       diasSemana: l.usaData ? (repeticao === 'SEMANAL' ? [...(v.diasSemana ?? [])].sort((a, b) => a - b) : null) : antes?.diasSemana ?? null,
       repetirAte: l.usaData ? (repeticao === 'NENHUMA' ? null : v.repetirAte || null) : antes?.repetirAte ?? null,
-      observacao: l.usaObservacao ? v.observacao?.trim() || null : antes?.observacao ?? null
+      observacao: l.usaObservacao ? v.observacao?.trim() || null : antes?.observacao ?? null,
+      tipo: l.usaTipo ? v.tipo?.trim() || null : antes?.tipo ?? null
     };
   }
 
@@ -254,7 +258,7 @@ export class ItemPlanejamentoFormComponent implements OnInit {
         const data = this.form.controls.data.value;
         this.form.reset({
           descricao: '', quantidade: 1, valor: null, data, hora: null, diaTodo: true, repeticao: 'NENHUMA',
-          diasSemana: [], repetirAte: null, observacao: null, feito: false
+          diasSemana: [], repetirAte: null, observacao: null, tipo: null, feito: false
         });
         this.aplicarDiaTodo(true);
         this.alertService.success('Item adicionado.');

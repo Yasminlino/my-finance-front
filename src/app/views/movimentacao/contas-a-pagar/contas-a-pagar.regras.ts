@@ -99,7 +99,27 @@ export function tagDoStatus(conta: ContaExibida, hoje: Date): TagDoStatus {
   }
 
   const opcao = STATUS_PAGAMENTO_OPTIONS.find(o => o.value === conta.situacao);
-  return { label: opcao?.label ?? conta.situacao, severity: opcao?.classe ?? TagStatus.Secondary };
+  const label = (ehReceita(conta) ? ROTULO_DE_RECEITA[conta.situacao] : undefined) ?? opcao?.label ?? conta.situacao;
+  return { label, severity: opcao?.classe ?? TagStatus.Secondary };
+}
+
+/** Receita fala em recebimento também no status gravado (card #61); o valor gravado é o mesmo. */
+const ROTULO_DE_RECEITA: Record<string, string> = {
+  PENDENTE: 'A RECEBER',
+  'PAGO NO PRAZO': 'RECEBIDO NO PRAZO',
+  'PAGO ATRASADO': 'RECEBIDO ATRASADO'
+};
+
+/** Opções do status no modo edição, com os nomes de receita quando a conta é receita. */
+export function opcoesDeStatus(receita: boolean): typeof STATUS_PAGAMENTO_OPTIONS {
+  return receita ? STATUS_PAGAMENTO_OPTIONS.map(o => ({ ...o, label: ROTULO_DE_RECEITA[o.value as string] ?? o.label })) : STATUS_PAGAMENTO_OPTIONS;
+}
+
+/** Botão de marcar: "Marcar como recebido" só com receitas, "pago" só com despesas; misturado, os dois. */
+export function rotuloDeMarcar(receitas: boolean[]): string {
+  if (receitas.length && receitas.every(Boolean)) return 'Marcar como recebido';
+  if (receitas.some(Boolean)) return 'Marcar como pago/recebido';
+  return 'Marcar como pago';
 }
 
 /** Modo edição: o que a alteração muda na situação da conta ("" quando nada muda). */

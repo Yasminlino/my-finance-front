@@ -35,7 +35,7 @@ describe('lote.regras', () => {
   const porNome = (lista: LinhaLote[], nome: string) => lista.find(l => l.conta.nome === nome)!;
 
   describe('montarLinhas', () => {
-    it('situação: disponível, já lançada, inativa e inválida (valor zerado ou sem dia)', () => {
+    it('situação: disponível, já lançada e inválida (valor zerado ou sem dia); inativa não entra (card #61)', () => {
       const lista = linhas([
         conta({ id: 1, nome: 'Aluguel' }),
         conta({ id: 2, nome: 'Luz', vencimentos: dias(2, 5, 20) }),
@@ -46,7 +46,6 @@ describe('lote.regras', () => {
       ], [2, 2, 3]);
 
       expect(lista.map(l => [l.conta.nome, l.situacao])).toEqual([
-        ['Academia', 'inativa'],
         ['Água', 'disponivel'], // só um dos dois vencimentos lançado
         ['Aluguel', 'disponivel'],
         ['Feira', 'invalida'],
@@ -136,19 +135,19 @@ describe('lote.regras', () => {
 
       expect(nomes('disponiveis')).toEqual(['Aluguel', 'Feira', 'Salário']);
       expect(nomes('lancadas')).toEqual(['Luz']);
-      expect(nomes('todas')).toEqual(['Academia', 'Aluguel', 'Feira', 'Luz', 'Salário']);
+      expect(nomes('todas')).toEqual(['Aluguel', 'Feira', 'Luz', 'Salário']);
     });
 
     it('busca sem acento no nome e na categoria; filtro por categoria', () => {
       expect(filtrarLinhas(lista(), { filtro: 'todas', busca: 'salario', categorias: [] }).map(l => l.conta.nome))
         .toEqual(['Salário']);
-      expect(filtrarLinhas(lista(), { filtro: 'todas', busca: 'casa', categorias: [] }).length).toBe(4);
+      expect(filtrarLinhas(lista(), { filtro: 'todas', busca: 'casa', categorias: [] }).length).toBe(3);
       expect(filtrarLinhas(lista(), { filtro: 'todas', busca: '', categorias: [2] }).map(l => l.conta.nome))
         .toEqual(['Salário']);
     });
 
     it('contador de cada opção respeita a busca e as categorias', () => {
-      expect(contarPorFiltro(lista(), { busca: '', categorias: [] })).toEqual({ disponiveis: 3, lancadas: 1, todas: 5 });
+      expect(contarPorFiltro(lista(), { busca: '', categorias: [] })).toEqual({ disponiveis: 3, lancadas: 1, todas: 4 });
       expect(contarPorFiltro(lista(), { busca: 'luz', categorias: [] })).toEqual({ disponiveis: 0, lancadas: 1, todas: 1 });
     });
   });

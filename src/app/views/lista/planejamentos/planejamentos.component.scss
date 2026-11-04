@@ -38,3 +38,6 @@
 
 /* Ações do bottom sheet alinhadas à esquerda, como um menu. */
 :host ::ng-deep .acao-planejamento .p-button-label { flex: 0 1 auto; text-align: left; }
+
+// Aviso com Desfazer/Abrir: o texto quebra e, sem espaço, os botões descem (celular, card #61).
+.aviso-texto { flex: 1 1 12rem; overflow-wrap: anywhere; }

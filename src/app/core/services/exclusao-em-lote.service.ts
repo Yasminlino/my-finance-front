@@ -25,6 +25,8 @@ export interface ResultadoExclusaoEmLote {
  * se excluiu, limpa a seleção. Antes o serviço escrevia `grid.deleting` por fora (FE-P2-05).
  */
 export interface GridSelecionavel {
+  /** Opcional: a pessoa confirmou e a exclusão começou (o botão fica carregando; card #61). */
+  iniciarExclusao?(): void;
   concluirExclusao(excluiu: boolean): void;
 }
 
@@ -66,7 +68,7 @@ export class ExclusaoEmLoteService {
 
       return from(this.confirmacao.confirmar(pergunta)).pipe(
         switchMap(ok => ok
-          ? this.excluir(rows, excluirItem, rotulo).pipe(tap(() => (excluiu = true)), map(() => true))
+          ? defer(() => { grid?.iniciarExclusao?.(); return this.excluir(rows, excluirItem, rotulo); }).pipe(tap(() => (excluiu = true)), map(() => true))
           : of(false)),
         concluir
       );

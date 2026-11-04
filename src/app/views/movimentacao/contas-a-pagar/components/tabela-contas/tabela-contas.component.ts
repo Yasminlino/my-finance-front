@@ -11,6 +11,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SelectButtonModule } from 'primeng/selectbutton';
@@ -27,9 +28,10 @@ import { CategoryIconComponent } from 'src/app/shared/ui/category-icon/category-
 import {
   NaturezaLancamento, TotaisSelecao, calcularTotaisSelecao, naturezaPorSubCategoria
 } from 'src/app/shared/utils/totais-selecao';
-import { FiltroSituacao, previaDoEfeito } from '../../contas-a-pagar.regras';
+import { FiltroSituacao, opcoesDeStatus, previaDoEfeito, rotuloDeMarcar } from '../../contas-a-pagar.regras';
 import {
-  MetaLinha, OpcaoFiltro, categoriasDe, filtrarContas, metaDasContas, opcoesDeFiltro, ordenarPorVencimento
+  MetaLinha, OPCOES_ORDEM, OPCOES_STATUS_FILTRO, OpcaoFiltro, OrdemContas, StatusFiltro, categoriasDe, filtrarContas,
+  metaDasContas, opcoesDeFiltro, ordenarContas, subcategoriasDe
 } from '../../contas-a-pagar.lista';
 import { CampoEditavel, EdicaoContas, RascunhoConta } from '../../edicao-contas';
 import { ErroCampoDirective } from '../../erro-campo.directive';
@@ -45,7 +47,7 @@ import { AparenciaCategoria } from 'src/app/shared/ui/aparencia';
   imports: [
     NgClass, NgIf, FormsModule, TableModule, FilterBarComponent, SelectButtonModule, BadgeModule, IconFieldModule,
     InputIconModule, InputTextModule, MultiSelectModule, ButtonModule, TooltipModule, ProgressBarModule,
-    TagModule, MenuModule, InputNumberModule, CalendarModule, DropdownModule, ErroCampoDirective, CategoryIconComponent
+    TagModule, MenuModule, InputNumberModule, CalendarModule, DropdownModule, OverlayPanelModule, ErroCampoDirective, CategoryIconComponent
   ],
   templateUrl: './tabela-contas.component.html',
   styleUrls: ['./tabela-contas.component.scss']
@@ -74,6 +76,17 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
   busca = '';
   categoriasSelecionadas: string[] = [];
   categorias: string[] = [];
+  /** Card #61: subcategoria, status e valor (de/até), e "ordenar por". */
+  subcategorias: string[] = [];
+  subcategoriasSelecionadas: string[] = [];
+  statusSelecionados: StatusFiltro[] = [];
+  valorMin: number | null = null;
+  valorMax: number | null = null;
+  ordem: OrdemContas = 'vencimento';
+  readonly opcoesStatusFiltro = OPCOES_STATUS_FILTRO;
+  readonly opcoesOrdem = OPCOES_ORDEM;
+  /** Exclusão em lote rodando: o botão fica carregando e travado (card #61). */
+  excluindo = false;
   opcoesFiltro: OpcaoFiltro[] = [];
 
   linhasVisiveis: LinhaContasMensais[] = [];
@@ -89,6 +102,8 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
   totalDespesasPagina = 0;
 
   readonly statusOptions = STATUS_PAGAMENTO_OPTIONS;
+  /** Fixo (não recalculado a cada detecção): receita fala em "recebido" (card #61). */
+  readonly statusOptionsReceita = opcoesDeStatus(true);
   rascunho: Record<number, RascunhoConta> = {};
 
   private linhaDoMenu: LinhaContasMensais | null = null;
@@ -110,9 +125,12 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
     if (changes['contas'] || changes['hoje'] || changes['aparencias']) {
       this.meta = metaDasContas(this.contas, this.hoje, this.aparencias);
     }
+    if (changes['contas'] || changes['hoje'] || changes['aparencias']) {
+      this.contasOrdenadas = ordenarContas(this.contas, this.ordem, this.meta);
+    }
     if (changes['contas'] || changes['hoje']) {
-      this.contasOrdenadas = ordenarPorVencimento(this.contas);
       this.categorias = categoriasDe(this.contas);
+      this.subcategorias = subcategoriasDe(this.contas);
       // Seleção de contas que não existem mais (outro mês, excluídas) sai junto.
       const ids = new Set(this.contas.map(c => c.id));
       this.aoSelecionar(this.selecao.filter(c => ids.has(c.id)).map(c => this.contas.find(x => x.id === c.id)!));
@@ -226,6 +244,10 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
       filtro: this.filtro,
       busca: this.busca,
       categorias: this.categoriasSelecionadas,
+      subcategorias: this.subcategoriasSelecionadas,
+      status: this.statusSelecionados,
+      valorMin: this.valorMin,
+      valorMax: this.valorMax,
       alteradas: this.edicao?.idsAlterados
     });
 
@@ -242,11 +264,47 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
     this.filtro = 'todas';
     this.busca = '';
     this.categoriasSelecionadas = [];
+    this.subcategoriasSelecionadas = [];
+    this.statusSelecionados = [];
+    this.valorMin = null;
+    this.valorMax = null;
     this.aoMudarFiltro();
   }
 
+  get temFiltroDeValor(): boolean {
+    return this.valorMin !== null || this.valorMax !== null;
+  }
+
   get temFiltro(): boolean {
-    return this.filtro !== 'todas' || !!this.busca.trim() || this.categoriasSelecionadas.length > 0;
+    return this.filtro !== 'todas' || !!this.busca.trim() || this.categoriasSelecionadas.length > 0
+      || this.subcategoriasSelecionadas.length > 0 || this.statusSelecionados.length > 0 || this.temFiltroDeValor;
+  }
+
+  /** "Ordenar por" muda a ordem base; os filtros continuam. */
+  aoMudarOrdem(): void {
+    this.contasOrdenadas = ordenarContas(this.contas, this.ordem, this.meta);
+    this.aoMudarFiltro();
+  }
+
+  /** Rótulo do botão "Valor" do filtro: "R$ 100 – R$ 500", "a partir de R$ 100", "até R$ 500". */
+  get rotuloValor(): string {
+    const de = this.valorMin !== null ? formatCurrencyBR(this.valorMin) : null;
+    const ate = this.valorMax !== null ? formatCurrencyBR(this.valorMax) : null;
+    if (de && ate) return `${de} – ${ate}`;
+    if (de) return `a partir de ${de}`;
+    if (ate) return `até ${ate}`;
+    return 'Valor';
+  }
+
+  limparValor(): void {
+    this.valorMin = null;
+    this.valorMax = null;
+    this.aoMudarFiltro();
+  }
+
+  /** "Marcar como recebido" só com receitas selecionadas; misturado, "pago/recebido". */
+  get rotuloMarcar(): string {
+    return rotuloDeMarcar(this.selecao.map(c => !!this.meta[c.id]?.receita));
   }
 
   aoPaginar(evento: { first: number; rows: number }): void {
@@ -293,8 +351,14 @@ export class TabelaContasComponent implements OnChanges, GridSelecionavel {
     if (this.selecao.length) this.excluir.emit([...this.selecao]);
   }
 
+  /** GridSelecionavel: confirmou a exclusão em lote; trava o botão até terminar (card #61). */
+  iniciarExclusao(): void {
+    this.excluindo = true;
+  }
+
   /** GridSelecionavel: o ExclusaoEmLoteService avisa aqui quando termina. */
   concluirExclusao(excluiu: boolean): void {
+    this.excluindo = false;
     if (excluiu) this.limparSelecao();
   }
 

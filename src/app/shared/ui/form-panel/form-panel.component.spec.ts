@@ -42,8 +42,15 @@ describe('FormPanelComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [provideNoopAnimations()] });
     fixture = TestBed.createComponent(HostComponent);
+    // O Karma roda numa janela estreita: o padrão dos testes é o desktop; o bloco "celular" liga o modo celular.
+    modoCelular(false);
     fixture.detectChanges();
   });
+
+  function modoCelular(ligado: boolean) {
+    const painel = fixture.debugElement.query(By.directive(FormPanelComponent)).componentInstance as FormPanelComponent;
+    Object.defineProperty(painel, 'movel', { value: ligado, writable: true, configurable: true });
+  }
 
   it('abre à direita com o título, o aviso de obrigatórios e o conteúdo', () => {
     const painel = fixture.debugElement.query(By.directive(Sidebar)).componentInstance as Sidebar;
@@ -79,6 +86,37 @@ describe('FormPanelComponent', () => {
     Array.from(el().querySelectorAll('button')).find(b => b.textContent?.trim() === 'Salvar e criar outra')!.click();
     expect(host().salvouEOutra).toBe(1);
     expect(host().salvou).toBe(0);
+  });
+
+  describe('celular (card #61)', () => {
+    const painel = () => fixture.debugElement.query(By.directive(FormPanelComponent)).componentInstance as FormPanelComponent;
+
+    beforeEach(() => {
+      modoCelular(true);
+      host().criarOutra = true;
+      fixture.detectChanges();
+    });
+
+    it('rodapé só com Cancelar e Salvar; o "criar outra" vira switch no fim do formulário', () => {
+      const rotulos = Array.from(el().querySelectorAll('.p-sidebar-footer button')).map(b => b.textContent?.trim());
+      expect(rotulos).toEqual(['Cancelar', 'Salvar']);
+      expect(el().querySelector('.mf-form-panel__outra')?.textContent).toContain('Criar outra depois de salvar');
+    });
+
+    it('Salvar com o switch desligado salva; ligado, faz o "criar outra"', () => {
+      botao('Salvar').click();
+      expect(host().salvou).toBe(1);
+      painel().continuar = true;
+      botao('Salvar').click();
+      expect(host().salvouEOutra).toBe(1);
+      expect(host().salvou).toBe(1);
+    });
+
+    it('sem "criar outra" não aparece o switch', () => {
+      host().criarOutra = false;
+      fixture.detectChanges();
+      expect(el().querySelector('.mf-form-panel__outra')).toBeNull();
+    });
   });
 
   it('salvando põe o Salvar em carregando e não deixa fechar (X, Cancelar, Esc, clique fora)', () => {

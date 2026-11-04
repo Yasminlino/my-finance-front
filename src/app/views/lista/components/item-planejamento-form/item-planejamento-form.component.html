@@ -1,4 +1,4 @@
-<mf-form-panel [titulo]="titulo" [salvando]="saving" [criarOutra]="!item" rotuloCriarOutra="Salvar e outro"
+<mf-form-panel [titulo]="titulo" [salvando]="saving" [criarOutra]="!item" rotuloCriarOutra="Salvar e outro" rotuloAlternarCriarOutra="Adicionar outro depois de salvar"
   (fechar)="close()" (salvar)="save()" (salvarEOutra)="salvarEOutro()">
   <form [formGroup]="form" class="flex flex-column gap-4" (ngSubmit)="save()">
     <div class="flex flex-column gap-2">
@@ -84,10 +84,22 @@
       </div>
     }
 
+    @if (lista.usaTipo) {
+      <!-- Tipo (card #61): texto livre, com os tipos já usados como sugestão -->
+      <div class="flex flex-column gap-2">
+        <label for="item-tipo" class="mf-label">Tipo <small class="mf-hint">(opcional)</small></label>
+        <input pInputText id="item-tipo" maxlength="60" formControlName="tipo" list="item-tipos" autocomplete="off"
+          placeholder="Ex.: Mercado, Farmácia, Trabalho" />
+        <datalist id="item-tipos">
+          @for (tipo of tipos; track tipo) { <option [value]="tipo"></option> }
+        </datalist>
+      </div>
+    }
+
     @if (lista.usaObservacao) {
       <div class="flex flex-column gap-2">
         <label for="item-observacao" class="mf-label">Observação <small class="mf-hint">(opcional)</small></label>
-        <textarea pInputTextarea id="item-observacao" rows="2" maxlength="500" formControlName="observacao" [autoResize]="true"
+        <textarea pInputTextarea id="item-observacao" rows="3" maxlength="500" formControlName="observacao"
           [placeholder]="exemploObservacao"></textarea>
       </div>
     }

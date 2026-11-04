@@ -74,7 +74,7 @@
         <button type="button" class="lote-grupo-desabilitadas flex align-items-center gap-2 w-full p-2 mt-2 border-round"
           [attr.aria-expanded]="grupoAberto" (click)="grupoAberto = !grupoAberto">
           <i class="pi" [class.pi-chevron-right]="!grupoAberto" [class.pi-chevron-down]="grupoAberto"></i>
-          <span>Já lançadas e inativas ({{ desabilitadas.length }})</span>
+          <span>Já lançadas ({{ desabilitadas.length }})</span>
         </button>
         @if (grupoAberto) {
           <div class="lote-desabilitadas">
@@ -101,7 +101,7 @@
           <button type="button" class="lote-grupo-desabilitadas flex align-items-center gap-2 w-full p-2 border-round"
             [attr.aria-expanded]="grupoAberto" (click)="grupoAberto = !grupoAberto">
             <i class="pi" [class.pi-chevron-right]="!grupoAberto" [class.pi-chevron-down]="grupoAberto"></i>
-            <span>Já lançadas e inativas ({{ desabilitadas.length }})</span>
+            <span>Já lançadas ({{ desabilitadas.length }})</span>
           </button>
           @if (grupoAberto) {
             <div class="lote-desabilitadas flex flex-column gap-2">

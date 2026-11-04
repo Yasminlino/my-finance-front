@@ -33,6 +33,8 @@ export type ListaDto = {
   limite?: number | null;
   usaData: boolean;
   usaObservacao: boolean;
+  /** Campo Tipo nos itens: texto livre para agrupar e filtrar (card #61). */
+  usaTipo?: boolean;
   modelo: ModeloLista;
   /** Listas da mesma série se comparam; muda só por duplicar e por ligar/sair da série. */
   serieId?: string;
@@ -63,6 +65,8 @@ export type ItemListaDto = {
   /** yyyy-mm-dd; null = sem fim. */
   repetirAte?: string | null;
   observacao?: string | null;
+  /** Até 60 letras; null = sem tipo (card #61). */
+  tipo?: string | null;
   ordem?: number | null;
   /** Item de onde este foi copiado ao duplicar. */
   itemOrigemId?: number | null;

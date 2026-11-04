@@ -1,6 +1,6 @@
 import { ItemListaDto, ListaDto } from 'src/app/core/models/lista.model';
 import {
-  contarItens, csvDosItens, exemploDoItem, filtrarItens, ordenarItens, resumoDosItens, rotuloDosFeitos, separarPorFeito, textoDosPendentes, totalDoItem
+  contarItens, csvDosItens, exemploDoItem, filtrarItens, tiposDosItens, ordenarItens, resumoDosItens, rotuloDosFeitos, separarPorFeito, textoDosPendentes, totalDoItem
 } from './planejamento.regras';
 
 function lista(ajuste: Partial<ListaDto> = {}): ListaDto {
@@ -170,5 +170,35 @@ describe('planejamento.regras — exemplo do item (card #69)', () => {
     expect(exemploDoItem(lista())).toBe('Ex.: Arroz');
     expect(exemploDoItem(lista({ usaQuantidade: false }))).toBe('Ex.: Conta de luz');
     expect(exemploDoItem(lista({ usaQuantidade: false, usaValor: false }))).toBe('Ex.: Ligar para o banco');
+  });
+});
+
+describe('planejamento.regras — campo Tipo (card #61)', () => {
+  const itens: ItemListaDto[] = [
+    item({ id: 1, descricao: 'Arroz', tipo: 'Mercado' }),
+    item({ id: 2, descricao: 'Dipirona', tipo: 'Farmácia', feito: true }),
+    item({ id: 3, descricao: 'Feijão', tipo: '  mercado ' }),
+    item({ id: 4, descricao: 'Pilhas', tipo: null })
+  ];
+
+  it('tipos usados, sem repetir (sem ligar para maiúscula, acento e espaços), em ordem alfabética', () => {
+    expect(tiposDosItens(itens)).toEqual(['Farmácia', 'Mercado']);
+    expect(tiposDosItens([])).toEqual([]);
+  });
+
+  it('filtra por um ou mais tipos; a busca também acha pelo tipo', () => {
+    expect(filtrarItens(itens, 'TODOS', '', ['Mercado']).map(i => i.id)).toEqual([1, 3]);
+    expect(filtrarItens(itens, 'TODOS', '', ['farmacia', 'Mercado']).map(i => i.id)).toEqual([1, 2, 3]);
+    expect(filtrarItens(itens, 'FALTA', '', ['Farmácia']).map(i => i.id)).toEqual([]);
+    expect(filtrarItens(itens, 'TODOS', 'farm').map(i => i.id)).toEqual([2]);
+    expect(filtrarItens(itens, 'TODOS', '').length).toBe(4);
+  });
+
+  it('CSV ganha a coluna Tipo quando o campo está ligado', () => {
+    const csv = csvDosItens(lista({ usaQuantidade: false, usaValor: false, usaTipo: true }), [itens[0], itens[3]]);
+    const [cabecalho, primeira, segunda] = csv.slice(1).split(String.fromCharCode(13, 10));
+    expect(cabecalho).toBe('Item;Feito;Tipo');
+    expect(primeira).toBe('Arroz;Não;Mercado');
+    expect(segunda).toBe('Pilhas;Não;');
   });
 });

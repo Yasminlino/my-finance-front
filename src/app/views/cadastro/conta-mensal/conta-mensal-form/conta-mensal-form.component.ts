@@ -16,14 +16,17 @@ import { iconeDe } from 'src/app/shared/ui/aparencia';
 import { nomesParecidos } from 'src/app/shared/utils/nomes-parecidos';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { CurrencyInputDirective } from 'src/app/shared/directives/currency-input.directive';
 import { ChipsModule } from 'primeng/chips';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { MessageModule } from 'primeng/message';
 import { PreviaParcelamento, diasDaConta, previaParcelamento, textoVencimento } from '../contas.regras';
 
-/** Campos do passo 1 no celular: o que precisa estar certo para avançar. */
+/** Campos da aba Dados no celular (card #61): com erro aqui, o Salvar abre esta aba. */
 const CAMPOS_DO_PASSO_1 = ['nome', 'categoriaId', 'valor', 'dias'] as const;
 
 /** 1 a 31, sem repetir, ao menos um (as mesmas regras da API). */
@@ -39,7 +42,8 @@ function diasValidos(controle: AbstractControl<string[]>): ValidationErrors | nu
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule, FormPanelComponent, FieldErrorComponent, CategoryIconComponent, DropdownModule,
-    InputTextModule, InputNumberModule, ChipsModule, InputSwitchModule, InputTextareaModule, MessageModule
+    InputTextModule, InputNumberModule, InputGroupModule, InputGroupAddonModule, CurrencyInputDirective, ChipsModule, InputSwitchModule,
+    InputTextareaModule, MessageModule
   ],
   templateUrl: './conta-mensal-form.component.html',
   styleUrls: ['./conta-mensal-form.component.scss']
@@ -59,7 +63,8 @@ export class ContaMensalFormComponent implements OnInit {
   readonly movel = inject(LarguraTelaService).movel;
 
   saving = false;
-  passo = 1;
+  /** Celular (card #61): a aba aberta — 1 Dados, 2 Parcelas e situação. No desktop tudo aparece. */
+  aba: 1 | 2 = 1;
   /** Mensagem do último dia recusado no campo de dias (fora de 1 a 31 ou repetido). */
   avisoDia = '';
   /** "Salvar e criar outra" já gravou alguma: ao fechar, a lista recarrega. */
@@ -82,13 +87,16 @@ export class ContaMensalFormComponent implements OnInit {
     return !!this.registro?.id;
   }
 
-  get passos(): number {
-    return this.movel() ? 2 : 1;
+  /** No celular cada aba mostra só a sua parte (dá para ir e voltar livre); no desktop tudo aparece. */
+  mostra(parte: 1 | 2): boolean {
+    return !this.movel() || this.aba === parte;
   }
 
-  /** No celular cada passo mostra só a sua parte; no desktop tudo aparece. */
-  mostra(parte: 1 | 2): boolean {
-    return this.passos === 1 || this.passo === parte;
+  /** A aba tem campo com erro já tocado (ponto vermelho no título da aba). */
+  abaComErro(parte: 1 | 2): boolean {
+    const c = this.form.controls;
+    if (parte === 1) return CAMPOS_DO_PASSO_1.some(campo => c[campo].invalid && c[campo].touched);
+    return (!!this.form.errors && this.form.touched) || (c.observacao.invalid && c.observacao.touched);
   }
 
   get categoriaEscolhida(): CategoriaDto | undefined {
@@ -161,16 +169,6 @@ export class ContaMensalFormComponent implements OnInit {
     this.form.controls.dias.setValue(dias.slice(0, -1));
   }
 
-  avancar() {
-    const invalidos = CAMPOS_DO_PASSO_1.filter(campo => this.form.controls[campo].invalid);
-    CAMPOS_DO_PASSO_1.forEach(campo => this.form.controls[campo].markAsTouched());
-    if (!invalidos.length) this.passo = 2;
-  }
-
-  voltar() {
-    this.passo = 1;
-  }
-
   close() {
     this.closed.emit(this.gravouAlguma);
   }
@@ -186,8 +184,8 @@ export class ContaMensalFormComponent implements OnInit {
   private gravar(criarOutra: boolean) {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      // No celular o erro pode estar no passo 1, que não aparece no passo 2.
-      if (CAMPOS_DO_PASSO_1.some(campo => this.form.controls[campo].invalid)) this.passo = 1;
+      // No celular o erro pode estar na outra aba: abre a primeira que tiver erro.
+      this.aba = CAMPOS_DO_PASSO_1.some(campo => this.form.controls[campo].invalid) ? 1 : 2;
       return;
     }
 
@@ -217,7 +215,7 @@ export class ContaMensalFormComponent implements OnInit {
           if (criarOutra) {
             this.form.reset();
             this.avisoDia = '';
-            this.passo = 1;
+            this.aba = 1;
           } else {
             this.close();
           }

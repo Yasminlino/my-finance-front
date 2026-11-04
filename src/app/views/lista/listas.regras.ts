@@ -1,18 +1,18 @@
 import { ListaDto, ModeloLista } from 'src/app/core/models/lista.model';
 import { CorCategoria, PALETA_CATEGORIA } from 'src/app/shared/ui/aparencia';
 
-type CamposDaLista = Pick<ListaDto, 'usaQuantidade' | 'usaValor' | 'modoValor' | 'usaLimite' | 'usaData' | 'usaObservacao'>;
+type CamposDaLista = Pick<ListaDto, 'usaQuantidade' | 'usaValor' | 'modoValor' | 'usaLimite' | 'usaData' | 'usaObservacao' | 'usaTipo'>;
 
 /**
  * Campos que cada modelo pré-marca ao criar a lista (card #67). O modelo não muda regra nenhuma
  * depois: a lista vale pelos campos ligados.
  */
 export const CAMPOS_DO_MODELO: Record<ModeloLista, CamposDaLista> = {
-  COMPRAS: { usaQuantidade: true, usaValor: true, modoValor: 'UNITARIO', usaLimite: false, usaData: false, usaObservacao: false },
-  ORCAMENTO: { usaQuantidade: false, usaValor: true, modoValor: 'TOTAL', usaLimite: true, usaData: false, usaObservacao: true },
-  TAREFAS: { usaQuantidade: false, usaValor: false, modoValor: 'TOTAL', usaLimite: false, usaData: false, usaObservacao: false },
-  AGENDA: { usaQuantidade: false, usaValor: false, modoValor: 'TOTAL', usaLimite: false, usaData: true, usaObservacao: false },
-  BRANCO: { usaQuantidade: false, usaValor: false, modoValor: 'TOTAL', usaLimite: false, usaData: false, usaObservacao: false }
+  COMPRAS: { usaQuantidade: true, usaValor: true, modoValor: 'UNITARIO', usaLimite: false, usaData: false, usaObservacao: false, usaTipo: false },
+  ORCAMENTO: { usaQuantidade: false, usaValor: true, modoValor: 'TOTAL', usaLimite: true, usaData: false, usaObservacao: true, usaTipo: false },
+  TAREFAS: { usaQuantidade: false, usaValor: false, modoValor: 'TOTAL', usaLimite: false, usaData: false, usaObservacao: false, usaTipo: false },
+  AGENDA: { usaQuantidade: false, usaValor: false, modoValor: 'TOTAL', usaLimite: false, usaData: true, usaObservacao: false, usaTipo: false },
+  BRANCO: { usaQuantidade: false, usaValor: false, modoValor: 'TOTAL', usaLimite: false, usaData: false, usaObservacao: false, usaTipo: false }
 };
 
 /** Ícone de quem não escolheu um (card #63). */
@@ -47,7 +47,8 @@ export function chipsDosCampos(lista: CamposDaLista): string[] {
     lista.usaValor && 'Valor',
     lista.usaValor && lista.usaLimite && 'Limite',
     lista.usaData && 'Data',
-    lista.usaObservacao && 'Obs.'
+    lista.usaObservacao && 'Obs.',
+    lista.usaTipo && 'Tipo'
   ].filter((c): c is string => !!c);
   return chips.length ? chips : ['Só itens'];
 }

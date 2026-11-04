@@ -96,17 +96,18 @@ describe('ModalAdicionarEmLoteComponent', () => {
   it('Disponíveis lista as que dá para lançar, em ordem alfabética; lançadas e inativas num grupo recolhido', () => {
     expect(nomesNaTabela()).toEqual(['Feira', 'Internet', 'Luz', 'Salário']);
     const grupo = el().querySelector('.lote-grupo-desabilitadas');
-    expect(texto(grupo)).toContain('Já lançadas e inativas (2)');
+    // Card #61: inativa (Academia) não entra no lote; o grupo fica só com as já lançadas.
+    expect(texto(grupo)).toContain('Já lançadas (1)');
     expect(el().querySelectorAll('.lote-desabilitadas .lote-nome').length).toBe(0);
 
     (grupo as HTMLElement).click();
     fixture.detectChanges();
 
-    expect(Array.from(el().querySelectorAll('.lote-desabilitadas .lote-nome')).map(texto)).toEqual(['Academia', 'Água']);
+    expect(Array.from(el().querySelectorAll('.lote-desabilitadas .lote-nome')).map(texto)).toEqual(['Água']);
   });
 
   it('contador em cada filtro; Já lançadas mostra só elas', () => {
-    expect(comp().opcoesFiltro.map(o => [o.value, o.contagem])).toEqual([['disponiveis', 4], ['lancadas', 1], ['todas', 6]]);
+    expect(comp().opcoesFiltro.map(o => [o.value, o.contagem])).toEqual([['disponiveis', 4], ['lancadas', 1], ['todas', 5]]);
 
     comp().filtro = 'lancadas';
     comp().aoMudarFiltro();

@@ -14,6 +14,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { MessageModule } from 'primeng/message';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { SidebarModule } from 'primeng/sidebar';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -38,9 +39,10 @@ import { isoDe, resumoCurto } from '../agenda.regras';
 import { DuplicarPlanejamentoComponent } from '../components/duplicar-planejamento/duplicar-planejamento.component';
 import { ItemPlanejamentoFormComponent } from '../components/item-planejamento-form/item-planejamento-form.component';
 import { PlanejamentoFormComponent } from '../components/planejamento-form/planejamento-form.component';
-import { chipsDosCampos, corDaLista, iconeDaLista, rotaDaLista } from '../listas.regras';
+import { corDaLista, iconeDaLista, rotaDaLista } from '../listas.regras';
 import {
   FiltroItens, ResumoDosItens, contarItens, csvDosItens, filtrarItens, resumoDosItens, rotuloDosFeitos, separarPorFeito, textoDosPendentes,
+  tiposDosItens,
   totalDoItem
 } from '../planejamento.regras';
 
@@ -76,7 +78,7 @@ interface BotaoDoAviso {
   standalone: true,
   imports: [
     NgTemplateOutlet, FormsModule, BadgeModule, ButtonModule, CheckboxModule, IconFieldModule, InputIconModule, InputSwitchModule, InputTextModule,
-    MenuModule, MessageModule, ProgressBarModule, SelectButtonModule, SidebarModule, SkeletonModule, ToastModule,
+    MenuModule, MessageModule, MultiSelectModule, ProgressBarModule, SelectButtonModule, SidebarModule, SkeletonModule, ToastModule,
     CategoryIconComponent, EmptyStateComponent, FilterBarComponent, PageHeaderComponent, StatCardComponent,
     AdicionarItemComponent, AgendaSemanaComponent, DuplicarPlanejamentoComponent, ItemPlanejamentoFormComponent, PlanejamentoFormComponent
   ],
@@ -106,6 +108,9 @@ export class PlanejamentoComponent implements OnInit {
 
   filtro: FiltroItens = 'TODOS';
   busca = '';
+  /** Campo Tipo (card #61): os tipos usados nos itens e os escolhidos no filtro. */
+  tiposDisponiveis: string[] = [];
+  tiposEscolhidos: string[] = [];
   ocultarFeitos = false;
   feitosAbertos = true;
   /** Recalculado só em aplicar() (lição do #23: getter recriaria as opções e o p-selectButton não trocaria). */
@@ -163,10 +168,6 @@ export class PlanejamentoComponent implements OnInit {
     this.breadcrumb = itens;
   }
 
-  get chips(): string[] {
-    return this.lista ? chipsDosCampos(this.lista) : [];
-  }
-
   get cor(): string {
     return this.lista ? corDaLista(this.lista) : 'azul';
   }
@@ -180,7 +181,7 @@ export class PlanejamentoComponent implements OnInit {
   }
 
   get temFiltro(): boolean {
-    return this.filtro !== 'TODOS' || !!this.busca.trim();
+    return this.filtro !== 'TODOS' || !!this.busca.trim() || this.tiposEscolhidos.length > 0;
   }
 
   /** Unitário mostra Valor un. e Total; no modo total o valor já é o total, e fica uma coluna só. */
@@ -192,12 +193,15 @@ export class PlanejamentoComponent implements OnInit {
   get colunas(): string {
     const l = this.lista;
     if (!l) return '';
-    const partes = ['2.5rem', 'minmax(10rem, 1fr)'];
+    // Data primeiro (card #61): ✓ · Data · Item · Tipo · Qtd · Valor · Obs. · ações (lápis e lixeira).
+    const partes = ['2.5rem'];
+    if (l.usaData) partes.push('8rem');
+    partes.push('minmax(10rem, 1fr)');
+    if (l.usaTipo) partes.push('minmax(7rem, 0.5fr)');
     if (l.usaQuantidade) partes.push('4.5rem');
     if (l.usaValor) partes.push(...(this.valorUnitario ? ['8rem', '8rem'] : ['8rem']));
-    if (l.usaData) partes.push('8rem');
     if (l.usaObservacao) partes.push('minmax(8rem, 0.8fr)');
-    partes.push('3rem');
+    partes.push('5.5rem');
     return partes.join(' ');
   }
 
@@ -247,7 +251,11 @@ export class PlanejamentoComponent implements OnInit {
     ];
     this.resumo = resumoDosItens(this.itens, this.lista);
     this.regras = Object.fromEntries(this.itens.map(i => [i.id, resumoCurto(i)]));
-    const grupos = separarPorFeito(filtrarItens(this.itens, this.filtro, this.busca));
+    this.tiposDisponiveis = tiposDosItens(this.itens);
+    // Tipo que sumiu dos itens (renomeado ou excluído) sai do filtro.
+    this.tiposEscolhidos = this.tiposEscolhidos.filter(t => this.tiposDisponiveis.includes(t));
+    const tipos = this.lista.usaTipo ? this.tiposEscolhidos : [];
+    const grupos = separarPorFeito(filtrarItens(this.itens, this.filtro, this.busca, tipos));
     this.pendentes = grupos.pendentes;
     this.feitos = this.ocultarFeitos && this.filtro !== 'FEITOS' ? [] : grupos.feitos;
   }
@@ -255,6 +263,7 @@ export class PlanejamentoComponent implements OnInit {
   limparFiltros() {
     this.filtro = 'TODOS';
     this.busca = '';
+    this.tiposEscolhidos = [];
     this.aplicar();
   }
 
@@ -475,6 +484,22 @@ export class PlanejamentoComponent implements OnInit {
   }
 
   /** A API não tem exclusão em lote: um por vez, com Desfazer que recria os itens. */
+  /** Lixeira da linha (card #61): sem abrir a edição; confirma e o aviso tem Desfazer. */
+  async excluirItem(item: ItemListaDto) {
+    if (!this.lista || this.somenteLeitura) return;
+    const ok = await this.confirmacao.confirmar(`Excluir o item "${item.descricao}"?`, { titulo: 'Excluir item' });
+    if (!ok) return;
+    const listaId = this.lista.id;
+    this.itemService.excluir(listaId, item.id).subscribe({
+      next: () => {
+        this.avisar('Item excluído', `"${item.descricao}" foi excluído.`,
+          { rotulo: 'Desfazer', icone: 'pi pi-undo', acao: () => this.recriar(listaId, [item]) });
+        this.load();
+      },
+      error: e => this.alertService.error(extrairMensagemErro(e, 'Não deu para excluir o item.'))
+    });
+  }
+
   async excluirSelecionados() {
     if (!this.lista || !this.selecionados.size) return;
     const apagados = this.itens.filter(i => this.selecionados.has(i.id));

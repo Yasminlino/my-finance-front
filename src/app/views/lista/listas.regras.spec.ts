@@ -16,6 +16,7 @@ describe('listas.regras (card #63)', () => {
     it('mostra os campos ligados na ordem do formulário', () => {
       expect(chipsDosCampos(lista({ ...CAMPOS_DO_MODELO.ORCAMENTO, limite: 100 }))).toEqual(['Valor', 'Limite', 'Obs.']);
       expect(chipsDosCampos(lista({ usaQuantidade: true, usaValor: true, usaData: true }))).toEqual(['Qtd', 'Valor', 'Data']);
+      expect(chipsDosCampos(lista({ usaData: true, usaTipo: true }))).toEqual(['Data', 'Tipo']);
     });
 
     it('sem campo extra, "Só itens"', () => {

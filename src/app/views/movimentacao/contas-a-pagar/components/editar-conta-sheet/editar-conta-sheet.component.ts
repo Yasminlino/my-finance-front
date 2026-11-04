@@ -13,7 +13,7 @@ import { TagModule } from 'primeng/tag';
 import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import { STATUS_PAGAMENTO_OPTIONS } from 'src/app/shared/enums/status.enum';
 import { CategoryIconComponent } from 'src/app/shared/ui/category-icon/category-icon.component';
-import { iconeDaCategoria, previaDoEfeito } from '../../contas-a-pagar.regras';
+import { ehReceita, iconeDaCategoria, opcoesDeStatus, previaDoEfeito } from '../../contas-a-pagar.regras';
 import { CampoEditavel, EdicaoContas, RascunhoConta } from '../../edicao-contas';
 import { ErroCampoDirective } from '../../erro-campo.directive';
 import { AparenciaCategoria } from 'src/app/shared/ui/aparencia';
@@ -48,6 +48,12 @@ export class EditarContaSheetComponent implements OnChanges {
   @Output() salvar = new EventEmitter<LinhaContasMensais>();
 
   readonly statusOptions = STATUS_PAGAMENTO_OPTIONS;
+  /** Fixo: receita fala em "recebido" (card #61). */
+  readonly statusOptionsReceita = opcoesDeStatus(true);
+
+  get receita(): boolean {
+    return !!this.conta && ehReceita(this.conta);
+  }
   edicao: EdicaoContas | null = null;
   rascunho: RascunhoConta | null = null;
   icone = '';

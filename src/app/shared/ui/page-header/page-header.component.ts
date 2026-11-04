@@ -5,7 +5,8 @@ import { ButtonModule } from 'primeng/button';
 
 /**
  * Cabeçalho das telas (card #27), tirado do de Contas a Pagar: breadcrumb, ‹ voltar, título e subtítulo à
- * esquerda; ações (botões, mês, switch…) à direita, pelo conteúdo com o atributo `acoes`.
+ * esquerda; ações (botões, mês, switch…) à direita, pelo conteúdo com o atributo `acoes`. Um ícone antes do título
+ * entra pelo atributo `icone` (o Planejamento põe o da cor dele, card #61).
  */
 @Component({
   selector: 'mf-page-header',
@@ -22,6 +23,7 @@ import { ButtonModule } from 'primeng/button';
             <p-button icon="pi pi-chevron-left" [text]="true" [rounded]="true" severity="secondary" size="small"
               (onClick)="voltar.emit()" ariaLabel="Voltar" />
           }
+          <ng-content select="[icone]" />
           <h5 class="mf-page-title">{{ titulo }}</h5>
         </div>
         @if (subtitulo) {

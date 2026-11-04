@@ -103,11 +103,12 @@
   }
 
   <!-- Aviso com Desfazer (arquivar/desarquivar) ou Abrir (duplicar); o MessageService é o da tela. -->
-  <p-toast key="planejamento" position="bottom-center">
+  <!-- Sem animação de saída: o aviso trocado não segura espaço e o novo não "pula" (o Desfazer saía do lugar). Celular: largura toda e os botões descem para baixo do texto, sem cortar (card #61) -->
+  <p-toast key="planejamento" position="bottom-center" hideTransitionOptions="0ms" [breakpoints]="{ '767px': { width: 'calc(100vw - 2rem)', left: '1rem', right: '1rem', transform: 'none' } }">
     <ng-template let-mensagem pTemplate="message">
-      <div class="flex align-items-center gap-3 w-full">
+      <div class="flex flex-wrap align-items-center gap-2 w-full">
         <i class="pi pi-check-circle text-2xl"></i>
-        <div class="flex-grow-1">
+        <div class="flex-grow-1 min-w-0 aviso-texto">
           <div class="font-semibold">{{ mensagem.summary }}</div>
           <small>{{ mensagem.detail }}</small>
         </div>

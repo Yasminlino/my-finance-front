@@ -1,4 +1,7 @@
 import { ContaDto, LancamentoDaConta } from 'src/app/core/models/conta.model';
+import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
+import { StatusFiltro } from '../../movimentacao/contas-a-pagar/contas-a-pagar.lista';
+import { situacao } from '../../movimentacao/contas-a-pagar/contas-a-pagar.regras';
 import { normalizarNome } from 'src/app/shared/utils/nomes-parecidos';
 
 /**
@@ -16,6 +19,32 @@ export interface FiltroContas {
   /** Ids de categoria; vazio = todas. */
   categorias: number[];
   ordem: OrdemContas;
+  /** Card #61: status do lançamento do mês atual (vazio = todos) e os de cada conta (contaId → status). */
+  status?: StatusFiltro[];
+  statusPorConta?: ReadonlyMap<number, ReadonlySet<StatusFiltro>>;
+}
+
+/**
+ * Status de cada conta no mês, pelos lançamentos dele (a conta com vários dias tem vários). Em aberto e vencido
+ * vale "Atrasado", como em Contas a Pagar (card #61).
+ */
+export function statusDoMesPorConta(lancamentos: readonly LinhaContasMensais[], hoje: Date): Map<number, Set<StatusFiltro>> {
+  const mapa = new Map<number, Set<StatusFiltro>>();
+  for (const l of lancamentos) {
+    if (!l.contaId) continue;
+    const status: StatusFiltro = situacao(l, hoje) === 'atrasada' ? 'ATRASADO' : ((l.situacao as StatusFiltro) || 'PENDENTE');
+    const daConta = mapa.get(l.contaId) ?? new Set<StatusFiltro>();
+    daConta.add(status);
+    mapa.set(l.contaId, daConta);
+  }
+  return mapa;
+}
+
+/** Com status escolhido, só a conta que tem lançamento no mês com um deles. */
+function passaStatus(conta: ContaDto, filtro: FiltroContas): boolean {
+  if (!filtro.status?.length) return true;
+  const daConta = filtro.statusPorConta?.get(conta.id);
+  return !!daConta && filtro.status.some(s => daConta.has(s));
 }
 
 /** Dias de vencimento da conta, em ordem. */
@@ -38,6 +67,7 @@ function passaSituacao(conta: ContaDto, situacao: FiltroSituacao): boolean {
 /** Tudo do filtro, menos a situação: é a base dos contadores do seletor Ativas / Inativas / Todas. */
 function passaSemSituacao(conta: ContaDto, filtro: FiltroContas, busca: string): boolean {
   return (!filtro.categorias.length || filtro.categorias.includes(conta.categoriaId))
+    && passaStatus(conta, filtro)
     && (!busca || normalizarNome(conta.nome).includes(busca) || normalizarNome(conta.categoriaNome).includes(busca));
 }
 

@@ -1,11 +1,24 @@
 <mf-form-panel [titulo]="editando ? 'Editar conta' : 'Nova conta'" [salvando]="saving" [criarOutra]="!editando"
-  [passos]="passos" [passo]="passo" [rotuloSalvar]="passos > 1 ? 'Salvar conta' : 'Salvar'"
-  (fechar)="close()" (salvar)="save()" (salvarEOutra)="salvarEOutra()" (avancar)="avancar()" (voltar)="voltar()">
+  rotuloAlternarCriarOutra="Criar outra conta depois de salvar"
+  (fechar)="close()" (salvar)="save()" (salvarEOutra)="salvarEOutra()">
   <ng-container [ngTemplateOutlet]="dados" />
 </mf-form-panel>
 
 <ng-template #dados>
   <form [formGroup]="form" class="flex flex-column gap-4" (ngSubmit)="save()">
+    @if (movel()) {
+      <!-- Celular (card #61): abas no lugar dos 2 passos; dá para ir e voltar livre, o Salvar valida as duas -->
+      <div class="conta-abas" role="tablist" aria-label="Partes do formulário">
+        <button type="button" role="tab" class="conta-aba" [class.conta-aba--ativa]="aba === 1" [attr.aria-selected]="aba === 1"
+          (click)="aba = 1">
+          Dados @if (abaComErro(1)) { <span class="conta-aba__erro" aria-label="com erro"></span> }
+        </button>
+        <button type="button" role="tab" class="conta-aba" [class.conta-aba--ativa]="aba === 2" [attr.aria-selected]="aba === 2"
+          (click)="aba = 2">
+          Parcelas e situação @if (abaComErro(2)) { <span class="conta-aba__erro" aria-label="com erro"></span> }
+        </button>
+      </div>
+    }
     @if (mostra(1)) {
       <section class="flex flex-column gap-3">
         <h6 class="mf-section-title m-0">Identificação</h6>
@@ -48,8 +61,13 @@
 
         <div class="flex flex-column gap-2">
           <label for="conta-valor" class="mf-label">Valor por mês <span class="text-red-500">*</span></label>
-          <p-inputNumber inputId="conta-valor" formControlName="valor" mode="currency" currency="BRL" locale="pt-BR"
-            styleClass="w-full" [class.ng-dirty]="form.controls.valor.touched && form.controls.valor.invalid" />
+          <!-- Card #61: o p-inputNumber depende do keydown, que o teclado do celular não manda (tecla "Unidentified"); a
+               diretiva do app refaz o valor pelo evento input, como já é em Contas a Pagar. -->
+          <p-inputGroup>
+            <p-inputGroupAddon>R$</p-inputGroupAddon>
+            <input pInputText id="conta-valor" type="text" inputmode="decimal" formControlName="valor" currencyInput
+              placeholder="0,00" autocomplete="off" [class.ng-dirty]="form.controls.valor.touched && form.controls.valor.invalid" />
+          </p-inputGroup>
           @if (diasNumeros.length > 1) {
             <small class="mf-hint">Dividido entre os dias: {{ diasNumeros.length }} lançamentos de
               {{ moeda((form.controls.valor.value ?? 0) / diasNumeros.length) }} por mês.</small>
@@ -141,7 +159,7 @@
         </div>
       </section>
 
-      @if (passos > 1) {
+      @if (movel()) {
         <section class="conta-resumo surface-ground border-round p-3 flex flex-column gap-1">
           <span class="mf-hint">Resumo</span>
           <span class="flex align-items-center gap-2 font-semibold">

@@ -129,6 +129,22 @@ describe('ExclusaoEmLoteService', () => {
       expect(alertService.success).toHaveBeenCalledWith('3 contas excluídas com sucesso!');
     });
 
+    it('avisa o grid que começou só depois de confirmar, antes de excluir (card #61)', async () => {
+      confirmacao.confirmar.and.resolveTo(true);
+      const ordem: string[] = [];
+      const comInicio = {
+        iniciarExclusao: jasmine.createSpy('iniciarExclusao').and.callFake(() => ordem.push('inicio')),
+        concluirExclusao: jasmine.createSpy('concluirExclusao').and.callFake(() => ordem.push('fim'))
+      };
+      await firstValueFrom(service.confirmarEExcluir(comInicio, rows, () => { ordem.push('excluir'); return of(null); }, rotulo));
+      expect(ordem).toEqual(['inicio', 'excluir', 'excluir', 'excluir', 'fim']);
+
+      confirmacao.confirmar.and.resolveTo(false);
+      comInicio.iniciarExclusao.calls.reset();
+      await firstValueFrom(service.confirmarEExcluir(comInicio, rows, () => of(null), rotulo));
+      expect(comInicio.iniciarExclusao).not.toHaveBeenCalled();
+    });
+
     it('concorda a pergunta no singular e no masculino', async () => {
       const confirm = confirmacao.confirmar.and.resolveTo(true);
 

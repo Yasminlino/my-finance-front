@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { MenuItem } from 'primeng/api';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
+import { DropdownModule } from 'primeng/dropdown';
 import { IconFieldModule } from 'primeng/iconfield';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
@@ -19,10 +21,11 @@ import { GridSelecionavel } from 'src/app/core/services/exclusao-em-lote.service
 import { formatCurrencyBR } from 'src/app/core/utils/mask';
 import { CategoryIconComponent } from 'src/app/shared/ui/category-icon/category-icon.component';
 import { TotaisSelecao, calcularTotaisSelecao, naturezaPorSubCategoria } from 'src/app/shared/utils/totais-selecao';
-import { FiltroSituacao } from '../../contas-a-pagar.regras';
+import { FiltroSituacao, rotuloDeMarcar } from '../../contas-a-pagar.regras';
 import { AparenciaCategoria } from 'src/app/shared/ui/aparencia';
 import {
-  MetaLinha, OpcaoFiltro, categoriasDe, filtrarContas, metaDasContas, opcoesDeFiltro, ordenarPorVencimento
+  MetaLinha, OPCOES_ORDEM, OPCOES_STATUS_FILTRO, OpcaoFiltro, OrdemContas, StatusFiltro, categoriasDe, filtrarContas,
+  metaDasContas, opcoesDeFiltro, ordenarContas, subcategoriasDe
 } from '../../contas-a-pagar.lista';
 
 /** Quanto o dedo precisa ficar no card para entrar no modo seleção. */
@@ -38,7 +41,8 @@ const TOQUE_LONGO_MS = 500;
   standalone: true,
   imports: [
     NgClass, FormsModule, SelectButtonModule, BadgeModule, IconFieldModule, InputIconModule, InputTextModule,
-    MultiSelectModule, ButtonModule, ProgressBarModule, TagModule, MenuModule, SidebarModule, CategoryIconComponent
+    MultiSelectModule, ButtonModule, ProgressBarModule, TagModule, MenuModule, SidebarModule, DropdownModule, InputNumberModule,
+    CategoryIconComponent
   ],
   templateUrl: './lista-contas-movel.component.html',
   styleUrls: ['./lista-contas-movel.component.scss'],
@@ -64,6 +68,17 @@ export class ListaContasMovelComponent implements OnChanges, OnDestroy, GridSele
   busca = '';
   categoriasSelecionadas: string[] = [];
   categorias: string[] = [];
+  /** Card #61: subcategoria, status e valor (de/até), e "ordenar por". */
+  subcategorias: string[] = [];
+  subcategoriasSelecionadas: string[] = [];
+  statusSelecionados: StatusFiltro[] = [];
+  valorMin: number | null = null;
+  valorMax: number | null = null;
+  ordem: OrdemContas = 'vencimento';
+  readonly opcoesStatusFiltro = OPCOES_STATUS_FILTRO;
+  readonly opcoesOrdem = OPCOES_ORDEM;
+  /** Exclusão em lote rodando: o botão fica carregando e travado (card #61). */
+  excluindo = false;
   opcoesFiltro: OpcaoFiltro[] = [];
   filtrosAbertos = false;
 
@@ -89,9 +104,12 @@ export class ListaContasMovelComponent implements OnChanges, OnDestroy, GridSele
     if (changes['contas'] || changes['hoje'] || changes['aparencias']) {
       this.meta = metaDasContas(this.contas, this.hoje, this.aparencias);
     }
+    if (changes['contas'] || changes['hoje'] || changes['aparencias']) {
+      this.ordenadas = ordenarContas(this.contas, this.ordem, this.meta);
+    }
     if (changes['contas'] || changes['hoje']) {
-      this.ordenadas = ordenarPorVencimento(this.contas);
       this.categorias = categoriasDe(this.contas);
+      this.subcategorias = subcategoriasDe(this.contas);
       this.opcoesFiltro = opcoesDeFiltro(this.contas, this.hoje);
       // Seleção de contas que não existem mais (outro mês, excluídas) sai junto.
       const ids = new Set(this.contas.map(c => c.id));
@@ -113,7 +131,11 @@ export class ListaContasMovelComponent implements OnChanges, OnDestroy, GridSele
     this.visiveis = filtrarContas(this.ordenadas, this.meta, {
       filtro: this.filtro,
       busca: this.busca,
-      categorias: this.categoriasSelecionadas
+      categorias: this.categoriasSelecionadas,
+      subcategorias: this.subcategoriasSelecionadas,
+      status: this.statusSelecionados,
+      valorMin: this.valorMin,
+      valorMax: this.valorMax
     });
   }
 
@@ -121,7 +143,27 @@ export class ListaContasMovelComponent implements OnChanges, OnDestroy, GridSele
     this.filtro = 'todas';
     this.busca = '';
     this.categoriasSelecionadas = [];
+    this.subcategoriasSelecionadas = [];
+    this.statusSelecionados = [];
+    this.valorMin = null;
+    this.valorMax = null;
     this.aplicarFiltros();
+  }
+
+  /** Quantos filtros do painel estão em uso (o número no botão de filtros). */
+  get filtrosNoPainel(): number {
+    return [this.categoriasSelecionadas.length > 0, this.subcategoriasSelecionadas.length > 0, this.statusSelecionados.length > 0,
+      this.valorMin !== null || this.valorMax !== null].filter(Boolean).length;
+  }
+
+  aoMudarOrdem(): void {
+    this.ordenadas = ordenarContas(this.contas, this.ordem, this.meta);
+    this.aplicarFiltros();
+  }
+
+  /** "Marcar como recebido" só com receitas selecionadas; misturado, "pago/recebido". */
+  get rotuloMarcar(): string {
+    return rotuloDeMarcar(this.selecionadas().map(c => !!this.meta[c.id]?.receita));
   }
 
   // ---------------------------------------------------------------------------
@@ -205,8 +247,14 @@ export class ListaContasMovelComponent implements OnChanges, OnDestroy, GridSele
     if (selecionadas.length) this.excluir.emit(selecionadas);
   }
 
+  /** GridSelecionavel: confirmou a exclusão em lote; trava o botão até terminar (card #61). */
+  iniciarExclusao(): void {
+    this.excluindo = true;
+  }
+
   /** GridSelecionavel: o ExclusaoEmLoteService avisa aqui quando termina. */
   concluirExclusao(excluiu: boolean): void {
+    this.excluindo = false;
     if (excluiu) this.limparSelecao();
   }
 

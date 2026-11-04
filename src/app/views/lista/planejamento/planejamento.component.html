@@ -2,6 +2,10 @@
   [class.planejamento--com-fab]="movel() && mostrandoAgenda && !somenteLeitura && !selecionando">
   <mf-page-header class="block mt-2 mb-3" [titulo]="lista?.nome ?? 'Planejamento'" [breadcrumb]="breadcrumb" [home]="home"
     [mostrarVoltar]="true" (voltar)="voltar()">
+    <!-- Um elemento por @if: com dois, o Angular não projeta cada um no seu lugar (o [acoes] sumia). -->
+    @if (lista) {
+      <mf-category-icon icone [cor]="cor" [icone]="icone" class="planejamento-icone" />
+    }
     @if (lista) {
       <ng-container ngProjectAs="[acoes]">
         @if (somenteLeitura) {
@@ -26,17 +30,6 @@
   }
 
   @if (lista) {
-    <!-- Identidade: ícone na cor, chips dos campos e o atalho para os campos -->
-    <div class="planejamento-identidade flex flex-wrap align-items-center gap-2 mb-3">
-      <mf-category-icon [cor]="cor" [icone]="icone" />
-      @for (chip of chips; track chip) {
-        <span class="planejamento-chip">{{ chip }}</span>
-      }
-      @if (!somenteLeitura) {
-        <p-button label="Campos" icon="pi pi-sliders-h" [link]="true" size="small" (onClick)="abrirCampos()" />
-      }
-    </div>
-
     @if (somenteLeitura) {
       <p-message severity="warn" styleClass="w-full justify-content-start mb-3"
         text="Planejamento arquivado: abre só para leitura. Desarquive para adicionar, marcar ou editar itens." />
@@ -86,7 +79,7 @@
       </div>
     } @else {
     @if (lista.usaData) {
-      <div class="flex mb-3"><ng-container [ngTemplateOutlet]="seletorVisao" /></div>
+      <div class="flex mb-3 planejamento-visoes-itens"><ng-container [ngTemplateOutlet]="seletorVisao" /></div>
     }
     <div class="surface-card border-round shadow-1">
       @if (!somenteLeitura && !movel()) {
@@ -108,6 +101,11 @@
           <input pInputText type="text" placeholder="Buscar item..." [(ngModel)]="busca" (ngModelChange)="aplicar()"
             aria-label="Buscar item" [class.w-full]="movel()" />
         </p-iconField>
+        @if (lista.usaTipo && tiposDisponiveis.length) {
+          <p-multiSelect fim [options]="tiposDisponiveis" [(ngModel)]="tiposEscolhidos" placeholder="Tipos" appendTo="body"
+            [showToggleAll]="false" display="chip" (onChange)="aplicar()" styleClass="filtro-tipos" ariaLabel="Filtrar por tipo"
+            [class.w-full]="movel()" />
+        }
         <span fim class="flex align-items-center gap-2">
           <p-inputSwitch inputId="ocultar-feitos" [(ngModel)]="ocultarFeitos" (onChange)="aplicar()" />
           <label for="ocultar-feitos" class="m-0 white-space-nowrap">Ocultar {{ rotuloFeitos.toLowerCase() }}</label>
@@ -122,13 +120,19 @@
               <p-checkbox [ngModel]="selecionados.has(item.id)" [binary]="true" (onChange)="alternarSelecao(item)"
                 [ariaLabel]="'Selecionar ' + item.descricao" styleClass="planejamento-selecao" />
             } @else {
-              <p-checkbox [ngModel]="!!item.feito" [binary]="true" [disabled]="somenteLeitura" (onChange)="alternar(item)"
-                [ariaLabel]="(item.feito ? 'Desmarcar ' : 'Marcar ') + item.descricao" />
+              <!-- Concluir como o ✓ de Contas a Pagar (card #61); clicar de novo desmarca -->
+              <button type="button" class="planejamento-check" [class.planejamento-check--feito]="item.feito" [disabled]="somenteLeitura"
+                [attr.aria-label]="(item.feito ? 'Desmarcar ' : 'Concluir ') + item.descricao" [attr.aria-pressed]="!!item.feito"
+                [title]="item.feito ? 'Desmarcar' : 'Concluir'" (click)="alternar(item)"><i class="pi pi-check"></i></button>
             }
+            @if (lista.usaData) { <span class="white-space-nowrap">{{ dataDe(item) }}</span> }
             <span class="planejamento-linha__item" [class.cursor-pointer]="!somenteLeitura" (click)="tocarItem(item)">
               {{ item.descricao }}
               @if (repete(item)) { <i class="pi pi-sync mf-hint ml-1" title="Repete"></i> }
             </span>
+            @if (lista.usaTipo) {
+              <span class="overflow-hidden">@if (item.tipo) { <span class="planejamento-tipo" [title]="item.tipo">{{ item.tipo }}</span> }</span>
+            }
             @if (lista.usaQuantidade) { <span class="text-center">{{ item.quantidade ?? 1 }}</span> }
             @if (lista.usaValor) {
               @if (item.valor === null || item.valor === undefined) {
@@ -143,7 +147,6 @@
                 <span class="text-right mf-valor font-semibold">{{ moeda(totalDe(item)) }}</span>
               }
             }
-            @if (lista.usaData) { <span>{{ dataDe(item) }}</span> }
             @if (lista.usaObservacao) {
               <span class="mf-hint white-space-nowrap overflow-hidden text-overflow-ellipsis" [title]="item.observacao ?? ''">{{ item.observacao }}</span>
             }
@@ -151,6 +154,8 @@
               @if (!somenteLeitura && !selecionando) {
                 <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="secondary" size="small"
                   [ariaLabel]="'Editar ' + item.descricao" (onClick)="editarItem(item)" />
+                <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger" size="small"
+                  [ariaLabel]="'Excluir ' + item.descricao" (onClick)="excluirItem(item)" />
               }
             </span>
           </div>
@@ -180,6 +185,7 @@
                   {{ item.quantidade ?? 1 }} un.
                 }
                 @if (lista.usaData && item.data) { · {{ dataDe(item) }} }
+                @if (lista.usaTipo && item.tipo) { · {{ item.tipo }} }
                 @if (lista.usaObservacao && item.observacao) { · {{ item.observacao }} }
               </small>
             </div>
@@ -188,6 +194,11 @@
                 @if (totalDe(item) === null) { <span class="mf-hint">+ valor</span> } @else { {{ moeda(totalDe(item)) }} }
               </span>
             }
+            @if (!somenteLeitura && !selecionando) {
+              <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger" size="small"
+                styleClass="planejamento-excluir-card" [ariaLabel]="'Excluir ' + item.descricao"
+                (onClick)="excluirItem(item)" (pointerdown)="$event.stopPropagation()" />
+            }
           </div>
         }
       </ng-template>
@@ -195,7 +206,9 @@
       @if (!movel() && (pendentes.length || feitos.length)) {
         <div class="planejamento-linha planejamento-linha--cabecalho" [style.grid-template-columns]="colunas">
           <span></span>
+          @if (lista.usaData) { <span>Data</span> }
           <span>Item</span>
+          @if (lista.usaTipo) { <span>Tipo</span> }
           @if (lista.usaQuantidade) { <span class="text-center">Qtd</span> }
           @if (lista.usaValor) {
             @if (valorUnitario) {
@@ -205,7 +218,6 @@
               <span class="text-right">Valor</span>
             }
           }
-          @if (lista.usaData) { <span>Data</span> }
           @if (lista.usaObservacao) { <span>Observação</span> }
           <span></span>
         </div>
@@ -295,6 +307,7 @@
 
   @if (itemAberto && lista) {
     <app-item-planejamento-form [lista]="lista" [item]="itemEditando" [dataOriginal]="dataOriginal" [dataInicial]="dataInicial"
+      [tipos]="tiposDisponiveis"
       (closed)="fecharItem($event)" (salvo)="load()" />
   }
   @if (camposAbertos && lista) {
@@ -305,11 +318,12 @@
   }
 
   <!-- Aviso com Desfazer (ações em lote, arquivar) ou Abrir (duplicar); o MessageService é o da tela. -->
-  <p-toast key="planejamento" position="bottom-center">
+  <!-- Sem animação de saída: o aviso trocado não segura espaço e o novo não "pula" (o Desfazer saía do lugar). Celular: largura toda, acima da barra de baixo (adicionar/seleção) e os botões descem para baixo do texto (card #61) -->
+  <p-toast key="planejamento" position="bottom-center" hideTransitionOptions="0ms" [breakpoints]="{ '767px': { width: 'calc(100vw - 2rem)', left: '1rem', right: '1rem', transform: 'none', bottom: '5.5rem' } }">
     <ng-template let-mensagem pTemplate="message">
-      <div class="flex align-items-center gap-3 w-full">
+      <div class="flex flex-wrap align-items-center gap-2 w-full">
         <i class="pi pi-check-circle text-2xl"></i>
-        <div class="flex-grow-1">
+        <div class="flex-grow-1 min-w-0 aviso-texto">
           <div class="font-semibold">{{ mensagem.summary }}</div>
           <small>{{ mensagem.detail }}</small>
         </div>

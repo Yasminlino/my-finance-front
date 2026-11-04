@@ -1,6 +1,6 @@
 import { LinhaContasMensais } from 'src/app/core/models/conta-mensal.model';
 import {
-  categoriasDe, filtrarContas, metaDasContas, opcoesDeFiltro, ordenarPorVencimento
+  categoriasDe, filtrarContas, metaDasContas, opcoesDeFiltro, ordenarContas, ordenarPorVencimento, statusParaFiltro, subcategoriasDe
 } from './contas-a-pagar.lista';
 
 /** O que a tabela (desktop) e a lista (mobile) compartilham: linha exibida, ordem e filtros. */
@@ -23,6 +23,38 @@ describe('contas-a-pagar.lista', () => {
   const meta = metaDasContas(contas, hoje);
   const ids = (lista: LinhaContasMensais[]) => lista.map(c => c.id);
   const semFiltro = { filtro: 'todas' as const, busca: '', categorias: [] as string[] };
+
+  describe('filtros e ordem novos (card #61)', () => {
+    it('subcategorias do mês, sem repetir e em ordem', () => {
+      expect(subcategoriasDe(contas)).toEqual(['Despesa', 'Receita']);
+    });
+
+    it('filtro por subcategoria', () => {
+      expect(ids(filtrarContas(contas, meta, { ...semFiltro, subcategorias: ['Receita'] }))).toEqual([3]);
+    });
+
+    it('status: em aberto e vencida conta como Atrasado; os outros pelo gravado', () => {
+      expect(statusParaFiltro(contas[1], meta[2])).toBe('ATRASADO');
+      expect(statusParaFiltro(contas[0], meta[1])).toBe('PENDENTE');
+      expect(statusParaFiltro(contas[2], meta[3])).toBe('PAGO NO PRAZO');
+      expect(ids(filtrarContas(contas, meta, { ...semFiltro, status: ['ATRASADO'] }))).toEqual([2]);
+      expect(ids(filtrarContas(contas, meta, { ...semFiltro, status: ['PENDENTE', 'PAGO NO PRAZO'] }))).toEqual([1, 3, 4]);
+    });
+
+    it('valor de / até (cada um opcional)', () => {
+      expect(ids(filtrarContas(contas, meta, { ...semFiltro, valorMin: 800 }))).toEqual([2, 3, 4]);
+      expect(ids(filtrarContas(contas, meta, { ...semFiltro, valorMax: 800 }))).toEqual([1, 4]);
+      expect(ids(filtrarContas(contas, meta, { ...semFiltro, valorMin: 300, valorMax: 1500 }))).toEqual([2, 4]);
+      expect(ids(filtrarContas(contas, meta, { ...semFiltro, valorMin: null, valorMax: null }))).toEqual([1, 2, 3, 4]);
+    });
+
+    it('ordenar por: vencimento, receitas primeiro, maior valor e nome', () => {
+      expect(ids(ordenarContas(contas, 'vencimento', meta))).toEqual(ids(ordenarPorVencimento(contas)));
+      expect(ids(ordenarContas(contas, 'receitas', meta))[0]).toBe(3);
+      expect(ids(ordenarContas(contas, 'valor', meta))).toEqual([3, 2, 4, 1]);
+      expect(ids(ordenarContas(contas, 'nome', meta))).toEqual([2, 4, 1, 3]);
+    });
+  });
 
   it('metaDasContas: o que a linha mostra', () => {
     expect(meta[4].parcela).toBe('8 / 12');
