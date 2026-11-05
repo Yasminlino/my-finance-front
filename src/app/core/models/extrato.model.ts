@@ -40,8 +40,10 @@ export interface ExtratoItemDto {
 
   usuarioId?: number;
   chaveDescricao?: string | null;
-  /** Pede à API para atualizar também o vínculo da pessoa com categoria/tipo. */
+  /** Pede à API para gravar a ligação com a pessoa (ou criá-la pelo nome); o padrão da pessoa não muda (card #45, parte 2). */
   alteraVinculoPessoa?: boolean;
+  /** Pagamento (Entrada) que abate uma compra (Saída) da mesma pessoa; null = saldo geral (card #45, parte 3). */
+  abateItemId?: number | null;
 
   /** Navegações que a API devolve na leitura (o relatório de gastos agrupa por elas). */
   banco?: Pick<BancoDto, 'id' | 'nomeBanco'> | null;

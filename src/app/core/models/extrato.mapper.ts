@@ -101,6 +101,8 @@ export function paraExtratoItemDto(linha: ExtratoItemEntrada, contexto: Contexto
     ...(usuarioId !== null ? { usuarioId } : {}),
     chaveDescricao: linha.chaveDescricao ?? null,
     alteraVinculoPessoa: Boolean(linha.alteraVinculoPessoa),
+    // Sem isto, editar um pagamento no Modo edição o desligaria da compra que ele abate.
+    abateItemId: idOuNulo(linha.abateItemId),
   } as ExtratoItemDto;
 
   return dto;

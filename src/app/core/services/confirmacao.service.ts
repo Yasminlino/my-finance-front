@@ -6,6 +6,8 @@ export interface OpcoesConfirmacao {
   titulo?: string;
   /** Rótulo do botão de confirmar (padrão: "Excluir"). */
   aceitar?: string;
+  /** Rótulo do botão de cancelar (padrão: "Cancelar"). */
+  cancelar?: string;
 }
 
 /**
@@ -26,7 +28,7 @@ export class ConfirmacaoService {
         message: mensagem,
         icon: 'pi pi-exclamation-triangle',
         acceptLabel: opcoes.aceitar ?? 'Excluir',
-        rejectLabel: 'Cancelar',
+        rejectLabel: opcoes.cancelar ?? 'Cancelar',
         acceptButtonStyleClass: 'p-button-danger',
         rejectButtonStyleClass: 'p-button-text p-button-secondary',
         accept: () => resolve(true),

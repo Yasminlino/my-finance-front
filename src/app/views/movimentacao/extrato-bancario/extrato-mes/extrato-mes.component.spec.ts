@@ -42,7 +42,18 @@ describe('ExtratoMesComponent', () => {
   beforeEach(() => {
     movel.set(false);
     queryParams = {};
-    itens = jasmine.createSpyObj<ExtratoBancarioItemService>('ExtratoBancarioItemService', ['listarDoMes', 'atualizar', 'excluir']);
+    itens = jasmine.createSpyObj<ExtratoBancarioItemService>('ExtratoBancarioItemService', ['listarDoMes', 'atualizar', 'excluir', 'acertos']);
+    itens.acertos.and.returnValue(of({
+      pessoas: [{
+        pessoaId: 7, nome: 'CARLOS', ehTitular: false, devido: 140, recebido: 30, falta: 110, quitado: false, aindaVaiCobrar: 0,
+        compras: [
+          { id: 1, data: '2026-10-05', descricao: 'Mercado Extra', valor: 100, bancoId: 1, bancoNome: 'Nubank', parcelaAtual: 2, quantidadeParcelas: 4, pago: 30, quitada: false },
+          { id: 99, data: '2026-09-05', descricao: 'De outra fatura', valor: 40, bancoId: 1, bancoNome: 'Nubank', parcelaAtual: null, quantidadeParcelas: null, pago: 0, quitada: false }
+        ],
+        pagamentos: [], proximasParcelas: []
+      }],
+      eu: null, totais: { devido: 140, recebido: 30, faltaReceber: 120, aindaVaiCobrar: 0 }
+    }));
     itens.listarDoMes.and.returnValue(of(dados()));
     const comLista = <T>(nome: string, metodo: string, lista: T[]) => {
       const spy = jasmine.createSpyObj(nome, [metodo]);
@@ -83,8 +94,38 @@ describe('ExtratoMesComponent', () => {
     expect(el().querySelector('.modo-edicao #extrato-edicao')).not.toBeNull();
     expect(el().querySelector('p-splitbutton')?.textContent).toContain('Novo lançamento');
     expect(comp().itensNovoLancamento.map(i => i.label)).toEqual(
-      ['Importar extrato', 'Importações mensais', 'Relatório mensal', 'Configurar pessoas', 'Exportar', 'Atualizar']);
-    expect(el().querySelector('[aria-label="Mais ações"]')).toBeNull();
+      ['Importar extrato', 'Importações mensais', 'Relatório mensal', 'Configurar pessoas', 'Atualizar']);
+    expect(el().querySelector('mf-page-header [aria-label="Mais ações"]')).toBeNull();
+  });
+
+  it('abas Lançamentos | Acertos com pessoas, com o selo do que falta receber', () => {
+    abrir();
+    fixture.detectChanges();
+    const abas = Array.from(el().querySelectorAll('.extrato-aba')).map(texto);
+    expect(abas.length).toBe(2);
+    expect(abas[0]).toContain('Lançamentos');
+    expect(abas[1]).toContain('Acertos com pessoas');
+    expect(abas[1]).toContain('120,00');
+    expect(el().querySelector('app-acertos')).not.toBeNull();
+  });
+
+  it('cartão de crédito escolhido mostra a fatura dividida por pessoa, com o devolvido dos Acertos; "Ver acertos" troca de aba', () => {
+    abrir();
+    expect(el().querySelector('app-fatura-por-pessoa')).toBeNull();
+
+    comp().escolherConta(1);
+    fixture.detectChanges();
+    expect(el().querySelector('app-fatura-por-pessoa')).not.toBeNull();
+    // O devolvido é o pago das compras desta fatura, de qualquer data (o pagamento costuma vir em outro mês).
+    expect(itens.acertos).toHaveBeenCalledWith({ inicio: null, fim: null, bancoId: 1 });
+    expect(comp().devolvidoFatura).toBe(30);
+    expect(comp().faltaFatura).toBe(70);
+    expect(comp().fatura?.total).toBe(130);
+
+    comp().verAcertos();
+    expect(comp().aba).toBe(1);
+    comp().escolherConta(2);
+    expect(comp().fatura).toBeNull();
   });
 
   it('abre no mês e na conta da URL (o antigo /detalhes redireciona para cá)', () => {
@@ -111,7 +152,7 @@ describe('ExtratoMesComponent', () => {
 
   it('cards de Saídas, Entradas, Sem pessoa e Sem categoria; clicar em Sem pessoa filtra', () => {
     abrir();
-    const cards = Array.from(el().querySelectorAll('mf-stat-card')).map(texto);
+    const cards = Array.from(el().querySelectorAll('.extrato-card mf-stat-card')).map(texto);
 
     expect(cards.length).toBe(4);
     expect(cards[0]).toContain('R$ 130,00');
@@ -146,6 +187,41 @@ describe('ExtratoMesComponent', () => {
     const opcoes = comp().opcoesTipo;
     fixture.detectChanges();
     expect(comp().opcoesTipo).toBe(opcoes);
+  });
+
+  it('filtros como Contas a Pagar: contagem em cada opção (com os outros filtros) e Exportar na barra', () => {
+    abrir();
+    expect(comp().opcoesTipo.map(o => [o.value, o.contagem])).toEqual([['todos', 3], ['saidas', 2], ['entradas', 1]]);
+    expect(texto(el().querySelector('mf-filter-bar p-selectbutton'))).toContain('Saídas2');
+
+    comp().filtro = { ...comp().filtro, busca: 'padaria' };
+    comp().aoMudarFiltro();
+    expect(comp().opcoesTipo.map(o => o.contagem)).toEqual([1, 1, 0]);
+
+    fixture.detectChanges();
+    expect(el().querySelector('mf-filter-bar [aria-label="Exportar"]')).not.toBeNull();
+    expect(comp().itensMenu.map(i => i.label)).not.toContain('Exportar');
+  });
+
+  it('ações por linha como Contas a Pagar: o lápis liga o Modo edição e leva à linha; o ⋮ exclui com confirmação', async () => {
+    abrir();
+    const linha = Array.from(el().querySelectorAll('.extrato-linha')).find(l => texto(l).includes('Padaria'))!;
+    expect(linha.querySelector('[aria-label="Editar"]')).not.toBeNull();
+    expect(linha.querySelector('[aria-label="Mais ações"]')).not.toBeNull();
+
+    (linha.querySelector('[aria-label="Editar"]') as HTMLButtonElement).click();
+    expect(comp().edicao).toBeTrue();
+    expect(comp().destacado).toBe(3);
+
+    await comp().alternarEdicao(false);
+    const confirmacao = TestBed.inject(ConfirmacaoService);
+    spyOn(confirmacao, 'confirmar').and.resolveTo(true);
+    itens.excluir.and.returnValue(of({}));
+    spyOn(comp().menuLinha!, 'toggle');
+    comp().abrirMenuLinha(new MouseEvent('click'), dados()[2]);
+    await comp().itensMenuLinha[0].command!({});
+    expect(confirmacao.confirmar).toHaveBeenCalled();
+    expect(itens.excluir).toHaveBeenCalledWith(3);
   });
 
   it('busca e limpar filtros', () => {
@@ -208,22 +284,32 @@ describe('ExtratoMesComponent', () => {
       expect(comp().salvando).toBeFalse();
     });
 
-    it('Descartar volta o rascunho; sair com alterações pede confirmação (cancelar mantém)', async () => {
+    it('Descartar sai do Modo edição como em Contas a Pagar: sem alterações direto; com alterações pede confirmação', async () => {
       const confirmacao = TestBed.inject(ConfirmacaoService);
       const pergunta = spyOn(confirmacao, 'confirmar').and.resolveTo(false);
       ligar();
+      await comp().descartarEdicao();
+      expect(comp().edicao).toBeFalse();
+      expect(pergunta).not.toHaveBeenCalled();
+
+      ligar();
       comp().rascunho[2].descricao = 'Salário de outubro';
       comp().aoEditar();
-      await comp().alternarEdicao(false);
-      expect(pergunta).toHaveBeenCalled();
+      await comp().descartarEdicao();
+      expect(pergunta).toHaveBeenCalledTimes(1);
       expect(comp().edicao).toBeTrue();
 
-      comp().descartarEdicao();
-      expect(comp().alteracoes).toBe(0);
-      expect(comp().rascunho[2].descricao).toBe('Salário');
-      await comp().alternarEdicao(false);
+      pergunta.and.resolveTo(true);
+      await comp().descartarEdicao();
       expect(comp().edicao).toBeFalse();
-      expect(pergunta).toHaveBeenCalledTimes(1);
+      expect(comp().alteracoes).toBe(0);
+    });
+
+    it('no Modo edição a tabela usa a largura toda (as contas saem) e cada campo tem a sua coluna', () => {
+      ligar();
+      expect(el().querySelector('app-extrato-contas')).toBeNull();
+      const cabecalho = Array.from(el().querySelectorAll('.extrato-tabela--edicao thead th')).map(texto);
+      expect(cabecalho.map(t => t.trim())).toEqual(['', 'Data', 'Descrição', 'Categoria', 'Pessoa', 'Tipo de movimentação', 'Parcela', 'Valor']);
     });
 
     it('seleção com o total e Excluir um ou vários com confirmação', async () => {
@@ -276,6 +362,21 @@ describe('ExtratoMesComponent', () => {
       expect(el().querySelector('mf-page-header [aria-label="Mais ações"]')).not.toBeNull();
       expect(comp().itensMenuMovel.map(i => i.label)[0]).toBe('Importar extrato');
       expect(el().textContent).not.toContain('Importar extrato');
+    });
+
+    it('filtros como Contas a Pagar no celular: opções roláveis com contagem, busca e o botão que abre a folha de filtros', () => {
+      expect(el().querySelector('mf-filter-bar')).toBeNull();
+      expect(texto(el().querySelector('.filtro-rolavel p-selectbutton'))).toContain('Todos3');
+      expect(el().querySelector('.extrato-busca-movel input')).not.toBeNull();
+      expect(comp().filtrosNoPainel).toBe(0);
+
+      (el().querySelector('.botao-filtros button') as HTMLButtonElement).click();
+      expect(comp().filtrosAbertos).toBeTrue();
+      comp().filtro = { ...comp().filtro, pessoas: ['Carlos'], categorias: [5] };
+      comp().aoMudarFiltro();
+      fixture.detectChanges();
+      expect(comp().filtrosNoPainel).toBe(2);
+      expect(texto(el().querySelector('.botao-filtros'))).toContain('2');
     });
 
     it('tocar no card abre a folha; Salvar grava o lançamento e recarrega', () => {

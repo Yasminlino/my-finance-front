@@ -1,0 +1,222 @@
+<!-- Filtros: período (intervalo de meses), conta e os switches -->
+<div class="acertos-filtros flex flex-wrap align-items-center gap-2 mb-3" [class.acertos-filtros--movel]="movel">
+  <p-calendar [(ngModel)]="periodo" selectionMode="range" view="month" dateFormat="M/yy" [readonlyInput]="true" [showIcon]="true"
+    [showButtonBar]="true" placeholder="Desde o início" (onSelect)="aoMudarFiltro()" (onClearClick)="limparPeriodo()"
+    styleClass="acertos-periodo" appendTo="body" ariaLabel="Período" />
+  <p-dropdown [options]="opcoesConta" [(ngModel)]="bancoId" optionLabel="label" optionValue="value" appendTo="body"
+    (onChange)="aoMudarFiltro()" styleClass="acertos-conta" ariaLabel="Conta ou cartão" />
+  @if (!movel) {
+    <span class="flex-grow-1"></span>
+  }
+  <div class="flex align-items-center gap-2">
+    <p-inputSwitch inputId="acertos-eu" [(ngModel)]="mostrarEu" />
+    <label for="acertos-eu" class="m-0 cursor-pointer text-sm">Mostrar minhas compras (Eu)</label>
+  </div>
+  <div class="flex align-items-center gap-2">
+    <p-inputSwitch inputId="acertos-quitados" [(ngModel)]="mostrarQuitados" />
+    <label for="acertos-quitados" class="m-0 cursor-pointer text-sm">Mostrar quitados</label>
+  </div>
+</div>
+
+<!-- Totais: no celular, só os dois que importam -->
+<div class="grid mb-1">
+  @if (!movel) {
+    <div class="col-6 xl:col-3">
+      <mf-stat-card rotulo="Devido no período" [valor]="moeda(acertos?.totais?.devido)" icone="pi pi-credit-card" tom="despesa" />
+    </div>
+    <div class="col-6 xl:col-3">
+      <mf-stat-card rotulo="Recebido" [valor]="moeda(acertos?.totais?.recebido)" icone="pi pi-arrow-down-left" tom="receita" corDoValor="receita" />
+    </div>
+  }
+  <div class="col-6 xl:col-3">
+    <mf-stat-card rotulo="Falta receber" [valor]="moeda(acertos?.totais?.faltaReceber)" icone="pi pi-wallet" tom="perigo" [destaque]="true" />
+  </div>
+  <div class="col-6 xl:col-3">
+    <mf-stat-card rotulo="Ainda vai cobrar" [valor]="moeda(acertos?.totais?.aindaVaiCobrar)" icone="pi pi-calendar-plus" tom="info">
+      <small class="mf-hint">parcelas das próximas faturas</small>
+    </mf-stat-card>
+  </div>
+</div>
+
+<div class="grid">
+  <!-- Um card por pessoa -->
+  <div class="col-12" [class.lg:col-7]="!!selecionada && !movel" [class.xl:col-8]="!!selecionada && !movel">
+    <div class="grid">
+      @for (p of visiveis; track p.pessoaId) {
+        <div class="col-12" [class.md:col-6]="!movel" [class.xl:col-4]="!selecionada && !movel">
+          <div class="acerto-card" role="button" tabindex="0" [class.acerto-card--ativo]="selecionadaId === p.pessoaId"
+            [class.acerto-card--eu]="p.ehTitular" (click)="abrirDetalhe(p)" (keydown.enter)="abrirDetalhe(p)">
+            <div class="flex align-items-center gap-2 mb-2">
+              <p-avatar [label]="avatar(p)" shape="circle" styleClass="acerto-avatar" />
+              <span class="font-semibold flex-grow-1 min-w-0 white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ p.nome }}</span>
+              @if (p.quitado && !p.ehTitular) {
+                <p-tag value="Quitado" severity="success" />
+              }
+            </div>
+            <div class="flex justify-content-between text-sm"><span class="mf-hint">Devido</span><span>{{ moeda(p.devido) }}</span></div>
+            @if (!p.ehTitular) {
+              <div class="flex justify-content-between text-sm"><span class="mf-hint">Recebido</span><span class="acerto-receita">{{ moeda(p.recebido) }}</span></div>
+              <div class="flex justify-content-between font-semibold mt-1"><span>Falta</span><span>{{ moeda(p.falta) }}</span></div>
+              <p-progressBar [value]="recebido(p)" [showValue]="false" styleClass="acerto-progresso mt-2" />
+            }
+            @if (p.aindaVaiCobrar > 0) {
+              <small class="mf-hint block mt-2"><i class="pi pi-calendar-plus mr-1"></i>Ainda vai cobrar {{ moeda(p.aindaVaiCobrar) }}</small>
+            }
+            @if (!p.ehTitular) {
+              <p-button label="Registrar pagamento" icon="pi pi-plus" [outlined]="true" size="small" styleClass="w-full mt-3"
+                (onClick)="abrirPagamento(p, $event)" />
+            }
+          </div>
+        </div>
+      } @empty {
+        @if (!loading) {
+          <div class="col-12">
+            <mf-empty-state icone="pi pi-users" titulo="Ninguém com contas a acertar"
+              texto="Marque as pessoas em Configurar pessoas (Entra nos acertos) e ligue os lançamentos a elas." />
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  <!-- Detalhe da pessoa (desktop, à direita) -->
+  @if (selecionada && !movel) {
+    <div class="col-12 lg:col-5 xl:col-4">
+      <ng-container *ngTemplateOutlet="detalhe" />
+    </div>
+  }
+</div>
+
+@if (movel) {
+  <p-sidebar [visible]="!!selecionada" (visibleChange)="!$event && fecharDetalhe()" position="bottom" styleClass="acertos-folha h-auto"
+    [blockScroll]="true">
+    <ng-container *ngTemplateOutlet="detalhe" />
+  </p-sidebar>
+}
+
+<ng-template #detalhe>
+  @if (selecionada; as p) {
+    <div class="acerto-detalhe">
+      <div class="flex align-items-center gap-2 mb-3">
+        <p-avatar [label]="avatar(p)" shape="circle" styleClass="acerto-avatar" />
+        <div class="flex-grow-1 min-w-0">
+          <div class="font-semibold">{{ p.nome }}</div>
+          @if (!p.ehTitular) {
+            <small class="mf-hint">Falta {{ moeda(p.falta) }} · recebido {{ moeda(p.recebido) }} de {{ moeda(p.devido) }}</small>
+          }
+        </div>
+        @if (!movel) {
+          <p-button icon="pi pi-times" [text]="true" severity="secondary" ariaLabel="Fechar detalhe" (onClick)="fecharDetalhe()" />
+        }
+      </div>
+
+      <h4 class="acerto-secao">Compras</h4>
+      @for (c of p.compras; track c.id) {
+        <div class="acerto-linha">
+          <div class="min-w-0 flex-grow-1">
+            <div class="white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ c.descricao || '(sem descrição)' }}</div>
+            <small class="mf-hint">{{ data(c.data) }}@if (c.bancoNome) { · {{ c.bancoNome }} }@if (parcela(c); as pc) { · {{ pc }} }</small>
+          </div>
+          <div class="text-right">
+            <div class="font-medium">{{ moeda(c.valor) }}</div>
+            @if (c.quitada) {
+              <p-tag value="Paga" severity="success" />
+            } @else if (c.pago > 0) {
+              <small class="acerto-receita">pago {{ moeda(c.pago) }}</small>
+            }
+          </div>
+        </div>
+      } @empty {
+        <small class="mf-hint">Nenhuma compra no período.</small>
+      }
+
+      @if (meses.length) {
+        <h4 class="acerto-secao">Próximas parcelas</h4>
+        @for (m of meses; track m.mes) {
+          <div class="acerto-linha">
+            <div class="min-w-0 flex-grow-1">
+              <div class="font-medium acerto-mes">{{ m.titulo }}</div>
+              <small class="mf-hint">
+                @for (pc of m.parcelas; track $index) { {{ pc.descricao }} {{ pc.parcela }}/{{ pc.quantidadeParcelas }}@if (!$last) { · } }
+              </small>
+            </div>
+            <span class="font-medium">{{ moeda(m.total) }}</span>
+          </div>
+        }
+      }
+
+      @if (!p.ehTitular) {
+        <h4 class="acerto-secao">Pagamentos recebidos</h4>
+        @if (p.pagamentos.length) {
+          <p-timeline [value]="p.pagamentos" styleClass="acerto-timeline">
+            <ng-template pTemplate="content" let-pg>
+              <div class="font-medium acerto-receita">+ {{ moeda(pg.valor) }}</div>
+              <small class="mf-hint">{{ data(pg.data) }}@if (pg.bancoNome) { · {{ pg.bancoNome }} } · {{ pg.descricao }}</small>
+            </ng-template>
+          </p-timeline>
+        } @else {
+          <small class="mf-hint">Nenhum pagamento ainda.</small>
+        }
+        <p-button label="Registrar pagamento" icon="pi pi-plus" styleClass="w-full mt-3" (onClick)="abrirPagamento(p)" />
+      }
+    </div>
+  }
+</ng-template>
+
+<!-- Registrar pagamento: à direita no desktop, de baixo no celular -->
+<p-sidebar [visible]="!!pagamento" (visibleChange)="!$event && fecharPagamento()" [position]="posicaoPainel"
+  [styleClass]="movel ? 'acertos-folha h-auto' : 'acertos-painel'" [blockScroll]="true" [dismissible]="!salvando">
+  <ng-template pTemplate="header">
+    <span class="font-semibold flex-grow-1">Registrar pagamento</span>
+  </ng-template>
+  @if (pagamento; as pg) {
+    <form class="flex flex-column gap-3" (ngSubmit)="salvarPagamento()">
+      <div class="flex align-items-center gap-2">
+        <p-avatar [label]="avatar(pg.pessoa)" shape="circle" styleClass="acerto-avatar" />
+        <div>
+          <div class="font-semibold">{{ pg.pessoa.nome }}</div>
+          <small class="mf-hint">Falta {{ moeda(pg.pessoa.falta) }}</small>
+        </div>
+      </div>
+
+      <div class="flex flex-column gap-1">
+        <label for="pagamento-abater" class="mf-label">Abater de</label>
+        <p-dropdown inputId="pagamento-abater" name="abater" [options]="opcoesAbater(pg.pessoa)" optionLabel="label" optionValue="value"
+          [ngModel]="pg.abateItemId" (ngModelChange)="escolherCompra($event)" appendTo="body" styleClass="w-full" />
+      </div>
+
+      <div class="flex flex-column gap-1">
+        <span class="mf-label">Valor</span>
+        <p-selectButton name="modo" [options]="opcoesModo" optionLabel="label" optionValue="value" [(ngModel)]="pg.modo" [allowEmpty]="false">
+          <ng-template let-o pTemplate="item">
+            <span>{{ o.value === 'tudo' ? 'Tudo · ' + moeda(pg.valor) : o.label }}</span>
+          </ng-template>
+        </p-selectButton>
+        @if (pg.modo === 'outro') {
+          <input pInputText name="outroValor" inputmode="decimal" currencyInput class="w-full text-right" [(ngModel)]="pg.outroValor"
+            aria-label="Outro valor" />
+        }
+      </div>
+
+      <div class="grid">
+        <div class="col-6 flex flex-column gap-1">
+          <label for="pagamento-data" class="mf-label">Data</label>
+          <p-calendar inputId="pagamento-data" name="data" [(ngModel)]="pg.data" dateFormat="dd/mm/yy" [showIcon]="true" appendTo="body"
+            styleClass="w-full" />
+        </div>
+        <div class="col-6 flex flex-column gap-1">
+          <label for="pagamento-conta" class="mf-label">Conta onde entrou</label>
+          <p-dropdown inputId="pagamento-conta" name="conta" [options]="contasDoPagamento" optionLabel="label" optionValue="value"
+            [(ngModel)]="pg.bancoId" placeholder="Escolha" appendTo="body" styleClass="w-full" />
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <p-button label="Cancelar" severity="secondary" [outlined]="true" styleClass="w-full" class="flex-1" [disabled]="salvando"
+          (onClick)="fecharPagamento()" />
+        <p-button type="submit" label="Registrar" icon="pi pi-check" styleClass="w-full" class="flex-1"
+          [loading]="salvando" [disabled]="!podeSalvar" />
+      </div>
+    </form>
+  }
+</p-sidebar>

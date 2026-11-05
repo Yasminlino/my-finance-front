@@ -32,6 +32,7 @@
     }
   </mf-page-header>
   <p-menu #menu [model]="itensMenuMovel" [popup]="true" appendTo="body" />
+  <p-menu #menuLinha [model]="itensMenuLinha" [popup]="true" appendTo="body" />
 
   @if (movel()) {
     <div class="mes-movel flex align-items-center gap-2 mb-3">
@@ -42,12 +43,33 @@
     </div>
   }
 
+  <!-- Abas do mockup (parte 3): Lançamentos | Acertos com pessoas, com o selo do que falta receber. -->
+  <div class="extrato-abas" role="tablist" aria-label="Partes do extrato">
+    <button type="button" role="tab" class="extrato-aba" [class.extrato-aba--ativa]="aba === 0" [attr.aria-selected]="aba === 0"
+      (click)="aba = 0">Lançamentos</button>
+    <button type="button" role="tab" class="extrato-aba" [class.extrato-aba--ativa]="aba === 1" [attr.aria-selected]="aba === 1"
+      [disabled]="edicao" (click)="aba = 1">
+      <span class="white-space-nowrap">Acertos com pessoas</span>
+      @if (faltaReceber > 0) {
+        <p-badge [value]="moeda(faltaReceber)" severity="danger" />
+      }
+    </button>
+  </div>
+  <!-- [hidden] e não @if: a aba Acertos carrega já na abertura (o selo) e não perde o estado ao trocar. -->
+  <div role="tabpanel" [hidden]="aba !== 0">
   <div class="grid">
+    <!-- Modo edição como em Contas a Pagar: a tabela ganha a largura toda -->
+    @if (!edicao || movel()) {
     <div class="col-12 lg:col-3">
       <app-extrato-contas [contas]="contas" [selecionada]="filtro.bancoId" [compacto]="movel()" (selecionar)="escolherConta($event)" />
+      @if (fatura && fatura.total > 0) {
+        <app-fatura-por-pessoa class="block mt-3" [fatura]="fatura" [devolvido]="devolvidoFatura" [falta]="faltaFatura"
+          (verAcertos)="verAcertos()" />
+      }
     </div>
 
-    <div class="col-12 lg:col-9 flex flex-column gap-3">
+    }
+    <div class="col-12 flex flex-column gap-3" [class.lg:col-9]="!edicao || movel()">
       <div class="grid">
         <div class="col-6 xl:col-3">
           <button type="button" class="extrato-card" [class.extrato-card--ativo]="filtro.tipo === 'saidas'" (click)="clicarCard('saidas')">
@@ -78,9 +100,16 @@
       </div>
 
       <div class="surface-card border-round shadow-1">
+        @if (!movel()) {
+        <!-- Filtros como em Contas a Pagar: tipo com a contagem à esquerda; busca, pessoas, categorias, limpar e exportar à direita -->
         <mf-filter-bar>
           <p-selectButton inicio [options]="opcoesTipo" [(ngModel)]="filtro.tipo" optionLabel="label" optionValue="value"
-            [allowEmpty]="false" (onChange)="aoMudarFiltro()" />
+            [allowEmpty]="false" (onChange)="aoMudarFiltro()">
+            <ng-template let-opcao pTemplate="item">
+              <span>{{ opcao.label }}</span>
+              <p-badge [value]="'' + opcao.contagem" severity="secondary" styleClass="ml-2" />
+            </ng-template>
+          </p-selectButton>
 
           <p-iconField fim iconPosition="left">
             <p-inputIcon styleClass="pi pi-search" />
@@ -95,7 +124,36 @@
             (onChange)="aoMudarFiltro()" styleClass="extrato-filtro" />
           <p-button fim icon="pi pi-filter-slash" [text]="true" severity="secondary" pTooltip="Limpar filtros"
             tooltipPosition="top" [disabled]="!temFiltro" (onClick)="limparFiltros()" ariaLabel="Limpar filtros" />
+          <p-button fim icon="pi pi-upload" [text]="true" severity="secondary" pTooltip="Exportar CSV" tooltipPosition="top"
+            (onClick)="exportar()" ariaLabel="Exportar" />
         </mf-filter-bar>
+        } @else {
+          <!-- Celular, como em Contas a Pagar: tipo rolável com contagem, busca e o botão da folha de filtros -->
+          <div class="px-3 pt-3">
+            <div class="filtro-rolavel filtro-situacao-compacto">
+              <p-selectButton [options]="opcoesTipo" [(ngModel)]="filtro.tipo" optionLabel="label" optionValue="value"
+                [allowEmpty]="false" (onChange)="aoMudarFiltro()">
+                <ng-template let-opcao pTemplate="item">
+                  <span class="white-space-nowrap">{{ opcao.label }}</span>
+                  <p-badge [value]="'' + opcao.contagem" severity="secondary" styleClass="ml-2" />
+                </ng-template>
+              </p-selectButton>
+            </div>
+            <div class="flex gap-2 my-2">
+              <p-iconField iconPosition="left" class="flex-grow-1 extrato-busca-movel">
+                <p-inputIcon styleClass="pi pi-search" />
+                <input pInputText type="text" class="w-full" placeholder="Buscar descrição ou pessoa..." [(ngModel)]="filtro.busca"
+                  (ngModelChange)="aoMudarFiltro()" aria-label="Buscar no extrato" />
+              </p-iconField>
+              <span class="botao-filtros p-overlay-badge">
+                <p-button icon="pi pi-sliders-h" [outlined]="true" severity="secondary" (onClick)="filtrosAbertos = true" ariaLabel="Filtros" />
+                @if (filtrosNoPainel) {
+                  <span class="p-badge p-component p-badge-no-gutter">{{ filtrosNoPainel }}</span>
+                }
+              </span>
+            </div>
+          </div>
+        }
 
         @if (edicao) {
           <app-barra-edicao [mes]="nomeDoMes" oQue="os lançamentos" [contagem]="alteracoes" [salvando]="salvando"
@@ -155,12 +213,13 @@
               <tr>
                 <!-- Larguras fixas no Modo edição: sem isto os dropdowns esticavam a tabela para fora da tela (Valor sumia). -->
                 <th style="width: 3rem"><p-tableHeaderCheckbox /></th>
-                <th style="width: 9.5rem">Data</th>
-                <th>Descrição e categoria</th>
-                <th style="width: 11rem">Pessoa</th>
-                <th style="width: 11rem">Tipo de movimentação</th>
-                <th style="width: 7.5rem">Parcela</th>
-                <th style="width: 8.5rem" class="text-right">Valor</th>
+                <th style="width: 10.5rem">Data</th>
+                <th>Descrição</th>
+                <th style="width: 12rem">Categoria</th>
+                <th style="width: 12rem">Pessoa</th>
+                <th style="width: 12rem">Tipo de movimentação</th>
+                <th style="width: 8.5rem">Parcela</th>
+                <th style="width: 9rem" class="text-right">Valor</th>
               </tr>
             } @else {
             <tr>
@@ -168,32 +227,36 @@
               <th style="min-width: 10rem">Pessoa</th>
               <th style="min-width: 8rem">Parcela</th>
               <th style="min-width: 9rem" class="text-right">Valor</th>
+              <th style="width: 6.5rem" class="text-center">Ações</th>
             </tr>
             }
           </ng-template>
           <ng-template pTemplate="groupheader" let-item>
             <tr class="extrato-dia">
-              <td [attr.colspan]="edicao ? 6 : 3" class="font-semibold">{{ grupos[item.dataMovimentacao]?.titulo }}</td>
+              <td [attr.colspan]="edicao ? 7 : 3" class="font-semibold">{{ grupos[item.dataMovimentacao]?.titulo }}</td>
               <td class="text-right text-sm mf-hint">{{ saldoDoDia(item.dataMovimentacao) }}</td>
+              @if (!edicao) {
+                <td></td>
+              }
             </tr>
           </ng-template>
           <ng-template pTemplate="body" let-item>
             @if (edicao && rascunho[item.id]; as r) {
               <!-- Linha em edição: cada campo mexido fica destacado; nada grava antes do "Salvar alterações" -->
-              <tr class="extrato-linha extrato-linha--edicao">
+              <tr class="extrato-linha extrato-linha--edicao" [attr.data-linha]="item.id" [class.extrato-linha--destacada]="destacado === item.id">
                 <td><p-tableCheckbox [value]="item" [ariaLabel]="'Selecionar ' + (item.descricao || 'lançamento')" /></td>
                 <td>
                   <input pInputText type="date" class="w-full p-inputtext-sm" [(ngModel)]="r.dataMovimentacao" (ngModelChange)="aoEditar()"
                     [class.campo-alterado]="alterado(item, 'dataMovimentacao')" aria-label="Data" />
                 </td>
                 <td>
-                  <div class="flex flex-column gap-1">
-                    <input pInputText class="w-full p-inputtext-sm" maxlength="500" [(ngModel)]="r.descricao" (ngModelChange)="aoEditar()"
-                      [class.campo-alterado]="alterado(item, 'descricao')" aria-label="Descrição" placeholder="Descrição" />
-                    <p-dropdown [options]="opcoesCategoria" optionLabel="label" optionValue="value" [(ngModel)]="r.categoriaId"
-                      (ngModelChange)="aoEditar()" [filter]="true" [showClear]="true" placeholder="Sem categoria" appendTo="body"
-                      styleClass="w-full p-inputtext-sm" [class.campo-alterado]="alterado(item, 'categoriaId')" ariaLabel="Categoria" />
-                  </div>
+                  <input pInputText class="w-full p-inputtext-sm" maxlength="500" [(ngModel)]="r.descricao" (ngModelChange)="aoEditar()"
+                    [class.campo-alterado]="alterado(item, 'descricao')" aria-label="Descrição" placeholder="Descrição" />
+                </td>
+                <td>
+                  <p-dropdown [options]="opcoesCategoria" optionLabel="label" optionValue="value" [(ngModel)]="r.categoriaId"
+                    (ngModelChange)="aoEditar()" [filter]="true" [showClear]="true" placeholder="Sem categoria" appendTo="body"
+                    styleClass="w-full p-inputtext-sm" [class.campo-alterado]="alterado(item, 'categoriaId')" ariaLabel="Categoria" />
                 </td>
                 <td>
                   <input pInputText class="w-full p-inputtext-sm" list="extrato-pessoas" [ngModel]="r.nomePessoaTransacao ?? ''"
@@ -245,12 +308,19 @@
               <td class="text-right font-semibold white-space-nowrap" [class.extrato-valor--entrada]="entrada(item)">
                 {{ valor(item) }}
               </td>
+              <!-- Ações como em Contas a Pagar: lápis leva ao Modo edição; ⋮ com Excluir -->
+              <td class="text-center white-space-nowrap">
+                <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="secondary" pTooltip="Editar" tooltipPosition="top"
+                  (onClick)="editarLinha(item)" ariaLabel="Editar" />
+                <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
+                  (onClick)="abrirMenuLinha($event, item)" ariaLabel="Mais ações" />
+              </td>
             </tr>
             }
           </ng-template>
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td [attr.colspan]="edicao ? 7 : 4">
+              <td [attr.colspan]="edicao ? 8 : 5">
                 <mf-empty-state icone="pi pi-wallet" [titulo]="temFiltro ? 'Nada com esses filtros' : 'Nenhum lançamento no mês'"
                   [texto]="temFiltro ? 'Mude ou limpe os filtros.' : 'Importe o extrato ou faça um lançamento.'" />
               </td>
@@ -264,8 +334,28 @@
       </div>
     </div>
   </div>
+  </div>
+  <div role="tabpanel" [hidden]="aba !== 1">
+    <app-acertos [bancos]="bancos" [movel]="movel()" (faltaReceber)="faltaReceber = $event" (alterou)="carregarMes()" />
+  </div>
 
   @if (movel()) {
+    <p-sidebar [(visible)]="filtrosAbertos" position="bottom" header="Filtros" styleClass="painel-filtros h-auto">
+      <label class="block text-sm text-color-secondary mb-1" for="filtro-pessoas-movel">Pessoas</label>
+      <p-multiSelect inputId="filtro-pessoas-movel" [options]="opcoesPessoa" [(ngModel)]="filtro.pessoas" placeholder="Todas"
+        [filter]="true" selectedItemsLabel="{0} pessoas" [maxSelectedLabels]="1" appendTo="body" styleClass="w-full"
+        (onChange)="aoMudarFiltro()" />
+      <label class="block text-sm text-color-secondary mb-1 mt-3" for="filtro-categorias-movel">Categorias</label>
+      <p-multiSelect inputId="filtro-categorias-movel" [options]="opcoesCategoria" [(ngModel)]="filtro.categorias" placeholder="Todas"
+        [filter]="true" selectedItemsLabel="{0} categorias" [maxSelectedLabels]="1" appendTo="body" styleClass="w-full"
+        (onChange)="aoMudarFiltro()" />
+      <div class="flex gap-2 mt-4">
+        <p-button label="Limpar filtros" icon="pi pi-filter-slash" [outlined]="true" severity="secondary" styleClass="w-full" class="flex-1"
+          [disabled]="!temFiltro" (onClick)="limparFiltros()" />
+        <p-button label="Ver lançamentos" icon="pi pi-check" styleClass="w-full" class="flex-1" (onClick)="filtrosAbertos = false" />
+      </div>
+    </p-sidebar>
+
     <mf-fab rotulo="Novo lançamento" (clique)="showLancamento = true" />
     <app-extrato-editar-sheet [item]="noSheet" [opcoesCategoria]="opcoesCategoria" [opcoesTipoMov]="opcoesTipoMov"
       [nomesPessoas]="nomesPessoas" [pessoas]="pessoasCadastradas" [salvando]="salvandoSheet" [excluindo]="excluindoSheet"

@@ -3,7 +3,7 @@ import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 import {
   FiltroExtrato, agruparPorDia, alteracoesDoRascunho, aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehEntrada,
-  ehDoTitular, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa
+  ehDoTitular, faturaPorPessoa, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa
 } from './extrato.regras';
 
 const item = (id: number, data: string, valor: number, extra: Partial<ExtratoItemDto> = {}): ExtratoItemDto => ({
@@ -159,6 +159,29 @@ describe('extrato.regras', () => {
     it('nas sugestões e na ordem, a titular vem primeiro como "Eu"', () => {
       expect(nomesParaSugestao([{ id: 7, nomePessoa: 'CARLOS' }, { id: 1, nomePessoa: 'EU', ehTitular: true }, { id: 8, nomePessoa: 'ÁGATA' }]))
         .toEqual(['Eu', 'ÁGATA', 'CARLOS']);
+    });
+  });
+});
+
+/** Card "Fatura dividida por pessoa" (card #45, parte 3, item 6). */
+describe('faturaPorPessoa', () => {
+  it('minhas compras × de outras pessoas (só quem entra nos acertos), por pessoa, sem as entradas', () => {
+    const pessoas = [
+      { id: 1, nomePessoa: 'EU', ehTitular: true }, { id: 7, nomePessoa: 'CARLOS', entraNosAcertos: true },
+      { id: 8, nomePessoa: 'ÁGATHA', entraNosAcertos: true }, { id: 9, nomePessoa: 'MERCADO X', entraNosAcertos: false }
+    ];
+    const itens = [
+      item(1, '2026-10-01', 100, { pessoaMovimentacaoId: 7 }), item(2, '2026-10-02', 50, { pessoaMovimentacaoId: 7 }),
+      item(3, '2026-10-03', 30, { pessoaMovimentacaoId: 8 }), item(4, '2026-10-04', 200, { pessoaMovimentacaoId: 9 }),
+      item(5, '2026-10-05', 12, { pessoaMovimentacaoId: 1 }), item(6, '2026-10-06', 8),
+      item(7, '2026-10-07', 400, { tipoLancamento: 'Entrada', pessoaMovimentacaoId: 7 })
+    ];
+
+    const f = faturaPorPessoa(itens, pessoas);
+
+    expect(f).toEqual({
+      total: 400, minhas: 220, outras: 180,
+      porPessoa: [{ pessoaId: 7, nome: 'CARLOS', valor: 150 }, { pessoaId: 8, nome: 'ÁGATHA', valor: 30 }]
     });
   });
 });

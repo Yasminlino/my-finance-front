@@ -60,7 +60,58 @@
 
 .extrato-parcela-campo { width: 3.5rem; }
 .extrato-selecao { border-top: 1px solid var(--surface-border); background: var(--highlight-bg); }
-:host ::ng-deep .tabela-extrato .extrato-linha--edicao > td { vertical-align: top; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+/* Modo edição como em Contas a Pagar: um campo por coluna, todos da mesma altura e no meio da linha. */
+:host ::ng-deep .tabela-extrato .extrato-linha--edicao > td { vertical-align: middle; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+:host ::ng-deep .extrato-tabela--edicao {
+  .p-inputtext-sm, .p-dropdown .p-dropdown-label { height: 2.25rem; padding-top: 0.4rem; padding-bottom: 0.4rem; font-size: 0.875rem; }
+  .p-dropdown { height: 2.25rem; align-items: center; }
+  input[type="date"] { min-width: 0; }
+}
+
+/* Abas como as do formulário de contas (conta-abas): linha fina embaixo; só a ativa em azul e sublinhada. */
+.extrato-abas {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--surface-border);
+  margin-bottom: 1rem;
+}
+
+.extrato-aba {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+
+  &:hover:not(:disabled) { color: var(--text-color); }
+  &:disabled { opacity: 0.5; cursor: default; }
+  &--ativa, &--ativa:hover:not(:disabled) { color: var(--mf-primary); border-bottom-color: var(--mf-primary); }
+}
+
+/* Celular, como em Contas a Pagar: tipo rolável e o selo do botão de filtros. */
+.filtro-rolavel {
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.botao-filtros {
+  position: relative;
+
+  .p-badge {
+    position: absolute;
+    top: -0.4rem;
+    right: -0.4rem;
+  }
+}
 
 /* Celular (item 4): cards por dia; o + flutuante não cobre o último. */
 .extrato-movel { padding-bottom: 5rem; }
@@ -84,7 +135,7 @@
 }
 
 /* Modo edição: tabela com larguras fixas; os campos encolhem e o texto longo corta com reticências. */
-:host ::ng-deep .extrato-tabela--edicao { table-layout: fixed; width: 100%; min-width: 56rem; }
+:host ::ng-deep .extrato-tabela--edicao { table-layout: fixed; width: 100%; min-width: 72rem; }
 :host ::ng-deep .extrato-tabela--edicao .p-dropdown { width: 100%; min-width: 0; }
 :host ::ng-deep .extrato-tabela--edicao .p-dropdown-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -117,3 +168,6 @@
     background: var(--orange-500);
   }
 }
+
+/* Linha levada pelo lápis, como em Contas a Pagar. */
+.extrato-linha--destacada > td { background: var(--primary-50); }

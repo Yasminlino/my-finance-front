@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, DestroyRef, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Location, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -16,6 +16,10 @@ import { MenuModule } from 'primeng/menu';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { BadgeModule } from 'primeng/badge';
+import { SidebarModule } from 'primeng/sidebar';
+import { AcertosComponent } from '../acertos/acertos.component';
+import { FaturaPorPessoaComponent } from '../components/fatura-por-pessoa/fatura-por-pessoa.component';
 import { Table, TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 import { Subject, concat, forkJoin, toArray } from 'rxjs';
@@ -56,8 +60,8 @@ import { ModalImportacoesMensaisComponent } from '../components/modal-importacoe
 import { ModalImportarExtratoComponent } from '../components/modal-importar-extrato/modal-importar-extrato.component';
 import { ModalLancamentoManualComponent } from '../components/modal-lancamento-manual/modal-lancamento-manual.component';
 import {
-  CampoEditavel, CardsExtrato, ContaDoMes, FiltroExtrato, GrupoDoDia, Pendencia, TipoFiltro, agruparPorDia, alteracoesDoRascunho,
-  aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehDoTitular, ehEntrada, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa
+  CampoEditavel, CardsExtrato, ContaDoMes, FaturaPorPessoa, FiltroExtrato, GrupoDoDia, Pendencia, TipoFiltro, agruparPorDia, alteracoesDoRascunho,
+  aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehDoTitular, ehEntrada, faturaPorPessoa, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa
 } from '../extrato.regras';
 
 /** Mês escolhido por último, como no resumo antigo. */
@@ -70,12 +74,17 @@ const filtroVazio = (bancoId: number | null = null): FiltroExtrato =>
  * Extrato Bancário no layout novo (card #45, parte 1): uma tela no lugar do resumo por banco e do detalhe. Contas à
  * esquerda, cards clicáveis, filtros e a tabela agrupada por dia. As regras ficam em extrato.regras.ts.
  */
+/** Opções do Todos/Saídas/Entradas. */
+const TIPOS: { label: string; value: TipoFiltro }[] = [
+  { label: 'Todos', value: 'todos' }, { label: 'Saídas', value: 'saidas' }, { label: 'Entradas', value: 'entradas' }
+];
+
 @Component({
   selector: 'app-extrato-mes',
   standalone: true,
   imports: [
     NgIf, FormsModule, ButtonModule, CalendarModule, DropdownModule, InputSwitchModule, SplitButtonModule, IconFieldModule, InputIconModule, InputTextModule, MenuModule,
-    MultiSelectModule, ProgressBarModule, SelectButtonModule, TableModule, TooltipModule,
+    MultiSelectModule, ProgressBarModule, SelectButtonModule, BadgeModule, SidebarModule, AcertosComponent, FaturaPorPessoaComponent, TableModule, TooltipModule,
     PageHeaderComponent, StatCardComponent, FilterBarComponent, EmptyStateComponent, ExtratoContasComponent,
     ModalImportarExtratoComponent, ModalLancamentoManualComponent, ModalImportacoesMensaisComponent,
     ModalConfiguracaoVinculoPessoaComponent, BarraEdicaoComponent, TotaisSelecaoComponent, CurrencyInputDirective,
@@ -97,6 +106,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   private readonly alertService = inject(AlertService);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
+  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   /** Mês pedido ("YYYY-MM"); a carga segue sempre o último (FE-P2-08). */
@@ -110,7 +120,6 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     { label: 'Importações mensais', icon: 'pi pi-download', command: () => (this.showImportacoesMensais = true) },
     { label: 'Relatório mensal', icon: 'pi pi-chart-line', command: () => this.abrirRelatorio() },
     { label: 'Configurar pessoas', icon: 'pi pi-users', command: () => (this.showConfigPessoas = true) },
-    { label: 'Exportar', icon: 'pi pi-upload', command: () => this.tabela?.exportCSV() },
     { label: 'Atualizar', icon: 'pi pi-refresh', command: () => this.carregarMes() }
   ];
   /** Desktop, como em Contas a Pagar: o botão é o lançamento manual; a seta traz Importar e o resto. */
@@ -121,7 +130,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   /** Celular (item 4): o Importar vai para o ⋮; o lançamento manual fica no + flutuante. */
   readonly itensMenuMovel: MenuItem[] = [
     { label: 'Importar extrato', icon: 'pi pi-file-import', command: () => (this.showImportar = true) },
-    ...this.itensMenu.filter(i => i.label !== 'Exportar')
+    ...this.itensMenu
   ];
   readonly colunasExportacao = [
     { field: 'dataMovimentacao', header: 'Data' },
@@ -152,6 +161,14 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   grupos: Record<string, GrupoDoDia> = {};
   /** Celular: os dias do mais recente para o mais antigo, com os lançamentos de cada um. */
   diasMovel: GrupoDoDia[] = [];
+  /** Linha levada pelo lápis (Modo edição): destacada e com o foco no primeiro campo, como em Contas a Pagar. */
+  destacado: number | null = null;
+  /** Menu ⋮ da linha (leitura). */
+  @ViewChild('menuLinha') menuLinha?: { toggle(e: Event): void };
+  private linhaDoMenu: ExtratoItemDto | null = null;
+  readonly itensMenuLinha: MenuItem[] = [
+    { label: 'Excluir', icon: 'pi pi-trash', command: () => (this.linhaDoMenu ? this.excluirDoSheet(this.linhaDoMenu) : undefined) }
+  ];
   /** Celular: o lançamento aberto na folha de baixo. */
   noSheet: ExtratoItemDto | null = null;
   salvandoSheet = false;
@@ -160,9 +177,20 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
    * Campos recalculados só quando o filtro muda: um getter devolveria objetos novos a cada detecção de mudanças e o
    * p-selectButton / p-multiSelect recriariam as opções no meio do clique (#23).
    */
-  opcoesTipo: { label: string; value: TipoFiltro }[] = [
-    { label: 'Todos', value: 'todos' }, { label: 'Saídas', value: 'saidas' }, { label: 'Entradas', value: 'entradas' }
-  ];
+  /** Como em Contas a Pagar: cada opção mostra quantos lançamentos ela teria com os outros filtros. */
+  opcoesTipo: { label: string; value: TipoFiltro; contagem: number }[] = TIPOS.map(t => ({ ...t, contagem: 0 }));
+  /** Celular: a folha de baixo com Pessoas e Categorias. */
+  filtrosAbertos = false;
+  /** Aba aberta: 0 = Lançamentos, 1 = Acertos com pessoas (parte 3). */
+  aba = 0;
+  /** Selo da aba Acertos: o total que falta receber. */
+  faltaReceber = 0;
+  /** Card "Fatura dividida por pessoa": só com um cartão de crédito escolhido (parte 3, item 6). */
+  fatura: FaturaPorPessoa | null = null;
+  /** Já devolvido e falta receber das compras desta fatura (pelo pago delas nos Acertos); null enquanto carrega. */
+  devolvidoFatura: number | null = null;
+  faltaFatura: number | null = null;
+  private chaveFatura = '';
   opcoesPessoa: { label: string; value: string }[] = [];
   opcoesCategoria: { label: string; value: number }[] = [];
 
@@ -255,6 +283,36 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     this.carregarMes(new Date(this.dateFilter.getFullYear(), this.dateFilter.getMonth() + delta, 1));
   }
 
+  /** Aba Acertos aberta pelo "Ver acertos" do card da fatura. */
+  verAcertos(): void {
+    this.aba = 1;
+  }
+
+  private montarFatura(): void {
+    const conta = this.contas.find(c => c.bancoId === this.filtro.bancoId);
+    if (!conta?.ehCredito) {
+      this.fatura = null;
+      this.chaveFatura = '';
+      return;
+    }
+    this.fatura = faturaPorPessoa(this.itens.filter(i => i.bancoId === conta.bancoId), this.pessoasCadastradas);
+    // Devolvido e falta vêm dos Acertos daquele cartão no mês; só busca de novo quando muda o cartão ou o mês.
+    const chave = `${conta.bancoId}|${this.selectedMonth}|${this.itens.length}`;
+    if (chave === this.chaveFatura) return;
+    this.chaveFatura = chave;
+    this.devolvidoFatura = this.faltaFatura = null;
+    // Pelas compras desta fatura: o pagamento costuma ser feito em outro mês, então o período não serve aqui.
+    const daFatura = new Set(this.itens.filter(i => i.bancoId === conta.bancoId).map(i => i.id));
+    this.itensService.acertos({ inicio: null, fim: null, bancoId: conta.bancoId }).subscribe({
+      next: a => {
+        const compras = a.pessoas.flatMap(p => p.compras).filter(c => daFatura.has(c.id));
+        this.devolvidoFatura = Math.round(compras.reduce((s, c) => s + Math.min(c.pago, c.valor), 0) * 100) / 100;
+        this.faltaFatura = Math.round(compras.reduce((s, c) => s + Math.max(0, c.valor - c.pago), 0) * 100) / 100;
+      },
+      error: () => { /* o card fica sem o devolvido; os Acertos avisam o erro */ }
+    });
+  }
+
   escolherConta(bancoId: number | null): void {
     this.filtro = { ...this.filtro, bancoId };
     this.aoMudarFiltro();
@@ -279,6 +337,15 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     this.aoMudarFiltro();
   }
 
+  /** Celular: quantos filtros estão na folha (o selo do botão). */
+  get filtrosNoPainel(): number {
+    return (this.filtro.pessoas.length ? 1 : 0) + (this.filtro.categorias.length ? 1 : 0);
+  }
+
+  exportar(): void {
+    this.tabela?.exportCSV();
+  }
+
   get temFiltro(): boolean {
     const f = this.filtro;
     return f.tipo !== 'todos' || !!f.busca.trim() || f.pessoas.length > 0 || f.categorias.length > 0 || f.pendencia !== null;
@@ -289,6 +356,12 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     // Os cards contam a conta escolhida, sem os outros filtros: eles mesmos são filtros.
     this.cards = cardsDoExtrato(filtrarExtrato(this.itens, filtroVazio(this.filtro.bancoId)));
     this.exibidos = filtrarExtrato(this.itens, this.filtro);
+    this.montarFatura();
+    const contagens = TIPOS.map(t => filtrarExtrato(this.itens, { ...this.filtro, tipo: t.value }).length);
+    // Só troca a lista quando um número muda: o p-selectButton redesenha as opções a cada referência nova.
+    if (contagens.some((c, i) => c !== this.opcoesTipo[i].contagem)) {
+      this.opcoesTipo = TIPOS.map((t, i) => ({ ...t, contagem: contagens[i] }));
+    }
     this.grupos = Object.fromEntries(agruparPorDia(this.exibidos).map(g => [g.data, g]));
     this.diasMovel = agruparPorDia([...this.exibidos].sort((a, b) => b.dataMovimentacao.localeCompare(a.dataMovimentacao)));
 
@@ -325,9 +398,12 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
       return;
     }
     if (this.alteracoes > 0) {
+      // Mesmo texto de Contas a Pagar.
       const ok = await this.confirmacao.confirmar(
-        `Sair do Modo edição e descartar ${this.alteracoes === 1 ? 'a alteração' : `as ${this.alteracoes} alterações`}?`,
-        { titulo: 'Descartar alterações' });
+        this.alteracoes === 1
+          ? 'Há 1 lançamento alterado que não foi salvo. Descartar a alteração?'
+          : `Há ${this.alteracoes} lançamentos alterados que não foram salvos. Descartar as alterações?`,
+        { titulo: 'Descartar alterações', aceitar: 'Descartar', cancelar: 'Continuar editando' });
       if (!ok) {
         this.edicao = true;
         return;
@@ -364,9 +440,9 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     return campoAlterado(this.originais.get(item.id), this.rascunho[item.id], campo);
   }
 
-  descartarEdicao(): void {
-    this.rascunho = rascunhoDe(this.itens);
-    this.aoEditar();
+  /** Como em Contas a Pagar: Descartar sai do Modo edição (com alterações, confirma antes). */
+  descartarEdicao(): Promise<void> {
+    return this.alternarEdicao(false);
   }
 
   /** Um por vez, na ordem; para no primeiro erro (como o detalhe antigo). */
@@ -414,6 +490,22 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   }
 
   // --- Celular: folha de baixo (item 4) ---
+
+  /** Lápis da linha (desktop), como em Contas a Pagar: liga o Modo edição e leva até o lançamento. */
+  editarLinha(item: ExtratoItemDto): void {
+    if (!this.edicao) this.alternarEdicao(true);
+    this.destacado = item.id;
+    setTimeout(() => {
+      const linha = this.host.nativeElement.querySelector(`[data-linha="${item.id}"]`) as HTMLElement | null;
+      linha?.scrollIntoView({ block: 'center' });
+      (linha?.querySelector('input:not([type="checkbox"])') as HTMLElement | null)?.focus();
+    });
+  }
+
+  abrirMenuLinha(evento: Event, item: ExtratoItemDto): void {
+    this.linhaDoMenu = item;
+    this.menuLinha?.toggle(evento);
+  }
 
   abrirNoSheet(item: ExtratoItemDto): void {
     this.noSheet = item;

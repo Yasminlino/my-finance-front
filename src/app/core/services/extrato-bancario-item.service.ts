@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { ExtratoItemDto } from '../models/extrato.model';
+import { AcertosDto, FiltroAcertos } from '../models/acertos.model';
 
 @Injectable({ providedIn: 'root' })
 export class ExtratoBancarioItemService {
@@ -14,6 +15,13 @@ export class ExtratoBancarioItemService {
   listarDoMes(mes: string, bancoId?: number | null): Observable<ExtratoItemDto[]> {
     return this.api.get<ExtratoItemDto[]>('/GetExtratoBancarioItensByMonth', undefined, {
       params: { month: mes, bancoId }
+    });
+  }
+
+  /** Acertos com pessoas (card #45, parte 3). */
+  acertos(filtro: FiltroAcertos): Observable<AcertosDto> {
+    return this.api.get<AcertosDto>('/GetAcertos', undefined, {
+      params: { inicio: filtro.inicio, fim: filtro.fim, bancoId: filtro.bancoId }
     });
   }
 

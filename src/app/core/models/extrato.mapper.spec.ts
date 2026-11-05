@@ -86,4 +86,8 @@ describe('paraExtratoItemDto', () => {
 
     expect('id' in dto).toBeFalse();
   });
+  it('mantém a compra que o pagamento abate (card #45, parte 3)', () => {
+    expect(paraExtratoItemDto({ dataMovimentacao: '2026-10-01', valor: 1, abateItemId: 40 }, contexto).abateItemId).toBe(40);
+    expect(paraExtratoItemDto({ dataMovimentacao: '2026-10-01', valor: 1 }, contexto).abateItemId).toBeNull();
+  });
 });

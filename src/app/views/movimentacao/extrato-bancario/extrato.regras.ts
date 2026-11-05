@@ -204,3 +204,35 @@ export function aplicarPessoa(item: ExtratoItemDto, nome: string, pessoas: reado
   const pessoa = pessoas.find(p => normalizarNome(p.nomePessoa) === normalizarNome(limpo));
   return { ...item, nomePessoaTransacao: pessoa?.nomePessoa ?? limpo, pessoaMovimentacaoId: pessoa?.id ?? null, alteraVinculoPessoa: true };
 }
+
+export type FaturaPorPessoa = {
+  total: number;
+  /** Eu, sem pessoa e quem não entra nos acertos (mercado, Pix…). */
+  minhas: number;
+  outras: number;
+  porPessoa: { pessoaId: number; nome: string; valor: number }[];
+};
+
+/**
+ * Card "Fatura dividida por pessoa" (card #45, parte 3): as saídas da fatura separadas entre as minhas e as das pessoas
+ * que entram nos acertos, com quanto é de cada uma (maior primeiro). Entradas (estorno, pagamento) não contam.
+ */
+export function faturaPorPessoa(
+  itens: readonly ExtratoItemDto[],
+  pessoas: readonly { id: number; nomePessoa: string; ehTitular?: boolean; entraNosAcertos?: boolean }[]
+): FaturaPorPessoa {
+  const dosAcertos = new Map(pessoas.filter(p => p.entraNosAcertos && !p.ehTitular).map(p => [p.id, p.nomePessoa]));
+  const saidas = itens.filter(i => !ehEntrada(i));
+  const porPessoa = new Map<number, number>();
+  let minhas = 0;
+  for (const i of saidas) {
+    const id = i.pessoaMovimentacaoId;
+    if (id != null && dosAcertos.has(id)) porPessoa.set(id, (porPessoa.get(id) ?? 0) + Number(i.valor));
+    else minhas += Number(i.valor);
+  }
+  const lista = [...porPessoa.entries()]
+    .map(([pessoaId, valor]) => ({ pessoaId, nome: dosAcertos.get(pessoaId)!, valor: centavos(valor) }))
+    .sort((a, b) => b.valor - a.valor);
+  const outras = centavos(lista.reduce((s, p) => s + p.valor, 0));
+  return { total: centavos(minhas + outras), minhas: centavos(minhas), outras, porPessoa: lista };
+}
