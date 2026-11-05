@@ -61,8 +61,33 @@ describe('ModalConfiguracaoVinculoPessoaComponent', () => {
     ]);
 
     expect(pessoas.atualizar).toHaveBeenCalledOnceWith(
-      { id: 7, nomePessoa: 'Ana', categoriaId: 3, tipoMovimentacaoId: 2, mesAtualizacao: '2026-10' });
+      { id: 7, nomePessoa: 'Ana', categoriaId: 3, tipoMovimentacaoId: 2, entraNosAcertos: false, mesAtualizacao: '2026-10' });
     expect(pessoas.criar).toHaveBeenCalledOnceWith(
-      { nomePessoa: 'João', categoriaId: null, tipoMovimentacaoId: 5, mesAtualizacao: '2026-10' });
+      { nomePessoa: 'João', categoriaId: null, tipoMovimentacaoId: 5, entraNosAcertos: false, mesAtualizacao: '2026-10' });
+  });
+
+  it('"Entra nos acertos" é uma coluna Sim/Não que vai na gravação (parte 2)', () => {
+    const coluna = fixture.componentInstance.gridColumns.find(c => c.field === 'entraNosAcertos');
+    expect(coluna?.header).toBe('ENTRA NOS ACERTOS');
+    expect(coluna?.options).toEqual([{ label: 'Sim', value: true }, { label: 'Não', value: false }]);
+
+    fixture.componentInstance.onSaveInline([
+      { row: { id: 7, nomePessoa: 'ANA', categoriaId: null, tipoMovimentacaoId: null, entraNosAcertos: false }, changes: { entraNosAcertos: true } }
+    ]);
+    expect(pessoas.atualizar).toHaveBeenCalledOnceWith(jasmine.objectContaining({ id: 7, entraNosAcertos: true }));
+  });
+
+  it('o "Eu" vem primeiro, com esse nome, e travado (sem editar nem excluir)', () => {
+    pessoas.listar.and.returnValue(of([
+      { id: 7, nomePessoa: 'CARLOS', categoriaId: null, tipoMovimentacaoId: null, entraNosAcertos: true },
+      { id: 1, nomePessoa: 'EU', categoriaId: null, tipoMovimentacaoId: null, ehTitular: true }
+    ]));
+    fixture.componentInstance.ngOnInit();
+
+    const [eu, carlos] = fixture.componentInstance.pessoaMovimentacao;
+    expect(eu).toEqual(jasmine.objectContaining({ id: 1, nomePessoa: 'Eu', somenteLeitura: true }));
+    expect(carlos.id).toBe(7);
+    expect(fixture.componentInstance.bloquear(eu)).toBeTrue();
+    expect(fixture.componentInstance.bloquear(carlos)).toBeFalse();
   });
 });

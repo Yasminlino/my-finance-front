@@ -75,14 +75,16 @@ describe('ExtratoMesComponent', () => {
     });
   });
 
-  it('carrega o mês atual e mostra cabeçalho com Lançamento, Importar extrato e o ⋮', () => {
+  it('cabeçalho como Contas a Pagar: mês, Modo edição na caixa e "Novo lançamento" com Importar e o resto na seta', () => {
     abrir();
 
     expect(itens.listarDoMes).toHaveBeenCalled();
     expect(el().querySelector('.mf-page-title')?.textContent).toContain('Extrato Bancário');
-    expect(texto(el())).toContain('Lançamento');
-    expect(texto(el())).toContain('Importar extrato');
-    expect(el().querySelector('[aria-label="Mais ações"]')).not.toBeNull();
+    expect(el().querySelector('.modo-edicao #extrato-edicao')).not.toBeNull();
+    expect(el().querySelector('p-splitbutton')?.textContent).toContain('Novo lançamento');
+    expect(comp().itensNovoLancamento.map(i => i.label)).toEqual(
+      ['Importar extrato', 'Importações mensais', 'Relatório mensal', 'Configurar pessoas', 'Exportar', 'Atualizar']);
+    expect(el().querySelector('[aria-label="Mais ações"]')).toBeNull();
   });
 
   it('abre no mês e na conta da URL (o antigo /detalhes redireciona para cá)', () => {
@@ -268,6 +270,10 @@ describe('ExtratoMesComponent', () => {
       expect(el().querySelectorAll('.extrato-movel__item').length).toBe(3);
       expect(Array.from(el().querySelectorAll('.extrato-movel__item')).map(texto).find(t => t.includes('Mercado Extra'))).toContain('Carlos');
       expect(el().querySelector('mf-fab')).not.toBeNull();
+      // Como Contas a Pagar: o mês sai do cabeçalho e vai em largura total logo abaixo; o ⋮ fica no título.
+      expect(el().querySelector('mf-page-header .campo-mes')).toBeNull();
+      expect(el().querySelector('.mes-movel p-calendar')).not.toBeNull();
+      expect(el().querySelector('mf-page-header [aria-label="Mais ações"]')).not.toBeNull();
       expect(comp().itensMenuMovel.map(i => i.label)[0]).toBe('Importar extrato');
       expect(el().textContent).not.toContain('Importar extrato');
     });

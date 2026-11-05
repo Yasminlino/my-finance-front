@@ -1,6 +1,9 @@
 <div class="mf-pagina">
-  <mf-page-header class="block mt-2 mb-3" titulo="Extrato Bancário" subtitulo="Entradas e saídas das contas e cartões no mês"
-    [breadcrumb]="breadcrumb" [home]="home">
+  <!-- Como Contas a Pagar: no celular, título com ‹ e ⋮ e o mês em largura total logo abaixo. -->
+  <mf-page-header [class]="movel() ? 'block mb-2' : 'block mt-2 mb-3'" titulo="Extrato Bancário"
+    [subtitulo]="movel() ? '' : 'Entradas e saídas das contas e cartões no mês'"
+    [breadcrumb]="breadcrumb" [home]="home" [mostrarVoltar]="true" (voltar)="voltar()">
+    @if (!movel()) {
     <div acoes class="flex align-items-center gap-1">
       <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" pTooltip="Mês anterior"
         tooltipPosition="top" [disabled]="edicao" (onClick)="mudarMes(-1)" ariaLabel="Mês anterior" />
@@ -9,24 +12,35 @@
       <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" pTooltip="Próximo mês"
         tooltipPosition="top" [disabled]="edicao" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
     </div>
+    }
     @if (!movel()) {
-      <!-- Modo edição (item 3), como em Contas a Pagar; no celular a edição é pela folha de baixo (item 4) -->
-      <span acoes class="flex align-items-center gap-2 extrato-modo-edicao">
+      <!-- Como em Contas a Pagar: Modo edição na caixa (âmbar quando ligado) e o botão principal com as outras ações na seta.
+           No celular a edição é pela folha de baixo (item 4). -->
+      <div acoes class="modo-edicao flex align-items-center gap-2" [class.ativo]="edicao">
         <p-inputSwitch inputId="extrato-edicao" [ngModel]="edicao" (onChange)="alternarEdicao($event.checked)"
           [disabled]="loading || salvando || (!itens.length && !edicao)" />
-        <label for="extrato-edicao" class="m-0 white-space-nowrap">Modo edição</label>
-      </span>
+        <label for="extrato-edicao" class="m-0 cursor-pointer white-space-nowrap">Modo edição</label>
+      </div>
     }
     @if (!movel()) {
-      <p-button acoes label="Lançamento" icon="pi pi-plus" [outlined]="true" (onClick)="showLancamento = true" />
+      <p-splitButton acoes label="Novo lançamento" icon="pi pi-plus" [model]="itensNovoLancamento" [disabled]="edicao" [menuStyle]="{ minWidth: '15rem' }"
+        (onClick)="showLancamento = true" appendTo="body" />
     }
-    @if (!movel()) {
-      <p-button acoes label="Importar extrato" icon="pi pi-file-import" (onClick)="showImportar = true" />
+    @if (movel()) {
+      <p-button acoes icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
+        (onClick)="menu.toggle($event)" ariaLabel="Mais ações" />
     }
-    <p-button acoes icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
-      (onClick)="menu.toggle($event)" ariaLabel="Mais ações" />
   </mf-page-header>
-  <p-menu #menu [model]="movel() ? itensMenuMovel : itensMenu" [popup]="true" appendTo="body" />
+  <p-menu #menu [model]="itensMenuMovel" [popup]="true" appendTo="body" />
+
+  @if (movel()) {
+    <div class="mes-movel flex align-items-center gap-2 mb-3">
+      <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" (onClick)="mudarMes(-1)" ariaLabel="Mês anterior" />
+      <p-calendar class="flex-grow-1" styleClass="w-full" [(ngModel)]="dateFilter" view="month" dateFormat="MM 'de' yy"
+        [readonlyInput]="true" [showIcon]="true" [touchUI]="true" (onSelect)="carregarMes($event)" />
+      <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
+    </div>
+  }
 
   <div class="grid">
     <div class="col-12 lg:col-3">
@@ -116,7 +130,7 @@
                     <span class="block font-medium white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ item.descricao || '(sem descrição)' }}</span>
                     <small class="mf-hint">{{ categoria(item) || 'Sem categoria' }}@if (parcela(item); as p) { · {{ p }} }</small>
                     @if (pessoa(item)) {
-                      <span class="extrato-pessoa mt-1">{{ pessoa(item) }}</span>
+                      <span class="extrato-pessoa mt-1" [class.extrato-pessoa--eu]="doTitular(item)">{{ pessoa(item) }}</span>
                     } @else if (faltaPessoa(item)) {
                       <span class="extrato-pessoa extrato-pessoa--vazia mt-1">Sem pessoa</span>
                     }
@@ -217,7 +231,7 @@
               </td>
               <td>
                 @if (pessoa(item)) {
-                  <span class="extrato-pessoa">{{ pessoa(item) }}</span>
+                  <span class="extrato-pessoa" [class.extrato-pessoa--eu]="doTitular(item)">{{ pessoa(item) }}</span>
                 } @else if (faltaPessoa(item)) {
                   <span class="extrato-pessoa extrato-pessoa--vazia">Sem pessoa</span>
                 }

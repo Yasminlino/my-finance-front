@@ -15,6 +15,12 @@ import { concat, finalize, forkJoin, toArray } from 'rxjs';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 
 
+/** Linha do grid: a pessoa, com o "Eu" travado (somenteLeitura esconde o excluir e trava a linha). */
+type LinhaPessoa = PessoaMovimentacaoDto & { somenteLeitura?: boolean };
+
+/** Opções da coluna "Entra nos acertos" (card #45, parte 2). */
+const SIM_NAO: GridColumnOption[] = [{ label: 'Sim', value: true }, { label: 'Não', value: false }];
+
 @Component({
   selector: 'app-modal-configuracao-vinculo-pessoa',
   standalone: true,
@@ -26,12 +32,12 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   @Input() monthFilter!: string; // pode ser '2026-01-01' ou Date
   @Output() closed = new EventEmitter<boolean>(); // true = salvou algo, false = cancelou
 
-  pessoaMovimentacao: PessoaMovimentacaoDto[] = [];
+  pessoaMovimentacao: LinhaPessoa[] = [];
   disabledIds = new Set<number>();
   selectedIds = new Set<number>();
 
   exibirCampos: ExibirCamposConfig | null = null;
-  gridColumns: GridColumn<PessoaMovimentacaoDto>[] = []
+  gridColumns: GridColumn<LinhaPessoa>[] = []
   categorias: GridColumnOption[] = [];
   movimentacoes: GridColumnOption[] = [];
 
@@ -39,7 +45,10 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   saving = false;
   q = '';
 
-  @ViewChild('grid') grid?: DataGridComponent<PessoaMovimentacaoDto>;
+  @ViewChild('grid') grid?: DataGridComponent<LinhaPessoa>;
+
+  /** O "Eu" não entra na edição inline. */
+  readonly bloquear = (linha: LinhaPessoa): boolean => linha.ehTitular === true;
   deletingId: number | null = null;
 
   private readonly confirmacao = inject(ConfirmacaoService);
@@ -95,9 +104,18 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
         header: 'TIPO MOVIMENTAÇÃO',
         type: GridColumnTypeEnum.Select,
         formatter: (row) => this.tipoMovimentacaoLabel(row.tipoMovimentacaoId),
-        width: "40%",
+        width: "25%",
         editable: true,
         options: this.movimentacoes
+      },
+      {
+        field: 'entraNosAcertos',
+        header: 'ENTRA NOS ACERTOS',
+        type: GridColumnTypeEnum.Select,
+        formatter: (row) => (row.ehTitular ? '-' : row.entraNosAcertos ? 'Sim' : 'Não'),
+        width: '15%',
+        editable: true,
+        options: SIM_NAO
       },
       { field: 'actions', header: 'AÇÕES', type: GridColumnTypeEnum.Actions },
     ];
@@ -118,7 +136,8 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
         id: tempId,
         nomePessoa: '',
         categoriaId: null,
-        tipoMovimentacaoId: null
+        tipoMovimentacaoId: null,
+        entraNosAcertos: false
       },
       ...this.pessoaMovimentacao,
     ];
@@ -135,7 +154,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
     this.grid?.onSaveAll();
   }
 
-  onSaveInline(changes: GridRowChange<PessoaMovimentacaoDto>[]) {
+  onSaveInline(changes: GridRowChange<LinhaPessoa>[]) {
     if (!changes.length) {
       this.close(true);
       return;
@@ -147,6 +166,7 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
         nomePessoa: (change.changes.nomePessoa ?? change.row.nomePessoa ?? '').trim(),
         categoriaId: change.changes.categoriaId ?? change.row.categoriaId ?? null,
         tipoMovimentacaoId: change.changes.tipoMovimentacaoId ?? change.row.tipoMovimentacaoId ?? null,
+        entraNosAcertos: change.changes.entraNosAcertos ?? change.row.entraNosAcertos ?? false,
         mesAtualizacao: this.monthFilter ?? null,
       };
 
@@ -179,12 +199,14 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: pessoas => {
-          this.pessoaMovimentacao = pessoas;
+          // Parte 2: o "Eu" primeiro, com esse nome e travado; as outras na ordem da API.
+          const eu = pessoas.filter(p => p.ehTitular).map(p => ({ ...p, nomePessoa: 'Eu', somenteLeitura: true }));
+          this.pessoaMovimentacao = [...eu, ...pessoas.filter(p => !p.ehTitular)];
         },
         error: e => this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar as pessoas.'))
       });
   }
-  async deleteRow(r: PessoaMovimentacaoDto) {
+  async deleteRow(r: LinhaPessoa) {
     if (r.id < 0) {
       this.pessoaMovimentacao = this.pessoaMovimentacao.filter(x => x.id !== r.id);
       return;

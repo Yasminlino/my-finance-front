@@ -1,7 +1,7 @@
 <p-dialog header="Vínculos cadastrados" [visible]="true" [modal]="true" [dismissableMask]="true" [draggable]="false"
   styleClass="mf-dialog-lg" (visibleChange)="close(false)">
   <app-data-grid #grid [dataSource]="pessoaMovimentacao" [columns]="gridColumns" [exibeCampos]="exibirCampos"
-    (new)="addRow()" [loading]="loading" (saveInline)="onSaveInline($event)" (delete)="deleteRow($event)">
+    (new)="addRow()" [loading]="loading" [bloquearLinha]="bloquear" (saveInline)="onSaveInline($event)" (delete)="deleteRow($event)">
   </app-data-grid>
 
   <ng-template pTemplate="footer">

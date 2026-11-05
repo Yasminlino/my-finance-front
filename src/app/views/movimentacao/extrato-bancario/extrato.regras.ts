@@ -71,9 +71,30 @@ export interface FiltroExtrato {
   pendencia: Pendencia | null;
 }
 
-/** Nome mostrado no chip: o da pessoa cadastrada ou o digitado. */
+/** Nome gravado da pessoa "Eu" (a API grava os nomes em maiúsculas). */
+export const NOME_TITULAR = 'EU';
+/** Como a pessoa "Eu" aparece na tela. */
+export const ROTULO_TITULAR = 'Eu';
+
+type PessoaResumo = { id: number; nomePessoa: string; ehTitular?: boolean };
+
+/** O lançamento é do "Eu": pelo vínculo que veio da API ou pelo nome gravado. */
+export function ehDoTitular(item: ExtratoItemDto): boolean {
+  return item.pessoaMovimentacao?.ehTitular === true
+    || normalizarNome(item.pessoaMovimentacao?.nomePessoa ?? item.nomePessoaTransacao) === normalizarNome(NOME_TITULAR);
+}
+
+/** Nome mostrado no chip: o da pessoa cadastrada ou o digitado; a titular aparece como "Eu". */
 export function nomeDaPessoa(item: ExtratoItemDto): string {
+  if (ehDoTitular(item)) return ROTULO_TITULAR;
   return (item.pessoaMovimentacao?.nomePessoa ?? item.nomePessoaTransacao ?? '').trim();
+}
+
+/** Sugestões do campo Pessoa: "Eu" primeiro, depois as outras em ordem alfabética. */
+export function nomesParaSugestao(pessoas: readonly PessoaResumo[]): string[] {
+  const outras = [...new Set(pessoas.filter(p => !p.ehTitular).map(p => p.nomePessoa).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  return pessoas.some(p => p.ehTitular) ? [ROTULO_TITULAR, ...outras] : outras;
 }
 
 /** Do dia mais recente para o mais antigo; no mesmo dia, o último lançado primeiro. */
@@ -173,12 +194,13 @@ export function campoAlterado(original: ExtratoItemDto | undefined, editado: Ext
 }
 
 /**
- * Pessoa digitada no Modo edição: com nome de pessoa cadastrada, liga o lançamento a ela; sem, fica só o nome
- * (como no detalhe antigo). Vazio tira a pessoa.
+ * Pessoa digitada no Modo edição: com nome de pessoa cadastrada ("Eu" casa com a titular), liga o lançamento a ela;
+ * com nome novo, a API cria a pessoa sem padrão. Vazio tira a pessoa.
  */
-export function aplicarPessoa(item: ExtratoItemDto, nome: string, pessoas: readonly { id: number; nomePessoa: string }[]): ExtratoItemDto {
+export function aplicarPessoa(item: ExtratoItemDto, nome: string, pessoas: readonly PessoaResumo[]): ExtratoItemDto {
+  // Parte 2: com alteraVinculoPessoa a API grava a ligação (ou cria a pessoa pelo nome), sem mexer no padrão dela.
   const limpo = nome.trim();
-  if (!limpo) return { ...item, nomePessoaTransacao: null, pessoaMovimentacaoId: null };
+  if (!limpo) return { ...item, nomePessoaTransacao: null, pessoaMovimentacaoId: null, alteraVinculoPessoa: true };
   const pessoa = pessoas.find(p => normalizarNome(p.nomePessoa) === normalizarNome(limpo));
-  return { ...item, nomePessoaTransacao: pessoa?.nomePessoa ?? limpo, pessoaMovimentacaoId: pessoa?.id ?? null };
+  return { ...item, nomePessoaTransacao: pessoa?.nomePessoa ?? limpo, pessoaMovimentacaoId: pessoa?.id ?? null, alteraVinculoPessoa: true };
 }

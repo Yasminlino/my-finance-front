@@ -7,6 +7,10 @@ export type PessoaMovimentacaoDto = {
   nomePessoa: string;
   categoriaId: number | null;
   tipoMovimentacaoId: number | null;
+  /** A pessoa "Eu" (dono do cartão): uma por usuário, sem renomear nem excluir. Só a API define (card #45). */
+  ehTitular?: boolean;
+  /** Só as pessoas marcadas entram nos Acertos. */
+  entraNosAcertos?: boolean;
   /** "YYYY-MM": leva a alteração aos itens de extrato daquele mês. */
   mesAtualizacao?: string | null;
   categoria?: CategoriaDto | null;

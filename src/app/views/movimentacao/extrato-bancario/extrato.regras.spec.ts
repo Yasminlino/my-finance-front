@@ -3,7 +3,7 @@ import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 import {
   FiltroExtrato, agruparPorDia, alteracoesDoRascunho, aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehEntrada,
-  filtrarExtrato, rascunhoDe, semPessoa
+  ehDoTitular, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa
 } from './extrato.regras';
 
 const item = (id: number, data: string, valor: number, extra: Partial<ExtratoItemDto> = {}): ExtratoItemDto => ({
@@ -134,6 +134,31 @@ describe('extrato.regras', () => {
         .toEqual(jasmine.objectContaining({ pessoaMovimentacaoId: null, nomePessoaTransacao: 'Mercado X' }));
       expect(aplicarPessoa(item(1, '2026-10-05', 10, { pessoaMovimentacaoId: 7, nomePessoaTransacao: 'Giovanne' }), '  ', pessoas))
         .toEqual(jasmine.objectContaining({ pessoaMovimentacaoId: null, nomePessoaTransacao: null }));
+    });
+
+    it('trocar a pessoa pede à API para gravar a ligação (parte 2); "Eu" casa com a titular', () => {
+      const pessoas = [{ id: 1, nomePessoa: 'EU', ehTitular: true }, { id: 7, nomePessoa: 'GIOVANNE' }];
+      expect(aplicarPessoa(item(1, '2026-10-05', 10), 'giovanne', pessoas).alteraVinculoPessoa).toBeTrue();
+      expect(aplicarPessoa(item(1, '2026-10-05', 10), 'Eu', pessoas))
+        .toEqual(jasmine.objectContaining({ pessoaMovimentacaoId: 1, nomePessoaTransacao: 'EU', alteraVinculoPessoa: true }));
+    });
+  });
+
+  describe('pessoa "Eu" (parte 2)', () => {
+    it('mostra "Eu" para a titular e reconhece pelo vínculo ou pelo nome', () => {
+      const daTitular = item(1, '2026-10-05', 10, { pessoaMovimentacaoId: 1, nomePessoaTransacao: 'EU' });
+      const comObjeto = item(2, '2026-10-05', 10, { pessoaMovimentacao: { id: 1, nomePessoa: 'EU', ehTitular: true, categoriaId: null, tipoMovimentacaoId: null } });
+      const outra = item(3, '2026-10-05', 10, { pessoaMovimentacaoId: 7, nomePessoaTransacao: 'EUGÊNIA' });
+      expect(ehDoTitular(daTitular)).toBeTrue();
+      expect(ehDoTitular(comObjeto)).toBeTrue();
+      expect(ehDoTitular(outra)).toBeFalse();
+      expect(nomeDaPessoa(daTitular)).toBe('Eu');
+      expect(nomeDaPessoa(outra)).toBe('EUGÊNIA');
+    });
+
+    it('nas sugestões e na ordem, a titular vem primeiro como "Eu"', () => {
+      expect(nomesParaSugestao([{ id: 7, nomePessoa: 'CARLOS' }, { id: 1, nomePessoa: 'EU', ehTitular: true }, { id: 8, nomePessoa: 'ÁGATA' }]))
+        .toEqual(['Eu', 'ÁGATA', 'CARLOS']);
     });
   });
 });

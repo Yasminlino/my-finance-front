@@ -1,6 +1,6 @@
 import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NgIf } from '@angular/common';
+import { Location, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MenuItem } from 'primeng/api';
@@ -8,6 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { SplitButtonModule } from 'primeng/splitbutton';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
@@ -56,7 +57,7 @@ import { ModalImportarExtratoComponent } from '../components/modal-importar-extr
 import { ModalLancamentoManualComponent } from '../components/modal-lancamento-manual/modal-lancamento-manual.component';
 import {
   CampoEditavel, CardsExtrato, ContaDoMes, FiltroExtrato, GrupoDoDia, Pendencia, TipoFiltro, agruparPorDia, alteracoesDoRascunho,
-  aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehEntrada, filtrarExtrato, nomeDaPessoa, rascunhoDe, semPessoa
+  aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehDoTitular, ehEntrada, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa
 } from '../extrato.regras';
 
 /** Mês escolhido por último, como no resumo antigo. */
@@ -73,7 +74,7 @@ const filtroVazio = (bancoId: number | null = null): FiltroExtrato =>
   selector: 'app-extrato-mes',
   standalone: true,
   imports: [
-    NgIf, FormsModule, ButtonModule, CalendarModule, DropdownModule, InputSwitchModule, IconFieldModule, InputIconModule, InputTextModule, MenuModule,
+    NgIf, FormsModule, ButtonModule, CalendarModule, DropdownModule, InputSwitchModule, SplitButtonModule, IconFieldModule, InputIconModule, InputTextModule, MenuModule,
     MultiSelectModule, ProgressBarModule, SelectButtonModule, TableModule, TooltipModule,
     PageHeaderComponent, StatCardComponent, FilterBarComponent, EmptyStateComponent, ExtratoContasComponent,
     ModalImportarExtratoComponent, ModalLancamentoManualComponent, ModalImportacoesMensaisComponent,
@@ -95,6 +96,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   readonly movel = inject(LarguraTelaService).movel;
   private readonly alertService = inject(AlertService);
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   /** Mês pedido ("YYYY-MM"); a carga segue sempre o último (FE-P2-08). */
@@ -110,6 +112,11 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     { label: 'Configurar pessoas', icon: 'pi pi-users', command: () => (this.showConfigPessoas = true) },
     { label: 'Exportar', icon: 'pi pi-upload', command: () => this.tabela?.exportCSV() },
     { label: 'Atualizar', icon: 'pi pi-refresh', command: () => this.carregarMes() }
+  ];
+  /** Desktop, como em Contas a Pagar: o botão é o lançamento manual; a seta traz Importar e o resto. */
+  readonly itensNovoLancamento: MenuItem[] = [
+    { label: 'Importar extrato', icon: 'pi pi-file-import', command: () => (this.showImportar = true) },
+    ...this.itensMenu
   ];
   /** Celular (item 4): o Importar vai para o ⋮; o lançamento manual fica no + flutuante. */
   readonly itensMenuMovel: MenuItem[] = [
@@ -208,7 +215,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
           this.opcoesTipoMov = [...this.tiposMovimentacao]
             .sort((a, b) => a.nomeTipoMovimentacao.localeCompare(b.nomeTipoMovimentacao, 'pt-BR'))
             .map(t => ({ label: t.nomeTipoMovimentacao, value: t.id }));
-          this.nomesPessoas = [...new Set((pessoas ?? []).map(p => p.nomePessoa).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+          this.nomesPessoas = nomesParaSugestao(pessoas ?? []);
           this.bancos = bancos ?? [];
           this.tiposCartao = tipos ?? [];
           this.categorias = categorias ?? [];
@@ -452,6 +459,11 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     });
   }
 
+  /** ‹ do cabeçalho, como em Contas a Pagar. */
+  voltar(): void {
+    this.location.back();
+  }
+
   get nomeDoMes(): string {
     return this.dateFilter.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   }
@@ -464,6 +476,11 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
 
   pessoa(item: ExtratoItemDto): string {
     return nomeDaPessoa(item);
+  }
+
+  /** Chip cinza do "Eu" (parte 2). */
+  doTitular(item: ExtratoItemDto): boolean {
+    return ehDoTitular(item);
   }
 
   /** Só as saídas pedem pessoa (salário e transferências não). */

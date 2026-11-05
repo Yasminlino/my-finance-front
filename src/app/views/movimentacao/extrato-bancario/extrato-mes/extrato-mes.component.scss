@@ -35,6 +35,12 @@
   white-space: nowrap;
 }
 
+/* O "Eu" (dono do cartão) em cinza, como no mockup; não é pendência. */
+.extrato-pessoa--eu {
+  background: var(--surface-200);
+  color: var(--text-color);
+}
+
 .extrato-pessoa--vazia {
   background: var(--surface-200);
   color: var(--text-color-secondary);
@@ -81,3 +87,33 @@
 :host ::ng-deep .extrato-tabela--edicao { table-layout: fixed; width: 100%; min-width: 56rem; }
 :host ::ng-deep .extrato-tabela--edicao .p-dropdown { width: 100%; min-width: 0; }
 :host ::ng-deep .extrato-tabela--edicao .p-dropdown-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Cabeçalho como o de Contas a Pagar: mês com largura fixa e o Modo edição numa caixa, âmbar quando ligado. */
+.modo-edicao {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--border-radius);
+  background: var(--surface-card);
+  user-select: none;
+
+  &.ativo {
+    border-color: var(--orange-400);
+    background: var(--orange-50);
+    color: var(--orange-800);
+  }
+}
+
+:host ::ng-deep {
+  .mes-movel .p-calendar {
+    width: 100%;
+  }
+
+  .campo-mes {
+    width: 9.5rem;
+    text-transform: capitalize;
+  }
+
+  .modo-edicao.ativo .p-inputswitch.p-inputswitch-checked .p-inputswitch-slider {
+    background: var(--orange-500);
+  }
+}
