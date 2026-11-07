@@ -1,0 +1,259 @@
+<p-dialog [visible]="true" [modal]="true" [draggable]="false" [resizable]="false" [closable]="false" [dismissableMask]="!salvando && !movel"
+  [styleClass]="movel ? 'regras-dialog regras-dialog--movel' : 'regras-dialog'"
+  [style]="movel ? { width: '100vw', height: '100dvh', maxHeight: '100dvh', margin: '0' } : { width: '60rem', maxWidth: '96vw' }"
+  (visibleChange)="!$event && fechado.emit()">
+
+  <ng-template pTemplate="header">
+    @if (movel) {
+      <div class="regras-topo regras-topo--movel">
+        <p-button icon="pi pi-arrow-left" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Voltar" (onClick)="fechado.emit()" />
+        @if (buscaAberta) {
+          <input pInputText class="flex-grow-1" placeholder="Buscar regra..." aria-label="Buscar regra" [(ngModel)]="busca" />
+        } @else {
+          <span class="regras-titulo flex-grow-1">Regras de classificação</span>
+        }
+        <p-button [icon]="buscaAberta ? 'pi pi-times' : 'pi pi-search'" [rounded]="true" [text]="true" severity="secondary"
+          [ariaLabel]="buscaAberta ? 'Fechar busca' : 'Buscar regra'" (onClick)="buscaAberta = !buscaAberta; busca = ''" />
+      </div>
+    } @else {
+      <div class="regras-topo">
+        <i class="pi pi-bolt regras-raio"></i>
+        <span class="regras-titulo">Regras de classificação</span>
+        <span class="mf-hint">· {{ regras.length }} {{ regras.length === 1 ? 'regra' : 'regras' }}</span>
+        <span class="flex-grow-1"></span>
+        <span class="p-input-icon-left regras-busca">
+          <i class="pi pi-search"></i>
+          <input pInputText class="p-inputtext-sm w-full" placeholder="Buscar regra..." aria-label="Buscar regra" [(ngModel)]="busca" />
+        </span>
+        <p-button icon="pi pi-times" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Fechar" (onClick)="fechado.emit()" />
+      </div>
+    }
+  </ng-template>
+
+  @if (!movel) {
+    <p class="mt-0 mf-hint">A regra é aplicada na importação e no lançamento manual. Se mais de uma regra servir, vale a de cima.</p>
+  }
+
+  <!-- Nova regra / editar: inline no desktop, painel de baixo no celular -->
+  @if (!movel) {
+    @if (form) {
+      <div class="regra-painel mb-4">
+        <ng-container [ngTemplateOutlet]="formulario" />
+      </div>
+    } @else {
+      <div class="flex justify-content-end mb-3">
+        <p-button label="Nova regra" icon="pi pi-plus" [outlined]="true" (onClick)="novaRegra()" />
+      </div>
+    }
+  }
+
+  <!-- Minhas regras -->
+  <section class="mb-4">
+    @if (movel) {
+      <div class="regras-secao-movel">{{ regras.length }} {{ regras.length === 1 ? 'regra' : 'regras' }} · vale a de cima</div>
+    } @else {
+      <div class="flex align-items-baseline justify-content-between mb-2">
+        <h3 class="regras-secao">Minhas regras</h3>
+        @if (regras.length > 1) { <small class="mf-hint">arraste para mudar a prioridade</small> }
+      </div>
+    }
+
+    <div class="regras-lista">
+      @for (r of regrasVisiveis; track r.id; let i = $index) {
+        <div class="regra-linha" [class.regra-linha--movel]="movel" [class.regra-linha--desligada]="!r.ativa"
+          [class.regra-linha--arrastando]="arrastando === r.id" [attr.data-regra-id]="r.id">
+          @if (!filtrando) {
+            <span class="regra-alca" (pointerdown)="iniciarArrasto($event, r)" title="Arraste para mudar a prioridade"
+              [attr.aria-label]="'Mudar a prioridade de ' + r.texto"><i class="pi pi-bars"></i></span>
+          }
+          @if (!movel) { <span class="regra-numero">{{ i + 1 }}</span> }
+          <button type="button" class="regra-corpo" (click)="editar(r)" [attr.aria-label]="'Editar a regra ' + r.texto">
+            <span class="regra-frase">
+              @if (movel) {
+                @if (inicioCurto(r)) { <span>{{ inicioCurto(r) }}</span> }
+              } @else {
+                <span>{{ inicio(r).campo + ' ' + inicio(r).operador }}</span>
+              }
+              <code class="regra-texto">{{ r.texto }}</code>
+              @if (r.bancoNome) { <span class="mf-hint">na</span> <span class="regra-conta">{{ r.bancoNome }}</span> }
+              <i class="pi pi-arrow-right regra-seta"></i>
+              @if (r.categoriaNome) { <span class="regra-tag regra-tag--categoria">{{ r.categoriaNome }}</span> }
+              @if (r.pessoaNome) { <span class="mf-hint">pessoa</span> <span class="regra-tag">{{ r.pessoaNome }}</span> }
+              @if (r.tipoMovimentacaoNome) { <span class="mf-hint">tipo</span> <span class="regra-tag">{{ r.tipoMovimentacaoNome }}</span> }
+            </span>
+            @if (movel) { <small class="regra-uso">{{ uso(r) }}</small> }
+          </button>
+          @if (!movel) { <small class="regra-uso regra-uso--lado">{{ uso(r) }}</small> }
+          <p-inputSwitch [ngModel]="r.ativa" (onChange)="alternarAtiva(r, $event.checked)" [ariaLabel]="'Ligar regra ' + r.texto" />
+          <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary" [ariaLabel]="'Ações da regra ' + r.texto"
+            (onClick)="abrirMenu($event, r)" />
+        </div>
+      } @empty {
+        @if (!loading) {
+          @if (filtrando) {
+            <p class="mf-hint">Nenhuma regra com "{{ busca }}".</p>
+          } @else {
+            <mf-empty-state icone="pi pi-bolt" titulo="Nenhuma regra ainda"
+              texto="Crie uma regra ou use uma sugestão abaixo. Ao dar uma categoria a um lançamento, o Extrato também pergunta." />
+          }
+        }
+      }
+    </div>
+  </section>
+
+  <!-- Sugestões do seu extrato -->
+  @if (sugestoesVisiveis.length) {
+    <section>
+      @if (movel) {
+        <div class="regras-secao-movel">Sugestões</div>
+      } @else {
+        <div class="flex align-items-baseline justify-content-between mb-2">
+          <h3 class="regras-secao">Sugestões do seu extrato</h3>
+          <small class="mf-hint">textos que se repetem nos lançamentos sem categoria</small>
+        </div>
+      }
+      <div class="flex flex-column gap-2">
+        @for (s of sugestoesVisiveis; track s.texto) {
+          <div class="sugestao" [class.sugestao--movel]="movel">
+            @if (!movel) { <span class="sugestao-icone"><i class="pi pi-bolt"></i></span> }
+            <span class="sugestao-texto">
+              <code class="regra-texto">{{ s.texto }}</code> aparece em <strong>{{ s.quantidade }}</strong> lançamentos sem categoria
+              @if (s.categoriaNome) {
+                <span class="mf-hint"> · você usou <strong>{{ s.categoriaNome }}</strong>
+                  {{ s.vezesCategoria === 1 ? 'uma vez' : 'nas ' + s.vezesCategoria + ' vezes' }}</span>
+              }
+            </span>
+            <span class="sugestao-acoes">
+              <p-button label="Ignorar" severity="secondary" [outlined]="true" size="small" (onClick)="ignorarSugestao(s)" />
+              <p-button label="Criar regra" [outlined]="true" size="small" (onClick)="criarDaSugestao(s)" />
+            </span>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  @if (movel && !form) {
+    <p-button styleClass="regras-fab" icon="pi pi-plus" [rounded]="true" ariaLabel="Nova regra" (onClick)="novaRegra()" />
+  }
+
+  @if (!movel) {
+    <ng-template pTemplate="footer">
+      <p-button label="Fechar" severity="secondary" [outlined]="true" (onClick)="fechado.emit()" />
+    </ng-template>
+  }
+</p-dialog>
+
+<!-- Celular: a regra abre num painel de baixo -->
+@if (movel) {
+  <p-sidebar [visible]="!!form" (visibleChange)="!$event && cancelar()" position="bottom" appendTo="body" [blockScroll]="true"
+    styleClass="regra-sheet" [style]="{ height: 'auto', maxHeight: '92dvh' }">
+    <ng-template pTemplate="header">
+      <span class="regras-titulo flex-grow-1">{{ form?.id ? 'Editar regra' : 'Nova regra' }}</span>
+    </ng-template>
+    @if (form) { <ng-container [ngTemplateOutlet]="formulario" /> }
+  </p-sidebar>
+}
+
+<p-menu #menu [model]="itensMenu" [popup]="true" appendTo="body" />
+
+<!-- A frase da regra, a prévia e o conflito (mesmo conteúdo no desktop e no painel do celular) -->
+<ng-template #formulario>
+  @if (form; as f) {
+    <form class="regra-form" [class.regra-form--movel]="movel" (ngSubmit)="salvar()">
+      @if (!movel) { <div class="regra-rotulo">{{ f.id ? 'Editar regra' : 'Nova regra' }}</div> }
+
+      <div class="regra-linha-frase">
+        <span class="regra-palavra">Se</span>
+        <p-dropdown name="campo" [options]="opcoesCampo" optionLabel="label" optionValue="value" [(ngModel)]="f.campo"
+          (onChange)="aoMudarForm()" appendTo="body" styleClass="regra-campo" ariaLabel="Onde procurar" />
+        <p-dropdown name="operador" [options]="opcoesOperador" optionLabel="label" optionValue="value" [(ngModel)]="f.operador"
+          (onChange)="aoMudarForm()" appendTo="body" styleClass="regra-operador" ariaLabel="Como comparar" />
+        <input pInputText name="texto" class="regra-input-texto" maxlength="120" placeholder="Ex.: UBER" aria-label="Texto da regra"
+          [(ngModel)]="f.texto" (ngModelChange)="aoMudarForm()" />
+        @if (!movel) {
+          <span class="regra-palavra">em</span>
+          <p-dropdown name="conta" [options]="contas" optionLabel="label" optionValue="value" [(ngModel)]="f.bancoId" [showClear]="true"
+            placeholder="todas as contas" (onChange)="aoMudarForm()" appendTo="body" styleClass="regra-conta-dd" ariaLabel="Conta" />
+        }
+      </div>
+
+      <div class="regra-linha-frase">
+        <span class="regra-palavra">{{ movel ? 'Então' : 'então' }}</span>
+        @if (!movel) { <span class="mf-hint">categoria</span> }
+        <p-dropdown name="categoria" [options]="categorias" optionLabel="label" optionValue="value" [(ngModel)]="f.categoriaId"
+          [filter]="true" [showClear]="true" placeholder="Categoria" (onChange)="aoMudarForm()" appendTo="body"
+          styleClass="regra-categoria" class="regra-col-cheia" [class.regra-categoria--escolhida]="!!f.categoriaId" ariaLabel="Categoria" />
+        @if (!movel) { <span class="mf-hint">pessoa</span> }
+        <p-dropdown name="pessoa" [options]="pessoas" optionLabel="label" optionValue="value" [(ngModel)]="f.pessoaMovimentacaoId"
+          [filter]="true" [showClear]="true" [placeholder]="movel ? 'Pessoa: não mudar' : 'não mudar'" appendTo="body"
+          styleClass="regra-pessoa" ariaLabel="Pessoa" />
+        @if (movel) {
+          <p-dropdown name="conta" [options]="contas" optionLabel="label" optionValue="value" [(ngModel)]="f.bancoId" [showClear]="true"
+            placeholder="Conta: todas" (onChange)="aoMudarForm()" appendTo="body" styleClass="regra-conta-dd" ariaLabel="Conta" />
+        }
+        @if (!movel) { <span class="mf-hint">tipo</span> }
+        <p-dropdown name="tipo" [options]="tipos" optionLabel="label" optionValue="value" [(ngModel)]="f.tipoMovimentacaoId"
+          [filter]="true" [showClear]="true" [placeholder]="movel ? 'Tipo: não mudar' : 'não mudar'" appendTo="body"
+          styleClass="regra-tipo" class="regra-col-cheia" ariaLabel="Tipo de movimentação" />
+      </div>
+
+      <!-- Prévia ao vivo -->
+      <div class="regra-previa" aria-live="polite">
+        @if (!f.texto || f.texto.trim().length < 2) {
+          <span class="mf-hint"><i class="pi pi-search"></i> Digite pelo menos 2 letras para ver os lançamentos que batem.</span>
+        } @else if (carregandoPrevia && !previa) {
+          <span class="mf-hint"><i class="pi pi-spin pi-spinner"></i> Procurando lançamentos...</span>
+        } @else if (previa && previa.total > 0) {
+          <div class="regra-previa-topo">
+            <span><i class="pi pi-search regra-previa-icone"></i>
+              <strong>{{ previa.total }} {{ previa.total === 1 ? 'lançamento' : 'lançamentos' }}</strong>
+              {{ previa.total === 1 ? 'já existente bate' : 'já existentes batem' }} com a regra
+              @if (previa.semCategoria) { · {{ previa.semCategoria }} {{ previa.semCategoria === 1 ? 'está' : 'estão' }} sem categoria }
+            </span>
+            @if (previa.semCategoria) {
+              <span class="flex align-items-center gap-2">
+                <p-checkbox name="aplicarAgora" [binary]="true" inputId="regra-aplicar" [(ngModel)]="aplicarAgora" />
+                <label for="regra-aplicar">{{ previa.semCategoria === 1 ? "Aplicar ao 1 sem categoria agora" : "Aplicar aos " + previa.semCategoria + " sem categoria agora" }}</label>
+              </span>
+            }
+          </div>
+          <div class="regra-exemplos">
+            @for (ex of previa.exemplos; track ex.id) {
+              <div class="regra-exemplo">
+                <span class="regra-exemplo-data">{{ dataCurta(ex.dataMovimentacao) }}</span>
+                <span class="regra-exemplo-texto">@for (t of trechos(ex); track $index) {@if (t.marcado) {<mark>{{ t.texto }}</mark>} @else {<span>{{ t.texto }}</span>}}</span>
+                @if (ex.categoriaNome) {
+                  <span class="regra-tag regra-tag--categoria">{{ ex.categoriaNome }}</span>
+                } @else {
+                  <span class="regra-tag regra-tag--vazia">Sem categoria</span>
+                }
+                <span class="regra-exemplo-valor">{{ valor(ex) }}</span>
+              </div>
+            }
+            @if (previa.total > previa.exemplos.length) {
+              <div class="regra-exemplo-mais mf-hint">+ {{ previa.total - previa.exemplos.length }} lançamentos</div>
+            }
+          </div>
+        } @else if (previa) {
+          <span class="mf-hint"><i class="pi pi-info-circle"></i> Nenhum lançamento existente bate com a regra. Ela vale para os próximos.</span>
+        }
+      </div>
+
+      <!-- Conflito -->
+      @if (conflito; as c) {
+        <div class="regra-conflito" role="alert">
+          <i class="pi pi-exclamation-triangle"></i>
+          <span>"{{ c.texto }}" está em <strong>{{ c.categoriaNome }}</strong> e também bate com esta regra@if (previa && previa.conflitos > 1) { (e mais {{ previa.conflitos - 1 }})}.
+            A regra não muda lançamentos que já têm categoria. Para separar, crie uma regra mais específica e deixe acima desta.</span>
+        </div>
+      }
+
+      <div class="regra-botoes">
+        <p-button label="Cancelar" severity="secondary" [text]="true" [disabled]="salvando" (onClick)="cancelar()" />
+        <p-button type="submit" [label]="f.id ? 'Salvar regra' : 'Criar regra'" icon="pi pi-check" [loading]="salvando"
+          [disabled]="!podeSalvar" [styleClass]="movel ? 'w-full' : ''" />
+      </div>
+    </form>
+  }
+</ng-template>

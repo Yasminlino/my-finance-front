@@ -186,7 +186,7 @@
                   [attr.aria-label]="'Editar ' + (item.descricao || 'lançamento') + ' de ' + moeda(item.valor)">
                   <span class="flex-grow-1 min-w-0 text-left">
                     <span class="block font-medium white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ item.descricao || '(sem descrição)' }}</span>
-                    <small class="mf-hint">{{ categoria(item) || 'Sem categoria' }}@if (parcela(item); as p) { · {{ p }} }</small>
+                    <small class="mf-hint">{{ categoria(item) || 'Sem categoria' }}@if (parcela(item); as p) { · {{ p }} }@if (acabouDeClassificar(item)) {<span class="extrato-recem"> · acabou de ser classificado</span>}</small>
                     @if (pessoa(item)) {
                       <span class="extrato-pessoa mt-1" [class.extrato-pessoa--eu]="doTitular(item)">{{ pessoa(item) }}</span>
                     } @else if (faltaPessoa(item)) {
@@ -257,6 +257,12 @@
                   <p-dropdown [options]="opcoesCategoria" optionLabel="label" optionValue="value" [(ngModel)]="r.categoriaId"
                     (ngModelChange)="aoEditar()" [filter]="true" [showClear]="true" placeholder="Sem categoria" appendTo="body"
                     styleClass="w-full p-inputtext-sm" [class.campo-alterado]="alterado(item, 'categoriaId')" ariaLabel="Categoria" />
+                  @if (sugestao(item); as s) {
+                    <!-- Card #76: a categoria mais usada nessa descrição -->
+                    <button type="button" class="extrato-sugestao" (click)="usarSugestao(item)" [attr.aria-label]="'Usar a sugestão ' + s.nome">
+                      <i class="pi pi-sparkles"></i> Sugestão: {{ s.nome }}
+                    </button>
+                  }
                 </td>
                 <td>
                   <input pInputText class="w-full p-inputtext-sm" list="extrato-pessoas" [ngModel]="r.nomePessoaTransacao ?? ''"
@@ -290,7 +296,7 @@
             <tr class="extrato-linha">
               <td>
                 <div class="font-medium">{{ item.descricao || '(sem descrição)' }}</div>
-                <small class="mf-hint">{{ categoria(item) || 'Sem categoria' }}</small>
+                <small class="mf-hint">{{ categoria(item) || 'Sem categoria' }}@if (acabouDeClassificar(item)) {<span class="extrato-recem"> · acabou de ser classificado</span>}</small>
               </td>
               <td>
                 @if (pessoa(item)) {
@@ -359,8 +365,19 @@
     <mf-fab rotulo="Novo lançamento" (clique)="showLancamento = true" />
     <app-extrato-editar-sheet [item]="noSheet" [opcoesCategoria]="opcoesCategoria" [opcoesTipoMov]="opcoesTipoMov"
       [nomesPessoas]="nomesPessoas" [pessoas]="pessoasCadastradas" [salvando]="salvandoSheet" [excluindo]="excluindoSheet"
+      [sugestao]="noSheet ? sugestao(noSheet) : null"
       (salvar)="salvarDoSheet($event)" (excluir)="excluirDoSheet($event)" (fechar)="fecharSheet()" />
   }
+
+  @if (showRegras) {
+    <app-modal-regras-classificacao [categorias]="opcoesCategoria" [tipos]="opcoesTipoMov" [pessoas]="opcoesPessoaRegra"
+      [contas]="opcoesConta" [movel]="movel()" [inicial]="regraInicial"
+      (fechado)="showRegras = false" (alterou)="aoClassificar($event)" (regrasMudaram)="regras = $event" />
+  }
+
+  <!-- Card #76: depois de salvar categorias novas -->
+  <app-classificar-sempre [propostas]="propostas" [categorias]="opcoesCategoria" [movel]="movel()" (regraCriada)="aoCriarRegra($event)"
+    (concluiu)="aoConcluirRegras($event)" (editar)="editarProposta($event)" />
 
   <app-modal-importar-extrato *ngIf="showImportar" [bancos]="bancos" [tiposCartao]="tiposCartao"
     (fechado)="aoFecharModal($event)" />

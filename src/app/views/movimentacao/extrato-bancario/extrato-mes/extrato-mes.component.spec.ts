@@ -13,6 +13,7 @@ import { PessoaMovimentacaoService } from 'src/app/core/services/pessoa-moviment
 import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
 import { LarguraTelaService } from 'src/app/core/services/largura-tela.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { RegraClassificacaoService } from 'src/app/core/services/regra-classificacao.service';
 import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
 
 import { ExtratoMesComponent } from './extrato-mes.component';
@@ -39,7 +40,13 @@ describe('ExtratoMesComponent', () => {
     fixture.detectChanges();
   };
 
+  let regras: jasmine.SpyObj<RegraClassificacaoService>;
+
   beforeEach(() => {
+    regras = jasmine.createSpyObj<RegraClassificacaoService>('RegraClassificacaoService', ['listar', 'sugestoes', 'previa']);
+    regras.previa.and.returnValue(of({ total: 0, semCategoria: 0, conflitos: 0, exemplos: [], exemplosConflito: [] }));
+    regras.listar.and.returnValue(of([{ id: 1, texto: 'PADARIA', categoriaId: 5, ativa: true }]));
+    regras.sugestoes.and.returnValue(of([]));
     movel.set(false);
     queryParams = {};
     itens = jasmine.createSpyObj<ExtratoBancarioItemService>('ExtratoBancarioItemService', ['listarDoMes', 'atualizar', 'excluir', 'acertos']);
@@ -80,6 +87,7 @@ describe('ExtratoMesComponent', () => {
         ]) },
         { provide: PessoaMovimentacaoService, useValue: comLista('PessoaMovimentacaoService', 'listar', []) },
         { provide: TipoMovimentacaoService, useValue: comLista('TipoMovimentacaoService', 'listar', []) },
+        { provide: RegraClassificacaoService, useValue: regras },
         { provide: AlertService, useValue: jasmine.createSpyObj('AlertService', ['success', 'error', 'info']) },
         { provide: LarguraTelaService, useValue: { movel } }
       ]
@@ -94,7 +102,7 @@ describe('ExtratoMesComponent', () => {
     expect(el().querySelector('.modo-edicao #extrato-edicao')).not.toBeNull();
     expect(el().querySelector('p-splitbutton')?.textContent).toContain('Novo lançamento');
     expect(comp().itensNovoLancamento.map(i => i.label)).toEqual(
-      ['Importar extrato', 'Importações mensais', 'Relatório mensal', 'Configurar pessoas', 'Atualizar']);
+      ['Importar extrato', 'Importações mensais', 'Relatório mensal', 'Configurar pessoas', 'Regras de classificação', 'Atualizar']);
     expect(el().querySelector('mf-page-header [aria-label="Mais ações"]')).toBeNull();
   });
 
@@ -271,6 +279,46 @@ describe('ExtratoMesComponent', () => {
       expect(itens.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ id: 3, descricao: 'Padaria do bairro', dataMovimentacao: '2026-10-01' }));
       expect(comp().edicao).toBeFalse();
       expect(itens.listarDoMes).toHaveBeenCalledTimes(2);
+    });
+
+    it('categoria nova ao salvar vira a pergunta "Sempre classificar…?" (sem repetir regra que já existe)', () => {
+      ligar();
+      comp().rascunho[1].categoriaId = 9;   // Mercado Extra (Carlos): proposta nova
+      comp().rascunho[3].categoriaId = 5;   // Padaria: já tem regra
+      comp().aoEditar();
+      comp().salvarEdicao();
+
+      expect(comp().propostas).toEqual([{ texto: 'CARLOS', categoriaId: 9, tipoMovimentacaoId: null }]);
+      expect(document.querySelector('app-classificar-sempre')).toBeDefined();
+
+      comp().aoConcluirRegras([1]);
+      expect(comp().propostas).toEqual([]);
+      expect(itens.listarDoMes).toHaveBeenCalledTimes(3);
+      fixture.detectChanges();
+      expect(comp().acabouDeClassificar(dados()[0])).toBeTrue();
+      expect(el().textContent).toContain('acabou de ser classificado');
+
+      // "Editar" do "Criar regra?": abre a tela de regras com a frase preenchida.
+      comp().editarProposta({ texto: 'CARLOS', categoriaId: 9, tipoMovimentacaoId: null });
+      expect(comp().showRegras).toBeTrue();
+      expect(comp().regraInicial).toEqual({ texto: 'CARLOS', categoriaId: 9, tipoMovimentacaoId: null });
+    });
+
+    it('sem categoria mostra a sugestão do histórico; um clique aplica no rascunho', () => {
+      regras.sugestoes.and.returnValue(of([{ itemId: 3, categoriaId: 5, vezes: 4 }]));
+      comp().carregarMes();
+      ligar();
+
+      expect(regras.sugestoes).toHaveBeenCalledWith([2, 3]);
+      expect(comp().sugestao(dados()[2])).toEqual({ categoriaId: 5, nome: 'Casa' });
+      expect(comp().sugestao(dados()[2])).toBe(comp().sugestao(dados()[2])); // mesmo objeto: a folha não reinicia
+      const botao = el().querySelector('.extrato-sugestao') as HTMLButtonElement;
+      expect(botao.textContent).toContain('Casa');
+      botao.click();
+      expect(comp().rascunho[3].categoriaId).toBe(5);
+      expect(comp().alteracoes).toBe(1);
+      fixture.detectChanges();
+      expect(el().querySelector('.extrato-sugestao')).toBeNull();
     });
 
     it('erro ao salvar avisa e continua no Modo edição com o rascunho', () => {

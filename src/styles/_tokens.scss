@@ -59,6 +59,8 @@
 
   /* Forma */
   --mf-radius: 8px;
+  /* Altura do menu do topo (app-header, sticky): o que gruda no topo da página fica logo abaixo dele. */
+  --mf-altura-topo: 56px;
   --mf-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
 
   /* Celular: abaixo de 768px (o md: do PrimeFlex) */

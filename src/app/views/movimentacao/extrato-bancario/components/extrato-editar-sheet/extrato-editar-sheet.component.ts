@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -31,14 +31,17 @@ export class ExtratoEditarSheetComponent implements OnChanges {
   @Input() pessoas: PessoaMovimentacaoDto[] = [];
   @Input() salvando = false;
   @Input() excluindo = false;
+  /** Sugestão de categoria do histórico (card #76); some quando o rascunho já tem categoria. */
+  @Input() sugestao: { categoriaId: number; nome: string } | null = null;
   @Output() salvar = new EventEmitter<ExtratoItemDto>();
   @Output() excluir = new EventEmitter<ExtratoItemDto>();
   @Output() fechar = new EventEmitter<void>();
 
   rascunho: ExtratoItemDto | null = null;
 
-  ngOnChanges(): void {
-    this.rascunho = this.item ? rascunhoDe([this.item])[this.item.id] : null;
+  /** Só um item novo recomeça o rascunho: mudar sugestão, salvando ou listas não apaga o que foi digitado. */
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['item']) this.rascunho = this.item ? rascunhoDe([this.item])[this.item.id] : null;
   }
 
   get aberta(): boolean {
@@ -56,6 +59,10 @@ export class ExtratoEditarSheetComponent implements OnChanges {
 
   get titulo(): string {
     return this.item ? `${this.entrada ? 'Entrada' : 'Saída'} de ${formatCurrencyBR(this.item.valor)}` : '';
+  }
+
+  usarSugestao(): void {
+    if (this.rascunho && this.sugestao) this.rascunho = { ...this.rascunho, categoriaId: this.sugestao.categoriaId };
   }
 
   editarPessoa(nome: string): void {

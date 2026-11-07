@@ -50,6 +50,26 @@ describe('ExtratoEditarSheetComponent', () => {
     expect(item.descricao).toBe('Padaria');
   });
 
+  it('sugestão do histórico aparece sem categoria e um toque aplica', () => {
+    fixture = TestBed.createComponent(ExtratoEditarSheetComponent);
+    fixture.componentRef.setInput('item', item);
+    fixture.componentRef.setInput('sugestao', { categoriaId: 5, nome: 'Casa' });
+    fixture.detectChanges();
+    const botao = el().querySelector('.sheet-sugestao') as HTMLButtonElement;
+    expect(botao.textContent).toContain('Casa');
+    botao.click();
+    expect(comp().rascunho?.categoriaId).toBe(5);
+
+    // Outra entrada mudando (sugestão, salvando) não recomeça o rascunho; só um item novo recomeça.
+    fixture.componentRef.setInput('sugestao', { categoriaId: 5, nome: 'Casa' });
+    fixture.componentRef.setInput('salvando', true);
+    fixture.detectChanges();
+    expect(comp().rascunho?.categoriaId).toBe(5);
+    fixture.componentRef.setInput('item', { ...item });
+    fixture.detectChanges();
+    expect(comp().rascunho?.categoriaId).toBeFalsy();
+  });
+
   it('pessoa cadastrada liga pelo id; fechar avisa a tela; sem item, fechada', () => {
     abrir();
     comp().editarPessoa('giovanne');

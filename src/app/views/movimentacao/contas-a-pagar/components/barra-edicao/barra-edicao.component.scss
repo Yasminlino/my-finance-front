@@ -1,7 +1,8 @@
 :host {
   display: block;
   position: sticky;
-  top: 0;
+  /* Logo abaixo do menu do topo (app-header, também sticky): com top 0 a barra sumia atrás dele ao rolar. */
+  top: var(--mf-altura-topo);
   z-index: 3;
 }
 

@@ -20,6 +20,11 @@ import { BadgeModule } from 'primeng/badge';
 import { SidebarModule } from 'primeng/sidebar';
 import { AcertosComponent } from '../acertos/acertos.component';
 import { FaturaPorPessoaComponent } from '../components/fatura-por-pessoa/fatura-por-pessoa.component';
+import { ClassificarSempreComponent } from '../classificacao/classificar-sempre.component';
+import { ModalRegrasClassificacaoComponent, RegraInicial } from '../classificacao/modal-regras-classificacao.component';
+import { PropostaDeRegra, propostasDeRegra } from '../classificacao/classificacao.regras';
+import { RegraClassificacaoService } from 'src/app/core/services/regra-classificacao.service';
+import { RegraClassificacaoDto } from 'src/app/core/models/regra-classificacao.model';
 import { Table, TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 import { Subject, concat, forkJoin, toArray } from 'rxjs';
@@ -84,7 +89,7 @@ const TIPOS: { label: string; value: TipoFiltro }[] = [
   standalone: true,
   imports: [
     NgIf, FormsModule, ButtonModule, CalendarModule, DropdownModule, InputSwitchModule, SplitButtonModule, IconFieldModule, InputIconModule, InputTextModule, MenuModule,
-    MultiSelectModule, ProgressBarModule, SelectButtonModule, BadgeModule, SidebarModule, AcertosComponent, FaturaPorPessoaComponent, TableModule, TooltipModule,
+    MultiSelectModule, ProgressBarModule, SelectButtonModule, BadgeModule, SidebarModule, AcertosComponent, FaturaPorPessoaComponent, ClassificarSempreComponent, ModalRegrasClassificacaoComponent, TableModule, TooltipModule,
     PageHeaderComponent, StatCardComponent, FilterBarComponent, EmptyStateComponent, ExtratoContasComponent,
     ModalImportarExtratoComponent, ModalLancamentoManualComponent, ModalImportacoesMensaisComponent,
     ModalConfiguracaoVinculoPessoaComponent, BarraEdicaoComponent, TotaisSelecaoComponent, CurrencyInputDirective,
@@ -106,6 +111,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   private readonly alertService = inject(AlertService);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
+  private readonly regraService = inject(RegraClassificacaoService);
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -120,6 +126,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     { label: 'Importações mensais', icon: 'pi pi-download', command: () => (this.showImportacoesMensais = true) },
     { label: 'Relatório mensal', icon: 'pi pi-chart-line', command: () => this.abrirRelatorio() },
     { label: 'Configurar pessoas', icon: 'pi pi-users', command: () => (this.showConfigPessoas = true) },
+    { label: 'Regras de classificação', icon: 'pi pi-bolt', command: () => this.abrirRegras() },
     { label: 'Atualizar', icon: 'pi pi-refresh', command: () => this.carregarMes() }
   ];
   /** Desktop, como em Contas a Pagar: o botão é o lançamento manual; a seta traz Importar e o resto. */
@@ -181,6 +188,14 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   opcoesTipo: { label: string; value: TipoFiltro; contagem: number }[] = TIPOS.map(t => ({ ...t, contagem: 0 }));
   /** Celular: a folha de baixo com Pessoas e Categorias. */
   filtrosAbertos = false;
+  /** Regras de classificação do usuário (card #76): para não propor um texto que já tem regra. */
+  regras: RegraClassificacaoDto[] = [];
+  /** Tela "Regras de classificação" (⋮). */
+  showRegras = false;
+  /** Pessoas cadastradas como opções do campo Pessoa da regra. */
+  opcoesPessoaRegra: { label: string; value: number }[] = [];
+  /** Fila do "Sempre classificar…?" depois de salvar categorias novas. */
+  propostas: PropostaDeRegra[] = [];
   /** Aba aberta: 0 = Lançamentos, 1 = Acertos com pessoas (parte 3). */
   aba = 0;
   /** Selo da aba Acertos: o total que falta receber. */
@@ -223,6 +238,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
         this.itens = Array.isArray(itens) ? itens : [];
         this.loading = false;
         this.originais = new Map(this.itens.map(i => [i.id, i]));
+        this.carregarSugestoes();
         if (this.edicao) this.manterRascunho();
         this.selecao = this.selecao.filter(s => this.originais.has(s.id));
         this.aoSelecionar(this.selecao);
@@ -245,10 +261,14 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
             .map(t => ({ label: t.nomeTipoMovimentacao, value: t.id }));
           this.nomesPessoas = nomesParaSugestao(pessoas ?? []);
           this.bancos = bancos ?? [];
+          this.opcoesConta = this.bancos.map(b => ({ label: b.nomeBanco, value: b.id }));
           this.tiposCartao = tipos ?? [];
           this.categorias = categorias ?? [];
           this.categoriasAtivas = this.categorias.filter(c => c.ativo !== false);
           this.pessoasCadastradas = pessoas ?? [];
+          this.opcoesPessoaRegra = this.pessoasCadastradas
+            .map(p => ({ label: p.ehTitular ? 'Eu' : p.nomePessoa, value: p.id }))
+            .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
           this.recalcular();
         },
         error: () => this.alertService.info('Falha ao carregar bancos, tipos de conta, categorias, pessoas e tipos de movimentação.')
@@ -259,6 +279,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     const bancoId = Number(params.get('bancoId'));
     this.filtro = filtroVazio(bancoId > 0 ? bancoId : null);
     this.carregarMes(this.mesInicial(params.get('month')));
+    this.carregarRegras();
   }
 
   private mesInicial(daUrl: string | null): Date {
@@ -271,6 +292,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   }
 
   carregarMes(data: Date = this.dateFilter): void {
+    if (formatYearMonth(data) !== this.selectedMonth) this.recemClassificados = new Set();
     this.dateFilter = data;
     try { localStorage.setItem(CHAVE_MES, data.toISOString()); } catch { /* só conveniência */ }
     this.selectedMonth = formatYearMonth(data);
@@ -455,8 +477,10 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
       next: () => {
         this.salvando = false;
         this.alertService.success(alterados.length === 1 ? '1 alteração salva.' : `${alterados.length} alterações salvas.`);
+        const propostas = propostasDeRegra(this.itens, alterados, this.regras);
         this.sairDaEdicao();
         this.carregarMes();
+        this.propostas = propostas;
       },
       error: e => {
         this.salvando = false;
@@ -523,7 +547,9 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
         this.salvandoSheet = false;
         this.noSheet = null;
         this.alertService.success('Lançamento salvo.');
+        const propostas = propostasDeRegra(this.itens, [editado], this.regras);
         this.carregarMes();
+        this.propostas = propostas;
       },
       error: e => {
         this.salvandoSheet = false;
@@ -549,6 +575,85 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
         this.alertService.error(extrairMensagemErro(e, 'Erro ao excluir o lançamento.'));
       }
     });
+  }
+
+  /** Fim da fila do "Criar regra?": se uma regra classificou lançamentos, marca e recarrega o mês. */
+  aoConcluirRegras(ids: number[]): void {
+    this.propostas = [];
+    if (ids?.length) this.aoClassificar(ids);
+  }
+
+  /** Contas como opção da regra ("em todas as contas" ou uma). */
+  opcoesConta: { label: string; value: number }[] = [];
+  /** Regra nova já preenchida ao abrir a tela de regras ("Editar" do "Criar regra?"). */
+  regraInicial: RegraInicial | null = null;
+  /** Lançamentos que uma regra acabou de classificar: mostram "acabou de ser classificado" até trocar de mês. */
+  recemClassificados = new Set<number>();
+
+  abrirRegras(inicial: RegraInicial | null = null): void {
+    this.regraInicial = inicial;
+    this.showRegras = true;
+  }
+
+  /** "Editar" do "Criar regra?": abre a tela de regras com a frase da proposta. */
+  editarProposta(p: PropostaDeRegra): void {
+    this.abrirRegras({ texto: p.texto, categoriaId: p.categoriaId, tipoMovimentacaoId: p.tipoMovimentacaoId });
+  }
+
+  aoClassificar(ids: number[]): void {
+    this.recemClassificados = new Set([...this.recemClassificados, ...ids]);
+    this.carregarMes();
+  }
+
+  acabouDeClassificar(item: ExtratoItemDto): boolean {
+    return this.recemClassificados.has(item.id);
+  }
+
+  /** Sugestão de categoria do histórico (card #76), pelo id do lançamento sem categoria. */
+  sugestoes: Record<number, number> = {};
+
+  /** A sugestão de um lançamento ainda sem categoria (no rascunho, quando em edição). */
+  sugestao(item: ExtratoItemDto): { categoriaId: number; nome: string } | null {
+    const atual = this.edicao ? this.rascunho[item.id]?.categoriaId : item.categoriaId;
+    const categoriaId = this.sugestoes[item.id];
+    if (atual || !categoriaId) return null;
+    const nome = this.opcoesCategoria.find(c => c.value === categoriaId)?.label;
+    if (!nome) return null;
+    // Mesmo objeto a cada ciclo: a folha do celular recebe isto como @Input e não deve ver "mudança" à toa.
+    const antes = this.sugestoesProntas.get(item.id);
+    if (antes?.categoriaId === categoriaId && antes.nome === nome) return antes;
+    const nova = { categoriaId, nome };
+    this.sugestoesProntas.set(item.id, nova);
+    return nova;
+  }
+
+  private readonly sugestoesProntas = new Map<number, { categoriaId: number; nome: string }>();
+
+  usarSugestao(item: ExtratoItemDto): void {
+    const s = this.sugestao(item);
+    if (!s || !this.rascunho[item.id]) return;
+    this.rascunho[item.id] = { ...this.rascunho[item.id], categoriaId: s.categoriaId };
+    this.aoEditar();
+  }
+
+  private carregarSugestoes(): void {
+    const ids = this.itens.filter(i => !i.categoriaId).map(i => i.id);
+    if (!ids.length) {
+      this.sugestoes = {};
+      return;
+    }
+    this.regraService.sugestoes(ids).subscribe({
+      next: lista => (this.sugestoes = Object.fromEntries((lista ?? []).map(s => [s.itemId, s.categoriaId]))),
+      error: () => (this.sugestoes = {})
+    });
+  }
+
+  aoCriarRegra(regra: RegraClassificacaoDto): void {
+    this.regras = [...this.regras, regra];
+  }
+
+  private carregarRegras(): void {
+    this.regraService.listar().subscribe({ next: r => (this.regras = Array.isArray(r) ? r : []), error: () => { /* só evita repetir a pergunta */ } });
   }
 
   /** ‹ do cabeçalho, como em Contas a Pagar. */

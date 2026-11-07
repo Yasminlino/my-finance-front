@@ -171,3 +171,23 @@
 
 /* Linha levada pelo lápis, como em Contas a Pagar. */
 .extrato-linha--destacada > td { background: var(--primary-50); }
+
+/* Sugestão de categoria do histórico (card #76): um link discreto embaixo do campo. */
+.extrato-sugestao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--primary-color);
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+/* Card #76: lançamento que uma regra acabou de classificar. */
+.extrato-recem { color: var(--mf-tag-success-fg); }

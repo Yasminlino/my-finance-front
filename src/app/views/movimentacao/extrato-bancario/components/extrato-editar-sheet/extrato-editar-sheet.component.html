@@ -33,6 +33,9 @@
         <label for="sheet-categoria" class="mf-label">Categoria</label>
         <p-dropdown inputId="sheet-categoria" name="categoria" [options]="opcoesCategoria" optionLabel="label" optionValue="value"
           [(ngModel)]="r.categoriaId" [filter]="true" [showClear]="true" placeholder="Sem categoria" appendTo="body" styleClass="w-full" />
+        @if (sugestao && !r.categoriaId) {
+          <button type="button" class="sheet-sugestao" (click)="usarSugestao()"><i class="pi pi-sparkles"></i> Sugestão: {{ sugestao.nome }}</button>
+        }
       </div>
       <div class="flex flex-column gap-1">
         <label for="sheet-tipo" class="mf-label">Tipo de movimentação</label>
