@@ -1,3 +1,4 @@
+import { expandirPartes } from '../../extrato.regras';
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApexChartOptions } from 'src/app/core/components/charts/apex-chart/apex-chart.component';
@@ -90,7 +91,7 @@ export class RelatorioGastosMensaisComponent implements OnInit {
     ultimaBusca(this.mes$, mes => this.extratoItemService.listarDoMes(mes), e => console.error('Erro ao carregar o extrato do mês', e))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(items => {
-        this.itensDoMes = items;
+        this.itensDoMes = expandirPartes(items); // card #76, fase 3: cada parte conta na categoria dela
         this.aplicarFiltros();
       });
 

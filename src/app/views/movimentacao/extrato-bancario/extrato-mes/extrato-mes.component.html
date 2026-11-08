@@ -273,7 +273,8 @@
                 <td>
                   <p-dropdown [options]="opcoesCategoria" optionLabel="label" optionValue="value" [(ngModel)]="r.categoriaId"
                     (ngModelChange)="aoEditar()" [filter]="true" [showClear]="true" placeholder="Sem categoria" appendTo="body"
-                    styleClass="w-full p-inputtext-sm" [class.campo-alterado]="alterado(item, 'categoriaId')" ariaLabel="Categoria" />
+                    styleClass="w-full p-inputtext-sm" [class.campo-alterado]="alterado(item, 'categoriaId')" ariaLabel="Categoria"
+                    [disabled]="estaDividido(item)" />
                   @if (sugestao(item); as s) {
                     <!-- Card #76: a categoria mais usada nessa descrição -->
                     <button type="button" class="extrato-sugestao" (click)="usarSugestao(item)" [attr.aria-label]="'Usar a sugestão ' + s.nome">
@@ -305,7 +306,7 @@
                 </td>
                 <td>
                   <input pInputText type="text" inputmode="decimal" currencyInput class="w-full p-inputtext-sm text-right"
-                    [(ngModel)]="r.valor" (ngModelChange)="aoEditar()" [class.campo-alterado]="alterado(item, 'valor')"
+                    [(ngModel)]="r.valor" [disabled]="estaDividido(item)" (ngModelChange)="aoEditar()" [class.campo-alterado]="alterado(item, 'valor')"
                     [class.extrato-valor--entrada]="entrada(item)" aria-label="Valor" />
                 </td>
               </tr>
@@ -394,7 +395,11 @@
     <app-extrato-editar-sheet [item]="noSheet" [opcoesCategoria]="opcoesCategoria" [opcoesTipoMov]="opcoesTipoMov"
       [nomesPessoas]="nomesPessoas" [pessoas]="pessoasCadastradas" [salvando]="salvandoSheet" [excluindo]="excluindoSheet"
       [sugestao]="noSheet ? sugestao(noSheet) : null"
-      (salvar)="salvarDoSheet($event)" (excluir)="excluirDoSheet($event)" (fechar)="fecharSheet()" />
+      (salvar)="salvarDoSheet($event)" (excluir)="excluirDoSheet($event)" (fechar)="fecharSheet()" (dividir)="abrirDivisao($event)" />
+  }
+
+  @if (emDivisao) {
+    <app-dividir-lancamento [item]="emDivisao" [categorias]="opcoesCategoria" [pessoas]="opcoesPessoaRegra" (fechado)="aoFecharDivisao($event)" />
   }
 
   @if (showRegras) {

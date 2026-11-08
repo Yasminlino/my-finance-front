@@ -20,6 +20,30 @@ export function semPessoa(item: Pick<ExtratoItemDto, 'pessoaMovimentacaoId' | 'n
 
 const centavos = (valor: number) => Math.round(valor * 100) / 100;
 
+/** Lançamento dividido em partes (card #76, fase 3). */
+export function dividido(item: Pick<ExtratoItemDto, 'partes'>): boolean {
+  return !!item.partes?.length;
+}
+
+/** Sem categoria: dividido, conta se alguma parte ficou sem. */
+export function semCategoria(item: Pick<ExtratoItemDto, 'categoriaId' | 'partes'>): boolean {
+  return dividido(item) ? item.partes!.some(p => !p.categoriaId) : item.categoriaId == null;
+}
+
+/** Para relatórios: cada parte vale como um lançamento da categoria dela. Só leitura. */
+export function expandirPartes(itens: readonly ExtratoItemDto[]): ExtratoItemDto[] {
+  return itens.flatMap(item => !dividido(item) ? [item] : item.partes!.map(p => ({
+    ...item,
+    valor: Number(p.valor),
+    categoriaId: p.categoriaId ?? null,
+    categoriaNome: p.categoriaNome ?? null,
+    categoria: p.categoriaId
+      ? { id: p.categoriaId, nome: p.categoriaNome ?? '', subcategoria: '', naturezaOperacao: p.categoriaNaturezaOperacao ?? undefined } as ExtratoItemDto['categoria']
+      : null,
+    partes: []
+  })));
+}
+
 export interface ContaDoMes {
   bancoId: number;
   nome: string;
@@ -122,10 +146,12 @@ export function filtrarExtrato(itens: readonly ExtratoItemDto[], filtro: FiltroE
     .filter(i => filtro.bancoId === null || i.bancoId === filtro.bancoId)
     .filter(i => filtro.tipo === 'todos' || (filtro.tipo === 'entradas') === ehEntrada(i))
     .filter(i => !busca || normalizarNome(i.descricao).includes(busca) || normalizarNome(nomeDaPessoa(i)).includes(busca))
-    .filter(i => !pessoas.length || pessoas.includes(normalizarNome(nomeDaPessoa(i))))
-    .filter(i => !filtro.categorias.length || (i.categoriaId != null && filtro.categorias.includes(i.categoriaId)))
+    .filter(i => !pessoas.length || pessoas.includes(normalizarNome(nomeDaPessoa(i)))
+      || !!i.partes?.some(p => pessoas.includes(normalizarNome(p.pessoaNome))))
+    .filter(i => !filtro.categorias.length || (i.categoriaId != null && filtro.categorias.includes(i.categoriaId))
+      || !!i.partes?.some(p => p.categoriaId != null && filtro.categorias.includes(p.categoriaId)))
     .filter(i => filtro.pendencia !== 'sem-pessoa' || (!ehEntrada(i) && semPessoa(i)))
-    .filter(i => filtro.pendencia !== 'sem-categoria' || i.categoriaId == null)
+    .filter(i => filtro.pendencia !== 'sem-categoria' || semCategoria(i))
     .filter(i => filtro.valorMin == null || Number(i.valor) >= filtro.valorMin)
     .filter(i => filtro.valorMax == null || Number(i.valor) <= filtro.valorMax)
     .sort(maisRecentePrimeiro);
@@ -158,7 +184,7 @@ export function cardsDoExtrato(itens: readonly ExtratoItemDto[]): CardsExtrato {
     saidas: centavos(itens.filter(i => !ehEntrada(i)).reduce((s, i) => s + Number(i.valor), 0)),
     entradas: centavos(itens.filter(ehEntrada).reduce((s, i) => s + Number(i.valor), 0)),
     semPessoa: itens.filter(i => !ehEntrada(i) && semPessoa(i)).length,
-    semCategoria: itens.filter(i => i.categoriaId == null).length
+    semCategoria: itens.filter(semCategoria).length
   };
 }
 
@@ -261,10 +287,12 @@ export function faturaPorPessoa(
   const saidas = itens.filter(i => !ehEntrada(i));
   const porPessoa = new Map<number, number>();
   let minhas = 0;
-  for (const i of saidas) {
-    const id = i.pessoaMovimentacaoId;
-    if (id != null && dosAcertos.has(id)) porPessoa.set(id, (porPessoa.get(id) ?? 0) + Number(i.valor));
-    else minhas += Number(i.valor);
+  const pedacos = saidas.flatMap(i => dividido(i)
+    ? i.partes!.map(p => ({ id: p.pessoaMovimentacaoId ?? null, valor: Number(p.valor) }))
+    : [{ id: i.pessoaMovimentacaoId ?? null, valor: Number(i.valor) }]);
+  for (const { id, valor } of pedacos) {
+    if (id != null && dosAcertos.has(id)) porPessoa.set(id, (porPessoa.get(id) ?? 0) + valor);
+    else minhas += valor;
   }
   const lista = [...porPessoa.entries()]
     .map(([pessoaId, valor]) => ({ pessoaId, nome: dosAcertos.get(pessoaId)!, valor: centavos(valor) }))

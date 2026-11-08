@@ -14,7 +14,7 @@
         <div class="col-6 flex flex-column gap-1">
           <label for="sheet-valor" class="mf-label">Valor</label>
           <input pInputText type="text" id="sheet-valor" name="valor" inputmode="decimal" currencyInput class="w-full text-right"
-            [(ngModel)]="r.valor" [class.extrato-valor--entrada]="entrada" />
+            [(ngModel)]="r.valor" [class.extrato-valor--entrada]="entrada" [disabled]="dividido" />
         </div>
       </div>
       <div class="flex flex-column gap-1">
@@ -32,7 +32,7 @@
       <div class="flex flex-column gap-1">
         <label for="sheet-categoria" class="mf-label">Categoria</label>
         <p-dropdown inputId="sheet-categoria" name="categoria" [options]="opcoesCategoria" optionLabel="label" optionValue="value"
-          [(ngModel)]="r.categoriaId" [filter]="true" [showClear]="true" placeholder="Sem categoria" appendTo="body" styleClass="w-full" />
+          [(ngModel)]="r.categoriaId" [filter]="true" [showClear]="true" placeholder="Sem categoria" appendTo="body" styleClass="w-full" [disabled]="dividido" />
         @if (sugestao && !r.categoriaId) {
           <button type="button" class="sheet-sugestao" (click)="usarSugestao()"><i class="pi pi-sparkles"></i> Sugestão: {{ sugestao.nome }}</button>
         }
@@ -57,6 +57,10 @@
       <div class="flex gap-2 pt-2">
         <p-button label="Excluir" icon="pi pi-trash" severity="danger" [outlined]="true" [loading]="excluindo"
           [disabled]="salvando || excluindo" (onClick)="item && excluir.emit(item)" />
+        @if (!entrada) {
+          <p-button [label]="dividido ? 'Editar divisão' : 'Dividir'" icon="pi pi-percentage" severity="secondary" [outlined]="true"
+            [disabled]="salvando || excluindo" (onClick)="item && dividir.emit(item)" />
+        }
         <span class="flex-grow-1"></span>
         <p-button label="Salvar" icon="pi pi-check" type="submit" [loading]="salvando" [disabled]="!alterou || salvando || excluindo" />
       </div>

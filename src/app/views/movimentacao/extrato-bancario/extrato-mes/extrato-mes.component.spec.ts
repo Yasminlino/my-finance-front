@@ -227,7 +227,7 @@ describe('ExtratoMesComponent', () => {
     itens.excluir.and.returnValue(of({}));
     spyOn(comp().menuLinha!, 'toggle');
     comp().abrirMenuLinha(new MouseEvent('click'), dados()[2]);
-    await comp().itensMenuLinha[0].command!({});
+    await comp().itensMenuLinha.find(i => i.label === 'Excluir')!.command!({});
     expect(confirmacao.confirmar).toHaveBeenCalled();
     expect(itens.excluir).toHaveBeenCalledWith(3);
   });

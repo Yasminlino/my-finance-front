@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { ExtratoItemDto } from '../models/extrato.model';
+import { ExtratoItemDto, ExtratoItemParteDto } from '../models/extrato.model';
 import { AcertosDto, FiltroAcertos } from '../models/acertos.model';
 
 @Injectable({ providedIn: 'root' })
@@ -27,6 +27,11 @@ export class ExtratoBancarioItemService {
 
   criar(dto: ExtratoItemDto): Observable<unknown> {
     return this.api.post('/CreateExtratoBancarioItem', dto);
+  }
+
+  /** Divide o lançamento nestas partes; lista vazia desfaz (card #76, fase 3). */
+  dividir(id: number, partes: ExtratoItemParteDto[]): Observable<unknown> {
+    return this.api.put(`/DividirExtratoBancarioItem/${id}`, partes);
   }
 
   atualizar(dto: ExtratoItemDto): Observable<unknown> {

@@ -3,8 +3,41 @@ import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 import {
   FiltroExtrato, agruparPorDia, alteracoesDoRascunho, aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehEntrada,
-  ehDoTitular, faturaPorPessoa, filtrarExtrato, grupoUnico, nomeDaPessoa, nomesParaSugestao, ordenarExtrato, rascunhoDe, semPessoa
+  ehDoTitular, expandirPartes, faturaPorPessoa, filtrarExtrato, grupoUnico, nomeDaPessoa, nomesParaSugestao, ordenarExtrato, rascunhoDe, semPessoa
 } from './extrato.regras';
+
+describe('lançamento dividido (card #76, fase 3)', () => {
+  const dividida = (): ExtratoItemDto => item(1, '2026-10-05', 300, {
+    partes: [{ valor: 200, categoriaId: 8, categoriaNome: 'Alimentação', categoriaNaturezaOperacao: 1 }, { valor: 100, categoriaId: 9, categoriaNome: 'Beleza', pessoaMovimentacaoId: 7, pessoaNome: 'CARLOS' }]
+  });
+  const base: FiltroExtrato = { bancoId: null, tipo: 'todos', busca: '', pessoas: [], categorias: [], pendencia: null };
+
+  it('não conta como sem categoria, a não ser que falte em alguma parte', () => {
+    expect(cardsDoExtrato([dividida()]).semCategoria).toBe(0);
+    const faltando = item(2, '2026-10-05', 10, { partes: [{ valor: 5, categoriaId: 8 }, { valor: 5 }] });
+    expect(cardsDoExtrato([faltando]).semCategoria).toBe(1);
+    expect(cardsDoExtrato([dividida()]).saidas).toBe(300);
+  });
+
+  it('o filtro acha pela categoria e pela pessoa das partes', () => {
+    expect(filtrarExtrato([dividida()], { ...base, categorias: [9] }).length).toBe(1);
+    expect(filtrarExtrato([dividida()], { ...base, pessoas: ['Carlos'] }).length).toBe(1);
+    expect(filtrarExtrato([dividida()], { ...base, categorias: [99] }).length).toBe(0);
+  });
+
+  it('relatório: cada parte vale na categoria dela; a soma não muda', () => {
+    const lista = expandirPartes([dividida(), item(2, '2026-10-05', 10)]);
+    expect(lista.map(i => [i.categoria?.nome, i.valor])).toEqual([['Alimentação', 200], ['Beleza', 100], [undefined, 10]]);
+    expect(lista[0].categoria?.naturezaOperacao).toBe(1);
+  });
+
+  it('fatura por pessoa: só a parte da pessoa é dela', () => {
+    const f = faturaPorPessoa([dividida()], [{ id: 7, nomePessoa: 'CARLOS', entraNosAcertos: true }]);
+    expect(f.outras).toBe(100);
+    expect(f.minhas).toBe(200);
+    expect(f.total).toBe(300);
+  });
+});
 
 describe('ordenar e filtrar por valor, como em Contas a Pagar', () => {
   const lista = (): ExtratoItemDto[] => [

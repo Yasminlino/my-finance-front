@@ -3,6 +3,19 @@ import { CategoriaDto } from './categoria.model';
 import { PessoaMovimentacaoDto } from './pessoa-movimentacao.model';
 import { TipoMovimentacaoDto } from './tipo-movimentacao.model';
 
+/** Parte de um lançamento dividido (card #76, fase 3). Sem pessoa, é do dono. */
+export interface ExtratoItemParteDto {
+  id?: number;
+  valor: number;
+  categoriaId?: number | null;
+  categoriaNome?: string | null;
+  categoriaNaturezaOperacao?: number | null;
+  tipoMovimentacaoId?: number | null;
+  pessoaMovimentacaoId?: number | null;
+  pessoaNome?: string | null;
+  descricao?: string | null;
+}
+
 /** ExtratoBancarioItemDTO da API (JSON em camelCase). Data é "YYYY-MM-DD" (DateOnly). */
 export interface ExtratoItemDto {
   /** Ausente num item novo. */
@@ -44,6 +57,8 @@ export interface ExtratoItemDto {
   alteraVinculoPessoa?: boolean;
   /** Pagamento (Entrada) que abate uma compra (Saída) da mesma pessoa; null = saldo geral (card #45, parte 3). */
   abateItemId?: number | null;
+  /** Só leitura aqui: grava em /DividirExtratoBancarioItem. Vazio = não dividido. */
+  partes?: ExtratoItemParteDto[];
 
   /** Navegações que a API devolve na leitura (o relatório de gastos agrupa por elas). */
   banco?: Pick<BancoDto, 'id' | 'nomeBanco'> | null;

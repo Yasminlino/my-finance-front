@@ -61,6 +61,7 @@ import { StatCardComponent } from 'src/app/shared/ui/stat-card/stat-card.compone
 import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
 import { ExtratoContasComponent } from '../components/extrato-contas/extrato-contas.component';
 import { ExtratoEditarSheetComponent } from '../components/extrato-editar-sheet/extrato-editar-sheet.component';
+import { DividirLancamentoComponent } from '../components/dividir-lancamento/dividir-lancamento.component';
 import { FabComponent } from 'src/app/shared/ui/fab/fab.component';
 import { ModalConfiguracaoVinculoPessoaComponent } from '../components/modal-configuracao-vinculo-pessoa/modal-configuracao-vinculo-pessoa.component';
 import { ModalImportacoesMensaisComponent } from '../components/modal-importacoes-mensais/modal-importacoes-mensais.component';
@@ -69,7 +70,7 @@ import { ModalLancamentoManualComponent } from '../components/modal-lancamento-m
 import {
   CampoEditavel, CardsExtrato, ContaDoMes, FaturaPorPessoa, FiltroExtrato, GrupoDoDia, Pendencia, TipoFiltro, agruparPorDia, alteracoesDoRascunho,
   aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehDoTitular, ehEntrada, faturaPorPessoa, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa,
-  OPCOES_ORDEM_EXTRATO, OrdemExtrato, grupoUnico, ordenarExtrato
+  dividido, OPCOES_ORDEM_EXTRATO, OrdemExtrato, grupoUnico, ordenarExtrato
 } from '../extrato.regras';
 
 /** Mês escolhido por último, como no resumo antigo. */
@@ -96,7 +97,7 @@ const TIPOS: { label: string; value: TipoFiltro }[] = [
     PageHeaderComponent, StatCardComponent, FilterBarComponent, EmptyStateComponent, ExtratoContasComponent,
     ModalImportarExtratoComponent, ModalLancamentoManualComponent, ModalImportacoesMensaisComponent,
     ModalConfiguracaoVinculoPessoaComponent, BarraEdicaoComponent, TotaisSelecaoComponent, CurrencyInputDirective,
-    ExtratoEditarSheetComponent, FabComponent
+    ExtratoEditarSheetComponent, FabComponent, DividirLancamentoComponent
   ],
   templateUrl: './extrato-mes.component.html',
   styleUrls: ['./extrato-mes.component.scss']
@@ -180,6 +181,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   @ViewChild('menuLinha') menuLinha?: { toggle(e: Event): void };
   private linhaDoMenu: ExtratoItemDto | null = null;
   readonly itensMenuLinha: MenuItem[] = [
+    { label: 'Dividir', icon: 'pi pi-percentage', command: () => (this.linhaDoMenu ? this.abrirDivisao(this.linhaDoMenu) : undefined) },
     { label: 'Excluir', icon: 'pi pi-trash', command: () => (this.linhaDoMenu ? this.excluirDoSheet(this.linhaDoMenu) : undefined) }
   ];
   /** Celular: o lançamento aberto na folha de baixo. */
@@ -562,7 +564,26 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
 
   abrirMenuLinha(evento: Event, item: ExtratoItemDto): void {
     this.linhaDoMenu = item;
+    this.itensMenuLinha[0].visible = !ehEntrada(item);   // só saída se divide
+    this.itensMenuLinha[0].label = dividido(item) ? 'Editar divisão' : 'Dividir';
     this.menuLinha?.toggle(evento);
+  }
+
+  /** Lançamento aberto no editor de partes (card #76, fase 3). */
+  emDivisao: ExtratoItemDto | null = null;
+
+  abrirDivisao(item: ExtratoItemDto): void {
+    this.noSheet = null;
+    this.emDivisao = item;
+  }
+
+  aoFecharDivisao(gravou: boolean): void {
+    this.emDivisao = null;
+    if (gravou) this.carregarMes();
+  }
+
+  estaDividido(item: ExtratoItemDto): boolean {
+    return dividido(item);
   }
 
   abrirNoSheet(item: ExtratoItemDto): void {
@@ -720,6 +741,10 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   }
 
   categoria(item: ExtratoItemDto): string {
+    if (dividido(item)) {
+      const nomes = [...new Set(item.partes!.map(p => p.categoriaNome || 'Sem categoria'))];
+      return 'Dividido: ' + nomes.join(', ');
+    }
     return item.categoriaNome ?? item.categoria?.nome ?? '';
   }
 

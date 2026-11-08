@@ -129,3 +129,17 @@
   body { background: none; }
   .shadow-1, .shadow-2 { box-shadow: none !important; }
 }
+
+/* Celular: nome longo na lista não pode deixar o painel mais largo que a tela (alargava a página e empurrava as janelas). */
+@media (max-width: 767.98px) {
+  .p-dropdown-panel,
+  .p-multiselect-panel {
+    max-width: calc(100vw - 1rem);
+  }
+
+  .p-dropdown-panel .p-dropdown-item,
+  .p-multiselect-panel .p-multiselect-item {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
