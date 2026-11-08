@@ -18,7 +18,8 @@ describe('ModalConfiguracaoVinculoPessoaComponent', () => {
   let pessoas: jasmine.SpyObj<PessoaMovimentacaoService>;
 
   beforeEach(() => {
-    pessoas = jasmine.createSpyObj<PessoaMovimentacaoService>('PessoaMovimentacaoService', ['listar', 'criar', 'atualizar', 'excluir']);
+    pessoas = jasmine.createSpyObj<PessoaMovimentacaoService>('PessoaMovimentacaoService', ['listar', 'criar', 'atualizar', 'excluir', 'estabelecimentos', 'removerEstabelecimentos']);
+    pessoas.estabelecimentos.and.returnValue(of([]));
     pessoas.listar.and.returnValue(of([]));
     pessoas.criar.and.returnValue(of({ id: 1, nomePessoa: '', categoriaId: null, tipoMovimentacaoId: null }));
     pessoas.atualizar.and.returnValue(of({ id: 7, nomePessoa: '', categoriaId: null, tipoMovimentacaoId: null }));
@@ -89,5 +90,23 @@ describe('ModalConfiguracaoVinculoPessoaComponent', () => {
     expect(carlos.id).toBe(7);
     expect(fixture.componentInstance.bloquear(eu)).toBeTrue();
     expect(fixture.componentInstance.bloquear(carlos)).toBeFalse();
+  });
+
+  it('"Limpar estabelecimentos" abre a lista; se apagou, recarrega e avisa a tela ao fechar', () => {
+    const fechado = jasmine.createSpy('closed');
+    fixture.componentInstance.closed.subscribe(fechado);
+    const botao = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('Limpar estabelecimentos')) as HTMLButtonElement;
+    botao.click();
+    fixture.detectChanges();
+    expect(document.querySelector('app-limpar-estabelecimentos')).not.toBeNull();
+
+    pessoas.listar.calls.reset();
+    fixture.componentInstance.aoFecharLimpeza(3);
+    fixture.detectChanges();
+    expect(document.querySelector('app-limpar-estabelecimentos')).toBeNull();
+    expect(pessoas.listar).toHaveBeenCalled();
+
+    fixture.componentInstance.close(false);
+    expect(fechado).toHaveBeenCalledWith(true);
   });
 });

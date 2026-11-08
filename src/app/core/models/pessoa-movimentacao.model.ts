@@ -18,3 +18,6 @@ export type PessoaMovimentacaoDto = {
 };
 
 export type PessoaMovimentacaoCreateDto = Omit<PessoaMovimentacaoDto, 'id'>;
+
+/** Pessoa que parece estabelecimento (card #76, fase 2): candidata à limpeza, com quantos lançamentos tem. */
+export type PessoaEstabelecimentoDto = { id: number; nomePessoa: string; lancamentos: number };

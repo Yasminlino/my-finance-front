@@ -33,6 +33,10 @@
   color: var(--mf-tag-info-fg);
   font-size: 0.8rem;
   white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
 }
 
 /* O "Eu" (dono do cartão) em cinza, como no mockup; não é pendência. */
@@ -72,18 +76,31 @@
 .extrato-abas {
   display: flex;
   gap: 0.5rem;
-  border-bottom: 1px solid var(--surface-border);
+  /* Linha por sombra (e não borda): o sublinhado da aba ativa fica por cima sem sair da faixa, que rola em tela estreita. */
+  box-shadow: inset 0 -1px 0 var(--surface-border);
   margin-bottom: 1rem;
+  /* Sem isto, em celular pequeno as abas alargam a página inteira e cortam o conteúdo à direita. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+
+  @media (max-width: 767.98px) {
+    gap: 0;
+
+    .extrato-aba { padding: 0.75rem 0.5rem; }
+  }
 }
 
 .extrato-aba {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   border: 0;
   border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
   background: none;
   font: inherit;
   font-weight: 600;

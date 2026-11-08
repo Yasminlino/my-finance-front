@@ -5,7 +5,14 @@
   </app-data-grid>
 
   <ng-template pTemplate="footer">
+    <!-- Card #76, fase 2: apagar os nomes que a importação antiga cadastrou como pessoa -->
+    <p-button label="Limpar estabelecimentos" icon="pi pi-eraser" severity="secondary" [text]="true" styleClass="mr-auto"
+      (onClick)="showLimpar = true" />
     <p-button label="Fechar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
     <p-button label="Concluir" icon="pi pi-check" (onClick)="onSaveAll()" />
   </ng-template>
 </p-dialog>
+
+@if (showLimpar) {
+  <app-limpar-estabelecimentos (fechado)="aoFecharLimpeza($event)" />
+}

@@ -13,6 +13,7 @@ import { ExibirCamposConfig } from 'src/app/shared/models/utils/grid-config.cons
 import { PessoaMovimentacaoDto } from 'src/app/core/models/pessoa-movimentacao.model';
 import { concat, finalize, forkJoin, toArray } from 'rxjs';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
+import { LimparEstabelecimentosComponent } from '../limpar-estabelecimentos/limpar-estabelecimentos.component';
 
 
 /** Linha do grid: a pessoa, com o "Eu" travado (somenteLeitura esconde o excluir e trava a linha). */
@@ -24,7 +25,7 @@ const SIM_NAO: GridColumnOption[] = [{ label: 'Sim', value: true }, { label: 'N�
 @Component({
   selector: 'app-modal-configuracao-vinculo-pessoa',
   standalone: true,
-  imports: [SharedModule, DataGridComponent],
+  imports: [SharedModule, DataGridComponent, LimparEstabelecimentosComponent],
   templateUrl: './modal-configuracao-vinculo-pessoa.component.html',
 })
 export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
@@ -148,7 +149,20 @@ export class ModalConfiguracaoVinculoPessoaComponent implements OnInit {
   }
 
   close(saved = false) {
-    this.closed.emit(saved);
+    // Uma limpeza já mudou os lançamentos (perderam o vínculo): a tela de trás recarrega mesmo se cancelar aqui.
+    this.closed.emit(saved || this.limpou);
+  }
+
+  /** "Limpar estabelecimentos" (card #76, fase 2). */
+  showLimpar = false;
+  private limpou = false;
+
+  aoFecharLimpeza(apagadas: number): void {
+    this.showLimpar = false;
+    if (apagadas > 0) {
+      this.limpou = true;
+      this.load();
+    }
   }
   onSaveAll() {
     this.grid?.onSaveAll();
