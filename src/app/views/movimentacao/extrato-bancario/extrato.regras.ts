@@ -69,7 +69,20 @@ export interface FiltroExtrato {
   /** Ids de categoria; vazio = todas. */
   categorias: number[];
   pendencia: Pendencia | null;
+  /** Faixa de valor, como em Contas a Pagar; null ou ausente = sem limite. */
+  valorMin?: number | null;
+  valorMax?: number | null;
 }
+
+/** "Ordenar por", como em Contas a Pagar; data (mais recente primeiro) é o padrão. */
+export type OrdemExtrato = 'data' | 'entradas' | 'valor' | 'nome';
+
+export const OPCOES_ORDEM_EXTRATO: { label: string; value: OrdemExtrato }[] = [
+  { label: 'Data', value: 'data' },
+  { label: 'Entradas primeiro', value: 'entradas' },
+  { label: 'Maior valor', value: 'valor' },
+  { label: 'Nome', value: 'nome' }
+];
 
 /** Nome gravado da pessoa "Eu" (a API grava os nomes em maiúsculas). */
 export const NOME_TITULAR = 'EU';
@@ -113,7 +126,23 @@ export function filtrarExtrato(itens: readonly ExtratoItemDto[], filtro: FiltroE
     .filter(i => !filtro.categorias.length || (i.categoriaId != null && filtro.categorias.includes(i.categoriaId)))
     .filter(i => filtro.pendencia !== 'sem-pessoa' || (!ehEntrada(i) && semPessoa(i)))
     .filter(i => filtro.pendencia !== 'sem-categoria' || i.categoriaId == null)
+    .filter(i => filtro.valorMin == null || Number(i.valor) >= filtro.valorMin)
+    .filter(i => filtro.valorMax == null || Number(i.valor) <= filtro.valorMax)
     .sort(maisRecentePrimeiro);
+}
+
+/** O nome usado em "Ordenar por: Nome": a pessoa/estabelecimento ou, sem ele, a descrição. */
+const nomeParaOrdem = (i: ExtratoItemDto) => nomeDaPessoa(i) || (i.descricao ?? '').trim();
+
+/** "Ordenar por". Devolve uma cópia; no empate fica a data mais recente (a ordem em que vieram). */
+export function ordenarExtrato(itens: readonly ExtratoItemDto[], ordem: OrdemExtrato): ExtratoItemDto[] {
+  const copia = [...itens];
+  switch (ordem) {
+    case 'entradas': return copia.sort((a, b) => Number(ehEntrada(b)) - Number(ehEntrada(a)));
+    case 'valor': return copia.sort((a, b) => Number(b.valor) - Number(a.valor));
+    case 'nome': return copia.sort((a, b) => nomeParaOrdem(a).localeCompare(nomeParaOrdem(b), 'pt-BR'));
+    default: return copia;
+  }
 }
 
 export interface CardsExtrato {
@@ -161,6 +190,13 @@ export function agruparPorDia(itens: readonly ExtratoItemDto[]): GrupoDoDia[] {
     grupo.saldo = centavos(grupo.saldo + (ehEntrada(item) ? 1 : -1) * Number(item.valor));
   }
   return grupos;
+}
+
+/** Fora da ordem por data os dias não fazem sentido: um grupo só, na ordem pedida. */
+export function grupoUnico(itens: readonly ExtratoItemDto[], titulo: string): GrupoDoDia[] {
+  if (!itens.length) return [];
+  const saldo = centavos(itens.reduce((s, i) => s + (ehEntrada(i) ? 1 : -1) * Number(i.valor), 0));
+  return [{ data: 'ordenado', titulo, saldo, itens: [...itens] }];
 }
 
 /** Campos que o Modo edição deixa mudar. */

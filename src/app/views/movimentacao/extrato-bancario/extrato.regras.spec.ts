@@ -3,8 +3,39 @@ import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 import {
   FiltroExtrato, agruparPorDia, alteracoesDoRascunho, aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehEntrada,
-  ehDoTitular, faturaPorPessoa, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa
+  ehDoTitular, faturaPorPessoa, filtrarExtrato, grupoUnico, nomeDaPessoa, nomesParaSugestao, ordenarExtrato, rascunhoDe, semPessoa
 } from './extrato.regras';
+
+describe('ordenar e filtrar por valor, como em Contas a Pagar', () => {
+  const lista = (): ExtratoItemDto[] => [
+    item(1, '2026-10-05', 30, { nomePessoaTransacao: 'ZEBRA' }),
+    item(2, '2026-10-04', 100, { tipoLancamento: 'Entrada', nomePessoaTransacao: 'ANA' }),
+    item(3, '2026-10-03', 50, { descricao: 'Mercado' })
+  ];
+  const ids = (l: ExtratoItemDto[]) => l.map(i => i.id);
+
+  it('filtra pela faixa de valor', () => {
+    const base: FiltroExtrato = { bancoId: null, tipo: 'todos', busca: '', pessoas: [], categorias: [], pendencia: null };
+    expect(ids(filtrarExtrato(lista(), { ...base, valorMin: 40 }))).toEqual([2, 3]);
+    expect(ids(filtrarExtrato(lista(), { ...base, valorMin: 40, valorMax: 60 }))).toEqual([3]);
+  });
+
+  it('ordena por data (padrão), entradas primeiro, maior valor e nome, sem mexer na original', () => {
+    const original = lista();
+    expect(ids(ordenarExtrato(original, 'data'))).toEqual([1, 2, 3]);
+    expect(ids(ordenarExtrato(original, 'entradas'))).toEqual([2, 1, 3]);
+    expect(ids(ordenarExtrato(original, 'valor'))).toEqual([2, 3, 1]);
+    expect(ids(ordenarExtrato(original, 'nome'))).toEqual([2, 3, 1]);
+    expect(ids(original)).toEqual([1, 2, 3]);
+  });
+
+  it('fora da ordem por data vira um grupo só, com o saldo de tudo', () => {
+    const [grupo] = grupoUnico(lista(), 'Maior valor');
+    expect(grupo.titulo).toBe('Maior valor');
+    expect(grupo.saldo).toBe(20);
+    expect(grupoUnico([], 'x')).toEqual([]);
+  });
+});
 
 const item = (id: number, data: string, valor: number, extra: Partial<ExtratoItemDto> = {}): ExtratoItemDto => ({
   id, dataMovimentacao: data, valor, tipoLancamento: 'Saída', bancoId: 1, descricao: `Compra ${id}`, ...extra

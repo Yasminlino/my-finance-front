@@ -321,6 +321,33 @@ describe('ExtratoMesComponent', () => {
       expect(el().querySelector('.extrato-sugestao')).toBeNull();
     });
 
+    it('ordenar por maior valor tira os dias; voltar para data traz de volta; limpar filtros não mexe na ordem', () => {
+      comp().ordem = 'valor';
+      comp().aoMudarFiltro();
+      expect(comp().exibidos.map(i => i.id)).toEqual([2, 1, 3]);
+      expect(comp().diasMovel.length).toBe(1);
+      expect(comp().diasMovel[0].titulo).toBe('Maior valor');
+      fixture.detectChanges();
+      expect(el().querySelectorAll('.extrato-dia').length).toBe(0);
+      expect(el().querySelectorAll('tbody tr').length).toBe(3);
+
+      comp().filtro = { ...comp().filtro, valorMin: 50 };
+      comp().aoMudarFiltro();
+      expect(comp().exibidos.map(i => i.id)).toEqual([2, 1]);
+      expect(comp().temFiltro).toBeTrue();
+      expect(comp().rotuloValor).toContain('a partir de');
+
+      comp().limparFiltros();
+      expect(comp().ordem).toBe('valor');
+      expect(comp().exibidos.length).toBe(3);
+
+      comp().ordem = 'data';
+      comp().aoMudarFiltro();
+      expect(comp().diasMovel.length).toBe(2);
+      fixture.detectChanges();
+      expect(el().querySelectorAll('.extrato-dia').length).toBe(2);
+    });
+
     it('erro ao salvar avisa e continua no Modo edição com o rascunho', () => {
       itens.atualizar.and.returnValue(throwError(() => ({ error: { message: 'Fora do ar' } })));
       ligar();

@@ -51,6 +51,8 @@ import { PessoaMovimentacaoService } from 'src/app/core/services/pessoa-moviment
 import { TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { formatCurrencyBR, formatYearMonth } from 'src/app/core/utils/mask';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { EmptyStateComponent } from 'src/app/shared/ui/empty-state/empty-state.component';
 import { FilterBarComponent } from 'src/app/shared/ui/filter-bar/filter-bar.component';
@@ -66,7 +68,8 @@ import { ModalImportarExtratoComponent } from '../components/modal-importar-extr
 import { ModalLancamentoManualComponent } from '../components/modal-lancamento-manual/modal-lancamento-manual.component';
 import {
   CampoEditavel, CardsExtrato, ContaDoMes, FaturaPorPessoa, FiltroExtrato, GrupoDoDia, Pendencia, TipoFiltro, agruparPorDia, alteracoesDoRascunho,
-  aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehDoTitular, ehEntrada, faturaPorPessoa, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa
+  aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehDoTitular, ehEntrada, faturaPorPessoa, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa,
+  OPCOES_ORDEM_EXTRATO, OrdemExtrato, grupoUnico, ordenarExtrato
 } from '../extrato.regras';
 
 /** Mês escolhido por último, como no resumo antigo. */
@@ -89,7 +92,7 @@ const TIPOS: { label: string; value: TipoFiltro }[] = [
   standalone: true,
   imports: [
     NgIf, FormsModule, ButtonModule, CalendarModule, DropdownModule, InputSwitchModule, SplitButtonModule, IconFieldModule, InputIconModule, InputTextModule, MenuModule,
-    MultiSelectModule, ProgressBarModule, SelectButtonModule, BadgeModule, SidebarModule, AcertosComponent, FaturaPorPessoaComponent, ClassificarSempreComponent, ModalRegrasClassificacaoComponent, TableModule, TooltipModule,
+    InputNumberModule, OverlayPanelModule, MultiSelectModule, ProgressBarModule, SelectButtonModule, BadgeModule, SidebarModule, AcertosComponent, FaturaPorPessoaComponent, ClassificarSempreComponent, ModalRegrasClassificacaoComponent, TableModule, TooltipModule,
     PageHeaderComponent, StatCardComponent, FilterBarComponent, EmptyStateComponent, ExtratoContasComponent,
     ModalImportarExtratoComponent, ModalLancamentoManualComponent, ModalImportacoesMensaisComponent,
     ModalConfiguracaoVinculoPessoaComponent, BarraEdicaoComponent, TotaisSelecaoComponent, CurrencyInputDirective,
@@ -161,6 +164,9 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   pessoasCadastradas: PessoaMovimentacaoDto[] = [];
 
   filtro: FiltroExtrato = filtroVazio();
+  /** "Ordenar por", como em Contas a Pagar: não é filtro, então "Limpar filtros" não mexe nele. */
+  ordem: OrdemExtrato = 'data';
+  readonly opcoesOrdem = OPCOES_ORDEM_EXTRATO;
   contas: ContaDoMes[] = [];
   cards: CardsExtrato = { saidas: 0, entradas: 0, semPessoa: 0, semCategoria: 0 };
   exibidos: ExtratoItemDto[] = [];
@@ -361,7 +367,31 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
 
   /** Celular: quantos filtros estão na folha (o selo do botão). */
   get filtrosNoPainel(): number {
-    return (this.filtro.pessoas.length ? 1 : 0) + (this.filtro.categorias.length ? 1 : 0);
+    return (this.filtro.pessoas.length ? 1 : 0) + (this.filtro.categorias.length ? 1 : 0) + (this.temFiltroDeValor ? 1 : 0);
+  }
+
+  get temFiltroDeValor(): boolean {
+    return this.filtro.valorMin != null || this.filtro.valorMax != null;
+  }
+
+  /** Rótulo do botão Valor, como em Contas a Pagar. */
+  get rotuloValor(): string {
+    const de = this.filtro.valorMin != null ? formatCurrencyBR(this.filtro.valorMin) : null;
+    const ate = this.filtro.valorMax != null ? formatCurrencyBR(this.filtro.valorMax) : null;
+    if (de && ate) return `${de} – ${ate}`;
+    if (de) return `a partir de ${de}`;
+    if (ate) return `até ${ate}`;
+    return 'Valor';
+  }
+
+  limparValor(): void {
+    this.filtro = { ...this.filtro, valorMin: null, valorMax: null };
+    this.aoMudarFiltro();
+  }
+
+  /** Só a ordem por data mostra os dias. */
+  get porData(): boolean {
+    return this.ordem === 'data';
   }
 
   exportar(): void {
@@ -370,22 +400,26 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
 
   get temFiltro(): boolean {
     const f = this.filtro;
-    return f.tipo !== 'todos' || !!f.busca.trim() || f.pessoas.length > 0 || f.categorias.length > 0 || f.pendencia !== null;
+    return f.tipo !== 'todos' || !!f.busca.trim() || f.pessoas.length > 0 || f.categorias.length > 0 || f.pendencia !== null
+      || this.temFiltroDeValor;
   }
 
   private recalcular(): void {
     this.contas = contasDoMes(this.itens, this.bancos, this.tiposCartao);
     // Os cards contam a conta escolhida, sem os outros filtros: eles mesmos são filtros.
     this.cards = cardsDoExtrato(filtrarExtrato(this.itens, filtroVazio(this.filtro.bancoId)));
-    this.exibidos = filtrarExtrato(this.itens, this.filtro);
+    const filtrados = filtrarExtrato(this.itens, this.filtro);
+    this.exibidos = ordenarExtrato(filtrados, this.ordem);
     this.montarFatura();
     const contagens = TIPOS.map(t => filtrarExtrato(this.itens, { ...this.filtro, tipo: t.value }).length);
     // Só troca a lista quando um número muda: o p-selectButton redesenha as opções a cada referência nova.
     if (contagens.some((c, i) => c !== this.opcoesTipo[i].contagem)) {
       this.opcoesTipo = TIPOS.map((t, i) => ({ ...t, contagem: contagens[i] }));
     }
-    this.grupos = Object.fromEntries(agruparPorDia(this.exibidos).map(g => [g.data, g]));
-    this.diasMovel = agruparPorDia([...this.exibidos].sort((a, b) => b.dataMovimentacao.localeCompare(a.dataMovimentacao)));
+    this.grupos = Object.fromEntries(agruparPorDia(filtrados).map(g => [g.data, g]));
+    this.diasMovel = this.porData
+      ? agruparPorDia(filtrados)
+      : grupoUnico(this.exibidos, this.opcoesOrdem.find(o => o.value === this.ordem)?.label ?? '');
 
     const nomes = [...new Set(this.itens.map(nomeDaPessoa).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
     if (nomes.join('|') !== this.opcoesPessoa.map(o => o.value).join('|')) {

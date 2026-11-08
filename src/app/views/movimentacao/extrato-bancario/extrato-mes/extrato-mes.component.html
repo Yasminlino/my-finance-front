@@ -122,6 +122,23 @@
           <p-multiSelect fim [options]="opcoesCategoria" [(ngModel)]="filtro.categorias" placeholder="Categorias"
             [filter]="true" selectedItemsLabel="{0} categorias" [maxSelectedLabels]="1" appendTo="body"
             (onChange)="aoMudarFiltro()" styleClass="extrato-filtro" />
+          <p-button fim [label]="rotuloValor" icon="pi pi-dollar" severity="secondary" [outlined]="!temFiltroDeValor" size="small"
+            (onClick)="painelValor.toggle($event)" ariaLabel="Filtrar por valor" />
+          <p-overlayPanel #painelValor appendTo="body">
+            <div class="flex flex-column gap-2">
+              <span class="font-semibold">Valor</span>
+              <div class="flex align-items-center gap-2">
+                <p-inputNumber [(ngModel)]="filtro.valorMin" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="De"
+                  inputStyleClass="w-8rem" ariaLabel="Valor a partir de" (ngModelChange)="aoMudarFiltro()" />
+                <span class="mf-hint">até</span>
+                <p-inputNumber [(ngModel)]="filtro.valorMax" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="Até"
+                  inputStyleClass="w-8rem" ariaLabel="Valor até" (ngModelChange)="aoMudarFiltro()" />
+              </div>
+              <p-button label="Limpar valor" [text]="true" size="small" severity="secondary" [disabled]="!temFiltroDeValor" (onClick)="limparValor()" />
+            </div>
+          </p-overlayPanel>
+          <p-dropdown fim [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value" appendTo="body"
+            (onChange)="aoMudarFiltro()" ariaLabel="Ordenar por" />
           <p-button fim icon="pi pi-filter-slash" [text]="true" severity="secondary" pTooltip="Limpar filtros"
             tooltipPosition="top" [disabled]="!temFiltro" (onClick)="limparFiltros()" ariaLabel="Limpar filtros" />
           <p-button fim icon="pi pi-upload" [text]="true" severity="secondary" pTooltip="Exportar CSV" tooltipPosition="top"
@@ -204,9 +221,9 @@
             }
           </div>
         } @else {
-        <p-table #tabela [value]="exibidos" dataKey="id" [loading]="loading" [rowHover]="true" rowGroupMode="subheader"
+        <p-table #tabela [value]="exibidos" dataKey="id" [loading]="loading" [rowHover]="true" [rowGroupMode]="porData ? 'subheader' : undefined"
           [selection]="selecao" (selectionChange)="aoSelecionar($event)" [tableStyleClass]="edicao ? 'extrato-tabela--edicao' : ''"
-          groupRowsBy="dataMovimentacao" sortField="dataMovimentacao" [sortOrder]="-1" [scrollable]="true" styleClass="tabela-extrato" [columns]="colunasExportacao"
+          [groupRowsBy]="porData ? 'dataMovimentacao' : undefined" [sortField]="porData ? 'dataMovimentacao' : undefined" [sortOrder]="-1" [scrollable]="true" styleClass="tabela-extrato" [columns]="colunasExportacao"
           exportFilename="extrato">
           <ng-template pTemplate="header">
             @if (edicao) {
@@ -355,6 +372,17 @@
       <p-multiSelect inputId="filtro-categorias-movel" [options]="opcoesCategoria" [(ngModel)]="filtro.categorias" placeholder="Todas"
         [filter]="true" selectedItemsLabel="{0} categorias" [maxSelectedLabels]="1" appendTo="body" styleClass="w-full"
         (onChange)="aoMudarFiltro()" />
+      <span class="block text-sm text-color-secondary mb-1 mt-3">Valor</span>
+      <div class="flex align-items-center gap-2">
+        <p-inputNumber [(ngModel)]="filtro.valorMin" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="De"
+          class="flex-1" styleClass="w-full" inputStyleClass="w-full" ariaLabel="Valor a partir de" (ngModelChange)="aoMudarFiltro()" />
+        <span class="mf-hint">até</span>
+        <p-inputNumber [(ngModel)]="filtro.valorMax" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="Até"
+          class="flex-1" styleClass="w-full" inputStyleClass="w-full" ariaLabel="Valor até" (ngModelChange)="aoMudarFiltro()" />
+      </div>
+      <label class="block text-sm text-color-secondary mb-1 mt-3" for="filtro-ordem-movel">Ordenar por</label>
+      <p-dropdown inputId="filtro-ordem-movel" [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value"
+        appendTo="body" styleClass="w-full" (onChange)="aoMudarFiltro()" />
       <div class="flex gap-2 mt-4">
         <p-button label="Limpar filtros" icon="pi pi-filter-slash" [outlined]="true" severity="secondary" styleClass="w-full" class="flex-1"
           [disabled]="!temFiltro" (onClick)="limparFiltros()" />
