@@ -130,3 +130,53 @@ export interface ExtratoBancarioDto {
   valorTotal: number;
   situacao: string;
 }
+
+/** Uma linha do arquivo na prévia da importação (card #74). */
+export interface LinhaPreviaImportacaoDto {
+  chave: string;
+  data: string;
+  descricao: string;
+  valor: number;
+  tipoLancamento: string;
+  categoriaId?: number | null;
+  nomePessoa?: string | null;
+  entraNosAcertos: boolean;
+  duplicado: boolean;
+}
+
+/** O que a importação faria, sem gravar (card #74). */
+export interface PreviaImportacaoDto {
+  formato: string;
+  ehFatura: boolean;
+  /** null: a API não reconheceu o banco pelo arquivo; a tela pede. */
+  bancoId?: number | null;
+  bancoDetectado: boolean;
+  mesReferencia?: string | null;
+  dataInicio?: string | null;
+  dataFim?: string | null;
+  novos: number;
+  duplicados: number;
+  invalidas: number;
+  entradas: number;
+  saidas: number;
+  mesJaImportado: boolean;
+  aviso: string;
+  linhas: LinhaPreviaImportacaoDto[];
+}
+
+/** Escolhas da prévia enviadas ao importar: chaves desmarcadas e categorias trocadas. */
+export interface OpcoesImportacaoDto {
+  pular: string[];
+  categorias: Record<string, number | null>;
+}
+
+export interface ResultadoImportacaoDto {
+  extratoId?: number;
+  quantidadeCriados: number;
+  quantidadeIgnorados: number;
+  quantidadeJaImportados?: number;
+  quantidadeDesmarcados?: number;
+  valorTotal?: number;
+  mensagem: string;
+  mesDestino?: string | null;
+}

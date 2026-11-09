@@ -1,0 +1,54 @@
+.ia-cabecalho { display: flex; flex: 1; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.ia-titulo { font-size: 1.25rem; font-weight: 700; }
+.ia-titulo i { margin-right: 0.5rem; color: var(--mf-primary); }
+.ia-progresso { overflow: hidden; height: 0.3rem; border-radius: 0.15rem; background: var(--surface-border); }
+.ia-progresso span { display: block; height: 100%; background: var(--mf-primary); transition: width 0.2s; }
+
+.ia-area { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.35rem; padding: 2rem 1rem; border: 2px dashed var(--mf-borda); border-radius: var(--mf-radius); text-align: center; cursor: pointer; }
+.ia-area:hover, .ia-area--arrastando { border-color: var(--mf-primary); background: var(--highlight-bg); }
+.ia-area--erro { border-color: var(--mf-despesa); }
+.ia-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.ia-icone { font-size: 2rem; color: var(--mf-primary); }
+.ia-nome-arquivo { overflow-wrap: anywhere; }
+.ia-trocar { color: var(--mf-primary); font-weight: 600; }
+
+.ia-banco-opcao { display: flex; align-items: center; gap: 0.6rem; width: 100%; }
+.ia-sigla { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; border-radius: var(--mf-radius); font-size: 0.65rem; font-weight: 700; }
+.ia-detectado { color: var(--mf-receita); font-weight: 600; }
+
+.ia-resumo { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+.ia-resumo div { display: flex; flex-direction: column; padding: 0.75rem; border: 1px solid var(--surface-border); border-radius: var(--mf-radius); }
+.ia-entrada { color: var(--mf-receita); }
+.ia-saida { color: var(--mf-despesa); }
+.ia-filtros { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.75rem; }
+.ia-busca { min-width: 16rem; }
+.ia-descricao { overflow-wrap: anywhere; }
+.ia-duplicada { opacity: 0.6; }
+
+.ia-cards { display: flex; flex-direction: column; gap: 0.5rem; }
+.ia-card { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem; border: 1px solid var(--surface-border); border-radius: var(--mf-radius); cursor: pointer; }
+.ia-card--fora { opacity: 0.55; }
+.ia-card-texto { display: flex; flex: 1; flex-direction: column; gap: 0.35rem; min-width: 0; }
+
+.ia-pronto { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 1.5rem 1rem; text-align: center; }
+.ia-pronto-icone { font-size: 3rem; color: var(--mf-receita); }
+.ia-atalhos { display: flex; flex-direction: column; gap: 0.5rem; }
+.ia-atalho { display: flex; align-items: center; gap: 0.75rem; width: 100%; padding: 0.85rem 1rem; border: 1px solid var(--surface-border); border-radius: var(--mf-radius); background: var(--surface-card); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ia-atalho:hover { border-color: var(--mf-primary); }
+.ia-link { flex: none; color: var(--mf-primary); font-weight: 600; white-space: nowrap; }
+.ia-link i { font-size: 0.7rem; }
+.ia-rodape { display: flex; justify-content: flex-end; gap: 0.5rem; width: 100%; }
+
+@media (max-width: 767.98px) {
+  /* Tela cheia no celular, com o botão principal sempre visível no rodapé. */
+  ::ng-deep .p-dialog.imp-assistente { width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; }
+  ::ng-deep .p-dialog.imp-assistente .p-dialog-content { flex: 1; }
+  .ia-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ia-busca { flex: 1; min-width: 0; }
+  ::ng-deep .ia-segmento { display: flex; width: 100%; }
+  ::ng-deep .ia-segmento .p-button { flex: 1; padding-inline: 0.25rem; font-size: 0.875rem; }
+  .ia-rodape { display: grid; grid-template-columns: 1fr 1.6fr; }
+  .ia-rodape ::ng-deep .p-button { width: 100%; justify-content: center; }
+  .ia-area { padding: 1.5rem 1rem; }
+  .ia-area strong { font-size: 1rem; }
+}

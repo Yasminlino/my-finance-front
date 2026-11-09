@@ -1,102 +1,248 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { PrimeTemplate } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
-import { ButtonModule } from 'primeng/button';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MessageModule } from 'primeng/message';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { StepsModule } from 'primeng/steps';
+import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 import { finalize } from 'rxjs';
 
-import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
-import { AlertService } from 'src/app/shared/components/alert.service';
-import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { BancoDto } from 'src/app/core/models/banco.model';
+import { CategoriaDto } from 'src/app/core/models/categoria.model';
+import { LinhaPreviaImportacaoDto, PreviaImportacaoDto, ResultadoImportacaoDto } from 'src/app/core/models/extrato.model';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
+import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
+import { LarguraTelaService } from 'src/app/core/services/largura-tela.service';
+import { extrairMensagemErro } from 'src/app/core/utils/http-error';
+import { formatCurrencyBR } from 'src/app/core/utils/mask';
+import { AlertService } from 'src/app/shared/components/alert.service';
+import { corDoBanco, mesCurto, siglaDoBanco } from '../modal-importacoes-mensais/importacoes.regras';
+import { FORMATOS_ACEITOS, FiltroConferir, filtrarLinhas, montarOpcoes, resumoDoQueEntrou } from './importar.regras';
 
-/** O que a API devolve da importação: criados / já importados / ignorados (reimportar não cria nada). */
-type ResultadoImportacao = { quantidadeCriados?: number; mensagem?: string; mesDestino?: string | null } | null;
+/** Pedido para abrir o Extrato depois de importar (atalhos do passo Pronto). */
+export interface AbrirExtrato {
+  mes: string;
+  bancoId: number;
+  foco: 'acertos' | 'sem-categoria' | null;
+}
 
 /**
- * Importação de extrato do Resumo, em formulário Reactive (FE-P2-10). Antes o banco e o arquivo
- * ficavam em campos soltos da tela, e o arquivo sobrevivia entre aberturas do modal.
- * Emite `fechado(true)` quando importou, para a tela recarregar.
+ * Importar extrato em 3 passos, Arquivo → Conferir → Pronto (card #74). Nada é gravado antes de "Importar N":
+ * a prévia lê o arquivo na API, e a confirmação reenvia o arquivo com as linhas desmarcadas e as categorias trocadas.
+ * Emite `fechado(true)` quando algo entrou, para a tela recarregar.
  */
 @Component({
   selector: 'app-modal-importar-extrato',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DialogModule, DropdownModule, InputTextModule, ButtonModule],
-  templateUrl: './modal-importar-extrato.component.html'
+  imports: [
+    CommonModule, FormsModule, PrimeTemplate, ButtonModule, CheckboxModule, DialogModule, DropdownModule, IconFieldModule, InputIconModule,
+    InputTextModule, MessageModule, SelectButtonModule, StepsModule, TableModule, TagModule
+  ],
+  templateUrl: './modal-importar-extrato.component.html',
+  styleUrl: './modal-importar-extrato.component.scss'
 })
-export class ModalImportarExtratoComponent {
+export class ModalImportarExtratoComponent implements OnInit {
   @Input() bancos: BancoDto[] = [];
   @Input() tiposCartao: TipoCartaoDto[] = [];
+  @Input() categorias: CategoriaDto[] = [];
   /** Conta já escolhida (o "falta" da cobertura, card #75). */
-  @Input() set bancoInicial(id: number | null) {
-    if (id) this.form.controls.bancoId.setValue(id);
-  }
+  @Input() bancoInicial: number | null = null;
   @Output() fechado = new EventEmitter<boolean>();
   /** Mês (AAAA-MM) em que os lançamentos importados aparecem; emitido antes de fechar. */
   @Output() importadoEm = new EventEmitter<string>();
+  @Output() verExtrato = new EventEmitter<AbrirExtrato>();
 
+  private readonly itemService = inject(ExtratoBancarioItemService);
+  private readonly alertService = inject(AlertService);
+  readonly movel = inject(LarguraTelaService).movel;
+
+  readonly formatos = FORMATOS_ACEITOS;
+  readonly passos = [{ label: 'Arquivo' }, { label: 'Conferir' }, { label: 'Pronto' }];
+  readonly opcoesFiltro: { label: string; value: FiltroConferir }[] = [
+    { label: 'Todos', value: 'todos' }, { label: 'Sem categoria', value: 'sem-categoria' }, { label: 'Duplicados', value: 'duplicados' }
+  ];
+  readonly sigla = siglaDoBanco;
+  readonly mesCurto = mesCurto;
+
+  passo = 0;
+  arquivo: File | null = null;
+  bancoId: number | null = null;
+  previa: PreviaImportacaoDto | null = null;
+  carregando = false;
   importando = false;
+  tentouContinuar = false;
+  erro: string | null = null;
+  arrastando = false;
 
-  readonly form = this.fb.group({
-    bancoId: [null as number | null, Validators.required],
-    arquivo: [null as File | null, Validators.required]
-  });
+  filtro: FiltroConferir = 'todos';
+  busca = '';
+  marcadas = new Set<string>();
+  categoriaDe = new Map<string, number | null>();
+  resultado: ResultadoImportacaoDto | null = null;
+  private alterou = false;
 
-  constructor(
-    private readonly fb: FormBuilder,
-    private readonly itemService: ExtratoBancarioItemService,
-    private readonly alertService: AlertService
-  ) {}
+  ngOnInit(): void {
+    this.bancoId = this.bancoInicial;
+  }
 
   get banco(): BancoDto | undefined {
-    return this.bancos.find(b => b.id === Number(this.form.controls.bancoId.value));
+    return this.bancos.find(b => b.id === this.bancoId);
   }
 
-  get tipoCartao(): TipoCartaoDto | undefined {
-    const tipoCartaoId = this.banco?.tipoCartaoId ?? this.banco?.tipoCartao?.id;
-    return this.tiposCartao.find(t => t.id === tipoCartaoId);
+  tipoDe(banco: BancoDto | undefined): string {
+    return this.tiposCartao.find(t => t.id === banco?.tipoCartaoId)?.nomeTipoCartao ?? '';
   }
 
-  invalido(campo: keyof typeof this.form.controls): boolean {
-    const controle = this.form.controls[campo];
-    return controle.invalid && controle.touched;
+  estiloBanco(bancoId: number): Record<string, string> {
+    const cor = corDoBanco(bancoId);
+    return { background: `var(--mf-cor-${cor}-bg)`, color: `var(--mf-cor-${cor}-fg)` };
   }
 
-  /** O input de arquivo não tem ControlValueAccessor: o arquivo escolhido vai para o controle aqui. */
-  onArquivo(evento: Event): void {
-    const arquivo = (evento.target as HTMLInputElement).files?.[0] ?? null;
-    this.form.controls.arquivo.setValue(arquivo);
-    this.form.controls.arquivo.markAsTouched();
+  get opcoesCategoria(): { label: string; value: number | null }[] {
+    return [{ label: 'Sem categoria', value: null }, ...this.categorias
+      .filter(c => c.ativo !== false)
+      .map(c => ({ label: c.subcategoria ? `${c.nome} · ${c.subcategoria}` : c.nome, value: c.id as number | null }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))];
   }
 
-  cancelar(): void {
-    if (!this.importando) this.fechado.emit(false);
+  get linhasVisiveis(): LinhaPreviaImportacaoDto[] {
+    return filtrarLinhas(this.previa?.linhas ?? [], this.filtro, this.busca, this.categoriaDe);
   }
 
-  salvar(): void {
+  get quantidadeMarcada(): number {
+    return this.marcadas.size;
+  }
+
+  get oQueEntrou(): { semCategoria: number; pessoas: string[] } {
+    return resumoDoQueEntrou(this.previa?.linhas ?? [], this.marcadas, this.categoriaDe);
+  }
+
+  get mensagemArquivo(): string | null {
+    if (!this.tentouContinuar) return null;
+    if (!this.arquivo) return 'Escolha o arquivo do extrato.';
+    if (!this.bancoId) return 'Escolha o banco.';
+    return null;
+  }
+
+  moeda(v: number): string {
+    return formatCurrencyBR(v);
+  }
+
+  aoEscolher(evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    this.usarArquivo(input.files?.[0] ?? null);
+    input.value = '';
+  }
+
+  aoSoltar(evento: DragEvent): void {
+    evento.preventDefault();
+    this.arrastando = false;
+    this.usarArquivo(evento.dataTransfer?.files?.[0] ?? null);
+  }
+
+  private usarArquivo(arquivo: File | null): void {
+    if (!arquivo) return;
+    this.arquivo = arquivo;
+    this.prever();
+  }
+
+  aoTrocarBanco(): void {
+    if (this.arquivo) this.prever();
+  }
+
+  /** Lê o arquivo na API sem gravar; sem banco escolhido, a API tenta reconhecer pelo formato. */
+  prever(): void {
+    if (!this.arquivo) return;
+    this.carregando = true;
+    this.erro = null;
+    this.previa = null;
+    this.itemService.previaImportacao(this.arquivo, this.bancoId)
+      .pipe(finalize(() => (this.carregando = false)))
+      .subscribe({
+        next: p => {
+          this.previa = p;
+          if (!this.bancoId && p.bancoId) this.bancoId = p.bancoId;
+          this.marcadas = new Set(p.linhas.filter(l => !l.duplicado).map(l => l.chave));
+          this.categoriaDe = new Map(p.linhas.map(l => [l.chave, l.categoriaId ?? null]));
+        },
+        error: e => (this.erro = extrairMensagemErro(e, 'Não foi possível ler o arquivo.'))
+      });
+  }
+
+  continuar(): void {
+    this.tentouContinuar = true;
+    if (this.mensagemArquivo || !this.previa?.bancoId || this.carregando) return;
+    this.filtro = 'todos';
+    this.busca = '';
+    this.passo = 1;
+  }
+
+  alternar(linha: LinhaPreviaImportacaoDto): void {
+    if (linha.duplicado) return;
+    if (this.marcadas.has(linha.chave)) this.marcadas.delete(linha.chave);
+    else this.marcadas.add(linha.chave);
+    this.marcadas = new Set(this.marcadas);
+  }
+
+  trocarCategoria(linha: LinhaPreviaImportacaoDto, categoriaId: number | null): void {
+    this.categoriaDe = new Map(this.categoriaDe).set(linha.chave, categoriaId);
+  }
+
+  nomeCategoria(chave: string): string {
+    const id = this.categoriaDe.get(chave);
+    return this.opcoesCategoria.find(o => o.value === (id ?? null))?.label ?? 'Sem categoria';
+  }
+
+  importar(): void {
     const banco = this.banco;
-    const arquivo = this.form.controls.arquivo.value;
-    if (this.form.invalid || !banco || !arquivo) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
+    if (!banco || !this.arquivo || !this.previa || this.importando || !this.quantidadeMarcada) return;
     this.importando = true;
-    this.itemService.importar(arquivo, { id: banco.id, nomeBanco: banco.nomeBanco, tipoCartaoId: this.tipoCartao?.id ?? null })
+    const opcoes = montarOpcoes(this.previa.linhas, this.marcadas, this.categoriaDe);
+    this.itemService.importar(this.arquivo, { id: banco.id, nomeBanco: banco.nomeBanco, tipoCartaoId: banco.tipoCartaoId ?? null }, opcoes)
       .pipe(finalize(() => (this.importando = false)))
       .subscribe({
-        next: resposta => {
-          const resultado = resposta as ResultadoImportacao;
-          const mensagem = resultado?.mensagem ?? 'Extrato importado com sucesso!';
-          if ((resultado?.quantidadeCriados ?? 1) > 0) this.alertService.success(mensagem);
-          else this.alertService.info(mensagem);
-          if ((resultado?.quantidadeCriados ?? 0) > 0 && resultado?.mesDestino) this.importadoEm.emit(resultado.mesDestino);
-          this.fechado.emit(true);
+        next: r => {
+          this.resultado = r;
+          this.alterou = this.alterou || (r?.quantidadeCriados ?? 0) > 0;
+          if ((r?.quantidadeCriados ?? 0) > 0 && r?.mesDestino) this.importadoEm.emit(r.mesDestino);
+          this.passo = 2;
         },
         error: e => this.alertService.error(extrairMensagemErro(e, 'Falha ao importar arquivo.'))
       });
+  }
+
+  voltar(): void {
+    this.passo = 0;
+  }
+
+  importarOutro(): void {
+    this.passo = 0;
+    this.arquivo = null;
+    this.previa = null;
+    this.resultado = null;
+    this.tentouContinuar = false;
+    this.erro = null;
+  }
+
+  abrirExtrato(foco: AbrirExtrato['foco']): void {
+    const mes = this.resultado?.mesDestino ?? this.previa?.mesReferencia;
+    if (!mes || !this.bancoId) {
+      this.fechar();
+      return;
+    }
+    this.verExtrato.emit({ mes, bancoId: this.bancoId, foco });
+  }
+
+  fechar(): void {
+    if (!this.importando) this.fechado.emit(this.alterou);
   }
 }

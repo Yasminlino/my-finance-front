@@ -169,7 +169,7 @@
 
   @if (showImportar) {
     <app-modal-importar-extrato [bancos]="bancos" [tiposCartao]="tiposCartao" [bancoInicial]="bancoParaImportar"
-      (importadoEm)="aoImportarEm($event)" (fechado)="aoFecharModal($event)" />
+      [categorias]="categorias" (verExtrato)="abrirDoImportar($event)" (importadoEm)="aoImportarEm($event)" (fechado)="aoFecharModal($event)" />
   }
   @if (showLancamento) {
     <app-modal-lancamento-manual [mes]="selectedMonth" [bancos]="bancos" [tiposCartao]="tiposCartao" [categorias]="categorias" [pessoas]="pessoas" (fechado)="aoFecharModal($event)" />

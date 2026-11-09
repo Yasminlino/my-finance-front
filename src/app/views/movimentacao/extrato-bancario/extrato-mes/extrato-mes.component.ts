@@ -68,7 +68,7 @@ import { VerNotaComponent } from '../components/ver-nota/ver-nota.component';
 import { FabComponent } from 'src/app/shared/ui/fab/fab.component';
 import { ModalConfiguracaoVinculoPessoaComponent } from '../components/modal-configuracao-vinculo-pessoa/modal-configuracao-vinculo-pessoa.component';
 import { ModalImportacoesMensaisComponent } from '../components/modal-importacoes-mensais/modal-importacoes-mensais.component';
-import { ModalImportarExtratoComponent } from '../components/modal-importar-extrato/modal-importar-extrato.component';
+import { AbrirExtrato, ModalImportarExtratoComponent } from '../components/modal-importar-extrato/modal-importar-extrato.component';
 import { ModalLancamentoManualComponent } from '../components/modal-lancamento-manual/modal-lancamento-manual.component';
 import {
   CampoEditavel, CardsExtrato, ContaDoMes, FaturaPorPessoa, FiltroExtrato, GrupoDoDia, Pendencia, TipoFiltro, agruparPorDia, alteracoesDoRascunho,
@@ -290,6 +290,8 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     const params = this.route.snapshot.queryParamMap;
     const bancoId = Number(params.get('bancoId'));
     this.filtro = filtroVazio(bancoId > 0 ? bancoId : null);
+    // Atalhos do Importar (card #74) vindos do Resumo.
+    this.aplicarFoco(params.get('foco'));
     this.carregarMes(this.mesInicial(params.get('month')));
     this.carregarRegras();
   }
@@ -487,6 +489,23 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     this.importacaoEmFoco = null;
     this.filtro = { ...this.filtro, importacaoId: null };
     this.aoMudarFiltro();
+  }
+
+  /** Atalho do passo Pronto do Importar (card #74): vai ao mês e banco importados, na aba ou filtro pedido. */
+  abrirDoImportar(destino: AbrirExtrato): void {
+    this.showImportar = false;
+    this.bancoParaImportar = null;
+    this.mesImportado = null;
+    this.jaEscolheuConta = true;
+    this.filtro = filtroVazio(destino.bancoId);
+    this.aplicarFoco(destino.foco);
+    const [ano, numero] = destino.mes.split('-').map(Number);
+    this.carregarMes(new Date(ano, numero - 1, 1));
+  }
+
+  private aplicarFoco(foco: string | null): void {
+    if (foco === 'sem-categoria') this.filtro = { ...this.filtro, pendencia: 'sem-categoria' };
+    this.aba = foco === 'acertos' ? 1 : 0;
   }
 
   aoImportarEm(mes: string): void {

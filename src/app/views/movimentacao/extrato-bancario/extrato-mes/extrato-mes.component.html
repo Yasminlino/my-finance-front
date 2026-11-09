@@ -438,7 +438,7 @@
     (concluiu)="aoConcluirRegras($event)" (editar)="editarProposta($event)" />
 
   <app-modal-importar-extrato *ngIf="showImportar" [bancos]="bancos" [tiposCartao]="tiposCartao" [bancoInicial]="bancoParaImportar"
-    (importadoEm)="aoImportarEm($event)" (fechado)="aoFecharModal($event)" />
+    [categorias]="categoriasAtivas" (verExtrato)="abrirDoImportar($event)" (importadoEm)="aoImportarEm($event)" (fechado)="aoFecharModal($event)" />
 
   <app-modal-lancamento-manual *ngIf="showLancamento" [mes]="selectedMonth" [bancos]="bancos" [tiposCartao]="tiposCartao"
     [categorias]="categoriasAtivas" [pessoas]="pessoasCadastradas" (fechado)="aoFecharModal($event)" />

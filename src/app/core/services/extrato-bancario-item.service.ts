@@ -2,7 +2,7 @@ import { EvolucaoExtratosDto, ResumoCategoriasDto } from '../models/resumo-categ
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { ExtratoItemDto, ExtratoItemParteDto, NotaFiscalDto } from '../models/extrato.model';
+import { ExtratoItemDto, ExtratoItemParteDto, NotaFiscalDto, OpcoesImportacaoDto, PreviaImportacaoDto, ResultadoImportacaoDto } from '../models/extrato.model';
 import { AcertosDto, FiltroAcertos } from '../models/acertos.model';
 
 @Injectable({ providedIn: 'root' })
@@ -67,8 +67,17 @@ export class ExtratoBancarioItemService {
     return this.api.put('/UpdateExtratoBancarioItem', dto);
   }
 
-  importar(arquivo: File, banco: { id: number; nomeBanco: string; tipoCartaoId?: number | null }): Observable<unknown> {
+  /** Card #74: lê o arquivo e devolve o que entraria, sem gravar. Sem banco, a API tenta reconhecer. */
+  previaImportacao(arquivo: File, bancoId: number | null): Observable<PreviaImportacaoDto> {
     const form = new FormData();
+    form.append('arquivo', arquivo);
+    if (bancoId != null) form.append('bancoId', String(bancoId));
+    return this.api.post<PreviaImportacaoDto>('/PreviaImportacao', form);
+  }
+
+  importar(arquivo: File, banco: { id: number; nomeBanco: string; tipoCartaoId?: number | null }, opcoes?: OpcoesImportacaoDto): Observable<ResultadoImportacaoDto> {
+    const form = new FormData();
+    if (opcoes) form.append('opcoes', JSON.stringify(opcoes));
     form.append('arquivo', arquivo);
     form.append('bancoId', String(banco.id));
     // Opcionais: a API ignora se não usar.
@@ -77,7 +86,7 @@ export class ExtratoBancarioItemService {
       form.append('tipoCartaoId', String(banco.tipoCartaoId));
     }
 
-    return this.api.post('/ImportExtratoBancario', form);
+    return this.api.post<ResultadoImportacaoDto>('/ImportExtratoBancario', form);
   }
 
   excluir(id: number): Observable<unknown> {

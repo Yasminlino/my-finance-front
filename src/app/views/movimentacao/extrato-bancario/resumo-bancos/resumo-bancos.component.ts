@@ -42,7 +42,7 @@ import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
 import { ModalConfiguracaoVinculoPessoaComponent } from '../components/modal-configuracao-vinculo-pessoa/modal-configuracao-vinculo-pessoa.component';
 import { corDoBanco, dataCurta, siglaDoBanco } from '../components/modal-importacoes-mensais/importacoes.regras';
 import { ModalImportacoesMensaisComponent } from '../components/modal-importacoes-mensais/modal-importacoes-mensais.component';
-import { ModalImportarExtratoComponent } from '../components/modal-importar-extrato/modal-importar-extrato.component';
+import { AbrirExtrato, ModalImportarExtratoComponent } from '../components/modal-importar-extrato/modal-importar-extrato.component';
 import { ModalLancamentoManualComponent } from '../components/modal-lancamento-manual/modal-lancamento-manual.component';
 import { CardBanco, FiltroBancos, OrdemBancos, contarPendencias, filtrarBancos, montarCardsBancos, ordenarBancos } from './resumo-bancos.regras';
 
@@ -274,6 +274,14 @@ export class ResumoBancosComponent implements OnInit {
   verLancamentos(): void {
     this.showImportacoes = false;
     this.router.navigate(['/extrato-bancario'], { queryParams: { month: this.selectedMonth } });
+  }
+
+  /** Atalhos do passo Pronto do Importar (card #74): o Extrato abre no banco, no mês e na aba ou filtro pedido. */
+  abrirDoImportar(destino: AbrirExtrato): void {
+    this.showImportar = false;
+    this.router.navigate(['/extrato-bancario'], {
+      queryParams: { month: destino.mes, bancoId: destino.bancoId, ...(destino.foco ? { foco: destino.foco } : {}) }
+    });
   }
 
   aoImportarEm(mes: string): void {
