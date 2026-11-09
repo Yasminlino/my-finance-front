@@ -3,6 +3,14 @@ import { CategoriaDto } from './categoria.model';
 import { PessoaMovimentacaoDto } from './pessoa-movimentacao.model';
 import { TipoMovimentacaoDto } from './tipo-movimentacao.model';
 
+/** Nota lida pelo QR Code (card #76, fase 6). */
+export interface NotaFiscalDto {
+  estabelecimento: string;
+  total: number;
+  link?: string | null;
+  itens: { nome: string; quantidade: number; valor: number; categoriaId?: number | null; categoriaNome?: string | null }[];
+}
+
 /** Parte de um lançamento dividido (card #76, fase 3). Sem pessoa, é do dono. */
 export interface ExtratoItemParteDto {
   id?: number;
@@ -59,6 +67,8 @@ export interface ExtratoItemDto {
   abateItemId?: number | null;
   /** Só leitura aqui: grava em /DividirExtratoBancarioItem. Vazio = não dividido. */
   partes?: ExtratoItemParteDto[];
+  /** Tem nota fiscal salva (card #76, fase 6). */
+  temNota?: boolean;
 
   /** Navegações que a API devolve na leitura (o relatório de gastos agrupa por elas). */
   banco?: Pick<BancoDto, 'id' | 'nomeBanco'> | null;

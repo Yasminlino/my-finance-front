@@ -38,6 +38,8 @@ export class ExtratoEditarSheetComponent implements OnChanges {
   @Output() fechar = new EventEmitter<void>();
   /** "Dividir" (card #76, fase 3): a tela abre o editor de partes. */
   @Output() dividir = new EventEmitter<ExtratoItemDto>();
+  /** "Lançar nota" / "Ver nota" (card #76, fase 6). */
+  @Output() nota = new EventEmitter<ExtratoItemDto>();
 
   get dividido(): boolean {
     return !!this.item?.partes?.length;

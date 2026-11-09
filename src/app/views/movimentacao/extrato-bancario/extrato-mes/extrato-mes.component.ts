@@ -63,6 +63,8 @@ import { ExtratoContasComponent } from '../components/extrato-contas/extrato-con
 import { ExtratoEditarSheetComponent } from '../components/extrato-editar-sheet/extrato-editar-sheet.component';
 import { DividirLancamentoComponent } from '../components/dividir-lancamento/dividir-lancamento.component';
 import { ResumoCategoriasComponent } from '../resumo/resumo-categorias.component';
+import { LerNotaComponent } from '../components/ler-nota/ler-nota.component';
+import { VerNotaComponent } from '../components/ver-nota/ver-nota.component';
 import { FabComponent } from 'src/app/shared/ui/fab/fab.component';
 import { ModalConfiguracaoVinculoPessoaComponent } from '../components/modal-configuracao-vinculo-pessoa/modal-configuracao-vinculo-pessoa.component';
 import { ModalImportacoesMensaisComponent } from '../components/modal-importacoes-mensais/modal-importacoes-mensais.component';
@@ -98,7 +100,7 @@ const TIPOS: { label: string; value: TipoFiltro }[] = [
     PageHeaderComponent, StatCardComponent, FilterBarComponent, EmptyStateComponent, ExtratoContasComponent,
     ModalImportarExtratoComponent, ModalLancamentoManualComponent, ModalImportacoesMensaisComponent,
     ModalConfiguracaoVinculoPessoaComponent, BarraEdicaoComponent, TotaisSelecaoComponent, CurrencyInputDirective,
-    ExtratoEditarSheetComponent, FabComponent, DividirLancamentoComponent, ResumoCategoriasComponent
+    ExtratoEditarSheetComponent, FabComponent, DividirLancamentoComponent, ResumoCategoriasComponent, LerNotaComponent, VerNotaComponent
   ],
   templateUrl: './extrato-mes.component.html',
   styleUrls: ['./extrato-mes.component.scss']
@@ -183,6 +185,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   private linhaDoMenu: ExtratoItemDto | null = null;
   readonly itensMenuLinha: MenuItem[] = [
     { label: 'Dividir', icon: 'pi pi-percentage', command: () => (this.linhaDoMenu ? this.abrirDivisao(this.linhaDoMenu) : undefined) },
+    { label: 'Lançar nota', icon: 'pi pi-receipt', command: () => (this.linhaDoMenu ? this.abrirNota(this.linhaDoMenu) : undefined) },
     { label: 'Excluir', icon: 'pi pi-trash', command: () => (this.linhaDoMenu ? this.excluirDoSheet(this.linhaDoMenu) : undefined) }
   ];
   /** Celular: o lançamento aberto na folha de baixo. */
@@ -597,6 +600,8 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     this.linhaDoMenu = item;
     this.itensMenuLinha[0].visible = !ehEntrada(item);   // só saída se divide
     this.itensMenuLinha[0].label = dividido(item) ? 'Editar divisão' : 'Dividir';
+    this.itensMenuLinha[1].visible = !ehEntrada(item);
+    this.itensMenuLinha[1].label = item.temNota ? 'Ver nota' : 'Lançar nota';
     this.menuLinha?.toggle(evento);
   }
 
@@ -655,6 +660,32 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
 
   tituloDoDiaMovel(dia: GrupoDoDia): string {
     return this.porData ? tituloCurtoDoDia(dia.data) : dia.titulo;
+  }
+
+  /** Lançamento com a tela de lançar nota aberta (card #76, fase 6). */
+  lancandoNota: ExtratoItemDto | null = null;
+  /** Lançamento com a modal da nota aberta. */
+  vendoNota: ExtratoItemDto | null = null;
+
+  abrirNota(item: ExtratoItemDto): void {
+    this.noSheet = null;
+    if (item.temNota) this.vendoNota = item;
+    else this.lancandoNota = item;
+  }
+
+  /** Salvou: recarrega e já mostra a nota, para conferir. */
+  aoLancarNota(salvou: boolean): void {
+    const item = this.lancandoNota;
+    this.lancandoNota = null;
+    if (salvou && item) {
+      this.vendoNota = item;
+      this.carregarMes();
+    }
+  }
+
+  aoFecharNota(mudou: boolean): void {
+    this.vendoNota = null;
+    if (mudou) this.carregarMes();
   }
 
   estaDividido(item: ExtratoItemDto): boolean {

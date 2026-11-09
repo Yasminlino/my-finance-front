@@ -2,7 +2,7 @@ import { ResumoCategoriasDto } from '../models/resumo-categorias.model';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { ExtratoItemDto, ExtratoItemParteDto } from '../models/extrato.model';
+import { ExtratoItemDto, ExtratoItemParteDto, NotaFiscalDto } from '../models/extrato.model';
 import { AcertosDto, FiltroAcertos } from '../models/acertos.model';
 
 @Injectable({ providedIn: 'root' })
@@ -28,6 +28,24 @@ export class ExtratoBancarioItemService {
 
   criar(dto: ExtratoItemDto): Observable<unknown> {
     return this.api.post('/CreateExtratoBancarioItem', dto);
+  }
+
+  /** Lê a NFC-e pelo link do QR Code (card #76, fase 6). */
+  lerNota(link: string): Observable<NotaFiscalDto> {
+    return this.api.post<NotaFiscalDto>('/LerNotaFiscal', { link });
+  }
+
+  /** Guarda a nota no lançamento e o classifica pelos itens, se o total bater. */
+  salvarNota(itemId: number, nota: NotaFiscalDto): Observable<{ classificado: boolean; mensagem: string }> {
+    return this.api.put<{ classificado: boolean; mensagem: string }>(`/SalvarNotaFiscal/${itemId}`, nota);
+  }
+
+  obterNota(itemId: number): Observable<NotaFiscalDto> {
+    return this.api.get<NotaFiscalDto>(`/GetNotaFiscal/${itemId}`);
+  }
+
+  removerNota(itemId: number): Observable<unknown> {
+    return this.api.delete(`/DeleteNotaFiscal/${itemId}`);
   }
 
   /** Resumo do mês por categoria (card #76, fase 5). */

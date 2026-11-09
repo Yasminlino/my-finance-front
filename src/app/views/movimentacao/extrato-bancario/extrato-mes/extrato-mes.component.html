@@ -200,7 +200,7 @@
                     <i [class]="entrada(item) ? 'pi pi-arrow-down' : 'pi pi-shopping-bag'"></i>
                   </span>
                   <span class="flex-grow-1 min-w-0 text-left">
-                    <span class="block font-semibold white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ tituloDoItem(item) }}</span>
+                    <span class="block font-semibold white-space-nowrap overflow-hidden text-overflow-ellipsis">@if (item.temNota) {<i class="pi pi-receipt mr-1" aria-label="Tem nota"></i>}{{ tituloDoItem(item) }}</span>
                     <span class="extrato-movel__detalhes">
                       @if (pessoaAParte(item); as nome) {
                         <span class="extrato-pessoa extrato-pessoa--movel" [class.extrato-pessoa--eu]="doTitular(item)"><span class="extrato-pessoa__letra">{{ nome[0] }}</span><span class="extrato-pessoa__nome">{{ nome }}</span></span>
@@ -313,7 +313,7 @@
             } @else {
             <tr class="extrato-linha">
               <td>
-                <div class="font-medium">{{ item.descricao || '(sem descrição)' }}</div>
+                <div class="font-medium">@if (item.temNota) {<i class="pi pi-receipt mr-1" aria-label="Tem nota"></i>}{{ item.descricao || '(sem descrição)' }}</div>
                 <small class="mf-hint">{{ categoria(item) || 'Sem categoria' }}@if (acabouDeClassificar(item)) {<span class="extrato-recem"> · acabou de ser classificado</span>}</small>
               </td>
               <td>
@@ -403,7 +403,14 @@
     <app-extrato-editar-sheet [item]="noSheet" [opcoesCategoria]="opcoesCategoria" [opcoesTipoMov]="opcoesTipoMov"
       [nomesPessoas]="nomesPessoas" [pessoas]="pessoasCadastradas" [salvando]="salvandoSheet" [excluindo]="excluindoSheet"
       [sugestao]="noSheet ? sugestao(noSheet) : null"
-      (salvar)="salvarDoSheet($event)" (excluir)="excluirDoSheet($event)" (fechar)="fecharSheet()" (dividir)="abrirDivisao($event)" />
+      (salvar)="salvarDoSheet($event)" (excluir)="excluirDoSheet($event)" (fechar)="fecharSheet()" (dividir)="abrirDivisao($event)" (nota)="abrirNota($event)" />
+  }
+
+  @if (lancandoNota) {
+    <app-ler-nota [itemId]="lancandoNota.id" [valorDoLancamento]="lancandoNota.valor" [categorias]="opcoesCategoria" (concluiu)="aoLancarNota($event)" />
+  }
+  @if (vendoNota) {
+    <app-ver-nota [itemId]="vendoNota.id" (fechado)="aoFecharNota($event)" />
   }
 
   @if (emDivisao) {
