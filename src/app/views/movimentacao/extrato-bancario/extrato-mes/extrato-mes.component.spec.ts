@@ -110,7 +110,7 @@ describe('ExtratoMesComponent', () => {
     abrir();
     fixture.detectChanges();
     const abas = Array.from(el().querySelectorAll('.extrato-aba')).map(texto);
-    expect(abas.length).toBe(2);
+    expect(abas.length).toBe(3);
     expect(abas[0]).toContain('Lançamentos');
     expect(abas[1]).toContain('Acertos com pessoas');
     expect(abas[1]).toContain('120,00');

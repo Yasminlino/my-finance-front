@@ -62,6 +62,7 @@ import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
 import { ExtratoContasComponent } from '../components/extrato-contas/extrato-contas.component';
 import { ExtratoEditarSheetComponent } from '../components/extrato-editar-sheet/extrato-editar-sheet.component';
 import { DividirLancamentoComponent } from '../components/dividir-lancamento/dividir-lancamento.component';
+import { ResumoCategoriasComponent } from '../resumo/resumo-categorias.component';
 import { FabComponent } from 'src/app/shared/ui/fab/fab.component';
 import { ModalConfiguracaoVinculoPessoaComponent } from '../components/modal-configuracao-vinculo-pessoa/modal-configuracao-vinculo-pessoa.component';
 import { ModalImportacoesMensaisComponent } from '../components/modal-importacoes-mensais/modal-importacoes-mensais.component';
@@ -97,7 +98,7 @@ const TIPOS: { label: string; value: TipoFiltro }[] = [
     PageHeaderComponent, StatCardComponent, FilterBarComponent, EmptyStateComponent, ExtratoContasComponent,
     ModalImportarExtratoComponent, ModalLancamentoManualComponent, ModalImportacoesMensaisComponent,
     ModalConfiguracaoVinculoPessoaComponent, BarraEdicaoComponent, TotaisSelecaoComponent, CurrencyInputDirective,
-    ExtratoEditarSheetComponent, FabComponent, DividirLancamentoComponent
+    ExtratoEditarSheetComponent, FabComponent, DividirLancamentoComponent, ResumoCategoriasComponent
   ],
   templateUrl: './extrato-mes.component.html',
   styleUrls: ['./extrato-mes.component.scss']

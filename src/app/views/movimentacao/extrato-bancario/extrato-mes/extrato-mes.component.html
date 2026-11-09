@@ -54,6 +54,8 @@
         <p-badge [value]="movel() ? '' + pessoasComFalta : moeda(faltaReceber)" severity="danger" />
       }
     </button>
+    <button type="button" role="tab" class="extrato-aba" [class.extrato-aba--ativa]="aba === 2" [attr.aria-selected]="aba === 2"
+      [disabled]="edicao" (click)="aba = 2">Resumo</button>
   </div>
   <!-- [hidden] e não @if: a aba Acertos carrega já na abertura (o selo) e não perde o estado ao trocar. -->
   <div role="tabpanel" [hidden]="aba !== 0">
@@ -406,6 +408,10 @@
 
   @if (emDivisao) {
     <app-dividir-lancamento [item]="emDivisao" [categorias]="opcoesCategoria" [pessoas]="opcoesPessoaRegra" (fechado)="aoFecharDivisao($event)" />
+  }
+
+  @if (aba === 2) {
+    <div role="tabpanel"><app-resumo-categorias [mes]="selectedMonth" /></div>
   }
 
   @if (showRegras) {
