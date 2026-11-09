@@ -15,7 +15,7 @@
   </app-modal-lancamento-manual>
 
   <!-- MODAIS EXTERNOS (FORA DO CONTAINER DA MODAL MANUAL) -->
-  <app-modal-importacoes-mensais *ngIf="showModalImportacoesMensais" [monthFilter]="selectedMonth"
+  <app-modal-importacoes-mensais *ngIf="showModalImportacoesMensais"
     (closed)="showModalImportacoesMensais = false; loadMonth()">
   </app-modal-importacoes-mensais>
 

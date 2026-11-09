@@ -151,7 +151,7 @@ export class ExtratoBancarioResumoComponent implements OnInit {
         }
       },
       {
-        label: 'Importações Mensais',
+        label: 'Importações realizadas',
         icon: 'pi pi-download',
         command: () => {
           this.showModalImportacoesMensais = true;

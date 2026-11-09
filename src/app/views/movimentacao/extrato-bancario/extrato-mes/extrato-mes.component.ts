@@ -31,7 +31,7 @@ import { Subject, concat, forkJoin, toArray } from 'rxjs';
 
 import { BancoDto } from 'src/app/core/models/banco.model';
 import { CategoriaDto } from 'src/app/core/models/categoria.model';
-import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
+import { ImportacaoDto, ExtratoItemDto } from 'src/app/core/models/extrato.model';
 import { PessoaMovimentacaoDto } from 'src/app/core/models/pessoa-movimentacao.model';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 import { TipoMovimentacaoDto } from 'src/app/core/models/tipo-movimentacao.model';
@@ -130,7 +130,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   readonly breadcrumb: MenuItem[] = [{ label: 'Movimentações' }, { label: 'Extrato Bancário' }];
   readonly home: MenuItem = { icon: 'pi pi-home', routerLink: '/' };
   readonly itensMenu: MenuItem[] = [
-    { label: 'Importações mensais', icon: 'pi pi-download', command: () => (this.showImportacoesMensais = true) },
+    { label: 'Importações realizadas', icon: 'pi pi-download', command: () => (this.showImportacoesMensais = true) },
     { label: 'Relatório mensal', icon: 'pi pi-chart-line', command: () => this.abrirRelatorio() },
     { label: 'Configurar pessoas', icon: 'pi pi-users', command: () => (this.showConfigPessoas = true) },
     { label: 'Regras de classificação', icon: 'pi pi-bolt', command: () => this.abrirRegras() },
@@ -379,6 +379,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   }
 
   limparFiltros(): void {
+    this.importacaoEmFoco = null;
     this.filtro = filtroVazio(this.filtro.bancoId);
     this.aoMudarFiltro();
   }
@@ -420,7 +421,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   get temFiltro(): boolean {
     const f = this.filtro;
     return f.tipo !== 'todos' || !!f.busca.trim() || f.pessoas.length > 0 || f.categorias.length > 0 || f.pendencia !== null
-      || this.temFiltroDeValor;
+      || this.temFiltroDeValor || this.filtro.importacaoId != null;
   }
 
   private recalcular(): void {
@@ -460,6 +461,34 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   /** Mês em que o arquivo recém-importado aparece: a tela vai para ele ao fechar. */
   private mesImportado: string | null = null;
 
+  /** Conta preenchida ao abrir o Importar pelo "falta" da cobertura (card #75). */
+  bancoParaImportar: number | null = null;
+  /** Nome do arquivo quando o extrato mostra só uma importação. */
+  importacaoEmFoco: string | null = null;
+
+  abrirImportarDoHistorico(bancoId: number | null): void {
+    this.showImportacoesMensais = false;
+    this.bancoParaImportar = bancoId;
+    this.showImportar = true;
+  }
+
+  /** "Ver lançamentos": vai ao mês da importação e mostra só o que veio dela. */
+  verLancamentosDaImportacao(i: ImportacaoDto): void {
+    this.showImportacoesMensais = false;
+    this.jaEscolheuConta = true;
+    this.importacaoEmFoco = i.nomeArquivo || i.bancoNome;
+    this.filtro = { ...filtroVazio(null), importacaoId: i.id };
+    const [ano, numero] = (i.mesReferencia ?? '').split('-').map(Number);
+    if (ano && numero) this.carregarMes(new Date(ano, numero - 1, 1));
+    else this.aoMudarFiltro();
+  }
+
+  limparImportacaoEmFoco(): void {
+    this.importacaoEmFoco = null;
+    this.filtro = { ...this.filtro, importacaoId: null };
+    this.aoMudarFiltro();
+  }
+
   aoImportarEm(mes: string): void {
     this.mesImportado = mes;
   }
@@ -467,6 +496,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   aoFecharModal(gravou: boolean): void {
     this.showImportar = false;
     this.showLancamento = false;
+    this.bancoParaImportar = null;
     const mes = this.mesImportado;
     this.mesImportado = null;
     if (gravou && mes) {

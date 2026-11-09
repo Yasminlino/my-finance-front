@@ -173,6 +173,12 @@
           </div>
         }
 
+        @if (importacaoEmFoco) {
+          <div class="flex align-items-center justify-content-between gap-2 px-3 py-2 mb-2 surface-ground border-round">
+            <span class="min-w-0" style="overflow-wrap: anywhere"><i class="pi pi-filter mr-2"></i>Só a importação <strong>{{ importacaoEmFoco }}</strong></span>
+            <p-button icon="pi pi-times" [text]="true" severity="secondary" size="small" ariaLabel="Mostrar todos os lançamentos" (onClick)="limparImportacaoEmFoco()" />
+          </div>
+        }
         @if (edicao) {
           <app-barra-edicao [mes]="nomeDoMes" oQue="os lançamentos" [contagem]="alteracoes" [salvando]="salvando"
             (descartar)="descartarEdicao()" (salvar)="salvarEdicao()" />
@@ -431,14 +437,14 @@
   <app-classificar-sempre [propostas]="propostas" [categorias]="opcoesCategoria" [movel]="movel()" (regraCriada)="aoCriarRegra($event)"
     (concluiu)="aoConcluirRegras($event)" (editar)="editarProposta($event)" />
 
-  <app-modal-importar-extrato *ngIf="showImportar" [bancos]="bancos" [tiposCartao]="tiposCartao"
+  <app-modal-importar-extrato *ngIf="showImportar" [bancos]="bancos" [tiposCartao]="tiposCartao" [bancoInicial]="bancoParaImportar"
     (importadoEm)="aoImportarEm($event)" (fechado)="aoFecharModal($event)" />
 
   <app-modal-lancamento-manual *ngIf="showLancamento" [mes]="selectedMonth" [bancos]="bancos" [tiposCartao]="tiposCartao"
     [categorias]="categoriasAtivas" [pessoas]="pessoasCadastradas" (fechado)="aoFecharModal($event)" />
 
-  <app-modal-importacoes-mensais *ngIf="showImportacoesMensais" [monthFilter]="selectedMonth"
-    (closed)="showImportacoesMensais = false; carregarMes()" />
+  <app-modal-importacoes-mensais *ngIf="showImportacoesMensais" (importar)="abrirImportarDoHistorico($event)"
+    (verLancamentos)="verLancamentosDaImportacao($event)" (closed)="showImportacoesMensais = false; $event && carregarMes()" />
 
   <app-modal-configuracao-vinculo-pessoa *ngIf="showConfigPessoas" [monthFilter]="selectedMonth"
     (closed)="showConfigPessoas = false; carregarMes()" />

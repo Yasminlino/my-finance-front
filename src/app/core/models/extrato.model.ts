@@ -79,6 +79,44 @@ export interface ExtratoItemDto {
 }
 
 /** ExtratoBancarioDTO da API: o cabeçalho de uma importação. */
+/** Linha do histórico de importações (card #75). */
+export interface ImportacaoDto {
+  id: number;
+  bancoId: number;
+  bancoNome: string;
+  nomeArquivo?: string | null;
+  importadoEm: string;
+  mesReferencia?: string | null;
+  lancamentos: number;
+  duplicados?: number | null;
+  semCategoria: number;
+  entradas: number;
+  saidas: number;
+  status: 'Concluida' | 'Pendencias' | 'Desfeita';
+  desfeitoEm?: string | null;
+  motivoDesfazer?: string | null;
+}
+
+export interface CoberturaCelulaDto {
+  mes: string;
+  estado: 'importado' | 'pendencias' | 'falta' | 'sem-dados' | string;
+  lancamentos: number;
+  pendencias: number;
+}
+
+export interface CoberturaImportacoesDto {
+  meses: string[];
+  contas: { bancoId: number; bancoNome: string; celulas: CoberturaCelulaDto[] }[];
+}
+
+export interface VinculosImportacaoDto {
+  lancamentos: number;
+  divididos: number;
+  comNota: number;
+  pagamentosAbatendo: number;
+  pessoas: string[];
+}
+
 export interface ExtratoBancarioDto {
   id: number;
   dataImportacao: string;

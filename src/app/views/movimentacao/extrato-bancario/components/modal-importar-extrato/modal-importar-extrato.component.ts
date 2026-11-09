@@ -30,6 +30,10 @@ type ResultadoImportacao = { quantidadeCriados?: number; mensagem?: string; mesD
 export class ModalImportarExtratoComponent {
   @Input() bancos: BancoDto[] = [];
   @Input() tiposCartao: TipoCartaoDto[] = [];
+  /** Conta já escolhida (o "falta" da cobertura, card #75). */
+  @Input() set bancoInicial(id: number | null) {
+    if (id) this.form.controls.bancoId.setValue(id);
+  }
   @Output() fechado = new EventEmitter<boolean>();
   /** Mês (AAAA-MM) em que os lançamentos importados aparecem; emitido antes de fechar. */
   @Output() importadoEm = new EventEmitter<string>();

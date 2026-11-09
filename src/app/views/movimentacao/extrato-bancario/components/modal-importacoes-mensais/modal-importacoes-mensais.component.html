@@ -1,11 +1,245 @@
-<p-dialog header="Importações realizadas" [visible]="true" [modal]="true" [dismissableMask]="true" [draggable]="false"
-  styleClass="mf-dialog-md" (visibleChange)="close(false)">
-  <app-data-grid #grid [dataSource]="importacaoesMensais" [columns]="gridColumns" [exibeCampos]="exibirCampos"
-    [loading]="loading" (delete)="deleteRow($event)">
-  </app-data-grid>
+<p-dialog [visible]="true" [modal]="true" [draggable]="false" [resizable]="false" [closable]="!movel()" [focusOnShow]="false"
+  [style]="movel() ? { width: '100vw', height: '100dvh', maxHeight: '100dvh', borderRadius: '0' } : { width: '76rem', maxWidth: '96vw' }"
+  [contentStyle]="{ padding: '0' }" (visibleChange)="!$event && fechar()">
+  <ng-template pTemplate="header">
+    <div class="imp-topo">
+      @if (movel()) {
+        <p-button icon="pi pi-arrow-left" [text]="true" severity="secondary" ariaLabel="Voltar" (onClick)="fechar()" />
+        <span class="imp-titulo">Importações</span>
+        <p-button icon="pi pi-upload" [text]="true" ariaLabel="Importar extrato" (onClick)="importar.emit(null)" />
+      } @else {
+        <span class="imp-titulo"><i class="pi pi-history imp-titulo-icone"></i>Importações realizadas</span>
+        <p-button label="Importar extrato" icon="pi pi-upload" (onClick)="importar.emit(null)" />
+      }
+    </div>
+  </ng-template>
 
+  @if (movel()) {
+    <div class="imp-segmento">
+      <p-selectButton [options]="opcoesAba" [(ngModel)]="aba" optionLabel="label" optionValue="value" [allowEmpty]="false" styleClass="w-full" />
+    </div>
+  } @else {
+    <div class="imp-abas" role="tablist">
+      <button type="button" role="tab" [attr.aria-selected]="aba === 0" [class.ativa]="aba === 0" (click)="aba = 0">Histórico</button>
+      <button type="button" role="tab" [attr.aria-selected]="aba === 1" [class.ativa]="aba === 1" (click)="aba = 1">Cobertura por mês</button>
+    </div>
+  }
+
+  <div class="imp-corpo">
+    @if (aba === 0) {
+      <div class="imp-filtros">
+        @if (!movel()) {
+          <p-iconField iconPosition="left">
+            <p-inputIcon styleClass="pi pi-search" />
+            <input pInputText type="text" placeholder="Buscar arquivo..." aria-label="Buscar arquivo" [(ngModel)]="busca" />
+          </p-iconField>
+        }
+        <p-dropdown [options]="opcoesBanco" optionLabel="label" optionValue="value" [(ngModel)]="bancoId" appendTo="body" ariaLabel="Banco"
+          [styleClass]="movel() ? 'imp-chip' : ''" />
+        <p-dropdown [options]="opcoesPeriodo" optionLabel="label" optionValue="value" [(ngModel)]="periodo" appendTo="body" ariaLabel="Período"
+          [styleClass]="movel() ? 'imp-chip' : ''" (onChange)="carregarHistorico()" />
+        @if (!movel()) {
+          <small class="mf-hint imp-resumo">{{ filtradas.length }} {{ filtradas.length === 1 ? 'importação' : 'importações' }} · {{ totalLancamentos }} lançamentos</small>
+        }
+      </div>
+
+      @if (carregando) {
+        <p class="mf-hint text-center">Carregando…</p>
+      } @else if (!filtradas.length) {
+        <div class="imp-vazio">
+          <i class="pi pi-inbox"></i>
+          <strong>Nenhuma importação {{ textoPeriodo }}</strong>
+          <span class="mf-hint">Importe o extrato do banco para ver os lançamentos aqui.</span>
+          <p-button label="Importar extrato" icon="pi pi-upload" (onClick)="importar.emit(null)" />
+        </div>
+      } @else if (movel()) {
+        @for (g of grupos; track g.mes) {
+          <h3 class="imp-grupo">{{ g.mes }}</h3>
+          @for (i of g.itens; track i.id) {
+            <button type="button" class="imp-card" [class.desfeita]="i.status === 'Desfeita'" (click)="i.status !== 'Desfeita' && (detalhe = i)">
+              <span class="imp-sigla" [ngStyle]="estiloBanco(i.bancoId)">{{ sigla(i.bancoNome) }}</span>
+              <span class="imp-card-texto">
+                <span class="imp-banco">{{ i.bancoNome }}</span>
+                <small class="mf-hint imp-arquivo">{{ i.nomeArquivo }} · {{ tempoRelativo(i.importadoEm) === 'hoje' ? 'hoje ' + dataHora(i.importadoEm).slice(8) : dataCurta(i.importadoEm) }}</small>
+                @if (i.status === 'Desfeita') {
+                  <span class="imp-status desfeita">Desfeita</span>
+                } @else if (i.status === 'Pendencias') {
+                  <span class="imp-status pendencias">{{ i.lancamentos }} · {{ i.semCategoria }} {{ i.semCategoria === 1 ? 'pendência' : 'pendências' }}</span>
+                } @else {
+                  <span class="imp-status concluida">{{ i.lancamentos }} lançamentos</span>
+                }
+              </span>
+              @if (i.status !== 'Desfeita') { <i class="pi pi-chevron-right mf-hint"></i> }
+            </button>
+          }
+        }
+      } @else {
+        <p-table [value]="filtradas" styleClass="imp-tabela" [paginator]="filtradas.length > 10" [rows]="10">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Importado em</th>
+              <th>Banco · arquivo</th>
+              <th>Referência</th>
+              <th>Lançamentos</th>
+              <th class="text-right">Entradas / saídas</th>
+              <th></th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-i>
+            <tr [class.desfeita]="i.status === 'Desfeita'">
+              <td class="white-space-nowrap">
+                <div class="font-semibold imp-riscavel">{{ dataHora(i.importadoEm) }}</div>
+                <small class="mf-hint">{{ tempoRelativo(i.importadoEm) }}</small>
+              </td>
+              <td>
+                <div class="imp-banco-celula">
+                  <span class="imp-sigla" [ngStyle]="estiloBanco(i.bancoId)">{{ sigla(i.bancoNome) }}</span>
+                  <span class="min-w-0">
+                    <span class="imp-banco imp-riscavel">{{ i.bancoNome }}</span>
+                    <small class="mf-hint imp-arquivo">{{ i.nomeArquivo }}</small>
+                  </span>
+                </div>
+              </td>
+              <td class="white-space-nowrap">{{ mesCurto(i.mesReferencia) }}</td>
+              <td>
+                <div>
+                  <strong class="imp-riscavel">{{ i.lancamentos }}</strong>
+                  @if (i.status === 'Pendencias') {
+                    <small class="mf-hint"> · {{ i.semCategoria }} sem categoria</small>
+                  } @else if (i.duplicados) {
+                    <small class="mf-hint"> · {{ i.duplicados }} duplicados ignorados</small>
+                  }
+                </div>
+                @if (i.status === 'Desfeita') {
+                  <span class="imp-status desfeita"><i class="pi pi-undo"></i>Desfeita</span>
+                } @else if (i.status === 'Pendencias') {
+                  <span class="imp-status pendencias"><i class="pi pi-exclamation-triangle"></i>Pendências</span>
+                } @else {
+                  <span class="imp-status concluida"><i class="pi pi-check"></i>Concluída</span>
+                }
+              </td>
+              <td class="text-right white-space-nowrap">
+                @if (i.status === 'Desfeita') {
+                  <small class="mf-hint">desfeita em {{ dataCurta(i.desfeitoEm) }}@if (i.motivoDesfazer) {<br />({{ i.motivoDesfazer }})}</small>
+                } @else {
+                  <div class="imp-entrada">+{{ moeda(i.entradas) }}</div>
+                  <div class="imp-saida">−{{ moeda(i.saidas) }}</div>
+                }
+              </td>
+              <td class="text-right white-space-nowrap">
+                @if (i.status !== 'Desfeita') {
+                  <p-button icon="pi pi-list" [text]="true" severity="secondary" ariaLabel="Ver lançamentos" (onClick)="ver(i)" />
+                  <p-button icon="pi pi-ellipsis-v" [text]="true" severity="secondary" ariaLabel="Ações" (onClick)="abrirMenu($event, menu, i)" />
+                }
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    } @else {
+      <div class="imp-cobertura">
+        @if (!cobertura) {
+          <p class="mf-hint text-center">Carregando…</p>
+        } @else if (!cobertura.contas.length) {
+          <div class="imp-vazio">
+            <i class="pi pi-inbox"></i>
+            <strong>Nenhuma conta com importação</strong>
+            <p-button label="Importar extrato" icon="pi pi-upload" (onClick)="importar.emit(null)" />
+          </div>
+        } @else {
+          <div class="imp-cobertura-topo">
+            <strong>{{ movel() ? 'Últimos 4 meses' : 'O que já foi importado de cada conta' }}</strong>
+            <span>
+              <p-button icon="pi pi-chevron-left" [text]="true" severity="secondary" size="small" [disabled]="!podeRecuar" ariaLabel="Meses anteriores" (onClick)="moverJanela(1)" />
+              <p-button icon="pi pi-chevron-right" [text]="true" severity="secondary" size="small" [disabled]="recuo === 0" ariaLabel="Meses seguintes" (onClick)="moverJanela(-1)" />
+            </span>
+          </div>
+          <div class="imp-matriz" [style.grid-template-columns]="colunasCobertura">
+            <span></span>
+            @for (m of mesesVisiveis; track m) { <span class="imp-mes">{{ mesColuna(m) }}</span> }
+            @for (c of cobertura.contas; track c.bancoId) {
+              <span class="imp-conta">
+                @if (!movel()) { <span class="imp-sigla pequena" [ngStyle]="estiloBanco(c.bancoId)">{{ sigla(c.bancoNome) }}</span> }
+                <span class="imp-conta-nome" tabindex="0" [pTooltip]="c.bancoNome" tooltipPosition="top" tooltipEvent="both">{{ c.bancoNome }}</span>
+              </span>
+              @for (x of celulasVisiveis(c.celulas); track x.mes) {
+                @if (x.estado === 'falta') {
+                  <button type="button" class="imp-celula falta" [pTooltip]="dicaDaCelula(c.bancoNome, x)" tooltipPosition="top" tooltipEvent="both" [attr.aria-label]="'Importar ' + c.bancoNome + ' de ' + mesCurto(x.mes)" (click)="importar.emit(c.bancoId)">falta</button>
+                } @else if (x.estado === 'sem-dados') {
+                  <span class="imp-celula sem-dados" tabindex="0" [pTooltip]="dicaDaCelula(c.bancoNome, x)" tooltipPosition="top" tooltipEvent="both">—</span>
+                } @else if (x.estado === 'pendencias') {
+                  <span class="imp-celula pendencias" tabindex="0" [pTooltip]="dicaDaCelula(c.bancoNome, x)" tooltipPosition="top" tooltipEvent="both"><strong>{{ x.lancamentos }}</strong><small>{{ x.pendencias }} {{ movel() ? 'sem cat.' : 'sem categoria' }}</small></span>
+                } @else {
+                  <span class="imp-celula importado" tabindex="0" [pTooltip]="dicaDaCelula(c.bancoNome, x)" tooltipPosition="top" tooltipEvent="both">{{ x.lancamentos }}</span>
+                }
+              }
+            }
+          </div>
+          <div class="imp-legenda mf-hint">
+            <span><i class="imp-ponto importado"></i>lançamentos importados</span>
+            <span><i class="imp-ponto pendencias"></i>com itens sem categoria</span>
+            <span><i class="imp-ponto falta"></i>falta importar</span>
+            <span>— sem dados</span>
+          </div>
+          @if (movel() && faltando) {
+            <div class="imp-aviso-info"><i class="pi pi-info-circle"></i><span><strong>{{ faltando }} {{ faltando === 1 ? 'extrato faltando' : 'extratos faltando' }}</strong> nesses meses. Toque em "falta" para importar já com a conta escolhida.</span></div>
+          }
+        }
+      </div>
+    }
+  </div>
+</p-dialog>
+
+<p-menu #menu [model]="itensMenu" [popup]="true" appendTo="body" />
+
+<p-sidebar [visible]="!!detalhe" position="bottom" [showCloseIcon]="false" styleClass="h-auto" (visibleChange)="!$event && (detalhe = null)">
+  @if (detalhe; as d) {
+    <div class="imp-det-topo">
+      <span class="imp-sigla" [ngStyle]="estiloBanco(d.bancoId)">{{ sigla(d.bancoNome) }}</span>
+      <span class="min-w-0">
+        <span class="imp-det-titulo">{{ d.bancoNome }} · {{ mesCurto(d.mesReferencia) }}</span>
+        <small class="mf-hint imp-arquivo">{{ d.nomeArquivo }}</small>
+      </span>
+    </div>
+    <div class="imp-det-linha"><span class="mf-hint">Importado em</span><strong>{{ dataHora(d.importadoEm) }}</strong></div>
+    <div class="imp-det-linha">
+      <span class="mf-hint">Lançamentos</span>
+      <strong>{{ d.lancamentos }}@if (d.duplicados) { <small>({{ d.duplicados }} duplicados ignorados)</small> }</strong>
+    </div>
+    <div class="imp-det-linha"><span class="mf-hint">Entradas</span><strong class="imp-entrada">+{{ moeda(d.entradas) }}</strong></div>
+    <div class="imp-det-linha"><span class="mf-hint">Saídas</span><strong class="imp-saida">−{{ moeda(d.saidas) }}</strong></div>
+    <button type="button" class="imp-det-acao" (click)="ver(d)"><i class="pi pi-list"></i>Ver lançamentos</button>
+    <button type="button" class="imp-det-acao perigo" (click)="abrirDesfazer(d)"><i class="pi pi-undo"></i>Desfazer importação</button>
+  }
+</p-sidebar>
+
+<p-dialog header="Desfazer importação?" [visible]="!!desfazendo" [modal]="true" [draggable]="false" [focusOnShow]="false" appendTo="body"
+  [style]="{ width: '36rem' }" [breakpoints]="{ '768px': '96vw' }" (visibleChange)="!$event && (desfazendo = null)">
+  @if (desfazendo; as d) {
+    <p class="mt-0">Os <strong>{{ d.lancamentos }} lançamentos</strong> de <strong>{{ d.nomeArquivo }}</strong> ({{ d.bancoNome }} · {{ mesCurto(d.mesReferencia) }}) serão removidos do extrato.</p>
+    @if (vinculos; as v) {
+      @if (v.pessoas.length || v.pagamentosAbatendo || v.divididos || v.comNota) {
+        <div class="imp-aviso" role="alert">
+          <i class="pi pi-exclamation-triangle"></i>
+          <div>
+            @if (v.pessoas.length) { <div>Há lançamentos nos acertos de {{ v.pessoas.join(', ') }}: esses valores saem dos acertos.</div> }
+            @if (v.pagamentosAbatendo) { <div>{{ v.pagamentosAbatendo }} {{ v.pagamentosAbatendo === 1 ? 'pagamento abatia' : 'pagamentos abatiam' }} estas compras e volta{{ v.pagamentosAbatendo === 1 ? '' : 'm' }} para o saldo geral da pessoa.</div> }
+            @if (v.divididos) { <div>{{ v.divididos }} {{ v.divididos === 1 ? 'lançamento dividido perde' : 'lançamentos divididos perdem' }} a divisão.</div> }
+            @if (v.comNota) { <div>{{ v.comNota }} {{ v.comNota === 1 ? 'nota fiscal será removida' : 'notas fiscais serão removidas' }}.</div> }
+          </div>
+        </div>
+      }
+    } @else {
+      <p class="mf-hint">Conferindo vínculos…</p>
+    }
+    <div class="flex justify-content-between">
+      <label for="imp-motivo" class="font-semibold">Motivo</label>
+      <small class="mf-hint">opcional</small>
+    </div>
+    <input id="imp-motivo" pInputText class="w-full mt-1" maxlength="200" placeholder="Ex.: arquivo errado" [(ngModel)]="motivo" />
+  }
   <ng-template pTemplate="footer">
-    <p-button label="Fechar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
-    <p-button label="Concluir" icon="pi pi-check" (onClick)="close(true)" />
+    <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="desfazendo = null" />
+    <p-button label="Desfazer importação" severity="danger" [loading]="gravando" [disabled]="!vinculos" (onClick)="confirmarDesfazer()" />
   </ng-template>
 </p-dialog>

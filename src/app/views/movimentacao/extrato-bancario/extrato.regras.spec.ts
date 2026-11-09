@@ -133,6 +133,7 @@ describe('extrato.regras', () => {
       expect(ids(filtrarExtrato(itens, { ...filtro, tipo: 'saidas' }))).toEqual([3, 4, 1]);
       expect(ids(filtrarExtrato(itens, { ...filtro, busca: 'sao jose' }))).toEqual([3]);
       expect(ids(filtrarExtrato(itens, { ...filtro, busca: 'agatha' }))).toEqual([4]);
+      expect(ids(filtrarExtrato([{ ...itens[0], id: 77, extratoBancarioId: 5 }, { ...itens[0], id: 78, extratoBancarioId: 6 }], { ...filtro, importacaoId: 5 }))).toEqual([77]);
       expect(ids(filtrarExtrato([...itens, { ...itens[0], id: 99, itensNota: ['Ração Golden'] }], { ...filtro, busca: 'racao' }))).toEqual([99]);
     });
 

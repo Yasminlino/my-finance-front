@@ -96,6 +96,8 @@ export interface FiltroExtrato {
   /** Faixa de valor, como em Contas a Pagar; null ou ausente = sem limite. */
   valorMin?: number | null;
   valorMax?: number | null;
+  /** Só os lançamentos desta importação (card #75). */
+  importacaoId?: number | null;
 }
 
 /** "Ordenar por", como em Contas a Pagar; data (mais recente primeiro) é o padrão. */
@@ -144,6 +146,7 @@ export function filtrarExtrato(itens: readonly ExtratoItemDto[], filtro: FiltroE
   const pessoas = filtro.pessoas.map(normalizarNome);
   return itens
     .filter(i => filtro.bancoId === null || i.bancoId === filtro.bancoId)
+    .filter(i => filtro.importacaoId == null || i.extratoBancarioId === filtro.importacaoId)
     .filter(i => filtro.tipo === 'todos' || (filtro.tipo === 'entradas') === ehEntrada(i))
     .filter(i => !busca || normalizarNome(i.descricao).includes(busca) || normalizarNome(nomeDaPessoa(i)).includes(busca)
       || !!i.itensNota?.some(n => normalizarNome(n).includes(busca)))

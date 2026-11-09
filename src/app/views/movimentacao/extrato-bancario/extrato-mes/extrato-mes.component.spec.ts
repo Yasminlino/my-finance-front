@@ -102,7 +102,7 @@ describe('ExtratoMesComponent', () => {
     expect(el().querySelector('.modo-edicao #extrato-edicao')).not.toBeNull();
     expect(el().querySelector('p-splitbutton')?.textContent).toContain('Novo lançamento');
     expect(comp().itensNovoLancamento.map(i => i.label)).toEqual(
-      ['Importar extrato', 'Importações mensais', 'Relatório mensal', 'Configurar pessoas', 'Regras de classificação', 'Atualizar']);
+      ['Importar extrato', 'Importações realizadas', 'Relatório mensal', 'Configurar pessoas', 'Regras de classificação', 'Atualizar']);
     expect(el().querySelector('mf-page-header [aria-label="Mais ações"]')).toBeNull();
   });
 
