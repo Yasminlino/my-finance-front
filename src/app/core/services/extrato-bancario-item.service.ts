@@ -1,4 +1,4 @@
-import { ResumoCategoriasDto } from '../models/resumo-categorias.model';
+import { EvolucaoExtratosDto, ResumoCategoriasDto } from '../models/resumo-categorias.model';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
@@ -51,6 +51,11 @@ export class ExtratoBancarioItemService {
   /** Resumo do mês por categoria (card #76, fase 5). */
   resumoCategorias(mes: string): Observable<ResumoCategoriasDto> {
     return this.api.get<ResumoCategoriasDto>('/GetResumoCategorias', undefined, { params: { month: mes } });
+  }
+
+  /** Entradas × saídas até o mês (card #62). */
+  evolucao(mes: string, meses = 6): Observable<EvolucaoExtratosDto> {
+    return this.api.get<EvolucaoExtratosDto>('/GetEvolucaoExtratos', undefined, { params: { month: mes, meses } });
   }
 
   /** Divide o lançamento nestas partes; lista vazia desfaz (card #76, fase 3). */

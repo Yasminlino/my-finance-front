@@ -72,7 +72,7 @@ import { ModalImportarExtratoComponent } from '../components/modal-importar-extr
 import { ModalLancamentoManualComponent } from '../components/modal-lancamento-manual/modal-lancamento-manual.component';
 import {
   CampoEditavel, CardsExtrato, ContaDoMes, FaturaPorPessoa, FiltroExtrato, GrupoDoDia, Pendencia, TipoFiltro, agruparPorDia, alteracoesDoRascunho,
-  aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehDoTitular, ehEntrada, faturaPorPessoa, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa,
+  aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehDoTitular, ehEntrada, faturaPorPessoa, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa, vencimentoNoMes,
   dividido, tituloCurtoDoDia, OPCOES_ORDEM_EXTRATO, OrdemExtrato, grupoUnico, ordenarExtrato
 } from '../extrato.regras';
 
@@ -667,10 +667,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
 
   /** "10/11": o dia de vencimento do cartão no mês aberto; vazio se o cartão não tem o dia cadastrado. */
   get venceFatura(): string {
-    const dia = this.bancos.find(b => b.id === this.filtro.bancoId)?.diaVencimento;
-    if (!dia) return '';
-    const [ano, mes] = this.selectedMonth.split('-').map(Number);
-    return `${String(Math.min(dia, new Date(ano, mes, 0).getDate())).padStart(2, '0')}/${String(mes).padStart(2, '0')}`;
+    return vencimentoNoMes(this.bancos.find(b => b.id === this.filtro.bancoId)?.diaVencimento, this.selectedMonth);
   }
 
   get nomeContaEscolhida(): string {

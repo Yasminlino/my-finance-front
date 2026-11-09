@@ -22,6 +22,36 @@
         styleClass="w-full" />
     </div>
   </div>
+  @if (doMes; as m) {
+    <div class="grid mb-1">
+      <div class="col-12 md:col-4"><mf-stat-card rotulo="Entradas do mês" [valor]="moeda(m.entradas)" icone="pi pi-arrow-down-left" tom="receita" corDoValor="receita" /></div>
+      <div class="col-12 md:col-4"><mf-stat-card rotulo="Saídas do mês" [valor]="moeda(m.saidas)" icone="pi pi-arrow-up-right" tom="despesa" /></div>
+      <div class="col-12 md:col-4"><mf-stat-card rotulo="Resultado do mês" [valor]="moeda(m.resultado)" icone="pi pi-wallet" [corDoValor]="m.resultado < 0 ? 'perigo' : 'receita'" /></div>
+    </div>
+    <small class="mf-hint block mb-3">Sem pagamento de fatura e transferências entre contas, para não contar o mesmo gasto duas vezes.</small>
+  }
+  @if (graficoEvolucao) {
+    <div class="surface-card border-round shadow-1 mb-3">
+      <div class="flex align-items-center justify-content-between px-3 py-2 border-bottom-1 surface-border">
+        <h3 class="text-lg font-semibold m-0">Entradas × Saídas · 6 meses</h3>
+        <p-button [link]="true" [label]="evolucaoComoTabela ? 'Ver como gráfico' : 'Ver como tabela'" (onClick)="evolucaoComoTabela = !evolucaoComoTabela" />
+      </div>
+      @if (evolucaoComoTabela) {
+        <div class="p-3 overflow-x-auto">
+          <table class="w-full">
+            <thead><tr><th class="text-left">Mês</th><th class="text-right">Entradas</th><th class="text-right">Saídas</th><th class="text-right">Resultado</th></tr></thead>
+            <tbody>
+              @for (linha of evolucao; track linha.mes) {
+                <tr><td>{{ mesCurto(linha.mes) }}</td><td class="text-right">{{ moeda(linha.entradas) }}</td><td class="text-right">{{ moeda(linha.saidas) }}</td><td class="text-right">{{ moeda(linha.resultado) }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <app-apex-chart [options]="graficoEvolucao" />
+      }
+    </div>
+  }
   <div class="grid mb-3">
     <div class="col-12 lg:col-5">
       <div class="surface-card border-round shadow-1 h-full">

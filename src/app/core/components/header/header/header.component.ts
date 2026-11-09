@@ -27,7 +27,7 @@ export class HeaderComponent {
   movimentacoesItems: NavItem[] = [
     { path: '/contas-a-pagar', label: 'Contas a Pagar', icon: 'pi pi-money-bill' },
     // { path: '/movimentacao-diaria', label: 'Movimentação Diária', icon: 'pi pi-calendar' },
-    { path: '/extrato-bancario', label: 'Extrato Bancário', icon: 'pi pi-chart-line' },
+    { path: '/extrato-bancario/resumo', label: 'Extrato Bancário', icon: 'pi pi-chart-line' },
   ];
 
   planejamentoItems: NavItem[] = [

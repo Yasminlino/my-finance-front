@@ -18,3 +18,14 @@ export type ResumoCategoriasDto = {
   foraDoResumo: number;
   categorias: ResumoCategoriaLinhaDto[];
 };
+
+export interface EvolucaoExtratosMesDto {
+  mes: string;
+  entradas: number;
+  saidas: number;
+  resultado: number;
+}
+
+export interface EvolucaoExtratosDto {
+  meses: EvolucaoExtratosMesDto[];
+}

@@ -11,6 +11,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, filter } from 'rxjs';
 import { FormControl, FormGroup } from '@angular/forms';
 import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
+import { EvolucaoExtratosMesDto } from 'src/app/core/models/resumo-categorias.model';
+import { formatCurrencyBR } from 'src/app/core/utils/mask';
+import { mesColuna, mesCurto } from '../modal-importacoes-mensais/importacoes.regras';
 
 function toNumber(v: unknown): number {
   // se vier string "123.45" ou number, converte para number
@@ -30,6 +33,12 @@ export class RelatorioGastosMensaisComponent implements OnInit {
   extratoItemsSaida: ExtratoItemDto[] = [];
   extratoItemsEntrada: ExtratoItemDto[] = [];
   meses = Meses;
+
+  /** Do mais antigo ao mês escolhido, sem pagamento de fatura e transferências (card #62). */
+  evolucao: EvolucaoExtratosMesDto[] = [];
+  graficoEvolucao: ApexChartOptions | null = null;
+  evolucaoComoTabela = false;
+  readonly mesCurto = mesCurto;
 
   totalEntrada = 0;
   totalSaida = 0;
@@ -95,6 +104,10 @@ export class RelatorioGastosMensaisComponent implements OnInit {
         this.aplicarFiltros();
       });
 
+    ultimaBusca(this.mes$, mes => this.extratoItemService.evolucao(mes), e => console.error('Erro ao carregar a evolução', e))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(r => this.aplicarEvolucao(r.meses));
+
     this.filtros.controls.mes.valueChanges
       .pipe(filter(m => !!m), takeUntilDestroyed(this.destroyRef))
       .subscribe(m => this.mes$.next(m));
@@ -103,6 +116,37 @@ export class RelatorioGastosMensaisComponent implements OnInit {
       .subscribe(() => this.aplicarFiltros());
 
     this.mes$.next(mes);
+  }
+
+  moeda(valor: number): string {
+    return formatCurrencyBR(valor);
+  }
+
+  get doMes(): EvolucaoExtratosMesDto | undefined {
+    return this.evolucao[this.evolucao.length - 1];
+  }
+
+  private aplicarEvolucao(meses: EvolucaoExtratosMesDto[]): void {
+    this.evolucao = meses;
+    this.graficoEvolucao = {
+      series: [
+        { name: 'Entradas', data: meses.map(m => m.entradas) },
+        { name: 'Saídas', data: meses.map(m => m.saidas) }
+      ],
+      chart: { type: 'bar', height: 300, toolbar: { show: false } },
+      colors: ['#00b919', '#FF4560'],
+      plotOptions: { bar: { columnWidth: '55%', borderRadius: 3 } },
+      dataLabels: { enabled: false },
+      xaxis: { categories: meses.map(m => mesColuna(m.mes)) },
+      yaxis: { labels: { formatter: v => formatCurrencyBR(v) } },
+      legend: { show: true, position: 'top' },
+      tooltip: {
+        shared: true,
+        intersect: false,
+        x: { formatter: (_v, o) => `${mesCurto(meses[o.dataPointIndex].mes)} · Resultado ${formatCurrencyBR(meses[o.dataPointIndex].resultado)}` },
+        y: { formatter: v => formatCurrencyBR(v) }
+      }
+    };
   }
 
   calculaRegraContabil() {

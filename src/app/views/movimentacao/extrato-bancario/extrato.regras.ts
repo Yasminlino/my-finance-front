@@ -44,6 +44,13 @@ export function expandirPartes(itens: readonly ExtratoItemDto[]): ExtratoItemDto
   })));
 }
 
+/** "10/11": o dia de vencimento no mês (AAAA-MM), limitado ao último dia; vazio sem o dia cadastrado. */
+export function vencimentoNoMes(dia: number | null | undefined, mes: string): string {
+  if (!dia) return '';
+  const [ano, numero] = mes.split('-').map(Number);
+  return `${String(Math.min(dia, new Date(ano, numero, 0).getDate())).padStart(2, '0')}/${String(numero).padStart(2, '0')}`;
+}
+
 export interface ContaDoMes {
   bancoId: number;
   nome: string;

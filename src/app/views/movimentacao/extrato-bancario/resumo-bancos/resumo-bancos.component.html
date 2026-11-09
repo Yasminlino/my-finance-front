@@ -1,0 +1,183 @@
+<div class="mf-pagina">
+  <mf-page-header [class]="movel() ? 'block mb-2' : 'block mt-2 mb-3'" titulo="Resumo de Extratos"
+    [subtitulo]="movel() ? '' : 'Escolha o banco para ver o extrato do mês'" [breadcrumb]="breadcrumb" [home]="home">
+    @if (!movel()) {
+      <div acoes class="flex align-items-center gap-1">
+        <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" (onClick)="mudarMes(-1)" ariaLabel="Mês anterior" />
+        <p-calendar [(ngModel)]="dateFilter" view="month" dateFormat="MM yy" [readonlyInput]="true" [showIcon]="true"
+          (onSelect)="carregarMes($event)" inputStyleClass="text-center" />
+        <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
+      </div>
+    }
+    @if (!movel()) {
+      <p-splitButton acoes label="Importar extrato" icon="pi pi-file-import" [model]="itensMenu" [menuStyle]="{ minWidth: '15rem' }"
+        (onClick)="abrirImportar()" appendTo="body" />
+    }
+    @if (movel()) {
+      <p-button acoes icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary" (onClick)="menu.toggle($event)" ariaLabel="Mais ações" />
+    }
+  </mf-page-header>
+  <p-menu #menu [model]="itensMenu" [popup]="true" appendTo="body" />
+
+  @if (movel()) {
+    <div class="flex align-items-center gap-2 mb-3">
+      <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" (onClick)="mudarMes(-1)" ariaLabel="Mês anterior" />
+      <p-calendar class="flex-grow-1" styleClass="w-full" [(ngModel)]="dateFilter" view="month" dateFormat="MM 'de' yy"
+        [readonlyInput]="true" [showIcon]="true" [touchUI]="true" (onSelect)="carregarMes($event)" />
+      <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
+    </div>
+  }
+
+  <div class="grid mb-2">
+    <div class="col-6 xl:col-3">
+      <mf-stat-card rotulo="Entradas" [valor]="totais ? moeda(totais.entradas) : '—'" icone="pi pi-arrow-down-left" tom="receita" corDoValor="receita">
+        <small class="mf-hint">{{ textoContas }}</small>
+      </mf-stat-card>
+    </div>
+    <div class="col-6 xl:col-3">
+      <mf-stat-card rotulo="Saídas" [valor]="totais ? moeda(totais.saidas) : '—'" icone="pi pi-arrow-up-right" tom="despesa">
+        <small class="mf-hint">{{ textoContasECartoes }}</small>
+      </mf-stat-card>
+    </div>
+    <div class="col-6 xl:col-3">
+      <mf-stat-card rotulo="Resultado do mês" [valor]="totais ? comSinal(totais.resultado) : '—'" icone="pi pi-chart-line"
+        [corDoValor]="totais && totais.resultado < 0 ? 'perigo' : 'receita'">
+        <small class="mf-hint">sem pagamento de fatura</small>
+      </mf-stat-card>
+    </div>
+    <div class="col-6 xl:col-3">
+      <mf-stat-card rotulo="Pendências" [valor]="'' + pendencias.total" icone="pi pi-exclamation-triangle" tom="neutro" [destaque]="pendencias.total > 0">
+        <small class="mf-hint">{{ pendencias.semExtrato }} sem extrato · {{ pendencias.semCategoria }} sem categoria</small>
+      </mf-stat-card>
+    </div>
+  </div>
+
+  <div class="surface-card border-round shadow-1 mb-3">
+    <mf-filter-bar>
+      <p-selectButton inicio class="rb-filtro" [options]="opcoesFiltro" [(ngModel)]="filtro" optionLabel="label" optionValue="value" [allowEmpty]="false">
+        <ng-template let-opcao pTemplate="item">
+          <span>{{ opcao.label }}</span>
+          <p-badge [value]="'' + opcao.contagem" severity="secondary" styleClass="ml-2" />
+        </ng-template>
+      </p-selectButton>
+      <p-iconField fim iconPosition="left">
+        <p-inputIcon styleClass="pi pi-search" />
+        <input pInputText type="text" placeholder="Buscar banco..." [(ngModel)]="busca" aria-label="Buscar banco" />
+      </p-iconField>
+      <p-dropdown fim [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value" appendTo="body" ariaLabel="Ordenar bancos" />
+      <!-- Um único elemento dentro do @if: com mais de um, a projeção em [fim] não acontece e eles somem. -->
+      @if (!movel()) {
+        <div fim class="rb-modos flex gap-1">
+          <p-button icon="pi pi-th-large" [outlined]="modo !== 'cards'" severity="secondary" pTooltip="Cards" tooltipPosition="top" (onClick)="modo = 'cards'" ariaLabel="Ver em cards" />
+          <p-button icon="pi pi-list" [outlined]="modo !== 'lista'" severity="secondary" pTooltip="Lista" tooltipPosition="top" (onClick)="modo = 'lista'" ariaLabel="Ver em lista" />
+        </div>
+      }
+    </mf-filter-bar>
+  </div>
+
+  @if (mesVazio) {
+    <div class="surface-card border-round shadow-1">
+      <mf-empty-state icone="pi pi-file-import" [titulo]="'Nenhum lançamento em ' + nomeDoMes" texto="Importe o extrato de um banco para começar.">
+        <p-button label="Importar extrato" icon="pi pi-file-import" (onClick)="abrirImportar()" />
+      </mf-empty-state>
+    </div>
+  } @else if (modo === 'lista' && !movel()) {
+    <div class="surface-card border-round shadow-1 overflow-x-auto">
+      <table class="rb-tabela">
+        <thead>
+          <tr><th>Banco</th><th>Tipo</th><th class="text-right">Entradas</th><th class="text-right">Saídas</th><th class="text-right">Resultado</th><th>Situação</th></tr>
+        </thead>
+        <tbody>
+          @for (c of visiveis; track c.bancoId) {
+            <tr [class.rb-linha]="!c.falta" (click)="!c.falta && abrirExtrato(c.bancoId)">
+              <td><span class="rb-banco-celula"><span class="rb-sigla rb-sigla--pequena" [ngStyle]="estiloBanco(c.bancoId)">{{ sigla(c.nome) }}</span><strong>{{ c.nome }}</strong></span></td>
+              <td>{{ c.tipoNome }}</td>
+              <td class="text-right">{{ moeda(c.entradas) }}</td>
+              <td class="text-right">{{ moeda(c.saidas) }}</td>
+              <td class="text-right">{{ comSinal(c.entradas - c.saidas) }}</td>
+              <td>
+                @if (c.falta) {
+                  <p-button [link]="true" [label]="'Importar ' + nomeMesCurto" (onClick)="abrirImportar(c.bancoId)" />
+                } @else {
+                  <small class="mf-hint">{{ situacao(c) }}</small>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <div class="rb-lista">
+      @for (c of normais; track c.bancoId) {
+        <button type="button" class="rb-card" (click)="abrirExtrato(c.bancoId)">
+          <div class="rb-topo">
+            <span class="rb-sigla" [ngStyle]="estiloBanco(c.bancoId)"><i class="pi" [class.pi-credit-card]="c.ehCredito" [class.pi-building-columns]="!c.ehCredito"></i></span>
+            <div class="rb-nome"><strong>{{ c.nome }}</strong>@if (c.subtitulo) {<small class="mf-hint">{{ c.subtitulo }}</small>}</div>
+            @if (c.tipoNome) { <p-tag [severity]="c.ehCredito ? 'secondary' : 'info'" [value]="c.tipoNome" /> }
+          </div>
+          @if (c.ehCredito) {
+            <div class="rb-valores">
+              <div><small class="mf-hint">Fatura</small><strong>{{ moeda(c.fatura) }}</strong></div>
+              <div><small class="mf-hint">De outras pessoas</small><strong>{{ moeda(c.outras) }}</strong></div>
+              @if (c.outras > 0) {
+                <div><small class="mf-hint">Falta receber</small><strong [class.rb-saida]="c.faltaReceber">{{ c.faltaReceber === null ? '—' : moeda(c.faltaReceber) }}</strong></div>
+              } @else {
+                <div><small class="mf-hint">Sem categoria</small><strong [class.rb-alerta]="c.semCategoria">{{ c.semCategoria }}</strong></div>
+              }
+            </div>
+            <div class="rb-barra" aria-hidden="true">
+              <span class="rb-barra--minhas" [style.flex-grow]="c.minhas"></span>
+              <span class="rb-barra--outras" [style.flex-grow]="c.outras"></span>
+            </div>
+          } @else {
+            <div class="rb-valores">
+              <div><small class="mf-hint">Entradas</small><strong class="rb-entrada">{{ moeda(c.entradas) }}</strong></div>
+              <div><small class="mf-hint">Saídas</small><strong>{{ moeda(c.saidas) }}</strong></div>
+              <div><small class="mf-hint">Resultado</small><strong [class.rb-entrada]="c.entradas >= c.saidas" [class.rb-saida]="c.entradas < c.saidas">{{ comSinal(c.entradas - c.saidas) }}</strong></div>
+            </div>
+            <div class="rb-barra" aria-hidden="true">
+              <span class="rb-barra--entradas" [style.flex-grow]="c.entradas"></span>
+              <span class="rb-barra--saidas" [style.flex-grow]="c.saidas"></span>
+            </div>
+          }
+          <div class="rb-rodape">
+            <small class="mf-hint">
+              @if (c.importadoEm) { <i class="pi pi-check-circle rb-entrada"></i> }
+              {{ situacao(c) }}
+            </small>
+            <span class="rb-ver">{{ c.ehCredito ? 'Ver fatura' : 'Ver extrato' }} <i class="pi pi-chevron-right"></i></span>
+          </div>
+        </button>
+      } @empty {
+        @if (!loading && !faltando.length) { <p class="mf-hint">Nenhum banco neste filtro.</p> }
+      }
+    </div>
+    @for (c of faltando; track c.bancoId) {
+      <div class="rb-falta">
+        <span class="rb-sigla" [ngStyle]="estiloBanco(c.bancoId)"><i class="pi pi-file"></i></span>
+        <div class="rb-nome">
+          <strong>{{ c.nome }}@if (c.tipoNome) { · {{ c.tipoNome }} }</strong>
+          <small>Extrato de {{ nomeMesCurto }} ainda não importado@if (c.ultimaImportacao) { · último em {{ dataCurta(c.ultimaImportacao) }} }</small>
+        </div>
+        <p-button [label]="'Importar ' + nomeMesCurto" icon="pi pi-download" [outlined]="true" (onClick)="abrirImportar(c.bancoId)" />
+      </div>
+    }
+  }
+
+  @if (movel()) { <mf-fab icone="pi pi-file-import" rotulo="Importar extrato" (clique)="abrirImportar()" /> }
+
+  @if (showImportar) {
+    <app-modal-importar-extrato [bancos]="bancos" [tiposCartao]="tiposCartao" [bancoInicial]="bancoParaImportar"
+      (importadoEm)="aoImportarEm($event)" (fechado)="aoFecharModal($event)" />
+  }
+  @if (showLancamento) {
+    <app-modal-lancamento-manual [mes]="selectedMonth" [bancos]="bancos" [tiposCartao]="tiposCartao" [categorias]="categorias" [pessoas]="pessoas" (fechado)="aoFecharModal($event)" />
+  }
+  @if (showImportacoes) {
+    <app-modal-importacoes-mensais (importar)="abrirImportar($event)" (verLancamentos)="verLancamentos()" (closed)="showImportacoes = false; $event && recarregar()" />
+  }
+  @if (showConfigPessoas) {
+    <app-modal-configuracao-vinculo-pessoa [monthFilter]="selectedMonth" (closed)="showConfigPessoas = false; recarregar()" />
+  }
+</div>

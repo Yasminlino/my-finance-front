@@ -27,4 +27,17 @@ describe('RelatorioGastosMensaisComponent', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('o mês escolhido é o último da evolução e o tooltip mostra o resultado', () => {
+    (component as unknown as { aplicarEvolucao(m: unknown[]): void }).aplicarEvolucao([
+      { mes: '2026-09', entradas: 1, saidas: 2, resultado: -1 },
+      { mes: '2026-10', entradas: 10, saidas: 4, resultado: 6 }
+    ]);
+
+    expect(component.doMes?.resultado).toBe(6);
+    expect(component.graficoEvolucao?.series.map(s => s.name)).toEqual(['Entradas', 'Saídas']);
+    const titulo = component.graficoEvolucao?.tooltip?.x?.formatter as (v: number, o: { dataPointIndex: number }) => string;
+    expect(titulo(0, { dataPointIndex: 1 })).toContain('out/2026');
+    expect(titulo(0, { dataPointIndex: 1 })).toContain('6,00');
+  });
 });
