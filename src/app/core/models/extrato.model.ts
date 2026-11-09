@@ -69,6 +69,8 @@ export interface ExtratoItemDto {
   partes?: ExtratoItemParteDto[];
   /** Tem nota fiscal salva (card #76, fase 6). */
   temNota?: boolean;
+  /** Nomes dos itens da nota, para a busca. */
+  itensNota?: string[];
 
   /** Navegações que a API devolve na leitura (o relatório de gastos agrupa por elas). */
   banco?: Pick<BancoDto, 'id' | 'nomeBanco'> | null;

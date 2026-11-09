@@ -37,6 +37,8 @@ describe('VerNotaComponent', () => {
     expect(texto).toContain('Circuito');
     expect(texto).toContain('Ração');
     expect(texto).toContain('Pet');
+    expect(texto).toMatch(/2 × R\$\s*15,00/);
+    expect(texto).not.toContain('Sem categoria');
     f.destroy();
   });
 

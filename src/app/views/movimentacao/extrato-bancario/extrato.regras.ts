@@ -145,7 +145,8 @@ export function filtrarExtrato(itens: readonly ExtratoItemDto[], filtro: FiltroE
   return itens
     .filter(i => filtro.bancoId === null || i.bancoId === filtro.bancoId)
     .filter(i => filtro.tipo === 'todos' || (filtro.tipo === 'entradas') === ehEntrada(i))
-    .filter(i => !busca || normalizarNome(i.descricao).includes(busca) || normalizarNome(nomeDaPessoa(i)).includes(busca))
+    .filter(i => !busca || normalizarNome(i.descricao).includes(busca) || normalizarNome(nomeDaPessoa(i)).includes(busca)
+      || !!i.itensNota?.some(n => normalizarNome(n).includes(busca)))
     .filter(i => !pessoas.length || pessoas.includes(normalizarNome(nomeDaPessoa(i)))
       || !!i.partes?.some(p => pessoas.includes(normalizarNome(p.pessoaNome))))
     .filter(i => !filtro.categorias.length || (i.categoriaId != null && filtro.categorias.includes(i.categoriaId))

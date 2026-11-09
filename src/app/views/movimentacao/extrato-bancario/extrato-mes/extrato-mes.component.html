@@ -116,7 +116,7 @@
 
           <p-iconField fim iconPosition="left">
             <p-inputIcon styleClass="pi pi-search" />
-            <input pInputText type="text" placeholder="Buscar descrição ou pessoa..." [(ngModel)]="filtro.busca"
+            <input pInputText type="text" placeholder="Buscar descrição, pessoa ou item..." [(ngModel)]="filtro.busca"
               (ngModelChange)="aoMudarFiltro()" aria-label="Buscar no extrato" />
           </p-iconField>
           <p-multiSelect fim [options]="opcoesPessoa" [(ngModel)]="filtro.pessoas" placeholder="Pessoas" [filter]="true"
@@ -148,17 +148,22 @@
             (onClick)="exportar()" ariaLabel="Exportar" />
         </mf-filter-bar>
         } @else {
-          <!-- Celular: o tipo com a contagem e, ao lado, o botão da folha de filtros (a busca fica nela) -->
+          <!-- Celular, como em Contas a Pagar: o tipo com a contagem e, abaixo, a busca com o botão da folha de filtros -->
+          <div class="filtro-rolavel filtro-situacao-compacto mb-2">
+            <p-selectButton [options]="opcoesTipo" [(ngModel)]="filtro.tipo" optionLabel="label" optionValue="value"
+              [allowEmpty]="false" (onChange)="aoMudarFiltro()">
+              <ng-template let-opcao pTemplate="item">
+                <span class="white-space-nowrap">{{ opcao.label }}</span>
+                <p-badge [value]="'' + opcao.contagem" severity="secondary" styleClass="ml-2" />
+              </ng-template>
+            </p-selectButton>
+          </div>
           <div class="flex align-items-center gap-2 mb-2">
-            <div class="filtro-rolavel filtro-situacao-compacto flex-grow-1 min-w-0">
-              <p-selectButton [options]="opcoesTipo" [(ngModel)]="filtro.tipo" optionLabel="label" optionValue="value"
-                [allowEmpty]="false" (onChange)="aoMudarFiltro()">
-                <ng-template let-opcao pTemplate="item">
-                  <span class="white-space-nowrap">{{ opcao.label }}</span>
-                  <p-badge [value]="'' + opcao.contagem" severity="secondary" styleClass="ml-2" />
-                </ng-template>
-              </p-selectButton>
-            </div>
+            <p-iconField iconPosition="left" class="flex-grow-1 min-w-0">
+              <p-inputIcon styleClass="pi pi-search" />
+              <input pInputText type="text" class="w-full" placeholder="Buscar lançamento ou item..." [(ngModel)]="filtro.busca"
+                (ngModelChange)="aoMudarFiltro()" aria-label="Buscar no extrato" />
+            </p-iconField>
               <span class="botao-filtros p-overlay-badge">
                 <p-button icon="pi pi-sliders-h" [outlined]="true" severity="secondary" (onClick)="filtrosAbertos = true" ariaLabel="Filtros" />
                 @if (filtrosNoPainel) {
@@ -365,11 +370,6 @@
 
   @if (movel()) {
     <p-sidebar [(visible)]="filtrosAbertos" position="bottom" header="Filtros" styleClass="painel-filtros h-auto">
-      <p-iconField iconPosition="left" class="block extrato-busca-movel mb-3">
-        <p-inputIcon styleClass="pi pi-search" />
-        <input pInputText type="text" class="w-full" placeholder="Buscar descrição ou pessoa..." [(ngModel)]="filtro.busca"
-          (ngModelChange)="aoMudarFiltro()" aria-label="Buscar no extrato" />
-      </p-iconField>
       <label class="block text-sm text-color-secondary mb-1" for="filtro-pendencia-movel">Mostrar só</label>
       <p-dropdown inputId="filtro-pendencia-movel" [options]="opcoesPendencia" optionLabel="label" optionValue="value" [(ngModel)]="filtro.pendencia"
         [showClear]="true" placeholder="Todos" appendTo="body" styleClass="w-full mb-3" (onChange)="aoMudarFiltro()" />

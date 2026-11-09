@@ -386,7 +386,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   /** Celular: quantos filtros estão na folha (o selo do botão). */
   get filtrosNoPainel(): number {
     return (this.filtro.pessoas.length ? 1 : 0) + (this.filtro.categorias.length ? 1 : 0) + (this.temFiltroDeValor ? 1 : 0)
-      + (this.filtro.busca.trim() ? 1 : 0) + (this.filtro.pendencia ? 1 : 0);
+      + (this.filtro.pendencia ? 1 : 0);
   }
 
   get temFiltroDeValor(): boolean {
