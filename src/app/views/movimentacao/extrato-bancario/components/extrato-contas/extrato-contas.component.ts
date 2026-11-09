@@ -15,12 +15,14 @@ import { ContaDoMes } from '../../extrato.regras';
       <nav class="extrato-chips" aria-label="Contas e cartões">
         <button type="button" class="extrato-chip" [class.extrato-chip--ativo]="selecionada === null" [attr.aria-pressed]="selecionada === null"
           (click)="selecionar.emit(null)">
-          <i class="pi pi-th-large"></i> Todas
+          <i class="pi pi-th-large"></i>
+          <span class="extrato-chip__texto"><strong>Todas</strong><small>{{ moeda(todas.saidas) }}</small></span>
         </button>
         @for (conta of contas; track conta.bancoId) {
           <button type="button" class="extrato-chip" [class.extrato-chip--ativo]="selecionada === conta.bancoId"
             [attr.aria-pressed]="selecionada === conta.bancoId" (click)="selecionar.emit(conta.bancoId)">
-            <i [class]="conta.ehCredito ? 'pi pi-credit-card' : 'pi pi-building-columns'"></i> {{ conta.nome }}
+            <i [class]="conta.ehCredito ? 'pi pi-credit-card' : 'pi pi-building-columns'"></i>
+            <span class="extrato-chip__texto"><strong>{{ conta.nome }}</strong><small>{{ conta.ehCredito ? 'Fatura' : 'Conta' }} · {{ moeda(conta.saidas) }}</small></span>
           </button>
         }
       </nav>
@@ -70,11 +72,13 @@ import { ContaDoMes } from '../../extrato.regras';
     .extrato-chips { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.25rem; scrollbar-width: none; }
     .extrato-chips::-webkit-scrollbar { display: none; }
     .extrato-chip {
-      display: inline-flex; align-items: center; gap: 0.4rem; flex: 0 0 auto; padding: 0.45rem 0.85rem; border-radius: 2rem;
+      display: inline-flex; align-items: center; gap: 0.5rem; flex: 0 0 auto; padding: 0.5rem 0.75rem; border-radius: var(--mf-radius); text-align: left;
       border: 1px solid var(--surface-border); background: var(--surface-card); color: var(--text-color); font: inherit;
       font-size: 0.875rem; white-space: nowrap; cursor: pointer;
     }
-    .extrato-chip--ativo { background: var(--highlight-bg); color: var(--highlight-text-color); border-color: transparent; font-weight: 600; }
+    .extrato-chip--ativo { background: var(--highlight-bg); color: var(--highlight-text-color); border-color: var(--primary-color); }
+    .extrato-chip__texto { display: flex; flex-direction: column; line-height: 1.25; }
+    .extrato-chip__texto small { color: var(--text-color-secondary); font-size: 0.75rem; }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })

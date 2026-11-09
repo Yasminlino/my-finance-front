@@ -34,6 +34,7 @@ export class BancoFormComponent implements OnInit {
     nomeBanco: ['', [Validators.required, Validators.minLength(2)]],
     // Número direto do currencyInput (FE-P2-10).
     saldoInicial: [0 as number | null, [Validators.required]],
+    diaVencimento: [null as number | null, [Validators.min(1), Validators.max(31)]],
     ativo: [true, [Validators.required]],
     tipoCartaoId: [null as number | null, [Validators.required]],
   });
@@ -45,6 +46,7 @@ export class BancoFormComponent implements OnInit {
       this.form.patchValue({
         nomeBanco: this.registro.nomeBanco,
         saldoInicial: this.registro.saldoInicial,
+        diaVencimento: this.registro.diaVencimento ?? null,
         ativo: this.registro.ativo,
         tipoCartaoId: this.registro.tipoCartaoId ?? null,
       });
@@ -71,6 +73,7 @@ export class BancoFormComponent implements OnInit {
       id: this.registro?.id || 0,
       nomeBanco: this.form.value.nomeBanco!,
       saldoInicial: this.form.value.saldoInicial ?? 0,
+      diaVencimento: this.form.value.diaVencimento || null,
       tipoCartaoId: Number(this.form.value.tipoCartaoId),
       ativo: !!this.form.value.ativo,
     };

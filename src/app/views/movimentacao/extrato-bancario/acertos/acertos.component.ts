@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { RadioButtonModule } from 'primeng/radiobutton';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PrimeTemplate } from 'primeng/api';
@@ -48,7 +49,7 @@ export type PagamentoEmEdicao = {
   standalone: true,
   imports: [
     NgTemplateOutlet, FormsModule, PrimeTemplate, AvatarModule, ButtonModule, CalendarModule, DropdownModule, InputSwitchModule, InputTextModule,
-    ProgressBarModule, SelectButtonModule, SidebarModule, TagModule, TimelineModule, CurrencyInputDirective, EmptyStateComponent,
+    ProgressBarModule, RadioButtonModule, SelectButtonModule, SidebarModule, TagModule, TimelineModule, CurrencyInputDirective, EmptyStateComponent,
     StatCardComponent
   ],
   templateUrl: './acertos.component.html',
@@ -60,6 +61,8 @@ export class AcertosComponent implements OnInit {
   @Input() movel = false;
   /** O total que falta receber (o selo da aba). */
   @Output() faltaReceber = new EventEmitter<number>();
+  /** Quantas pessoas ainda devem (o selo da aba no celular). */
+  @Output() pessoasComFalta = new EventEmitter<number>();
   /** Um pagamento foi gravado: a tela recarrega os lançamentos. */
   @Output() alterou = new EventEmitter<void>();
 
@@ -156,6 +159,19 @@ export class AcertosComponent implements OnInit {
     ];
   }
 
+  /** "Abater de": escolheu uma compra específica (mesmo antes de trocar qual). */
+  get abaterCompra(): boolean {
+    return this.pagamento?.abateItemId != null;
+  }
+
+  usarCompraEspecifica(p: AcertoPessoaDto): void {
+    this.escolherCompra(comprasEmAberto(p)[0]?.id ?? null);
+  }
+
+  temCompraEmAberto(p: AcertoPessoaDto): boolean {
+    return comprasEmAberto(p).length > 0;
+  }
+
   get valorAPagar(): number {
     if (!this.pagamento) return 0;
     return this.pagamento.modo === 'tudo' ? this.pagamento.valor : Number(this.pagamento.outroValor ?? 0);
@@ -199,6 +215,12 @@ export class AcertosComponent implements OnInit {
     return percentualRecebido(p);
   }
 
+  /** "2 compras · 1 pagamento" do card do celular. */
+  resumo(p: AcertoPessoaDto): string {
+    const c = p.compras.length, g = p.pagamentos.length;
+    return `${c === 1 ? '1 compra' : c + ' compras'} · ${g === 0 ? 'nenhum pagamento' : g === 1 ? '1 pagamento' : g + ' pagamentos'}`;
+  }
+
   avatar(p: AcertoPessoaDto): string {
     return iniciais(p.nome);
   }
@@ -220,6 +242,7 @@ export class AcertosComponent implements OnInit {
         this.loading = false;
         this.acertos = a;
         this.faltaReceber.emit(a.totais.faltaReceber);
+        this.pessoasComFalta.emit(a.pessoas.filter(p => p.falta > 0).length);
       },
       error: e => {
         this.loading = false;

@@ -218,6 +218,15 @@ export function agruparPorDia(itens: readonly ExtratoItemDto[]): GrupoDoDia[] {
   return grupos;
 }
 
+const MESES_CURTOS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+const SEMANA_CURTA = ['DOMINGO', 'SEGUNDA', 'TERÇA', 'QUARTA', 'QUINTA', 'SEXTA', 'SÁBADO'];
+
+/** Título do dia no celular: "22 OUT · QUINTA". */
+export function tituloCurtoDoDia(data: string): string {
+  const [ano, mes, dia] = data.split('-').map(Number);
+  return `${dia} ${MESES_CURTOS[mes - 1]} · ${SEMANA_CURTA[new Date(ano, mes - 1, dia).getDay()]}`;
+}
+
 /** Fora da ordem por data os dias não fazem sentido: um grupo só, na ordem pedida. */
 export function grupoUnico(itens: readonly ExtratoItemDto[], titulo: string): GrupoDoDia[] {
   if (!itens.length) return [];

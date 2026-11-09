@@ -14,7 +14,7 @@ import { BancoDto } from 'src/app/core/models/banco.model';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 
 /** O que a API devolve da importação: criados / já importados / ignorados (reimportar não cria nada). */
-type ResultadoImportacao = { quantidadeCriados?: number; mensagem?: string } | null;
+type ResultadoImportacao = { quantidadeCriados?: number; mensagem?: string; mesDestino?: string | null } | null;
 
 /**
  * Importação de extrato do Resumo, em formulário Reactive (FE-P2-10). Antes o banco e o arquivo
@@ -31,6 +31,8 @@ export class ModalImportarExtratoComponent {
   @Input() bancos: BancoDto[] = [];
   @Input() tiposCartao: TipoCartaoDto[] = [];
   @Output() fechado = new EventEmitter<boolean>();
+  /** Mês (AAAA-MM) em que os lançamentos importados aparecem; emitido antes de fechar. */
+  @Output() importadoEm = new EventEmitter<string>();
 
   importando = false;
 
@@ -87,6 +89,7 @@ export class ModalImportarExtratoComponent {
           const mensagem = resultado?.mensagem ?? 'Extrato importado com sucesso!';
           if ((resultado?.quantidadeCriados ?? 1) > 0) this.alertService.success(mensagem);
           else this.alertService.info(mensagem);
+          if ((resultado?.quantidadeCriados ?? 0) > 0 && resultado?.mesDestino) this.importadoEm.emit(resultado.mesDestino);
           this.fechado.emit(true);
         },
         error: e => this.alertService.error(extrairMensagemErro(e, 'Falha ao importar arquivo.'))

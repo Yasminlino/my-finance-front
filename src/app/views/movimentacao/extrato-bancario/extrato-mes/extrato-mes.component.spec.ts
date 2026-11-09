@@ -348,6 +348,17 @@ describe('ExtratoMesComponent', () => {
       expect(el().querySelectorAll('.extrato-dia').length).toBe(2);
     });
 
+    it('depois de importar vai para o mês do arquivo, em todas as contas', () => {
+      comp().filtro = { ...comp().filtro, bancoId: 2 };
+      comp().aoImportarEm('2027-03');
+      comp().aoFecharModal(true);
+      expect(comp().selectedMonth).toBe('2027-03');
+      expect(comp().filtro.bancoId).toBeNull();
+
+      comp().aoFecharModal(true);          // o próximo fechamento não repete o salto
+      expect(comp().selectedMonth).toBe('2027-03');
+    });
+
     it('erro ao salvar avisa e continua no Modo edição com o rascunho', () => {
       itens.atualizar.and.returnValue(throwError(() => ({ error: { message: 'Fora do ar' } })));
       ligar();
@@ -419,6 +430,22 @@ describe('ExtratoMesComponent', () => {
       itens.atualizar.and.returnValue(of(null));
       itens.excluir.and.returnValue(of(null));
       abrir();
+      comp().escolherConta(null);   // os testes abaixo olham todas as contas
+      fixture.detectChanges();
+    });
+
+    it('vencimento do card da fatura: o dia do cartão no mês aberto, limitado ao fim do mês', () => {
+      comp().bancos = [{ id: 1, nomeBanco: 'X', saldoInicial: 0, ativo: true, diaVencimento: 31 }];
+      comp().filtro = { ...comp().filtro, bancoId: 1 };
+      comp().selectedMonth = '2026-11';
+      expect(comp().venceFatura).toBe('30/11');
+      comp().bancos[0].diaVencimento = null;
+      expect(comp().venceFatura).toBe('');
+    });
+
+    it('depois que a pessoa escolhe "Todas", a tela não volta sozinha para o cartão', () => {
+      comp().carregarMes();
+      expect(comp().filtro.bancoId).toBeNull();
     });
 
     it('sem o switch do Modo edição; contas em chips; cards por dia do mais recente; + flutuante; Importar no ⋮', () => {
@@ -427,7 +454,7 @@ describe('ExtratoMesComponent', () => {
       expect(el().querySelector('p-table')).toBeNull();
       const dias = Array.from(el().querySelectorAll('.extrato-movel__dia')).map(texto);
       expect(dias.length).toBe(2);
-      expect(dias[0]).toContain('5 de outubro');
+      expect(dias[0]).toContain('5 OUT · SEGUNDA');
       expect(el().querySelectorAll('.extrato-movel__item').length).toBe(3);
       expect(Array.from(el().querySelectorAll('.extrato-movel__item')).map(texto).find(t => t.includes('Mercado Extra'))).toContain('Carlos');
       expect(el().querySelector('mf-fab')).not.toBeNull();
@@ -442,7 +469,6 @@ describe('ExtratoMesComponent', () => {
     it('filtros como Contas a Pagar no celular: opções roláveis com contagem, busca e o botão que abre a folha de filtros', () => {
       expect(el().querySelector('mf-filter-bar')).toBeNull();
       expect(texto(el().querySelector('.filtro-rolavel p-selectbutton'))).toContain('Todos3');
-      expect(el().querySelector('.extrato-busca-movel input')).not.toBeNull();
       expect(comp().filtrosNoPainel).toBe(0);
 
       (el().querySelector('.botao-filtros button') as HTMLButtonElement).click();

@@ -70,7 +70,7 @@ import { ModalLancamentoManualComponent } from '../components/modal-lancamento-m
 import {
   CampoEditavel, CardsExtrato, ContaDoMes, FaturaPorPessoa, FiltroExtrato, GrupoDoDia, Pendencia, TipoFiltro, agruparPorDia, alteracoesDoRascunho,
   aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehDoTitular, ehEntrada, faturaPorPessoa, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa,
-  dividido, OPCOES_ORDEM_EXTRATO, OrdemExtrato, grupoUnico, ordenarExtrato
+  dividido, tituloCurtoDoDia, OPCOES_ORDEM_EXTRATO, OrdemExtrato, grupoUnico, ordenarExtrato
 } from '../extrato.regras';
 
 /** Mês escolhido por último, como no resumo antigo. */
@@ -343,7 +343,19 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     });
   }
 
+  /** Celular: abre no cartão de maior gasto do mês (mostra o card da fatura); depois vale o que a pessoa escolher. */
+  private jaEscolheuConta = false;
+
+  private abrirNoCartaoPrincipal(): void {
+    if (this.jaEscolheuConta || !this.movel() || this.filtro.bancoId !== null) return;
+    const cartao = this.contas.filter(c => c.ehCredito && c.saidas > 0).sort((a, b) => b.saidas - a.saidas)[0];
+    if (!cartao) return;
+    this.jaEscolheuConta = true;
+    this.filtro = { ...this.filtro, bancoId: cartao.bancoId };
+  }
+
   escolherConta(bancoId: number | null): void {
+    this.jaEscolheuConta = true;
     this.filtro = { ...this.filtro, bancoId };
     this.aoMudarFiltro();
   }
@@ -369,7 +381,8 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
 
   /** Celular: quantos filtros estão na folha (o selo do botão). */
   get filtrosNoPainel(): number {
-    return (this.filtro.pessoas.length ? 1 : 0) + (this.filtro.categorias.length ? 1 : 0) + (this.temFiltroDeValor ? 1 : 0);
+    return (this.filtro.pessoas.length ? 1 : 0) + (this.filtro.categorias.length ? 1 : 0) + (this.temFiltroDeValor ? 1 : 0)
+      + (this.filtro.busca.trim() ? 1 : 0) + (this.filtro.pendencia ? 1 : 0);
   }
 
   get temFiltroDeValor(): boolean {
@@ -408,6 +421,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
 
   private recalcular(): void {
     this.contas = contasDoMes(this.itens, this.bancos, this.tiposCartao);
+    this.abrirNoCartaoPrincipal();
     // Os cards contam a conta escolhida, sem os outros filtros: eles mesmos são filtros.
     this.cards = cardsDoExtrato(filtrarExtrato(this.itens, filtroVazio(this.filtro.bancoId)));
     const filtrados = filtrarExtrato(this.itens, this.filtro);
@@ -439,10 +453,26 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   }
 
   /** Fechou a importação ou o lançamento manual: recarrega o mês se gravou. */
+  /** Mês em que o arquivo recém-importado aparece: a tela vai para ele ao fechar. */
+  private mesImportado: string | null = null;
+
+  aoImportarEm(mes: string): void {
+    this.mesImportado = mes;
+  }
+
   aoFecharModal(gravou: boolean): void {
     this.showImportar = false;
     this.showLancamento = false;
-    if (gravou) this.carregarMes();
+    const mes = this.mesImportado;
+    this.mesImportado = null;
+    if (gravou && mes) {
+      // Todas as contas: o que acabou de entrar não pode ficar escondido pelo filtro de outra conta.
+      this.filtro = { ...this.filtro, bancoId: null };
+      const [ano, numero] = mes.split('-').map(Number);
+      this.carregarMes(new Date(ano, numero - 1, 1));
+    } else if (gravou) {
+      this.carregarMes();
+    }
   }
 
   // --- Modo edição ---
@@ -580,6 +610,50 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   aoFecharDivisao(gravou: boolean): void {
     this.emDivisao = null;
     if (gravou) this.carregarMes();
+  }
+
+  readonly opcoesPendencia: { label: string; value: Pendencia }[] = [
+    { label: 'Sem pessoa', value: 'sem-pessoa' }, { label: 'Sem categoria', value: 'sem-categoria' }
+  ];
+
+  /** Celular: entrada em verde; saída com uma cor fixa por categoria (mesma categoria, mesma cor). */
+  corDoIcone(item: ExtratoItemDto, parte: 'bg' | 'fg'): string {
+    if (this.entrada(item)) return `var(--mf-cor-verde-${parte})`;
+    const nome = this.categoria(item);
+    if (!nome) return `var(--mf-cor-cinza-${parte})`;
+    const cores = ['rosa', 'laranja', 'azul', 'roxo', 'verde-agua', 'indigo', 'amarelo'];
+    const soma = [...nome].reduce((s, c) => s + c.charCodeAt(0), 0);
+    return `var(--mf-cor-${cores[soma % cores.length]}-${parte})`;
+  }
+
+  /** Quantas pessoas ainda devem (o selo "Acertos" do celular). */
+  pessoasComFalta = 0;
+
+  /** "10/11": o dia de vencimento do cartão no mês aberto; vazio se o cartão não tem o dia cadastrado. */
+  get venceFatura(): string {
+    const dia = this.bancos.find(b => b.id === this.filtro.bancoId)?.diaVencimento;
+    if (!dia) return '';
+    const [ano, mes] = this.selectedMonth.split('-').map(Number);
+    return `${String(Math.min(dia, new Date(ano, mes, 0).getDate())).padStart(2, '0')}/${String(mes).padStart(2, '0')}`;
+  }
+
+  get nomeContaEscolhida(): string {
+    return this.contas.find(c => c.bancoId === this.filtro.bancoId)?.nome ?? '';
+  }
+
+  /** Celular: o título do lançamento é a descrição ou, sem ela, o estabelecimento. */
+  tituloDoItem(item: ExtratoItemDto): string {
+    return item.descricao || this.pessoa(item) || '(sem descrição)';
+  }
+
+  /** Só mostra a pessoa à parte quando ela não é o próprio título. */
+  pessoaAParte(item: ExtratoItemDto): string {
+    const nome = this.pessoa(item);
+    return nome && nome !== this.tituloDoItem(item) ? nome : '';
+  }
+
+  tituloDoDiaMovel(dia: GrupoDoDia): string {
+    return this.porData ? tituloCurtoDoDia(dia.data) : dia.titulo;
   }
 
   estaDividido(item: ExtratoItemDto): boolean {

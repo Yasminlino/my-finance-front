@@ -24,6 +24,13 @@
     </div>
 
     <div class="flex flex-column gap-2">
+      <label for="banco-vencimento">Dia do vencimento da fatura</label>
+      <input pInputText id="banco-vencimento" type="number" inputmode="numeric" min="1" max="31" formControlName="diaVencimento"
+        placeholder="Só para cartão de crédito" [class.ng-dirty]="erro('diaVencimento')" />
+      <mf-field-error [control]="form.controls.diaVencimento">Informe um dia entre 1 e 31.</mf-field-error>
+    </div>
+
+    <div class="flex flex-column gap-2">
       <label for="banco-status">Status</label>
       <p-dropdown inputId="banco-status" formControlName="ativo" [options]="opcoesStatus" appendTo="body"
         styleClass="w-full" />

@@ -3,8 +3,14 @@ import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 import {
   FiltroExtrato, agruparPorDia, alteracoesDoRascunho, aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehEntrada,
-  ehDoTitular, expandirPartes, faturaPorPessoa, filtrarExtrato, grupoUnico, nomeDaPessoa, nomesParaSugestao, ordenarExtrato, rascunhoDe, semPessoa
+  ehDoTitular, expandirPartes, faturaPorPessoa, filtrarExtrato, grupoUnico, nomeDaPessoa, nomesParaSugestao, ordenarExtrato, rascunhoDe, semPessoa, tituloCurtoDoDia
 } from './extrato.regras';
+
+describe('título do dia no celular', () => {
+  it('dia, mês curto e dia da semana', () => {
+    expect(tituloCurtoDoDia('2026-10-22')).toBe('22 OUT · QUINTA');
+  });
+});
 
 describe('lançamento dividido (card #76, fase 3)', () => {
   const dividida = (): ExtratoItemDto => item(1, '2026-10-05', 300, {

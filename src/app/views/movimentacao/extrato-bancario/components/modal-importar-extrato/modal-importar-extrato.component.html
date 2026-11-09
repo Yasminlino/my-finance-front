@@ -17,7 +17,7 @@
 
     <div class="flex flex-column gap-2">
       <label for="ie-arquivo">Arquivo</label>
-      <input pInputText id="ie-arquivo" type="file" accept=".ofx,.csv,.xls,.xlsx,.txt,.pdf"
+      <input pInputText id="ie-arquivo" type="file" accept=".csv,.pdf"
         (change)="onArquivo($event)" [disabled]="importando" [class.ng-dirty]="invalido('arquivo')"
         [class.ng-invalid]="invalido('arquivo')" />
       <small class="p-error" *ngIf="invalido('arquivo')">Selecione o arquivo.</small>

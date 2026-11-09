@@ -49,9 +49,9 @@
       (click)="aba = 0">Lançamentos</button>
     <button type="button" role="tab" class="extrato-aba" [class.extrato-aba--ativa]="aba === 1" [attr.aria-selected]="aba === 1"
       [disabled]="edicao" (click)="aba = 1">
-      <span class="white-space-nowrap">Acertos com pessoas</span>
+      <span class="white-space-nowrap">{{ movel() ? 'Acertos' : 'Acertos com pessoas' }}</span>
       @if (faltaReceber > 0) {
-        <p-badge [value]="moeda(faltaReceber)" severity="danger" />
+        <p-badge [value]="movel() ? '' + pessoasComFalta : moeda(faltaReceber)" severity="danger" />
       }
     </button>
   </div>
@@ -64,13 +64,14 @@
       <app-extrato-contas [contas]="contas" [selecionada]="filtro.bancoId" [compacto]="movel()" (selecionar)="escolherConta($event)" />
       @if (fatura && fatura.total > 0) {
         <app-fatura-por-pessoa class="block mt-3" [fatura]="fatura" [devolvido]="devolvidoFatura" [falta]="faltaFatura"
-          (verAcertos)="verAcertos()" />
+          (verAcertos)="verAcertos()" [movel]="movel()" [conta]="nomeContaEscolhida" [vence]="venceFatura" />
       }
     </div>
 
     }
     <div class="col-12 flex flex-column gap-3" [class.lg:col-9]="!edicao || movel()">
-      <div class="grid">
+      <!-- Só no desktop: no celular, "Sem pessoa" e "Sem categoria" ficam na folha de filtros -->
+      <div class="grid" [class.hidden]="movel()">
         <div class="col-6 xl:col-3">
           <button type="button" class="extrato-card" [class.extrato-card--ativo]="filtro.tipo === 'saidas'" (click)="clicarCard('saidas')">
             <mf-stat-card rotulo="Saídas" [valor]="moeda(cards.saidas)" icone="pi pi-arrow-up-right" tom="despesa" />
@@ -99,7 +100,7 @@
         </div>
       </div>
 
-      <div class="surface-card border-round shadow-1">
+      <div [class]="movel() ? '' : 'surface-card border-round shadow-1'">
         @if (!movel()) {
         <!-- Filtros como em Contas a Pagar: tipo com a contagem à esquerda; busca, pessoas, categorias, limpar e exportar à direita -->
         <mf-filter-bar>
@@ -145,9 +146,9 @@
             (onClick)="exportar()" ariaLabel="Exportar" />
         </mf-filter-bar>
         } @else {
-          <!-- Celular, como em Contas a Pagar: tipo rolável com contagem, busca e o botão da folha de filtros -->
-          <div class="px-3 pt-3">
-            <div class="filtro-rolavel filtro-situacao-compacto">
+          <!-- Celular: o tipo com a contagem e, ao lado, o botão da folha de filtros (a busca fica nela) -->
+          <div class="flex align-items-center gap-2 mb-2">
+            <div class="filtro-rolavel filtro-situacao-compacto flex-grow-1 min-w-0">
               <p-selectButton [options]="opcoesTipo" [(ngModel)]="filtro.tipo" optionLabel="label" optionValue="value"
                 [allowEmpty]="false" (onChange)="aoMudarFiltro()">
                 <ng-template let-opcao pTemplate="item">
@@ -156,19 +157,12 @@
                 </ng-template>
               </p-selectButton>
             </div>
-            <div class="flex gap-2 my-2">
-              <p-iconField iconPosition="left" class="flex-grow-1 extrato-busca-movel">
-                <p-inputIcon styleClass="pi pi-search" />
-                <input pInputText type="text" class="w-full" placeholder="Buscar descrição ou pessoa..." [(ngModel)]="filtro.busca"
-                  (ngModelChange)="aoMudarFiltro()" aria-label="Buscar no extrato" />
-              </p-iconField>
               <span class="botao-filtros p-overlay-badge">
                 <p-button icon="pi pi-sliders-h" [outlined]="true" severity="secondary" (onClick)="filtrosAbertos = true" ariaLabel="Filtros" />
                 @if (filtrosNoPainel) {
                   <span class="p-badge p-component p-badge-no-gutter">{{ filtrosNoPainel }}</span>
                 }
               </span>
-            </div>
           </div>
         }
 
@@ -195,20 +189,24 @@
             }
             @for (dia of diasMovel; track dia.data) {
               <div class="extrato-movel__dia flex justify-content-between align-items-center px-3 py-2">
-                <span class="font-semibold text-sm">{{ dia.titulo }}</span>
-                <small class="mf-hint">{{ saldoDoDia(dia.data) }}</small>
+                <span class="extrato-movel__titulo-dia">{{ tituloDoDiaMovel(dia) }}</span>
               </div>
               @for (item of dia.itens; track item.id) {
                 <button type="button" class="extrato-movel__item" (click)="abrirNoSheet(item)"
                   [attr.aria-label]="'Editar ' + (item.descricao || 'lançamento') + ' de ' + moeda(item.valor)">
+                  <span class="extrato-movel__icone" [style.background]="corDoIcone(item, 'bg')" [style.color]="corDoIcone(item, 'fg')">
+                    <i [class]="entrada(item) ? 'pi pi-arrow-down' : 'pi pi-shopping-bag'"></i>
+                  </span>
                   <span class="flex-grow-1 min-w-0 text-left">
-                    <span class="block font-medium white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ item.descricao || '(sem descrição)' }}</span>
-                    <small class="mf-hint">{{ categoria(item) || 'Sem categoria' }}@if (parcela(item); as p) { · {{ p }} }@if (acabouDeClassificar(item)) {<span class="extrato-recem"> · acabou de ser classificado</span>}</small>
-                    @if (pessoa(item)) {
-                      <span class="extrato-pessoa mt-1" [class.extrato-pessoa--eu]="doTitular(item)">{{ pessoa(item) }}</span>
-                    } @else if (faltaPessoa(item)) {
-                      <span class="extrato-pessoa extrato-pessoa--vazia mt-1">Sem pessoa</span>
-                    }
+                    <span class="block font-semibold white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ tituloDoItem(item) }}</span>
+                    <span class="extrato-movel__detalhes">
+                      @if (pessoaAParte(item); as nome) {
+                        <span class="extrato-pessoa extrato-pessoa--movel" [class.extrato-pessoa--eu]="doTitular(item)"><span class="extrato-pessoa__letra">{{ nome[0] }}</span><span class="extrato-pessoa__nome">{{ nome }}</span></span>
+                      } @else if (faltaPessoa(item)) {
+                        <span class="extrato-pessoa extrato-pessoa--vazia">Sem pessoa</span>
+                      }
+                      <small class="mf-hint">{{ categoria(item) || 'Sem categoria' }}@if (parcela(item); as p) { · {{ p }} }@if (acabouDeClassificar(item)) {<span class="extrato-recem"> · acabou de ser classificado</span>}</small>
+                    </span>
                   </span>
                   <span class="font-semibold white-space-nowrap" [class.extrato-valor--entrada]="entrada(item)">{{ valor(item) }}</span>
                 </button>
@@ -360,11 +358,19 @@
   </div>
   </div>
   <div role="tabpanel" [hidden]="aba !== 1">
-    <app-acertos [bancos]="bancos" [movel]="movel()" (faltaReceber)="faltaReceber = $event" (alterou)="carregarMes()" />
+    <app-acertos [bancos]="bancos" [movel]="movel()" (faltaReceber)="faltaReceber = $event" (pessoasComFalta)="pessoasComFalta = $event" (alterou)="carregarMes()" />
   </div>
 
   @if (movel()) {
     <p-sidebar [(visible)]="filtrosAbertos" position="bottom" header="Filtros" styleClass="painel-filtros h-auto">
+      <p-iconField iconPosition="left" class="block extrato-busca-movel mb-3">
+        <p-inputIcon styleClass="pi pi-search" />
+        <input pInputText type="text" class="w-full" placeholder="Buscar descrição ou pessoa..." [(ngModel)]="filtro.busca"
+          (ngModelChange)="aoMudarFiltro()" aria-label="Buscar no extrato" />
+      </p-iconField>
+      <label class="block text-sm text-color-secondary mb-1" for="filtro-pendencia-movel">Mostrar só</label>
+      <p-dropdown inputId="filtro-pendencia-movel" [options]="opcoesPendencia" optionLabel="label" optionValue="value" [(ngModel)]="filtro.pendencia"
+        [showClear]="true" placeholder="Todos" appendTo="body" styleClass="w-full mb-3" (onChange)="aoMudarFiltro()" />
       <label class="block text-sm text-color-secondary mb-1" for="filtro-pessoas-movel">Pessoas</label>
       <p-multiSelect inputId="filtro-pessoas-movel" [options]="opcoesPessoa" [(ngModel)]="filtro.pessoas" placeholder="Todas"
         [filter]="true" selectedItemsLabel="{0} pessoas" [maxSelectedLabels]="1" appendTo="body" styleClass="w-full"
@@ -413,7 +419,7 @@
     (concluiu)="aoConcluirRegras($event)" (editar)="editarProposta($event)" />
 
   <app-modal-importar-extrato *ngIf="showImportar" [bancos]="bancos" [tiposCartao]="tiposCartao"
-    (fechado)="aoFecharModal($event)" />
+    (importadoEm)="aoImportarEm($event)" (fechado)="aoFecharModal($event)" />
 
   <app-modal-lancamento-manual *ngIf="showLancamento" [mes]="selectedMonth" [bancos]="bancos" [tiposCartao]="tiposCartao"
     [categorias]="categoriasAtivas" [pessoas]="pessoasCadastradas" (fechado)="aoFecharModal($event)" />
