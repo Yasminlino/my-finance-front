@@ -1,5 +1,5 @@
 import { NgStyle } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MenuItem, PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -38,6 +38,10 @@ const MESES_COBERTURA = 12;
 })
 export class ModalImportacoesMensaisComponent implements OnInit {
   /** true = algo mudou (a tela recarrega). */
+  /** Abre já filtrado neste banco (⋮ do detalhe, card #77). */
+  @Input() set bancoInicial(id: number | null | undefined) {
+    this.bancoId = id ?? null;
+  }
   @Output() closed = new EventEmitter<boolean>();
   /** Abrir o Importar; o id preenche a conta. */
   @Output() importar = new EventEmitter<number | null>();

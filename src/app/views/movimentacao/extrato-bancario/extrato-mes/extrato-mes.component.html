@@ -1,8 +1,9 @@
 <div class="mf-pagina">
   <!-- Como Contas a Pagar: no celular, título com ‹ e ⋮ e o mês em largura total logo abaixo. -->
-  <mf-page-header [class]="movel() ? 'block mb-2' : 'block mt-2 mb-3'" titulo="Extrato Bancário"
-    [subtitulo]="movel() ? '' : 'Entradas e saídas das contas e cartões no mês'"
-    [breadcrumb]="breadcrumb" [home]="home" [mostrarVoltar]="true" (voltar)="voltar()">
+  <!-- Card #77: a mesma moldura da listagem; o título é a conta aberta, e ‹ volta para "Todas as contas". -->
+  <mf-page-header [class]="movel() ? 'block mb-2' : 'block mt-2 mb-3'" [titulo]="tituloPagina"
+    [subtitulo]="movel() ? (contaAberta?.compartilhado ? 'compartilhado' : '') : subtituloPagina"
+    [breadcrumb]="breadcrumbAtual" [home]="home" [mostrarVoltar]="true" (voltar)="voltar()">
     @if (!movel()) {
     <div acoes class="flex align-items-center gap-1">
       <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" pTooltip="Mês anterior"
@@ -23,15 +24,18 @@
       </div>
     }
     @if (!movel()) {
-      <p-splitButton acoes label="Novo lançamento" icon="pi pi-plus" [model]="itensNovoLancamento" [disabled]="edicao" [menuStyle]="{ minWidth: '15rem' }"
-        (onClick)="showLancamento = true" appendTo="body" />
+      <p-dropdown acoes [options]="opcoesContaComTodas" [ngModel]="filtro.bancoId" (ngModelChange)="escolherConta($event)" optionLabel="label"
+        optionValue="value" appendTo="body" [disabled]="edicao" styleClass="extrato-troca-conta" ariaLabel="Trocar de conta" />
+    }
+    @if (!movel()) {
+      <p-splitButton acoes [label]="rotuloImportar" icon="pi pi-file-import" [model]="menuSplit" [disabled]="edicao" [menuStyle]="{ minWidth: '16rem' }"
+        (onClick)="abrirImportar()" appendTo="body" />
     }
     @if (movel()) {
       <p-button acoes icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
-        (onClick)="menu.toggle($event)" ariaLabel="Mais ações" />
+        (onClick)="acoesAbertas = true" ariaLabel="Mais ações" />
     }
   </mf-page-header>
-  <p-menu #menu [model]="itensMenuMovel" [popup]="true" appendTo="body" />
   <p-menu #menuLinha [model]="itensMenuLinha" [popup]="true" appendTo="body" />
 
   @if (movel()) {
@@ -41,12 +45,16 @@
         [readonlyInput]="true" [showIcon]="true" [touchUI]="true" (onSelect)="carregarMes($event)" />
       <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
     </div>
+    <p-dropdown class="block mb-3" styleClass="w-full" [options]="opcoesContaComTodas" [ngModel]="filtro.bancoId" (ngModelChange)="escolherConta($event)"
+      optionLabel="label" optionValue="value" appendTo="body" ariaLabel="Trocar de conta" />
   }
 
   <!-- Abas do mockup (parte 3): Lançamentos | Acertos com pessoas, com o selo do que falta receber. -->
   <div class="extrato-abas" role="tablist" aria-label="Partes do extrato">
     <button type="button" role="tab" class="extrato-aba" [class.extrato-aba--ativa]="aba === 0" [attr.aria-selected]="aba === 0"
       (click)="aba = 0">Lançamentos</button>
+    <!-- Cartão só meu: sem aba Acertos (card #77). -->
+    @if (mostraPessoa) {
     <button type="button" role="tab" class="extrato-aba" [class.extrato-aba--ativa]="aba === 1" [attr.aria-selected]="aba === 1"
       [disabled]="edicao" (click)="aba = 1">
       <span class="white-space-nowrap">{{ movel() ? 'Acertos' : 'Acertos com pessoas' }}</span>
@@ -54,53 +62,50 @@
         <p-badge [value]="movel() ? '' + pessoasComFalta : moeda(faltaReceber)" severity="danger" />
       }
     </button>
+    }
     <button type="button" role="tab" class="extrato-aba" [class.extrato-aba--ativa]="aba === 2" [attr.aria-selected]="aba === 2"
       [disabled]="edicao" (click)="aba = 2">Resumo</button>
   </div>
   <!-- [hidden] e não @if: a aba Acertos carrega já na abertura (o selo) e não perde o estado ao trocar. -->
   <div role="tabpanel" [hidden]="aba !== 0">
   <div class="grid">
-    <!-- Modo edição como em Contas a Pagar: a tabela ganha a largura toda -->
-    @if (!edicao || movel()) {
-    <div class="col-12 lg:col-3">
-      <app-extrato-contas [contas]="contas" [selecionada]="filtro.bancoId" [compacto]="movel()" (selecionar)="escolherConta($event)" />
-      @if (fatura && fatura.total > 0) {
-        <app-fatura-por-pessoa class="block mt-3" [fatura]="fatura" [devolvido]="devolvidoFatura" [falta]="faltaFatura"
-          (verAcertos)="verAcertos()" [movel]="movel()" [conta]="nomeContaEscolhida" [vence]="venceFatura" />
-      }
-    </div>
-
-    }
-    <div class="col-12 flex flex-column gap-3" [class.lg:col-9]="!edicao || movel()">
-      <!-- Só no desktop: no celular, "Sem pessoa" e "Sem categoria" ficam na folha de filtros -->
-      <div class="grid" [class.hidden]="movel()">
-        <div class="col-6 xl:col-3">
-          <button type="button" class="extrato-card" [class.extrato-card--ativo]="filtro.tipo === 'saidas'" (click)="clicarCard('saidas')">
-            <mf-stat-card rotulo="Saídas" [valor]="moeda(cards.saidas)" icone="pi pi-arrow-up-right" tom="despesa" />
-          </button>
-        </div>
-        <div class="col-6 xl:col-3">
-          <button type="button" class="extrato-card" [class.extrato-card--ativo]="filtro.tipo === 'entradas'" (click)="clicarCard('entradas')">
-            <mf-stat-card rotulo="Entradas" [valor]="moeda(cards.entradas)" icone="pi pi-arrow-down-left" tom="receita" corDoValor="receita" />
-          </button>
-        </div>
-        <div class="col-6 xl:col-3">
-          <button type="button" class="extrato-card" [class.extrato-card--ativo]="filtro.pendencia === 'sem-pessoa'" (click)="clicarCard('sem-pessoa')">
-            <mf-stat-card rotulo="Sem pessoa" [valor]="'' + cards.semPessoa" icone="pi pi-user" tom="info"
-              [destaque]="cards.semPessoa > 0">
-              <small class="mf-hint">saídas sem pessoa</small>
-            </mf-stat-card>
-          </button>
-        </div>
-        <div class="col-6 xl:col-3">
-          <button type="button" class="extrato-card" [class.extrato-card--ativo]="filtro.pendencia === 'sem-categoria'" (click)="clicarCard('sem-categoria')">
-            <mf-stat-card rotulo="Sem categoria" [valor]="'' + cards.semCategoria" icone="pi pi-tag" tom="neutro"
-              [destaque]="cards.semCategoria > 0">
-              <small class="mf-hint">lançamentos sem categoria</small>
-            </mf-stat-card>
-          </button>
-        </div>
+    <!-- Card #77: sem a lista de contas à esquerda (a troca é pelo seletor do cabeçalho); a tabela tem a largura toda. -->
+    <div class="col-12 flex flex-column gap-3">
+      <!-- KPIs do topo: os mesmos números do card da listagem, conforme a conta (corrente, cartão só meu ou emprestado). -->
+      <div class="grid extrato-kpis">
+        @for (k of kpis; track k.rotulo) {
+          <div class="col-6" [class.xl:col-3]="kpis.length === 4" [class.xl:col-4]="kpis.length === 3">
+            @if (k.acao) {
+              <button type="button" class="extrato-card" [class.extrato-card--ativo]="kpiAtivo(k)" (click)="clicarKpi(k)">
+                <mf-stat-card [rotulo]="k.rotulo" [valor]="k.valor" [icone]="k.icone" [tom]="k.tom" [corDoValor]="k.corDoValor ?? null" [destaque]="!!k.destaque">
+                  @if (k.dica) { <small class="mf-hint">{{ k.dica }}</small> }
+                </mf-stat-card>
+              </button>
+            } @else {
+              <mf-stat-card [rotulo]="k.rotulo" [valor]="k.valor" [icone]="k.icone" [tom]="k.tom" [corDoValor]="k.corDoValor ?? null" [destaque]="!!k.destaque">
+                @if (k.dica) { <small class="mf-hint">{{ k.dica }}</small> }
+              </mf-stat-card>
+            }
+          </div>
+        }
       </div>
+
+      @if (variacao === 'cartao' && !contaAberta!.conviteCompartilharDispensado && !edicao) {
+        <div class="extrato-convite">
+          <i class="pi pi-users"></i>
+          <span class="flex-grow-1">Empresta este cartão para alguém? Separe as compras de cada pessoa e acompanhe quanto falta receber.</span>
+          <span class="flex gap-1">
+            <p-button label="Ativar" size="small" (onClick)="abrirQuemUsa()" />
+            <p-button label="Agora não" size="small" [text]="true" severity="secondary" (onClick)="dispensarConvite()" />
+          </span>
+        </div>
+      }
+      @if (variacao === 'compartilhado' && opcoesChips.length) {
+        <div class="filtro-rolavel">
+          <p-selectButton [options]="opcoesChips" [ngModel]="chipPessoa" (ngModelChange)="escolherChip($event)" optionLabel="label"
+            optionValue="value" [allowEmpty]="false" styleClass="extrato-chips" ariaLabelledBy="Quem usou" />
+        </div>
+      }
 
       <div [class]="movel() ? '' : 'surface-card border-round shadow-1'">
         @if (!movel()) {
@@ -213,9 +218,9 @@
                   <span class="flex-grow-1 min-w-0 text-left">
                     <span class="block font-semibold white-space-nowrap overflow-hidden text-overflow-ellipsis">@if (item.temNota) {<i class="pi pi-receipt mr-1" aria-label="Tem nota"></i>}{{ tituloDoItem(item) }}</span>
                     <span class="extrato-movel__detalhes">
-                      @if (pessoaAParte(item); as nome) {
+                      @if (mostraPessoa && pessoaAParte(item); as nome) {
                         <span class="extrato-pessoa extrato-pessoa--movel" [class.extrato-pessoa--eu]="doTitular(item)"><span class="extrato-pessoa__letra">{{ nome[0] }}</span><span class="extrato-pessoa__nome">{{ nome }}</span></span>
-                      } @else if (faltaPessoa(item)) {
+                      } @else if (mostraPessoa && faltaPessoa(item)) {
                         <span class="extrato-pessoa extrato-pessoa--vazia">Sem pessoa</span>
                       }
                       <small class="mf-hint">{{ categoria(item) || 'Sem categoria' }}@if (parcela(item); as p) { · {{ p }} }@if (acabouDeClassificar(item)) {<span class="extrato-recem"> · acabou de ser classificado</span>}</small>
@@ -252,7 +257,9 @@
             } @else {
             <tr>
               <th style="min-width: 16rem">Descrição</th>
-              <th style="min-width: 10rem">Pessoa</th>
+              @if (mostraPessoa) {
+                <th style="min-width: 10rem">{{ variacao === 'compartilhado' ? 'Quem usou' : 'Pessoa' }}</th>
+              }
               <th style="min-width: 8rem">Parcela</th>
               <th style="min-width: 9rem" class="text-right">Valor</th>
               <th style="width: 6.5rem" class="text-center">Ações</th>
@@ -261,7 +268,7 @@
           </ng-template>
           <ng-template pTemplate="groupheader" let-item>
             <tr class="extrato-dia">
-              <td [attr.colspan]="edicao ? 7 : 3" class="font-semibold">{{ grupos[item.dataMovimentacao]?.titulo }}</td>
+              <td [attr.colspan]="edicao ? 7 : mostraPessoa ? 3 : 2" class="font-semibold">{{ grupos[item.dataMovimentacao]?.titulo }}</td>
               <td class="text-right text-sm mf-hint">{{ saldoDoDia(item.dataMovimentacao) }}</td>
               @if (!edicao) {
                 <td></td>
@@ -327,6 +334,7 @@
                 <div class="font-medium">@if (item.temNota) {<i class="pi pi-receipt mr-1" aria-label="Tem nota"></i>}{{ item.descricao || '(sem descrição)' }}</div>
                 <small class="mf-hint">{{ categoria(item) || 'Sem categoria' }}@if (acabouDeClassificar(item)) {<span class="extrato-recem"> · acabou de ser classificado</span>}</small>
               </td>
+              @if (mostraPessoa) {
               <td>
                 @if (pessoa(item)) {
                   <span class="extrato-pessoa" [class.extrato-pessoa--eu]="doTitular(item)">{{ pessoa(item) }}</span>
@@ -334,6 +342,7 @@
                   <span class="extrato-pessoa extrato-pessoa--vazia">Sem pessoa</span>
                 }
               </td>
+              }
               <td>
                 @if (parcela(item); as texto) {
                   <div class="text-sm">{{ texto }}</div>
@@ -437,13 +446,56 @@
   <app-classificar-sempre [propostas]="propostas" [categorias]="opcoesCategoria" [movel]="movel()" (regraCriada)="aoCriarRegra($event)"
     (concluiu)="aoConcluirRegras($event)" (editar)="editarProposta($event)" />
 
+  @if (movel()) {
+    <!-- Card #77: ⋮ do detalhe como folha de baixo, com as ações da conta aberta e o switch do cartão. -->
+    <p-sidebar [(visible)]="acoesAbertas" position="bottom" styleClass="painel-filtros h-auto">
+      <ng-template pTemplate="header"><span class="font-semibold">{{ contaAberta?.nome ?? 'Ações' }}</span></ng-template>
+      <div class="flex flex-column">
+        <button type="button" class="extrato-acao" (click)="acoesAbertas = false; abrirImportar()"><i class="pi pi-file-import"></i>{{ rotuloImportar }}</button>
+        @for (grupo of menuDetalhe; track grupo.label) {
+          @if (grupo.items) {
+            <small class="extrato-acao-grupo">{{ grupo.label }}</small>
+            @for (acao of grupo.items; track acao.label) {
+              @if (acao.id !== 'compartilhar') {
+                <button type="button" class="extrato-acao" (click)="executarAcao(acao)"><i [class]="acao.icon"></i>{{ acao.label }}</button>
+              }
+            }
+          } @else {
+            <button type="button" class="extrato-acao" (click)="executarAcao(grupo)"><i [class]="grupo.icon"></i>{{ grupo.label }}</button>
+          }
+        }
+        @if (contaAberta?.ehCredito) {
+          <div class="extrato-acao">
+            <p-inputSwitch inputId="extrato-compartilhado" [ngModel]="contaAberta!.compartilhado" (onChange)="alternarCompartilhado()" />
+            <label for="extrato-compartilhado" class="cursor-pointer">Outras pessoas usam este cartão</label>
+          </div>
+        }
+      </div>
+    </p-sidebar>
+  }
+
+  @if (showQuemUsa) {
+    <p-dialog header="Quem usa este cartão" [visible]="true" [modal]="true" [draggable]="false" styleClass="mf-dialog-sm" (visibleChange)="showQuemUsa = false">
+      <p class="mt-0 mf-hint">Escolha quem faz compras neste cartão. As compras dessas pessoas aparecem separadas e entram nos Acertos.</p>
+      <p-multiSelect [options]="opcoesQuemUsa" [(ngModel)]="quemUsa" optionLabel="label" optionValue="value" display="chip"
+        placeholder="Escolha as pessoas" appendTo="body" styleClass="w-full" ariaLabel="Quem usa este cartão" />
+      @if (!opcoesQuemUsa.length) {
+        <small class="block mt-2 mf-hint">Nenhuma pessoa está marcada para entrar nos acertos. Marque em "Pessoas que usam meus cartões".</small>
+      }
+      <ng-template pTemplate="footer">
+        <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="showQuemUsa = false" />
+        <p-button label="Ativar" icon="pi pi-check" [disabled]="!quemUsa.length" (onClick)="confirmarQuemUsa()" />
+      </ng-template>
+    </p-dialog>
+  }
+
   <app-modal-importar-extrato *ngIf="showImportar" [bancos]="bancos" [tiposCartao]="tiposCartao" [bancoInicial]="bancoParaImportar"
     [categorias]="categoriasAtivas" (verExtrato)="abrirDoImportar($event)" (importadoEm)="aoImportarEm($event)" (fechado)="aoFecharModal($event)" />
 
-  <app-modal-lancamento-manual *ngIf="showLancamento" [mes]="selectedMonth" [bancos]="bancos" [tiposCartao]="tiposCartao"
+  <app-modal-lancamento-manual *ngIf="showLancamento" [mes]="selectedMonth" [bancos]="bancos" [bancoFixoId]="bancoDoLancamento" [tiposCartao]="tiposCartao"
     [categorias]="categoriasAtivas" [pessoas]="pessoasCadastradas" (fechado)="aoFecharModal($event)" />
 
-  <app-modal-importacoes-mensais *ngIf="showImportacoesMensais" (importar)="abrirImportarDoHistorico($event)"
+  <app-modal-importacoes-mensais *ngIf="showImportacoesMensais" [bancoInicial]="bancoDasImportacoes" (importar)="abrirImportarDoHistorico($event)"
     (verLancamentos)="verLancamentosDaImportacao($event)" (closed)="showImportacoesMensais = false; $event && carregarMes()" />
 
   <app-modal-configuracao-vinculo-pessoa *ngIf="showConfigPessoas" [monthFilter]="selectedMonth"

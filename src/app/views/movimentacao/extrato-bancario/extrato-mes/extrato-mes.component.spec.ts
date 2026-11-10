@@ -17,6 +17,8 @@ import { RegraClassificacaoService } from 'src/app/core/services/regra-classific
 import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
 
 import { ExtratoMesComponent } from './extrato-mes.component';
+import { Router } from '@angular/router';
+import { ResumoContaDto, ResumoContasDto } from 'src/app/core/models/resumo-categorias.model';
 
 /** Tela única do Extrato no layout novo (card #45, parte 1): leitura no desktop. */
 describe('ExtratoMesComponent', () => {
@@ -32,6 +34,24 @@ describe('ExtratoMesComponent', () => {
     { id: 3, dataMovimentacao: '2026-10-01', valor: 30, tipoLancamento: 'Saída', bancoId: 1, descricao: 'Padaria' }
   ];
 
+  // Card #77: os números do topo vêm do resumo por conta (o mesmo da listagem).
+  let nubankCompartilhado = false;
+  let conviteDispensado = false;
+  const contaResumo = (extra: Partial<ResumoContaDto>): ResumoContaDto => ({
+    bancoId: 2, nome: 'Caixa', tipoNome: 'Conta corrente', ehCredito: false, ativo: true, compartilhado: false, conviteCompartilharDispensado: false,
+    pessoas: [], quantidade: 1, entradas: 1000, saidas: 0, resultado: 1000, semCategoria: 1, fatura: 0, pagamentosEstornos: 0, parcelasQueContinuam: 0,
+    minhasCompras: 0, deOutrasPessoas: 0, porPessoa: [], faltaReceber: 0, faltaImportar: false, ...extra
+  });
+  const resumoContas = (): ResumoContasDto => ({
+    mes: '2026-10', entradas: 1000, saidas: 130, paraClassificar: 2, faltaReceber: nubankCompartilhado ? 70 : null,
+    contas: [
+      contaResumo({ bancoId: 1, nome: 'Nubank', tipoNome: 'Cartão de crédito', ehCredito: true, quantidade: 2, entradas: 0, saidas: 130, resultado: -130,
+        fatura: 130, parcelasQueContinuam: 200, minhasCompras: 30, deOutrasPessoas: 100, faltaReceber: 70, semCategoria: 1,
+        compartilhado: nubankCompartilhado, pessoas: nubankCompartilhado ? ['CARLOS'] : [], dataVencimento: '2026-10-10',
+        conviteCompartilharDispensado: conviteDispensado }),
+      contaResumo({})
+    ]
+  });
   const comp = () => fixture.componentInstance;
   const el = () => fixture.nativeElement as HTMLElement;
   const texto = (e: Element | null | undefined) => (e?.textContent ?? '').replace(/\s+/g, ' ');
@@ -49,7 +69,8 @@ describe('ExtratoMesComponent', () => {
     regras.sugestoes.and.returnValue(of([]));
     movel.set(false);
     queryParams = {};
-    itens = jasmine.createSpyObj<ExtratoBancarioItemService>('ExtratoBancarioItemService', ['listarDoMes', 'atualizar', 'excluir', 'acertos']);
+    itens = jasmine.createSpyObj<ExtratoBancarioItemService>('ExtratoBancarioItemService', ['listarDoMes', 'atualizar', 'excluir', 'acertos', 'resumoContas']);
+    itens.resumoContas.and.callFake(() => of(resumoContas()));
     itens.acertos.and.returnValue(of({
       pessoas: [{
         pessoaId: 7, nome: 'CARLOS', ehTitular: false, devido: 140, recebido: 30, falta: 110, quitado: false, aindaVaiCobrar: 0,
@@ -94,15 +115,17 @@ describe('ExtratoMesComponent', () => {
     });
   });
 
-  it('cabeçalho como Contas a Pagar: mês, Modo edição na caixa e "Novo lançamento" com Importar e o resto na seta', () => {
+  it('cabeçalho igual ao da listagem: mês, troca de conta, Modo edição e Importar com o ⋮ na seta', () => {
     abrir();
 
     expect(itens.listarDoMes).toHaveBeenCalled();
+    expect(itens.resumoContas).toHaveBeenCalled();
     expect(el().querySelector('.mf-page-title')?.textContent).toContain('Extrato Bancário');
     expect(el().querySelector('.modo-edicao #extrato-edicao')).not.toBeNull();
-    expect(el().querySelector('p-splitbutton')?.textContent).toContain('Novo lançamento');
-    expect(comp().itensNovoLancamento.map(i => i.label)).toEqual(
-      ['Importar extrato', 'Importações realizadas', 'Relatório mensal', 'Configurar pessoas', 'Regras de classificação', 'Atualizar']);
+    expect(el().querySelector('p-splitbutton')?.textContent).toContain('Importar extrato');
+    expect(comp().opcoesContaComTodas.map(o => o.label)).toEqual(['Todas as contas', 'Nubank', 'Caixa']);
+    expect(comp().menuSplit.filter(i => !i.separator).map(i => i.label)).toEqual([
+      'Lançamento manual', 'Importações realizadas', 'Relatório do mês', 'Pessoas que usam meus cartões', 'Regras de classificação', 'Atualizar']);
     expect(el().querySelector('mf-page-header [aria-label="Mais ações"]')).toBeNull();
   });
 
@@ -117,13 +140,66 @@ describe('ExtratoMesComponent', () => {
     expect(el().querySelector('app-acertos')).not.toBeNull();
   });
 
-  it('cartão de crédito escolhido mostra a fatura dividida por pessoa, com o devolvido dos Acertos; "Ver acertos" troca de aba', () => {
+  it('card #77: cartão só meu tem os KPIs da fatura, sem pessoas e sem Acertos, e o convite some em "Agora não"', () => {
     abrir();
-    expect(el().querySelector('app-fatura-por-pessoa')).toBeNull();
-
+    expect(el().querySelector('app-extrato-contas')).toBeNull();
     comp().escolherConta(1);
     fixture.detectChanges();
-    expect(el().querySelector('app-fatura-por-pessoa')).not.toBeNull();
+
+    expect(comp().variacao).toBe('cartao');
+    expect(comp().kpis.map(k => k.rotulo)).toEqual(['Fatura', 'Pagamentos e estornos', 'Parcelas que continuam', 'Sem categoria']);
+    expect(Array.from(el().querySelectorAll('.extrato-aba')).map(texto).join('|')).not.toContain('Acertos');
+    expect(Array.from(el().querySelectorAll('thead th')).map(texto).join('|')).not.toContain('Pessoa');
+    expect(el().querySelector('.extrato-convite')).not.toBeNull();
+    expect(comp().tituloPagina).toBe('Nubank');
+    expect(comp().rotuloImportar).toBe('Importar fatura');
+
+    const banco = TestBed.inject(BancoService) as unknown as { compartilhar: jasmine.Spy };
+    banco.compartilhar = jasmine.createSpy('compartilhar').and.callFake(() => { conviteDispensado = true; return of(null); });
+    comp().dispensarConvite();
+    fixture.detectChanges();
+    expect(banco.compartilhar).toHaveBeenCalledWith(1, { conviteDispensado: true });
+    expect(el().querySelector('.extrato-convite')).toBeNull();
+    conviteDispensado = false;
+  });
+
+  it('card #77: ligar "Outras pessoas usam este cartão" troca para emprestado na hora, com Quem usou, chips e Acertos', () => {
+    abrir();
+    comp().escolherConta(1);
+    comp().pessoasCadastradas = [{ id: 7, nomePessoa: 'CARLOS', entraNosAcertos: true } as never];
+    const banco = TestBed.inject(BancoService) as unknown as { compartilhar: jasmine.Spy };
+    banco.compartilhar = jasmine.createSpy('compartilhar').and.callFake(() => { nubankCompartilhado = true; return of(null); });
+
+    comp().alternarCompartilhado();
+    expect(comp().showQuemUsa).toBeTrue();
+    comp().quemUsa = [7];
+    comp().confirmarQuemUsa();
+    fixture.detectChanges();
+
+    expect(banco.compartilhar).toHaveBeenCalledWith(1, { compartilhado: true, pessoasIds: [7] });
+    expect(comp().variacao).toBe('compartilhado');
+    expect(comp().kpis.map(k => k.rotulo)).toEqual(['Fatura', 'Minhas compras', 'De outras pessoas', 'Falta receber']);
+    expect(Array.from(el().querySelectorAll('thead th')).map(texto).join('|')).toContain('Quem usou');
+    expect(comp().opcoesChips.map(o => o.label)).toEqual(['Todos', 'Eu', 'CARLOS', 'Sem pessoa']);
+    comp().escolherChip('CARLOS');
+    expect(comp().filtro.pessoas).toEqual(['CARLOS']);
+    nubankCompartilhado = false;
+  });
+
+  it('card #77: sem conta, os KPIs são os da listagem; ⋮ do banco só com ações da conta aberta', () => {
+    abrir();
+    expect(comp().kpis.map(k => k.rotulo)).toEqual(['Entradas', 'Saídas', 'Para classificar']);
+    expect(comp().menuDetalhe.map(g => g.label)).toEqual(['Todas as contas', 'Configurações', 'Atualizar']);
+
+    comp().escolherConta(2);
+    expect(comp().kpis.map(k => k.rotulo)).toEqual(['Entradas', 'Saídas', 'Resultado', 'Sem categoria']);
+    expect(comp().menuDetalhe.map(g => g.label)).toEqual(['Este mês', 'Esta conta', 'Atualizar']);
+  });
+
+  it('cartão de crédito escolhido calcula a fatura por pessoa com o devolvido dos Acertos; "Ver acertos" troca de aba', () => {
+    abrir();
+    comp().escolherConta(1);
+    fixture.detectChanges();
     // O devolvido é o pago das compras desta fatura, de qualquer data (o pagamento costuma vir em outro mês).
     expect(itens.acertos).toHaveBeenCalledWith({ inicio: null, fim: null, bancoId: 1 });
     expect(comp().devolvidoFatura).toBe(30);
@@ -144,35 +220,36 @@ describe('ExtratoMesComponent', () => {
     expect(comp().filtro.bancoId).toBe(1);
   });
 
-  it('contas à esquerda: "Todas as contas" e uma por banco; clicar filtra a tela', () => {
+  it('trocar de conta pelo cabeçalho filtra a tela sem voltar para a listagem; ‹ volta para Todas as contas no mês', () => {
     abrir();
-    const contas = Array.from(el().querySelectorAll('.extrato-conta')).map(texto);
+    const navegar = spyOn(TestBed.inject(Router), 'navigate');
 
-    expect(contas[0]).toContain('Todas as contas');
-    expect(contas.some(c => c.includes('Nubank') && c.includes('Cartão de crédito'))).toBeTrue();
-
-    (Array.from(el().querySelectorAll('.extrato-conta')).find(c => c.textContent?.includes('Caixa')) as HTMLElement).click();
+    comp().escolherConta(2);
     fixture.detectChanges();
-
     expect(comp().filtro.bancoId).toBe(2);
+    expect(comp().tituloPagina).toBe('Caixa');
     expect(el().querySelectorAll('.extrato-linha').length).toBe(1);
+    expect(navegar).not.toHaveBeenCalled();
+
+    comp().voltar();
+    expect(navegar).toHaveBeenCalledWith(['/extrato-bancario/resumo'], { queryParams: { month: comp().selectedMonth } });
   });
 
-  it('cards de Saídas, Entradas, Sem pessoa e Sem categoria; clicar em Sem pessoa filtra', () => {
+  it('KPIs de todas as contas vêm do resumo (sem "Sem pessoa"); clicar em Para classificar filtra', () => {
     abrir();
-    const cards = Array.from(el().querySelectorAll('.extrato-card mf-stat-card')).map(texto);
+    const cards = Array.from(el().querySelectorAll('.extrato-kpis mf-stat-card')).map(texto);
 
-    expect(cards.length).toBe(4);
-    expect(cards[0]).toContain('R$ 130,00');
-    expect(cards[1]).toContain('R$ 1.000,00');
-    expect(cards[2]).toContain('1');
-    expect(cards[3]).toContain('2');
+    expect(cards.length).toBe(3);
+    expect(cards[0]).toContain('R$ 1.000,00');
+    expect(cards[1]).toContain('R$ 130,00');
+    expect(cards[2]).toContain('2');
+    expect(cards.join('|')).not.toContain('Sem pessoa');
 
-    (el().querySelectorAll('.extrato-card')[2] as HTMLElement).click();
+    (el().querySelectorAll('.extrato-kpis .extrato-card')[2] as HTMLElement).click();
     fixture.detectChanges();
 
-    expect(comp().filtro.pendencia).toBe('sem-pessoa');
-    expect(el().querySelectorAll('.extrato-linha').length).toBe(1);
+    expect(comp().filtro.pendencia).toBe('sem-categoria');
+    expect(el().querySelectorAll('.extrato-linha').length).toBe(2);
   });
 
   it('tabela agrupada por dia, com chip de pessoa, parcela e valor (entrada com "+")', () => {
@@ -208,7 +285,7 @@ describe('ExtratoMesComponent', () => {
 
     fixture.detectChanges();
     expect(el().querySelector('mf-filter-bar [aria-label="Exportar"]')).not.toBeNull();
-    expect(comp().itensMenu.map(i => i.label)).not.toContain('Exportar');
+    expect(comp().menuSplit.map(i => i.label)).not.toContain('Exportar CSV');
   });
 
   it('ações por linha como Contas a Pagar: o lápis liga o Modo edição e leva à linha; o ⋮ exclui com confirmação', async () => {
@@ -450,7 +527,7 @@ describe('ExtratoMesComponent', () => {
 
     it('sem o switch do Modo edição; contas em chips; cards por dia do mais recente; + flutuante; Importar no ⋮', () => {
       expect(el().querySelector('#extrato-edicao')).toBeNull();
-      expect(el().querySelectorAll('.extrato-chip').length).toBe(3);
+      expect(el().querySelector('p-dropdown[ariaLabel="Trocar de conta"]')).not.toBeNull();
       expect(el().querySelector('p-table')).toBeNull();
       const dias = Array.from(el().querySelectorAll('.extrato-movel__dia')).map(texto);
       expect(dias.length).toBe(2);
@@ -462,8 +539,9 @@ describe('ExtratoMesComponent', () => {
       expect(el().querySelector('mf-page-header .campo-mes')).toBeNull();
       expect(el().querySelector('.mes-movel p-calendar')).not.toBeNull();
       expect(el().querySelector('mf-page-header [aria-label="Mais ações"]')).not.toBeNull();
-      expect(comp().itensMenuMovel.map(i => i.label)[0]).toBe('Importar extrato');
-      expect(el().textContent).not.toContain('Importar extrato');
+      // O ⋮ abre a folha de baixo com Importar e as ações (card #77).
+      (el().querySelector('mf-page-header button[aria-label="Mais ações"]') as HTMLElement).click();
+      expect(comp().acoesAbertas).toBeTrue();
     });
 
     it('filtros como Contas a Pagar no celular: opções roláveis com contagem, busca e o botão que abre a folha de filtros', () => {

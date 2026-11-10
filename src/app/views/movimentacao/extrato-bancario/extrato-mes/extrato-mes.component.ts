@@ -18,6 +18,8 @@ import { ProgressBarModule } from 'primeng/progressbar';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { BadgeModule } from 'primeng/badge';
 import { SidebarModule } from 'primeng/sidebar';
+import { DialogModule } from 'primeng/dialog';
+import { ResumoContaDto, ResumoContasDto } from 'src/app/core/models/resumo-categorias.model';
 import { AcertosComponent } from '../acertos/acertos.component';
 import { FaturaPorPessoaComponent } from '../components/fatura-por-pessoa/fatura-por-pessoa.component';
 import { ClassificarSempreComponent } from '../classificacao/classificar-sempre.component';
@@ -72,7 +74,7 @@ import { AbrirExtrato, ModalImportarExtratoComponent } from '../components/modal
 import { ModalLancamentoManualComponent } from '../components/modal-lancamento-manual/modal-lancamento-manual.component';
 import {
   CampoEditavel, CardsExtrato, ContaDoMes, FaturaPorPessoa, FiltroExtrato, GrupoDoDia, Pendencia, TipoFiltro, agruparPorDia, alteracoesDoRascunho,
-  aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehDoTitular, ehEntrada, faturaPorPessoa, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa, vencimentoNoMes,
+  ROTULO_TITULAR, aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehDoTitular, ehEntrada, faturaPorPessoa, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa, vencimentoNoMes,
   dividido, tituloCurtoDoDia, OPCOES_ORDEM_EXTRATO, OrdemExtrato, grupoUnico, ordenarExtrato
 } from '../extrato.regras';
 
@@ -96,7 +98,7 @@ const TIPOS: { label: string; value: TipoFiltro }[] = [
   standalone: true,
   imports: [
     NgIf, FormsModule, ButtonModule, CalendarModule, DropdownModule, InputSwitchModule, SplitButtonModule, IconFieldModule, InputIconModule, InputTextModule, MenuModule,
-    InputNumberModule, OverlayPanelModule, MultiSelectModule, ProgressBarModule, SelectButtonModule, BadgeModule, SidebarModule, AcertosComponent, FaturaPorPessoaComponent, ClassificarSempreComponent, ModalRegrasClassificacaoComponent, TableModule, TooltipModule,
+    InputNumberModule, OverlayPanelModule, MultiSelectModule, ProgressBarModule, SelectButtonModule, BadgeModule, SidebarModule, DialogModule, AcertosComponent, FaturaPorPessoaComponent, ClassificarSempreComponent, ModalRegrasClassificacaoComponent, TableModule, TooltipModule,
     PageHeaderComponent, StatCardComponent, FilterBarComponent, EmptyStateComponent, ExtratoContasComponent,
     ModalImportarExtratoComponent, ModalLancamentoManualComponent, ModalImportacoesMensaisComponent,
     ModalConfiguracaoVinculoPessoaComponent, BarraEdicaoComponent, TotaisSelecaoComponent, CurrencyInputDirective,
@@ -129,23 +131,6 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
 
   readonly breadcrumb: MenuItem[] = [{ label: 'Movimentações' }, { label: 'Extrato Bancário' }];
   readonly home: MenuItem = { icon: 'pi pi-home', routerLink: '/' };
-  readonly itensMenu: MenuItem[] = [
-    { label: 'Importações realizadas', icon: 'pi pi-download', command: () => (this.showImportacoesMensais = true) },
-    { label: 'Relatório mensal', icon: 'pi pi-chart-line', command: () => this.abrirRelatorio() },
-    { label: 'Configurar pessoas', icon: 'pi pi-users', command: () => (this.showConfigPessoas = true) },
-    { label: 'Regras de classificação', icon: 'pi pi-bolt', command: () => this.abrirRegras() },
-    { label: 'Atualizar', icon: 'pi pi-refresh', command: () => this.carregarMes() }
-  ];
-  /** Desktop, como em Contas a Pagar: o botão é o lançamento manual; a seta traz Importar e o resto. */
-  readonly itensNovoLancamento: MenuItem[] = [
-    { label: 'Importar extrato', icon: 'pi pi-file-import', command: () => (this.showImportar = true) },
-    ...this.itensMenu
-  ];
-  /** Celular (item 4): o Importar vai para o ⋮; o lançamento manual fica no + flutuante. */
-  readonly itensMenuMovel: MenuItem[] = [
-    { label: 'Importar extrato', icon: 'pi pi-file-import', command: () => (this.showImportar = true) },
-    ...this.itensMenu
-  ];
   readonly colunasExportacao = [
     { field: 'dataMovimentacao', header: 'Data' },
     { field: 'descricao', header: 'Descrição' },
@@ -274,6 +259,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
           this.nomesPessoas = nomesParaSugestao(pessoas ?? []);
           this.bancos = bancos ?? [];
           this.opcoesConta = this.bancos.map(b => ({ label: b.nomeBanco, value: b.id }));
+          this.atualizarDetalhe();
           this.tiposCartao = tipos ?? [];
           this.categorias = categorias ?? [];
           this.categoriasAtivas = this.categorias.filter(c => c.ativo !== false);
@@ -292,6 +278,8 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     this.filtro = filtroVazio(bancoId > 0 ? bancoId : null);
     // Atalhos do Importar (card #74) vindos do Resumo.
     this.aplicarFoco(params.get('foco'));
+    // "Regras de classificação" do ⋮ da listagem (card #77) abre aqui, onde as opções estão carregadas.
+    if (params.get('regras')) this.abrirRegras();
     this.carregarMes(this.mesInicial(params.get('month')));
     this.carregarRegras();
   }
@@ -312,6 +300,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     this.selectedMonth = formatYearMonth(data);
     this.loading = true;
     this.mes$.next(this.selectedMonth);
+    this.carregarResumo();
   }
 
   mudarMes(delta: number): void {
@@ -362,8 +351,265 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
 
   escolherConta(bancoId: number | null): void {
     this.jaEscolheuConta = true;
-    this.filtro = { ...this.filtro, bancoId };
+    this.chipPessoa = '';
+    this.filtro = { ...this.filtro, bancoId, pessoas: [], pendencia: this.filtro.pendencia === 'sem-pessoa' ? null : this.filtro.pendencia };
+    this.atualizarDetalhe();
     this.aoMudarFiltro();
+  }
+
+  // ---------- Card #77: detalhe da conta (mesmos números da listagem, ⋮ do banco, cartão compartilhado ou não) ----------
+
+  /** Números das contas no mês, os mesmos da listagem. */
+  resumo: ResumoContasDto | null = null;
+  menuDetalhe: MenuItem[] = [];
+  menuSplit: MenuItem[] = [];
+  breadcrumbAtual: MenuItem[] = [];
+  opcoesContaComTodas: { label: string; value: number | null }[] = [];
+  opcoesChips: { label: string; value: string }[] = [];
+  opcoesQuemUsa: { label: string; value: number }[] = [];
+  chipPessoa = '';
+  showQuemUsa = false;
+  quemUsa: number[] = [];
+  acoesAbertas = false;
+
+  private carregarResumo(): void {
+    const mes = this.selectedMonth;
+    this.itensService.resumoContas(mes).subscribe({
+      next: r => {
+        if (mes !== this.selectedMonth) return;
+        this.resumo = r;
+        this.atualizarDetalhe();
+      },
+      error: () => {
+        this.resumo = null;
+        this.atualizarDetalhe();
+      }
+    });
+  }
+
+  get contaAberta(): ResumoContaDto | null {
+    return this.filtro.bancoId == null ? null : this.resumo?.contas.find(c => c.bancoId === this.filtro.bancoId) ?? null;
+  }
+
+  /** Sem banco: todas as contas; com banco: conta corrente, cartão só meu ou cartão emprestado. */
+  get variacao(): 'todas' | 'conta' | 'cartao' | 'compartilhado' {
+    const c = this.contaAberta;
+    if (!c) return 'todas';
+    if (!c.ehCredito) return 'conta';
+    return c.compartilhado ? 'compartilhado' : 'cartao';
+  }
+
+  /** Cartão só meu não mostra nada de pessoas. */
+  get mostraPessoa(): boolean {
+    return this.variacao !== 'cartao';
+  }
+
+  get tituloPagina(): string {
+    return this.contaAberta?.nome ?? 'Extrato Bancário';
+  }
+
+  get subtituloPagina(): string {
+    const c = this.contaAberta;
+    if (!c) return 'Entradas e saídas das contas e cartões no mês';
+    return c.compartilhado && c.pessoas.length ? `${c.tipoNome} · compartilhado com ${juntarNomes(c.pessoas)}` : c.tipoNome;
+  }
+
+  get rotuloImportar(): string {
+    return this.contaAberta?.ehCredito ? 'Importar fatura' : 'Importar extrato';
+  }
+
+  get kpis(): KpiExtrato[] {
+    const r = this.resumo;
+    const c = this.contaAberta;
+    const m = (v: number | null | undefined) => (v == null ? '—' : this.moeda(v));
+    const semCategoria = (n: number | undefined): KpiExtrato => ({
+      rotulo: 'Sem categoria', valor: n == null ? '—' : '' + n, icone: 'pi pi-tag', tom: 'neutro', destaque: !!n, acao: 'sem-categoria',
+      dica: 'lançamentos para classificar'
+    });
+    switch (this.variacao) {
+      case 'conta':
+        return [
+          { rotulo: 'Entradas', valor: m(c?.entradas), icone: 'pi pi-arrow-down-left', tom: 'receita', corDoValor: 'receita', acao: 'entradas' },
+          { rotulo: 'Saídas', valor: m(c?.saidas), icone: 'pi pi-arrow-up-right', tom: 'despesa', acao: 'saidas' },
+          { rotulo: 'Resultado', valor: m(c?.resultado), icone: 'pi pi-chart-line', tom: 'info', corDoValor: (c?.resultado ?? 0) < 0 ? 'perigo' : 'receita' },
+          semCategoria(c?.semCategoria)
+        ];
+      case 'cartao':
+        return [
+          { rotulo: 'Fatura', valor: m(c?.fatura), icone: 'pi pi-credit-card', tom: 'despesa', acao: 'saidas', dica: c?.dataVencimento ? 'vence ' + diaMes(c.dataVencimento) : undefined },
+          { rotulo: 'Pagamentos e estornos', valor: m(c?.pagamentosEstornos), icone: 'pi pi-arrow-down-left', tom: 'receita', corDoValor: 'receita', acao: 'entradas' },
+          { rotulo: 'Parcelas que continuam', valor: m(c?.parcelasQueContinuam), icone: 'pi pi-calendar', tom: 'info', dica: 'nas próximas faturas' },
+          semCategoria(c?.semCategoria)
+        ];
+      case 'compartilhado':
+        return [
+          { rotulo: 'Fatura', valor: m(c?.fatura), icone: 'pi pi-credit-card', tom: 'despesa', acao: 'saidas', dica: c?.dataVencimento ? 'vence ' + diaMes(c.dataVencimento) : undefined },
+          { rotulo: 'Minhas compras', valor: m(c?.minhasCompras), icone: 'pi pi-user', tom: 'neutro' },
+          { rotulo: 'De outras pessoas', valor: m(c?.deOutrasPessoas), icone: 'pi pi-users', tom: 'info',
+            dica: c?.porPessoa.length ? c.porPessoa.map(p => `${p.nome} ${this.moeda(p.valor)}`).join(' · ') : undefined },
+          { rotulo: 'Falta receber', valor: m(c?.faltaReceber), icone: 'pi pi-wallet', tom: 'perigo', corDoValor: c?.faltaReceber ? 'perigo' : null,
+            destaque: !!c?.faltaReceber, acao: 'acertos', dica: 'ver acertos' }
+        ];
+      default:
+        return [
+          { rotulo: 'Entradas', valor: m(r?.entradas), icone: 'pi pi-arrow-down-left', tom: 'receita', corDoValor: 'receita', acao: 'entradas' },
+          { rotulo: 'Saídas', valor: m(r?.saidas), icone: 'pi pi-arrow-up-right', tom: 'despesa', acao: 'saidas' },
+          ...(r?.faltaReceber != null ? [{ rotulo: 'Falta receber', valor: m(r.faltaReceber), icone: 'pi pi-wallet', tom: 'perigo' as const,
+            corDoValor: r.faltaReceber ? 'perigo' as const : null, acao: 'acertos' as const, dica: 'de outras pessoas' }] : []),
+          { ...semCategoria(r?.paraClassificar), rotulo: 'Para classificar' }
+        ];
+    }
+  }
+
+  kpiAtivo(k: KpiExtrato): boolean {
+    if (k.acao === 'entradas' || k.acao === 'saidas') return this.filtro.tipo === k.acao;
+    return k.acao === 'sem-categoria' && this.filtro.pendencia === 'sem-categoria';
+  }
+
+  clicarKpi(k: KpiExtrato): void {
+    if (!k.acao) return;
+    if (k.acao === 'acertos') this.aba = 1;
+    else this.clicarCard(k.acao);
+  }
+
+  /** Recalcula o que depende da conta aberta (menus, chips, migalhas); campos, não getters, para o p-menu não renascer a cada ciclo. */
+  private atualizarDetalhe(): void {
+    const c = this.contaAberta;
+    this.opcoesContaComTodas = [{ label: 'Todas as contas', value: null }, ...this.opcoesConta];
+    this.breadcrumbAtual = [
+      { label: 'Movimentações' },
+      { label: 'Extratos', routerLink: '/extrato-bancario/resumo', queryParams: { month: this.selectedMonth } },
+      ...(c ? [{ label: c.nome }] : [])
+    ];
+    this.opcoesChips = c?.compartilhado
+      ? [{ label: 'Todos', value: '' }, { label: ROTULO_TITULAR, value: ROTULO_TITULAR }, ...c.pessoas.map(p => ({ label: p, value: p })),
+        { label: 'Sem pessoa', value: 'sem-pessoa' }]
+      : [];
+    if (!this.mostraPessoa && this.aba === 1) this.aba = 0;
+
+    const cartao = !!c?.ehCredito;
+    const geral: MenuItem[] = [
+      { label: 'Todas as contas', items: [
+        { label: 'Lançamento manual', icon: 'pi pi-plus', command: () => this.lancar(null) },
+        { label: 'Importações realizadas', icon: 'pi pi-download', command: () => this.abrirImportacoes(null) },
+        { label: 'Relatório do mês', icon: 'pi pi-chart-line', command: () => this.abrirRelatorio() }
+      ] },
+      { label: 'Configurações', items: [
+        { label: 'Pessoas que usam meus cartões', icon: 'pi pi-users', command: () => (this.showConfigPessoas = true) },
+        { label: 'Regras de classificação', icon: 'pi pi-bolt', command: () => this.abrirRegras() }
+      ] }
+    ];
+    const doBanco: MenuItem[] = c ? [
+      { label: cartao ? 'Esta fatura' : 'Este mês', items: [
+        { label: cartao ? 'Lançamento neste cartão' : 'Lançamento nesta conta', icon: 'pi pi-plus', command: () => this.lancar(c.bancoId) },
+        { label: cartao ? 'Importações deste cartão' : 'Importações desta conta', icon: 'pi pi-download', command: () => this.abrirImportacoes(c.bancoId) },
+        { label: 'Relatório do mês', icon: 'pi pi-chart-line', command: () => this.abrirRelatorio() },
+        { label: 'Exportar CSV', icon: 'pi pi-upload', command: () => this.exportar() }
+      ] },
+      { label: cartao ? 'Este cartão' : 'Esta conta', items: [
+        ...(cartao ? [{ id: 'compartilhar', label: c.compartilhado ? 'Outras pessoas usam este cartão: sim' : 'Outras pessoas usam este cartão: não',
+          icon: c.compartilhado ? 'pi pi-users' : 'pi pi-user', command: () => this.alternarCompartilhado() }] : []),
+        { label: cartao ? 'Dados do cartão' : 'Dados da conta', icon: 'pi pi-pencil', command: () => this.router.navigate(['/bancos']) },
+        { label: 'Regras de classificação', icon: 'pi pi-bolt', command: () => this.abrirRegras() }
+      ] }
+    ] : geral;
+    this.menuDetalhe = [...doBanco, { label: 'Atualizar', icon: 'pi pi-refresh', command: () => this.carregarMes() }];
+    // O p-splitButton abre submenus em cascata: lá os grupos viram itens soltos, separados por linha.
+    this.menuSplit = this.menuDetalhe.flatMap((g, i) => g.items ? [...(i ? [{ separator: true }] : []), ...g.items] : [{ separator: true }, g]);
+  }
+
+  executarAcao(acao: MenuItem): void {
+    this.acoesAbertas = false;
+    acao.command?.({ originalEvent: undefined, item: acao });
+  }
+
+  abrirImportar(): void {
+    this.bancoParaImportar = this.filtro.bancoId;
+    this.showImportar = true;
+  }
+
+  /** null: o lançamento manual escolhe a conta; com banco, já vem nele. */
+  bancoDoLancamento: number | null = null;
+
+  private lancar(bancoId: number | null): void {
+    this.bancoDoLancamento = bancoId;
+    this.showLancamento = true;
+  }
+
+  bancoDasImportacoes: number | null = null;
+
+  private abrirImportacoes(bancoId: number | null): void {
+    this.bancoDasImportacoes = bancoId;
+    this.showImportacoesMensais = true;
+  }
+
+  escolherChip(valor: string): void {
+    this.chipPessoa = valor;
+    const pendencia = valor === 'sem-pessoa' ? 'sem-pessoa' : this.filtro.pendencia === 'sem-pessoa' ? null : this.filtro.pendencia;
+    this.filtro = { ...this.filtro, pessoas: valor && valor !== 'sem-pessoa' ? [valor] : [], pendencia };
+    this.aoMudarFiltro();
+  }
+
+  alternarCompartilhado(): void {
+    const c = this.contaAberta;
+    if (!c) return;
+    if (c.compartilhado) this.salvarCompartilhamento({ compartilhado: false });
+    else this.abrirQuemUsa();
+  }
+
+  abrirQuemUsa(): void {
+    const c = this.contaAberta;
+    if (!c) return;
+    this.acoesAbertas = false;
+    this.opcoesQuemUsa = this.pessoasCadastradas
+      .filter(p => p.entraNosAcertos && !p.ehTitular)
+      .map(p => ({ label: p.nomePessoa, value: p.id }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+    this.quemUsa = this.bancos.find(b => b.id === c.bancoId)?.pessoasIds ?? [];
+    this.showQuemUsa = true;
+  }
+
+  confirmarQuemUsa(): void {
+    if (!this.quemUsa.length) return;
+    this.showQuemUsa = false;
+    this.salvarCompartilhamento({ compartilhado: true, pessoasIds: [...this.quemUsa] });
+  }
+
+  dispensarConvite(): void {
+    this.salvarCompartilhamento({ conviteDispensado: true });
+  }
+
+  /** Muda na tela na hora (sem recarregar) e confirma pela API; se a API recusar, volta ao que ela diz. */
+  private salvarCompartilhamento(dados: { compartilhado?: boolean; pessoasIds?: number[]; conviteDispensado?: boolean }): void {
+    const c = this.contaAberta;
+    if (!c || !this.resumo) return;
+    const nomes = dados.pessoasIds?.map(id => this.pessoasCadastradas.find(p => p.id === id)?.nomePessoa ?? '').filter(Boolean);
+    const novo: ResumoContaDto = {
+      ...c,
+      compartilhado: dados.compartilhado ?? c.compartilhado,
+      conviteCompartilharDispensado: dados.conviteDispensado ?? c.conviteCompartilharDispensado,
+      pessoas: nomes ?? c.pessoas
+    };
+    this.resumo = { ...this.resumo, contas: this.resumo.contas.map(x => (x.bancoId === c.bancoId ? novo : x)) };
+    this.chipPessoa = '';
+    this.filtro = { ...this.filtro, pessoas: [], pendencia: this.filtro.pendencia === 'sem-pessoa' ? null : this.filtro.pendencia };
+    this.atualizarDetalhe();
+    this.aoMudarFiltro();
+    this.bancoService.compartilhar(c.bancoId, dados).subscribe({
+      next: () => {
+        const banco = this.bancos.find(b => b.id === c.bancoId);
+        if (banco) {
+          if (dados.compartilhado != null) banco.compartilhado = dados.compartilhado;
+          if (dados.pessoasIds) banco.pessoasIds = dados.pessoasIds;
+          if (dados.conviteDispensado != null) banco.conviteCompartilharDispensado = dados.conviteDispensado;
+        }
+        this.carregarResumo();
+      },
+      error: e => {
+        this.alertService.error(extrairMensagemErro(e, 'Não foi possível salvar o compartilhamento do cartão.'));
+        this.carregarResumo();
+      }
+    });
   }
 
   /** Os cards Sem pessoa / Sem categoria ligam e desligam o filtro; Saídas / Entradas trocam o tipo. */
@@ -864,8 +1110,9 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   }
 
   /** ‹ do cabeçalho, como em Contas a Pagar. */
+  /** "‹ Todas as contas": a listagem, no mesmo mês (card #77). */
   voltar(): void {
-    this.location.back();
+    this.router.navigate(['/extrato-bancario/resumo'], { queryParams: { month: this.selectedMonth } });
   }
 
   get nomeDoMes(): string {
@@ -920,4 +1167,27 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     const saldo = this.grupos[data]?.saldo ?? 0;
     return (saldo > 0 ? '+ ' : '') + formatCurrencyBR(saldo);
   }
+}
+
+/** Um KPI do topo do detalhe (card #77); a ação liga o filtro ou abre os Acertos. */
+interface KpiExtrato {
+  rotulo: string;
+  valor: string;
+  icone: string;
+  tom: 'receita' | 'despesa' | 'info' | 'perigo' | 'neutro';
+  corDoValor?: 'receita' | 'perigo' | null;
+  destaque?: boolean;
+  dica?: string;
+  acao?: 'entradas' | 'saidas' | 'sem-categoria' | 'acertos';
+}
+
+/** "Carlos", "Carlos e Ágatha", "Carlos, Ágatha e Bia". */
+function juntarNomes(nomes: readonly string[]): string {
+  return nomes.length <= 1 ? nomes.join('') : `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}`;
+}
+
+/** "2026-11-10" → "10/11". */
+function diaMes(iso: string): string {
+  const [, mes, dia] = iso.split('-');
+  return `${dia}/${mes}`;
 }

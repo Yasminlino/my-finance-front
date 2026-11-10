@@ -1,12 +1,17 @@
 .rb-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr)); gap: 1rem; }
 .rb-card { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; padding: 1rem; border: 1px solid var(--surface-border); border-radius: var(--mf-radius); background: var(--surface-card); color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .rb-card:hover { border-color: var(--mf-primary); }
+/* Cartão compartilhado (card #77): faixa roxa à esquerda. */
+.rb-card--compartilhado { border-left: 4px solid var(--mf-cor-roxo-fg); }
+.rb-card--falta { gap: 0.35rem; border: 1px dashed var(--mf-tag-warning-fg); background: var(--mf-tag-warning-bg); cursor: default; }
 .rb-topo { display: flex; align-items: center; gap: 0.75rem; }
 .rb-sigla { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: var(--mf-radius); font-size: 0.8rem; font-weight: 700; }
 .rb-sigla--pequena { width: 1.75rem; height: 1.75rem; font-size: 0.65rem; }
 .rb-nome { display: flex; flex: 1; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+:host ::ng-deep .rb-tag-compartilhado { background: var(--mf-cor-roxo-bg); color: var(--mf-cor-roxo-fg); }
+.rb-quem-usa { color: var(--mf-cor-roxo-fg); font-weight: 600; }
 .rb-valores { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
-.rb-valores div { display: flex; flex-direction: column; }
+.rb-valores div { display: flex; flex-direction: column; min-width: 0; }
 .rb-entrada { color: var(--mf-receita); }
 .rb-saida { color: var(--mf-despesa); }
 .rb-alerta { color: var(--mf-tag-warning-fg); }
@@ -15,12 +20,13 @@
 .rb-barra--entradas { background: var(--mf-primary); }
 .rb-barra--saidas { background: var(--mf-tag-warning-fg); }
 .rb-barra--minhas { background: var(--text-color-secondary); }
-.rb-barra--outras { background: var(--mf-tag-info-fg); }
+.rb-barra--outras { background: var(--mf-cor-roxo-fg); }
+.rb-aviso { margin: 0.5rem 0 0; color: var(--mf-tag-warning-fg); font-weight: 600; }
+.rb-aviso-linha { padding: 0.4rem 0.6rem; border-radius: var(--mf-radius); background: var(--mf-tag-warning-bg); color: var(--mf-tag-warning-fg); font-size: 0.875rem; font-weight: 600; }
 .rb-rodape { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 .rb-ver { flex: none; color: var(--mf-primary); font-size: 0.875rem; font-weight: 600; white-space: nowrap; }
 .rb-ver i { font-size: 0.7rem; }
-.rb-falta { display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem; padding: 1rem; border: 1px dashed var(--mf-tag-warning-fg); border-radius: var(--mf-radius); background: var(--mf-tag-warning-bg); }
-.rb-falta small { color: var(--mf-tag-warning-fg); }
+.rb-recolhidas { display: block; margin: 1rem auto 0; padding: 0.5rem 1rem; border: 0; background: none; color: var(--text-color-secondary); font: inherit; cursor: pointer; }
 .rb-tabela { width: 100%; border-collapse: collapse; }
 .rb-tabela th, .rb-tabela td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--surface-border); }
 .rb-tabela th { color: var(--text-color-secondary); font-size: 0.75rem; text-align: left; text-transform: uppercase; white-space: nowrap; }
@@ -32,9 +38,7 @@
 @media (max-width: 767.98px) {
   .rb-lista { grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
   .rb-card { padding: 0.75rem; }
-  .rb-falta { flex-wrap: wrap; }
-  .rb-falta p-button { width: 100%; }
-  .rb-falta ::ng-deep .p-button { width: 100%; }
+  .rb-valores { gap: 0.5rem; font-size: 0.9rem; }
   .rb-filtro { width: 100%; }
   .rb-filtro ::ng-deep .p-selectbutton { display: flex; }
   .rb-filtro ::ng-deep .p-button { flex: 1; padding-inline: 0.25rem; }
