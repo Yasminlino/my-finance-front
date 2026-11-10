@@ -126,15 +126,10 @@ describe('PlanejamentosComponent', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/planejamento', 'arquivados']);
     });
 
-    it('tem o ‹ voltar, que volta para a tela anterior', () => {
+    it('card #78: tela principal, sem o ‹ voltar', () => {
       montar();
-      const navegacao = TestBed.inject(NavegacaoService);
-      spyOn(navegacao, 'voltar');
-      expect(el().querySelector('mf-page-header [aria-label="Voltar"]')).not.toBeNull();
-
-      tela.voltar();
-
-      expect(navegacao.voltar).toHaveBeenCalledWith();
+      expect(TestBed.inject(NavegacaoService)).toBeTruthy();
+      expect(el().querySelector('mf-page-header [aria-label^="Voltar"]')).toBeNull();
     });
 
     it('menu: Abrir, Editar, Duplicar, Arquivar e Excluir', () => {
@@ -200,7 +195,7 @@ describe('PlanejamentosComponent', () => {
     });
 
     it('o ‹ voltar leva a Meus planejamentos', () => {
-      expect(el().querySelector('mf-page-header [aria-label="Voltar"]')).not.toBeNull();
+      expect(el().querySelector('mf-page-header [aria-label="Voltar para Meus planejamentos"]')).not.toBeNull();
 
       tela.voltar();
 

@@ -1,0 +1,25 @@
+<p-dialog [visible]="true" [modal]="true" appendTo="body" [showHeader]="false" [dismissableMask]="true" [draggable]="false" [resizable]="false"
+  position="top" styleClass="busca-dialogo" (onShow)="aoMostrar()" (visibleChange)="fechar()">
+  <div class="busca-campo">
+    <i class="pi pi-search"></i>
+    <input #campo pInputText type="text" [(ngModel)]="termo" (ngModelChange)="aoDigitar()" (keydown)="teclado($event)"
+      placeholder="Buscar telas, planejamentos, itens, categorias…" aria-label="Buscar" autocomplete="off" />
+    @if (buscando) { <i class="pi pi-spin pi-spinner busca-carregando"></i> }
+    <kbd class="busca-esc" (click)="fechar()">Esc</kbd>
+  </div>
+
+  <ul class="busca-lista" role="listbox" aria-label="Resultados">
+    @for (r of resultados; track r.url + r.titulo; let i = $index) {
+      @if (comecaGrupo(i)) { <li class="busca-grupo" role="presentation">{{ r.grupo }}</li> }
+      <li role="option" class="busca-item" [class.busca-item--ativo]="i === selecionado" [attr.aria-selected]="i === selecionado"
+        (mouseenter)="selecionado = i" (click)="abrir(r)">
+        <i [class]="r.icone"></i>
+        <span class="busca-titulo">{{ r.titulo }}</span>
+        @if (r.detalhe) { <small class="busca-detalhe">{{ r.detalhe }}</small> }
+      </li>
+    } @empty {
+      <li class="busca-vazio">Nada encontrado para "{{ termo }}".</li>
+    }
+  </ul>
+  <div class="busca-rodape mf-hint"><kbd>↑</kbd><kbd>↓</kbd> escolher · <kbd>Enter</kbd> abrir · <kbd>Esc</kbd> fechar</div>
+</p-dialog>

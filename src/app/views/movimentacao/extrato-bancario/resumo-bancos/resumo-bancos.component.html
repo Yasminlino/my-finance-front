@@ -1,11 +1,11 @@
 <div class="mf-pagina">
   <!-- Card #77: a mesma moldura do detalhe da conta (título, mês, Importar e ⋮ no mesmo lugar). -->
   <mf-page-header [class]="movel() ? 'block mb-2' : 'block mt-2 mb-3'" titulo="Extratos"
-    [subtitulo]="movel() ? '' : 'Escolha a conta para ver o extrato do mês'" [breadcrumb]="breadcrumb" [home]="home">
+    [subtitulo]="resumoCabecalho" [breadcrumb]="breadcrumb" [home]="home" [periodoCurto]="periodoCurto">
     @if (!movel()) {
-      <div acoes class="flex align-items-center gap-1">
+      <div periodo class="flex align-items-center gap-1">
         <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" (onClick)="mudarMes(-1)" ariaLabel="Mês anterior" />
-        <p-calendar [(ngModel)]="dateFilter" view="month" dateFormat="MM yy" [readonlyInput]="true" [showIcon]="true"
+        <p-calendar styleClass="mf-mes" [(ngModel)]="dateFilter" view="month" dateFormat="MM yy" [readonlyInput]="true" [showIcon]="false"
           (onSelect)="carregarMes($event)" inputStyleClass="text-center" />
         <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
       </div>
@@ -15,20 +15,47 @@
         (onClick)="abrirImportar()" appendTo="body" />
     }
     @if (movel()) {
-      <p-button acoes icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary" (onClick)="menu.toggle($event)" ariaLabel="Mais ações" />
+      <span acoes class="flex align-items-center">
+        <p-button icon="pi pi-upload" [rounded]="true" [text]="true" (onClick)="abrirImportar()" ariaLabel="Importar extrato" />
+        <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary" (onClick)="menu.toggle($event)" ariaLabel="Mais ações" />
+      </span>
+    }
+    @if (movel()) {
+      <div periodo class="flex align-items-center gap-2">
+        <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" (onClick)="mudarMes(-1)" ariaLabel="Mês anterior" />
+        <p-calendar class="flex-grow-1" styleClass="w-full mf-mes" [(ngModel)]="dateFilter" view="month" dateFormat="MM 'de' yy"
+        [readonlyInput]="true" [showIcon]="false" [touchUI]="true" (onSelect)="carregarMes($event)" />
+        <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
+      </div>
     }
   </mf-page-header>
   <p-menu #menu [model]="itensMenu" [popup]="true" appendTo="body" />
 
-  @if (movel()) {
-    <div class="flex align-items-center gap-2 mb-3">
-      <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" (onClick)="mudarMes(-1)" ariaLabel="Mês anterior" />
-      <p-calendar class="flex-grow-1" styleClass="w-full" [(ngModel)]="dateFilter" view="month" dateFormat="MM 'de' yy"
-        [readonlyInput]="true" [showIcon]="true" [touchUI]="true" (onSelect)="carregarMes($event)" />
-      <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
-    </div>
-  }
 
+  @if (carregandoPrimeiraVez) {
+    <div class="grid mb-2" aria-busy="true" aria-label="Carregando o resumo">
+      @for (n of [1, 2, 3]; track n) { <div class="col-6 xl:col-4"><p-skeleton height="6rem" borderRadius="12px" /></div> }
+    </div>
+  } @else if (erroAoCarregar) {
+    <!-- Falhou: sem cards de totais; a mensagem fica embaixo, no lugar da lista. -->
+  } @else if (movel()) {
+    <!-- Mesma marcação do carrossel de Contas a Pagar. -->
+    <div class="mf-carrossel" (scroll)="aoRolar($event)">
+      @for (k of kpis; track k.rotulo) {
+        <div class="mf-slide">
+          <div class="flex align-items-center justify-content-between">
+            <span class="text-color-secondary text-sm">{{ k.rotulo }}</span>
+            <i [class]="k.icone + ' ' + corDoIcone(k.tom)"></i>
+          </div>
+          <div class="font-bold text-2xl" [class.text-green-600]="k.corDoValor === 'receita'" [class.text-red-500]="k.corDoValor === 'perigo'">{{ k.valor }}</div>
+          <small class="text-color-secondary">{{ k.dica }}</small>
+        </div>
+      }
+    </div>
+    <div class="mf-pontos mb-3" aria-hidden="true">
+      @for (k of kpis; track k.rotulo; let i = $index) { <span [class.ativo]="i === slideAtivo"></span> }
+    </div>
+  } @else {
   <div class="grid mb-2">
     <div class="col-6" [class.xl:col-3]="existeCompartilhado" [class.xl:col-4]="!existeCompartilhado">
       <mf-stat-card rotulo="Entradas" [valor]="resumo ? moeda(resumo.entradas) : '—'" icone="pi pi-arrow-down-left" tom="receita" corDoValor="receita">
@@ -55,7 +82,56 @@
       </mf-stat-card>
     </div>
   </div>
+  }
 
+  @if (movel()) {
+    <!-- Mesma marcação dos filtros de Contas a Pagar no celular. -->
+    <div class="filtro-rolavel filtro-situacao-compacto">
+      <p-selectButton [options]="opcoesFiltro" [(ngModel)]="filtro" optionLabel="label" optionValue="value" [allowEmpty]="false">
+        <ng-template let-opcao pTemplate="item">
+          <span class="white-space-nowrap">{{ opcao.label }}</span>
+          <p-badge [value]="'' + opcao.contagem" severity="secondary" styleClass="ml-2" />
+        </ng-template>
+      </p-selectButton>
+    </div>
+    <div class="flex gap-2 my-2">
+      <p-iconField iconPosition="left" class="flex-grow-1">
+        <p-inputIcon styleClass="pi pi-search" />
+        <input pInputText type="text" class="w-full" placeholder="Buscar conta..." [(ngModel)]="busca" aria-label="Buscar conta" />
+      </p-iconField>
+      <span class="botao-filtros p-overlay-badge">
+        <p-button icon="pi pi-sliders-h" [outlined]="true" severity="secondary" (onClick)="filtrosAbertos = true" ariaLabel="Filtros" />
+        @if (filtrosNoPainel) { <span class="p-badge p-component p-badge-no-gutter">{{ filtrosNoPainel }}</span> }
+      </span>
+    </div>
+    <p-sidebar [(visible)]="filtrosAbertos" position="bottom" styleClass="painel-filtros h-auto" appendTo="body">
+      <ng-template pTemplate="header"><span class="font-semibold">Filtros</span></ng-template>
+      <label class="block text-sm text-color-secondary mb-1" for="rb-ordem-movel">Ordenar por</label>
+      <p-dropdown inputId="rb-ordem-movel" styleClass="w-full" [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value" appendTo="body" />
+      <label class="block text-sm text-color-secondary mb-1 mt-3" for="rb-situacao-movel">Situação</label>
+      <p-multiSelect inputId="rb-situacao-movel" [options]="opcoesSituacao" optionLabel="label" optionValue="value" [(ngModel)]="filtrosCampos.situacoes"
+        placeholder="Todas as situações" display="chip" [showHeader]="false" appendTo="body" styleClass="w-full" />
+      <span class="block text-sm text-color-secondary mb-1 mt-3">Cartões</span>
+      <p-selectButton [options]="opcoesCompartilhamento" [(ngModel)]="filtrosCampos.compartilhamento" optionLabel="label" optionValue="value"
+        [allowEmpty]="false" styleClass="rb-segmento-folha" />
+      <div class="flex align-items-center gap-2 mt-3">
+        <p-inputSwitch inputId="rb-sem-categoria-movel" [(ngModel)]="filtrosCampos.soSemCategoria" />
+        <label for="rb-sem-categoria-movel">Só com lançamentos sem categoria</label>
+      </div>
+      <span class="block text-sm text-color-secondary mb-1 mt-3">Valor (fatura ou saídas)</span>
+      <div class="flex align-items-center gap-2">
+        <p-inputNumber [(ngModel)]="filtrosCampos.valorMin" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="De"
+          class="flex-1" styleClass="w-full" inputStyleClass="w-full" ariaLabel="Valor a partir de" />
+        <span class="text-color-secondary">até</span>
+        <p-inputNumber [(ngModel)]="filtrosCampos.valorMax" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="Até"
+          class="flex-1" styleClass="w-full" inputStyleClass="w-full" ariaLabel="Valor até" />
+      </div>
+      <div class="flex gap-2 mt-3">
+        <p-button label="Limpar" severity="secondary" [outlined]="true" styleClass="w-full" class="flex-1" [disabled]="!temFiltro" (onClick)="limparFiltros()" />
+        <p-button label="Ver contas" styleClass="w-full" class="flex-1" (onClick)="filtrosAbertos = false" />
+      </div>
+    </p-sidebar>
+  } @else {
   <div class="surface-card border-round shadow-1 mb-3">
     <mf-filter-bar>
       <p-selectButton inicio class="rb-filtro" [options]="opcoesFiltro" [(ngModel)]="filtro" optionLabel="label" optionValue="value" [allowEmpty]="false">
@@ -68,7 +144,29 @@
         <p-inputIcon styleClass="pi pi-search" />
         <input pInputText type="text" placeholder="Buscar conta..." [(ngModel)]="busca" aria-label="Buscar conta" />
       </p-iconField>
+      <p-multiSelect fim [options]="opcoesSituacao" optionLabel="label" optionValue="value" [(ngModel)]="filtrosCampos.situacoes" placeholder="Situação"
+        [showHeader]="false" selectedItemsLabel="{0} situações" [maxSelectedLabels]="1" appendTo="body" styleClass="rb-filtro-campo" />
+      <p-dropdown fim [options]="opcoesCompartilhamento" [(ngModel)]="filtrosCampos.compartilhamento" optionLabel="label" optionValue="value"
+        appendTo="body" ariaLabel="Cartões compartilhados" styleClass="rb-filtro-campo" />
+      <p-button fim label="Sem categoria" icon="pi pi-tag" severity="secondary" [outlined]="!filtrosCampos.soSemCategoria" size="small"
+        (onClick)="filtrosCampos.soSemCategoria = !filtrosCampos.soSemCategoria" ariaLabel="Só com lançamentos sem categoria" />
+      <p-button fim [label]="rotuloValor" icon="pi pi-dollar" severity="secondary" [outlined]="!temFiltroDeValor" size="small"
+        (onClick)="painelValor.toggle($event)" ariaLabel="Filtrar por valor" />
+      <p-overlayPanel #painelValor appendTo="body">
+        <div class="flex flex-column gap-2">
+          <span class="font-semibold">Valor (fatura ou saídas)</span>
+          <div class="flex align-items-center gap-2">
+            <p-inputNumber [(ngModel)]="filtrosCampos.valorMin" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="De"
+              inputStyleClass="w-8rem" ariaLabel="Valor a partir de" />
+            <span class="mf-hint">até</span>
+            <p-inputNumber [(ngModel)]="filtrosCampos.valorMax" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="Até"
+              inputStyleClass="w-8rem" ariaLabel="Valor até" />
+          </div>
+        </div>
+      </p-overlayPanel>
       <p-dropdown fim [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value" appendTo="body" ariaLabel="Ordenar contas" />
+      <p-button fim icon="pi pi-filter-slash" [text]="true" severity="secondary" pTooltip="Limpar filtros" tooltipPosition="top"
+        [disabled]="!temFiltro" (onClick)="limparFiltros()" ariaLabel="Limpar filtros" />
       <!-- Um único elemento dentro do @if: com mais de um, a projeção em [fim] não acontece e eles somem. -->
       @if (!movel()) {
         <div fim class="rb-modos flex gap-1">
@@ -78,8 +176,19 @@
       }
     </mf-filter-bar>
   </div>
+  }
 
-  @if (mesVazio) {
+  @if (carregandoPrimeiraVez) {
+    <div class="rb-lista" aria-busy="true">
+      @for (n of [1, 2, 3]; track n) { <p-skeleton height="11rem" borderRadius="12px" /> }
+    </div>
+  } @else if (erroAoCarregar) {
+    <div class="surface-card border-round shadow-1">
+      <mf-empty-state icone="pi pi-exclamation-triangle" titulo="Não foi possível carregar o resumo das contas" texto="Confira a conexão e tente de novo.">
+        <p-button label="Tentar de novo" icon="pi pi-refresh" (onClick)="carregarMes()" />
+      </mf-empty-state>
+    </div>
+  } @else if (mesVazio) {
     <div class="surface-card border-round shadow-1">
       <mf-empty-state icone="pi pi-file-import" [titulo]="'Nenhum lançamento em ' + nomeDoMes" texto="Importe o extrato de uma conta para começar.">
         <p-button label="Importar extrato" icon="pi pi-file-import" (onClick)="abrirImportar()" />

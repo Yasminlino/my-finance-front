@@ -1,3 +1,7 @@
+import { registrarAcaoCriar } from 'src/app/core/services/criar-contexto.service';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -31,7 +35,8 @@ import { PlanejamentoCardComponent } from '../components/planejamento-card/plane
 import { PlanejamentoFormComponent } from '../components/planejamento-form/planejamento-form.component';
 import { DuplicarPlanejamentoComponent } from '../components/duplicar-planejamento/duplicar-planejamento.component';
 import {
-  FiltroPlanejamento, OrdemPlanejamento, contarPorFiltro, filtrarPlanejamentos, ordenarPlanejamentos, rotaDaLista
+  FiltroPlanejamento, OrdemPlanejamento, contarPorFiltro, filtrarPlanejamentos, ordenarPlanejamentos, rotaDaLista,
+  FiltrosPlanejamento, OPCOES_ANDAMENTO, OPCOES_MODELO_FILTRO, filtrarPlanejamentosPorCampos, filtrosPlanejamentoVazios, quantosFiltrosPlanejamento
 } from '../listas.regras';
 
 /** Ação do menu ⋮ (desktop) e do bottom sheet (celular): a mesma lista nos dois. */
@@ -63,7 +68,7 @@ const NOMES_NA_PASTA = 3;
   standalone: true,
   imports: [
     FormsModule, RouterLink, BadgeModule, ButtonModule, DropdownModule, IconFieldModule, InputIconModule, InputTextModule,
-    MenuModule, MessageModule, SelectButtonModule, SidebarModule, SkeletonModule, ToastModule,
+    MenuModule, MessageModule, SelectButtonModule, SidebarModule, SkeletonModule, ToastModule, MultiSelectModule, InputNumberModule, OverlayPanelModule,
     EmptyStateComponent, FabComponent, FilterBarComponent, PageHeaderComponent, PlanejamentoCardComponent, PlanejamentoFormComponent,
     DuplicarPlanejamentoComponent
   ],
@@ -83,7 +88,8 @@ export class PlanejamentosComponent implements OnInit {
   readonly movel = inject(LarguraTelaService).movel;
 
   /** Modo pasta: só os arquivados, com Desarquivar no lugar de Editar/Duplicar/Arquivar. */
-  readonly arquivados: boolean = !!inject(ActivatedRoute).snapshot.data['arquivados'];
+  private readonly route = inject(ActivatedRoute);
+  readonly arquivados: boolean = !!this.route.snapshot.data['arquivados'];
 
   readonly home: MenuItem = { icon: 'pi pi-home', routerLink: '/home' };
   readonly breadcrumb: MenuItem[] = this.arquivados
@@ -113,6 +119,63 @@ export class PlanejamentosComponent implements OnInit {
   /** Planejamento do menu ⋮ ou do bottom sheet aberto. */
   doMenu: ListaDto | null = null;
   itensMenu: MenuItem[] = [];
+  /** Celular, como Contas a Pagar (card #72): ⋮ do título e folha de filtros com a ordenação. */
+  readonly itensMenuTopo: MenuItem[] = this.arquivados
+    ? [{ label: 'Meus planejamentos', icon: 'pi pi-clipboard', command: () => this.router.navigate(['/planejamento']) }]
+    : [
+        { label: 'Novo planejamento', icon: 'pi pi-plus', command: () => this.novo() },
+        { label: 'Arquivados', icon: 'pi pi-inbox', command: () => this.router.navigate(['/planejamento', 'arquivados']) }
+      ];
+  filtrosAbertos = false;
+  /** "+" do menu no celular (card #72). */
+  private readonly acaoCriar = registrarAcaoCriar({
+    chave: 'planejamento', titulo: () => 'Nova lista', subtitulo: () => 'compras, orçamento, tarefas ou agenda', icone: 'pi pi-list', cor: 'vermelho',
+    executar: () => this.novo(),
+    locais: { compromisso: () => { this.filtro = 'DATA'; this.aplicarFiltros(); } }
+  });
+  /** Filtros por campo, como em Contas a Pagar (card #72). */
+  filtrosCampos: FiltrosPlanejamento = filtrosPlanejamentoVazios();
+  readonly opcoesModelo = OPCOES_MODELO_FILTRO;
+  readonly opcoesAndamento = OPCOES_ANDAMENTO;
+
+  get ordemMudou(): boolean {
+    return this.ordem !== 'RECENTES';
+  }
+
+  /** Resumo do cabeçalho (card #78). */
+  get resumoCabecalho(): string {
+    const n = this.listas.length;
+    if (this.arquivados) return `${n} ${n === 1 ? 'arquivado' : 'arquivados'}`;
+    return `${n} ${n === 1 ? 'planejamento' : 'planejamentos'} · compras, orçamentos, tarefas e agenda`;
+  }
+
+  get filtrosNoPainel(): number {
+    return quantosFiltrosPlanejamento(this.filtrosCampos) + (this.ordemMudou ? 1 : 0);
+  }
+
+  get temFiltroDeValor(): boolean {
+    return this.filtrosCampos.valorMin != null || this.filtrosCampos.valorMax != null;
+  }
+
+  get rotuloValor(): string {
+    const { valorMin: de, valorMax: ate } = this.filtrosCampos;
+    const m = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    if (de != null && ate != null) return `${m(de)} a ${m(ate)}`;
+    if (de != null) return `a partir de ${m(de)}`;
+    if (ate != null) return `até ${m(ate)}`;
+    return 'Valor';
+  }
+
+  get temFiltroDeCampo(): boolean {
+    return !!this.busca.trim() || this.filtro !== 'TODOS' || quantosFiltrosPlanejamento(this.filtrosCampos) > 0;
+  }
+
+  limparFiltrosDeCampo(): void {
+    this.busca = '';
+    this.filtro = 'TODOS';
+    this.filtrosCampos = filtrosPlanejamentoVazios();
+    this.aplicarFiltros();
+  }
   acoesAbertas = false;
 
   formAberto = false;
@@ -131,7 +194,14 @@ export class PlanejamentosComponent implements OnInit {
   }
 
   ngOnInit() {
+    const filtroDaUrl = this.route.snapshot.queryParamMap?.get('filtro');
+    if (!this.arquivados && (filtroDaUrl === 'DATA' || filtroDaUrl === 'VALOR')) this.filtro = filtroDaUrl;
     this.load();
+    // "Novo planejamento" do + do menu e da busca (card #72).
+    if (!this.arquivados && this.route.snapshot.queryParamMap?.get('novo')) {
+      this.novo();
+      this.router.navigate([], { relativeTo: this.route, queryParams: { novo: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    }
   }
 
   load() {
@@ -156,7 +226,8 @@ export class PlanejamentosComponent implements OnInit {
       { label: 'Com valor', value: 'VALOR', contagem: contagem.VALOR },
       { label: 'Com data', value: 'DATA', contagem: contagem.DATA }
     ];
-    this.exibidas = ordenarPlanejamentos(filtrarPlanejamentos(this.listas, this.arquivados ? 'TODOS' : this.filtro, this.busca), this.ordem);
+    const filtradas = filtrarPlanejamentos(this.listas, this.arquivados ? 'TODOS' : this.filtro, this.busca);
+    this.exibidas = ordenarPlanejamentos(filtrarPlanejamentosPorCampos(filtradas, this.filtrosCampos), this.ordem);
   }
 
   limparFiltros() {

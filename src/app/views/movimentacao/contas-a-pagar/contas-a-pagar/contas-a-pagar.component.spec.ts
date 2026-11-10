@@ -78,14 +78,11 @@ describe('ContasAPagarComponent', () => {
     localStorage.removeItem('dataFiltroContaMensal');
   });
 
-  it('desktop: breadcrumb e botão de voltar antes do título', () => {
+  it('card #78: tela principal, sem o ‹ voltar; o resumo diz mês, contas e vencidas', () => {
     const el = fixture.nativeElement as HTMLElement;
-    const location = TestBed.inject(Location);
-    spyOn(location, 'back');
-
-    expect(el.querySelector('mf-page-header p-breadcrumb')).not.toBeNull();
-    el.querySelector<HTMLButtonElement>('mf-page-header button[aria-label="Voltar"]')!.click();
-    expect(location.back).toHaveBeenCalled();
+    expect(TestBed.inject(Location)).toBeTruthy();
+    expect(el.querySelector('mf-page-header button[aria-label^="Voltar"]')).toBeNull();
+    expect(el.querySelector('mf-page-header .mf-page-subtitle')?.textContent).toMatch(/\d+ contas?/);
   });
 
   it('ícone e cor da categoria (todas as categorias, inclusive inativas) — cards #27 e #23', () => {
@@ -240,13 +237,11 @@ describe('ContasAPagarComponent', () => {
       expect(el().querySelector('p-inputSwitch')).toBeNull();
     });
 
-    it('também tem breadcrumb e botão de voltar', () => {
-      const location = TestBed.inject(Location);
-      spyOn(location, 'back');
-
-      expect(el().querySelector('mf-page-header p-breadcrumb')).not.toBeNull();
-      el().querySelector<HTMLButtonElement>('mf-page-header button[aria-label="Voltar"]')!.click();
-      expect(location.back).toHaveBeenCalled();
+    it('card #78: sem breadcrumb nem ‹ voltar no celular; o mês fica no cabeçalho', () => {
+      expect(TestBed.inject(Location)).toBeTruthy();
+      expect(el().querySelector('mf-page-header p-breadcrumb')).toBeNull();
+      expect(el().querySelector('mf-page-header button[aria-label^="Voltar"]')).toBeNull();
+      expect(el().querySelector('mf-page-header .mf-ph-periodo p-calendar')).not.toBeNull();
     });
 
     it('o ⋮ do título fica nas ações do cabeçalho, à direita, e o p-menu fica fora dele', () => {

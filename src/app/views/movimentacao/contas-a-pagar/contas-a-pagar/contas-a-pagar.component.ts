@@ -1,3 +1,6 @@
+import { registrarAcaoCriar } from 'src/app/core/services/criar-contexto.service';
+import { VencidasService } from 'src/app/core/services/vencidas.service';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Location } from '@angular/common';
@@ -10,13 +13,13 @@ import { ContaMensalService } from 'src/app/core/services/conta-mensal.service';
 import { CategoryService } from 'src/app/core/services/category.service';
 import { ExclusaoEmLoteService } from 'src/app/core/services/exclusao-em-lote.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
-import { formatYearMonth } from 'src/app/core/utils/mask';
+import { formatYearMonth, formatCurrencyBR } from 'src/app/core/utils/mask';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
 import { TabelaContasComponent } from '../components/tabela-contas/tabela-contas.component';
 import { ListaContasMovelComponent } from '../components/lista-contas-movel/lista-contas-movel.component';
 import { LarguraTelaService } from 'src/app/core/services/largura-tela.service';
-import { ResumoMes, resumoDoMes, statusAoPagar, vencimentoDe } from '../contas-a-pagar.regras';
+import { ResumoMes, resumoDoMes, statusAoPagar, vencidasPorMes, vencimentoDe } from '../contas-a-pagar.regras';
 import { EdicaoContas } from '../edicao-contas';
 import { LoteAdicionado } from '../components/modal-adicionar-em-lote/modal-adicionar-em-lote.component';
 import { AparenciaCategoria, aparenciaDe } from 'src/app/shared/ui/aparencia';
@@ -43,6 +46,14 @@ export class ContasAPagarComponent implements OnInit {
   readonly movel = inject(LarguraTelaService).movel;
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly vencidas = inject(VencidasService);
+  /** "+" do menu no celular (card #72): a ação desta tela. */
+  private readonly acaoCriar = registrarAcaoCriar({
+    chave: 'conta-a-pagar', titulo: () => 'Conta a pagar', subtitulo: () => `vencimento em ${this.nomeDoMes}`,
+    icone: 'pi pi-money-bill', cor: 'laranja', executar: () => this.onOpenCreate()
+  });
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly contaMensalService = inject(ContaMensalService);
   private readonly categoryService = inject(CategoryService);
   private readonly alertService = inject(AlertService);
@@ -96,7 +107,14 @@ export class ContasAPagarComponent implements OnInit {
         this.contasMensais = contas;
         this.resumo = resumoDoMes(contas, this.hoje);
         this.loading = false;
+        // Badge do menu (card #72): pagou, criou ou excluiu, a contagem de vencidas muda.
+        this.vencidas.atualizar();
       });
+    // "Conta a pagar" do + do menu e da busca (card #72).
+    if (this.route.snapshot.queryParamMap.get('novo')) {
+      this.onOpenCreate();
+      this.router.navigate([], { relativeTo: this.route, queryParams: { novo: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    }
 
     // Sem as categorias, os ícones ficam na cor neutra: não é motivo para avisar erro na tela.
     this.categoryService.listar()
@@ -109,6 +127,57 @@ export class ContasAPagarComponent implements OnInit {
   /** ‹ antes do título: volta para a tela anterior, como fazia o data-grid. */
   voltar(): void {
     this.location.back();
+  }
+
+  /** Resumo do cabeçalho (card #78): "29 contas"; as vencidas vão à parte, em vermelho. */
+  get resumoCabecalho(): string {
+    const n = this.contasMensais.length;
+    return `${n} ${n === 1 ? 'conta' : 'contas'}`;
+  }
+
+  /** Vencidas de hoje (as do selo do menu) separadas em do mês aberto e de meses anteriores (card #78). */
+  private get vencidasSeparadas() {
+    return vencidasPorMes(this.vencidas.contas(), formatYearMonth(this.dateFilter));
+  }
+
+  /** "15 vencidas" em vermelho, só do mês aberto; sem vencidas no mês, nada. */
+  get alertaCabecalho(): string | null {
+    const n = this.vencidasSeparadas.doMes.length;
+    return n ? `${n} ${n === 1 ? 'vencida' : 'vencidas'}` : null;
+  }
+
+  /** Aviso abaixo do cabeçalho: vencidas de meses anteriores ao aberto. */
+  get vencidasAnteriores() {
+    return this.vencidasSeparadas.anteriores;
+  }
+
+  vencidasAnterioresAbertas = false;
+  readonly formatCurrencyBR = formatCurrencyBR;
+
+  get totalVencidasAnteriores(): number {
+    return this.vencidasAnteriores.reduce((soma, c) => soma + Number(c.valor), 0);
+  }
+
+  /** "set/26": o mês do vencimento, no botão da linha. */
+  mesCurtoDe(c: { data: unknown }): string {
+    const d = vencimentoDe(c);
+    return `${d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}/${String(d.getFullYear()).slice(2)}`;
+  }
+
+  /** Botão da linha do diálogo: fecha e abre Contas a Pagar no mês do vencimento. */
+  irAoMes(c: { data: unknown }): void {
+    const d = vencimentoDe(c);
+    this.vencidasAnterioresAbertas = false;
+    this.loadMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+  }
+
+  dataCurta(c: { data: unknown }): string {
+    return vencimentoDe(c).toLocaleDateString('pt-BR');
+  }
+
+  /** Chip do cabeçalho compacto: "nov/26". */
+  get periodoCurto(): string {
+    return `${this.dateFilter.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}/${String(this.dateFilter.getFullYear()).slice(2)}`;
   }
 
   get nomeDoMes(): string {

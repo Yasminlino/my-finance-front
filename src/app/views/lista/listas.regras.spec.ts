@@ -121,3 +121,26 @@ describe('listas.regras (card #63)', () => {
     expect(rotaDaLista(lista({ id: 5, usaData: true }))).toEqual(['/planejamento', '5']);
   });
 });
+
+import { andamentoDe as _andamentoDe, filtrarPlanejamentosPorCampos as _porCampos, filtrosPlanejamentoVazios as _vazios, quantosFiltrosPlanejamento as _quantos } from './listas.regras';
+
+/** Filtros por campo dos planejamentos (card #72). */
+describe('listas.regras: filtros por campo', () => {
+  const lista = (id: number, extra: object) => ({ id, nome: 'P' + id, usaQuantidade: false, usaValor: false, modoValor: 'TOTAL', usaLimite: false,
+    usaData: false, usaObservacao: false, modelo: 'COMPRAS', ...extra }) as never;
+  const listas = [
+    lista(1, { modelo: 'COMPRAS', usaValor: true, resumo: { itens: 3, feitos: 3, total: 150, totalFeito: 150 } }),
+    lista(2, { modelo: 'TAREFAS', resumo: { itens: 4, feitos: 1, total: 0, totalFeito: 0 } }),
+    lista(3, { modelo: 'AGENDA' })
+  ];
+
+  it('tipo, andamento e valor total combinam; quem não usa valor sai quando há faixa', () => {
+    expect(_andamentoDe(listas[0])).toBe('CONCLUIDO');
+    expect(_andamentoDe(listas[1])).toBe('ANDAMENTO');
+    expect(_andamentoDe(listas[2])).toBe('SEM_ITENS');
+    expect(_porCampos(listas, { ..._vazios(), modelos: ['TAREFAS', 'AGENDA'] }).map((l: { id: number }) => l.id)).toEqual([2, 3]);
+    expect(_porCampos(listas, { ..._vazios(), andamentos: ['CONCLUIDO'] }).map((l: { id: number }) => l.id)).toEqual([1]);
+    expect(_porCampos(listas, { ..._vazios(), valorMin: 100 }).map((l: { id: number }) => l.id)).toEqual([1]);
+    expect(_quantos({ ..._vazios(), modelos: ['COMPRAS'], valorMax: 10 })).toBe(2);
+  });
+});

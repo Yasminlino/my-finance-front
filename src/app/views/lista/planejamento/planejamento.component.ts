@@ -106,6 +106,14 @@ export class PlanejamentoComponent implements OnInit {
   lista: ListaDto | null = null;
   itens: ItemListaDto[] = [];
 
+  /** Resumo do cabeçalho (card #78): "5 itens · 1 concluído". */
+  get resumoCabecalho(): string {
+    if (!this.lista) return '';
+    const n = this.itens.length;
+    const feitos = this.itens.filter(i => i.feito).length;
+    return `${n} ${n === 1 ? 'item' : 'itens'} · ${feitos} ${feitos === 1 ? 'concluído' : 'concluídos'}`;
+  }
+
   filtro: FiltroItens = 'TODOS';
   busca = '';
   /** Campo Tipo (card #61): os tipos usados nos itens e os escolhidos no filtro. */

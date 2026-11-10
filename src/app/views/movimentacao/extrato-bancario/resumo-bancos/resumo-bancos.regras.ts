@@ -55,11 +55,65 @@ export function numerosDoCard(c: ResumoContaDto): NumeroDoCard[] {
   return [
     { rotulo: 'Fatura', valor: c.fatura, tipo: 'moeda' },
     { rotulo: 'Pagamentos', valor: c.pagamentosEstornos, tipo: 'moeda', tom: 'entrada' },
-    { rotulo: 'Parcelas que continuam', valor: c.parcelasQueContinuam, tipo: 'moeda' }
+    { rotulo: 'Parcelas futuras', valor: c.parcelasQueContinuam, tipo: 'moeda' }
   ];
 }
 
 /** "Carlos", "Carlos e Ágatha", "Carlos, Ágatha e Bia". */
 export function juntarNomes(nomes: readonly string[]): string {
   return nomes.length <= 1 ? nomes.join('') : `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}`;
+}
+
+// ---------- Filtros por campo (card #72, como Contas a Pagar) ----------
+
+export type SituacaoConta = 'importado' | 'falta' | 'manual' | 'sem-lancamentos';
+export type Compartilhamento = 'todos' | 'compartilhados' | 'so-meus';
+
+export const OPCOES_SITUACAO: { label: string; value: SituacaoConta }[] = [
+  { label: 'Importado', value: 'importado' },
+  { label: 'Falta importar', value: 'falta' },
+  { label: 'Lançamento manual', value: 'manual' },
+  { label: 'Sem lançamentos', value: 'sem-lancamentos' }
+];
+
+export const OPCOES_COMPARTILHAMENTO: { label: string; value: Compartilhamento }[] = [
+  { label: 'Todos', value: 'todos' },
+  { label: 'Compartilhados', value: 'compartilhados' },
+  { label: 'Só meus', value: 'so-meus' }
+];
+
+export interface FiltrosContas {
+  situacoes: SituacaoConta[];
+  /** Vale para cartões: conta corrente não entra em "Compartilhados" nem em "Só meus". */
+  compartilhamento: Compartilhamento;
+  soSemCategoria: boolean;
+  valorMin: number | null;
+  valorMax: number | null;
+}
+
+export const filtrosContasVazios = (): FiltrosContas =>
+  ({ situacoes: [], compartilhamento: 'todos', soSemCategoria: false, valorMin: null, valorMax: null });
+
+export function situacaoDa(c: ResumoContaDto): SituacaoConta {
+  if (c.faltaImportar) return 'falta';
+  if (c.importadoEm) return 'importado';
+  return c.quantidade ? 'manual' : 'sem-lancamentos';
+}
+
+export function filtrarPorCampos(contas: readonly ResumoContaDto[], f: FiltrosContas): ResumoContaDto[] {
+  return contas.filter(c => {
+    if (f.situacoes.length && !f.situacoes.includes(situacaoDa(c))) return false;
+    if (f.compartilhamento === 'compartilhados' && !(c.ehCredito && c.compartilhado)) return false;
+    if (f.compartilhamento === 'so-meus' && !(c.ehCredito && !c.compartilhado)) return false;
+    if (f.soSemCategoria && !c.semCategoria) return false;
+    const valor = valorDaConta(c);
+    if (f.valorMin != null && valor < f.valorMin) return false;
+    return f.valorMax == null || valor <= f.valorMax;
+  });
+}
+
+/** Quantos filtros estão ligados (o número no botão de filtros). */
+export function quantosFiltros(f: FiltrosContas): number {
+  return (f.situacoes.length ? 1 : 0) + (f.compartilhamento !== 'todos' ? 1 : 0) + (f.soSemCategoria ? 1 : 0)
+    + (f.valorMin != null || f.valorMax != null ? 1 : 0);
 }

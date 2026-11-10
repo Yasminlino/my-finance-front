@@ -1,24 +1,191 @@
+@if (mostrarTopo()) {
 <header class="topo">
-  <p-menubar [model]="menu" [autoDisplay]="false" styleClass="topo-menubar">
-    <ng-template pTemplate="start">
-      <a class="marca" routerLink="/home">
-        <img src="assets/MyFinance.png" alt="MyFinance" width="32">
-        <span>{{ brand }}</span>
-      </a>
-    </ng-template>
+  <div class="topo-barra">
+    @if (tablet() && auth.token) {
+      <p-button icon="pi pi-bars" [text]="true" [rounded]="true" severity="secondary" (onClick)="abrirGaveta()" ariaLabel="Abrir menu" />
+    }
+    <!-- Marca no lugar do título (protótipo "Logo no celular"): no celular esta barra só existe no Início. -->
+    <a class="marca" routerLink="/home" aria-label="Início">
+      <img src="assets/MyFinance.png" alt="" width="32">
+      <span class="marca-nome">{{ brand }}</span>
+    </a>
 
-    <ng-template pTemplate="end">
-      <a *ngIf="!auth.token" routerLink="/login" class="p-menuitem-link">Login</a>
+    @if (desktop() && auth.token) {
+      <nav class="topo-nav" aria-label="Menu principal">
+        @for (item of diaADia; track item.path) {
+          <a class="topo-link" [class.ativo]="ativo(item.path)" [routerLink]="item.path">
+            {{ item.label }}
+            @if (item.path === '/contas-a-pagar' && vencidas()) {
+              <p-badge [value]="'' + vencidas()" severity="danger" styleClass="topo-badge" />
+            }
+          </a>
+        }
+        <button type="button" class="topo-link" [class.ativo]="grupoAtivo(planejamento)" (click)="menuPlanejamentoEl.toggle($event)">
+          Planejamento <i class="pi pi-angle-down"></i>
+        </button>
+        <button type="button" class="topo-link" [class.ativo]="grupoAtivo(cadastrosDoDia) || grupoAtivo(configuracoes)" (click)="painelCadastros.toggle($event)">
+          Cadastros <i class="pi pi-angle-down"></i>
+        </button>
+      </nav>
+    }
 
-      <div *ngIf="auth.token" class="usuario">
-        <i class="pi pi-user"></i>
-        <div class="usuario-nome">
-          <div>Usuário</div>
-          <small>{{ usuario }}</small>
-        </div>
-        <p-button label="Sair" icon="pi pi-sign-out" [text]="true" severity="secondary" size="small"
-          (onClick)="logout()" />
+    <span class="topo-espaco"></span>
+
+    @if (!auth.token) {
+      <a routerLink="/login" class="topo-link">Login</a>
+    } @else {
+      @if (celular()) {
+        <p-button icon="pi pi-search" [text]="true" [rounded]="true" severity="secondary" (onClick)="abrirBusca()" ariaLabel="Buscar" />
+      } @else {
+        <button type="button" class="topo-busca" (click)="abrirBusca()">
+          <i class="pi pi-search"></i><span>Buscar…</span><kbd>Ctrl K</kbd>
+        </button>
+      }
+      <button type="button" class="topo-usuario" (click)="menuUsuarioEl.toggle($event)" [attr.aria-label]="'Conta de ' + usuario">
+        <span class="avatar">{{ inicial }}</span>
+        @if (desktop()) { <span class="topo-usuario-nome">{{ usuario }}</span><i class="pi pi-angle-down"></i> }
+      </button>
+    }
+  </div>
+</header>
+}
+
+<p-menu #menuPlanejamentoEl [model]="menuPlanejamento" [popup]="true" appendTo="body" styleClass="topo-menu" />
+<p-menu #menuUsuarioEl [model]="menuUsuario" [popup]="true" appendTo="body" styleClass="topo-menu" />
+
+<!-- Cadastros: painel com o que é do dia a dia e as configurações, cada um com uma linha de descrição. -->
+<p-overlayPanel #painelCadastros appendTo="body" styleClass="topo-cadastros">
+  <div class="cadastros-grupos">
+    <div>
+      <div class="cadastros-titulo">Do dia a dia</div>
+      @for (item of cadastrosDoDia; track item.path) {
+        <button type="button" class="cadastros-item" [class.ativo]="ativo(item.path)" (click)="painelCadastros.hide(); ir(item.path)">
+          <i [class]="item.icon"></i><span><strong>{{ item.label }}</strong><small>{{ item.descricao }}</small></span>
+        </button>
+      }
+    </div>
+    <div>
+      <div class="cadastros-titulo">Configurações</div>
+      @for (item of configuracoes; track item.path) {
+        <button type="button" class="cadastros-item" [class.ativo]="ativo(item.path)" (click)="painelCadastros.hide(); ir(item.path)">
+          <i [class]="item.icon"></i><span><strong>{{ item.label }}</strong><small>{{ item.descricao }}</small></span>
+        </button>
+      }
+    </div>
+  </div>
+</p-overlayPanel>
+
+<!-- Tablet: gaveta à esquerda. -->
+<p-sidebar [(visible)]="gavetaAberta" position="left" styleClass="topo-gaveta" appendTo="body">
+  <ng-template pTemplate="header">
+    <div class="gaveta-usuario"><span class="avatar">{{ inicial }}</span><strong>{{ usuario }}</strong></div>
+  </ng-template>
+  <nav class="gaveta-nav" aria-label="Menu">
+    @for (item of diaADia; track item.path) {
+      <button type="button" class="gaveta-item" [class.ativo]="ativo(item.path)" (click)="ir(item.path)">
+        <i [class]="item.icon"></i><span>{{ item.label }}</span>
+        @if (item.path === '/contas-a-pagar' && vencidas()) { <p-badge [value]="'' + vencidas()" severity="danger" /> }
+      </button>
+    }
+    <div class="gaveta-titulo">Planejamento</div>
+    @for (item of planejamento; track item.path) {
+      <button type="button" class="gaveta-item" [class.ativo]="ativo(item.path)" (click)="ir(item.path)"><i [class]="item.icon"></i><span>{{ item.label }}</span></button>
+    }
+    <div class="gaveta-titulo">Cadastros</div>
+    <button type="button" class="gaveta-item" [attr.aria-expanded]="cadastrosAbertos" (click)="cadastrosAbertos = !cadastrosAbertos">
+      <i class="pi pi-folder"></i><span>Cadastros</span><i class="pi gaveta-seta" [class.pi-angle-down]="!cadastrosAbertos" [class.pi-angle-up]="cadastrosAbertos"></i>
+    </button>
+    @if (cadastrosAbertos) {
+      @for (item of cadastrosDoDia.concat(configuracoes); track item.path) {
+        <button type="button" class="gaveta-item gaveta-sub" [class.ativo]="ativo(item.path)" (click)="ir(item.path)"><i [class]="item.icon"></i><span>{{ item.label }}</span></button>
+      }
+    }
+  </nav>
+  <button type="button" class="gaveta-item gaveta-sair" (click)="logout()"><i class="pi pi-sign-out"></i><span>Sair</span></button>
+</p-sidebar>
+
+<!-- Celular: barra fixa embaixo; some com o teclado aberto. -->
+@if (mostrarBarra()) {
+  <nav class="barra-inferior" [class.barra-inferior--escondida]="tecladoAberto" aria-label="Menu principal">
+    <button type="button" [class.ativo]="ativo('/home')" (click)="ir('/home')"><span class="barra-icone"><i class="pi pi-home"></i></span><span>Início</span></button>
+    <button type="button" [class.ativo]="ativo('/contas-a-pagar')" (click)="ir('/contas-a-pagar')">
+      <span class="barra-icone"><i class="pi pi-money-bill"></i>@if (vencidas()) { <span class="barra-badge">{{ vencidas() }}</span> }</span>
+      <span>Contas</span>
+    </button>
+    <!-- Um "+" só (protótipo do card #72): vira "×" com o painel Novo aberto. -->
+    <span class="barra-centro">
+      <button type="button" class="barra-mais-criar" [class.barra-mais-criar--aberto]="criarAberto" (click)="criarAberto = !criarAberto"
+        aria-label="Novo" [attr.aria-expanded]="criarAberto"><i class="pi" [class.pi-plus]="!criarAberto" [class.pi-times]="criarAberto"></i></button>
+    </span>
+    <button type="button" [class.ativo]="ativo('/extrato-bancario')" (click)="ir('/extrato-bancario/resumo')"><span class="barra-icone"><i class="pi pi-wallet"></i></span><span>Extratos</span></button>
+    <button type="button" [class.ativo]="maisAberto" (click)="maisAberto = true"><span class="barra-icone"><i class="pi pi-bars"></i></span><span>Mais</span></button>
+  </nav>
+
+  <p-sidebar [(visible)]="criarAberto" position="bottom" styleClass="topo-folha topo-folha--novo" appendTo="body" [showCloseIcon]="false">
+    <ng-template pTemplate="header"><span class="folha-puxador" aria-hidden="true"></span></ng-template>
+    <div class="novo-titulo">Novo</div>
+    @for (d of destaquesCriar; track d.titulo) {
+      <button type="button" class="novo-destaque" (click)="d.executar()">
+        <span class="novo-destaque-icone" [style.background]="d.dessaTela ? 'var(--mf-primary)' : 'var(--mf-cor-' + d.cor + '-bg)'"
+          [style.color]="d.dessaTela ? 'var(--primary-color-text)' : 'var(--mf-cor-' + d.cor + '-fg)'"><i [class]="d.icone"></i></span>
+        <span class="novo-destaque-texto"><strong>{{ d.titulo }}</strong>@if (d.subtitulo) {<small>{{ d.subtitulo }}</small>}</span>
+        @if (d.dessaTela) { <span class="novo-tag">desta tela</span> }
+      </button>
+    }
+    <div class="gaveta-titulo">Outros</div>
+    <div class="novo-grade">
+      @for (a of outrosCriar; track a.chave) {
+        <button type="button" class="novo-atalho" (click)="abrirOutro(a)">
+          <span class="folha-icone" [style.background]="'var(--mf-cor-' + a.cor + '-bg)'" [style.color]="'var(--mf-cor-' + a.cor + '-fg)'"><i [class]="a.icone"></i></span>
+          <span>{{ a.titulo }}</span>
+        </button>
+      }
+    </div>
+  </p-sidebar>
+
+  <p-sidebar [(visible)]="maisAberto" position="bottom" styleClass="topo-folha topo-folha--mais" appendTo="body">
+    <ng-template pTemplate="header">
+      <div class="mais-topo">
+        <span class="folha-puxador" aria-hidden="true"></span>
+        <span class="mais-marca"><img src="assets/MyFinance.png" alt="" width="28"><strong>{{ brand }}</strong></span>
       </div>
     </ng-template>
-  </p-menubar>
-</header>
+    <!-- Meu perfil e Preferências ainda não têm tela: o cartão fica no lugar do protótipo, sem levar a lugar nenhum. -->
+    <div class="mais-usuario">
+      <span class="avatar avatar--claro">{{ inicial }}</span>
+      <span class="mais-usuario-texto"><strong>{{ usuario }}</strong><small>Meu perfil · Preferências</small></span>
+      <small class="folha-em-breve">em breve</small>
+    </div>
+    <div class="gaveta-titulo">Planejamento</div>
+    <div class="folha-grade folha-grade--4">
+      @for (item of planejamentoMais; track item.path) {
+        <button type="button" class="folha-atalho" (click)="ir(item.path)">
+          <span class="folha-icone" [style.background]="'var(--mf-cor-' + item.cor + '-bg)'" [style.color]="'var(--mf-cor-' + item.cor + '-fg)'"><i [class]="item.icon"></i></span>
+          <span>{{ item.label }}</span>
+        </button>
+      }
+    </div>
+    <div class="gaveta-titulo">Cadastros</div>
+    @for (item of cadastrosMais; track item.path) {
+      <button type="button" class="folha-linha" (click)="ir(item.path)">
+        <span class="folha-caixa"><i [class]="item.icon"></i></span><span class="flex-1">{{ item.label }}</span><i class="pi pi-angle-right"></i>
+      </button>
+    }
+    <button type="button" class="folha-linha" [attr.aria-expanded]="configuracoesAbertas" (click)="configuracoesAbertas = !configuracoesAbertas">
+      <span class="folha-caixa"><i class="pi pi-cog"></i></span><span class="flex-1">Bancos, cartões e tipos</span>
+      <i class="pi" [class.pi-angle-down]="!configuracoesAbertas" [class.pi-angle-up]="configuracoesAbertas"></i>
+    </button>
+    @if (configuracoesAbertas) {
+      @for (item of configuracoes; track item.path) {
+        <button type="button" class="folha-linha folha-linha--sub" (click)="ir(item.path)">
+          <span class="folha-caixa"><i [class]="item.icon"></i></span><span class="flex-1">{{ item.label }}</span><i class="pi pi-angle-right"></i>
+        </button>
+      }
+    }
+    <button type="button" class="folha-linha gaveta-sair" (click)="logout()"><span class="folha-caixa"><i class="pi pi-sign-out"></i></span><span class="flex-1">Sair</span></button>
+  </p-sidebar>
+}
+
+@if (buscaAberta) {
+  <app-busca (fechado)="buscaAberta = false" />
+}

@@ -124,3 +124,53 @@ export function ordenarPlanejamentos(listas: ListaDto[], ordem: OrdemPlanejament
   return [...listas].sort((a, b) =>
     ordem === 'NOME' ? normalizar(a.nome).localeCompare(normalizar(b.nome), 'pt-BR') : b.id - a.id);
 }
+
+// ---------- Filtros por campo (card #72, como Contas a Pagar) ----------
+
+export type AndamentoPlanejamento = 'SEM_ITENS' | 'ANDAMENTO' | 'CONCLUIDO';
+
+export const OPCOES_MODELO_FILTRO: { label: string; value: ModeloLista }[] = [
+  { label: 'Compras', value: 'COMPRAS' },
+  { label: 'Orçamento', value: 'ORCAMENTO' },
+  { label: 'Tarefas', value: 'TAREFAS' },
+  { label: 'Agenda', value: 'AGENDA' },
+  { label: 'Em branco', value: 'BRANCO' }
+];
+
+export const OPCOES_ANDAMENTO: { label: string; value: AndamentoPlanejamento }[] = [
+  { label: 'Sem itens', value: 'SEM_ITENS' },
+  { label: 'Em andamento', value: 'ANDAMENTO' },
+  { label: 'Concluídos', value: 'CONCLUIDO' }
+];
+
+export interface FiltrosPlanejamento {
+  modelos: ModeloLista[];
+  andamentos: AndamentoPlanejamento[];
+  valorMin: number | null;
+  valorMax: number | null;
+}
+
+export const filtrosPlanejamentoVazios = (): FiltrosPlanejamento => ({ modelos: [], andamentos: [], valorMin: null, valorMax: null });
+
+export function andamentoDe(lista: Pick<ListaDto, 'resumo'>): AndamentoPlanejamento {
+  const r = lista.resumo;
+  if (!r?.itens) return 'SEM_ITENS';
+  return r.feitos >= r.itens ? 'CONCLUIDO' : 'ANDAMENTO';
+}
+
+/** Valor filtra pelo total do planejamento; quem não usa valor sai quando há faixa. */
+export function filtrarPlanejamentosPorCampos(listas: ListaDto[], f: FiltrosPlanejamento): ListaDto[] {
+  const comFaixa = f.valorMin != null || f.valorMax != null;
+  return listas.filter(l => {
+    if (f.modelos.length && !f.modelos.includes(l.modelo)) return false;
+    if (f.andamentos.length && !f.andamentos.includes(andamentoDe(l))) return false;
+    if (!comFaixa) return true;
+    if (!l.usaValor) return false;
+    const total = l.resumo?.total ?? 0;
+    return (f.valorMin == null || total >= f.valorMin) && (f.valorMax == null || total <= f.valorMax);
+  });
+}
+
+export function quantosFiltrosPlanejamento(f: FiltrosPlanejamento): number {
+  return (f.modelos.length ? 1 : 0) + (f.andamentos.length ? 1 : 0) + (f.valorMin != null || f.valorMax != null ? 1 : 0);
+}

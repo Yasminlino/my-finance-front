@@ -205,3 +205,19 @@ describe('contas-a-pagar.regras', () => {
     });
   });
 });
+
+import { vencidasPorMes as _vencidasPorMes } from './contas-a-pagar.regras';
+
+/** Card #78: resumo (do mês) + aviso (anteriores) = selo (todas). */
+describe('contas-a-pagar.regras: vencidas por mês', () => {
+  it('separa as do mês aberto das de meses anteriores, mais antigas primeiro', () => {
+    const c = (data: string) => ({ data, nome: data });
+    const todas = [c('2026-11-05'), c('2026-09-10'), c('2026-10-02'), c('2026-11-01')];
+
+    const r = _vencidasPorMes(todas, '2026-11');
+
+    expect(r.doMes.map(x => x.nome)).toEqual(['2026-11-05', '2026-11-01']);
+    expect(r.anteriores.map(x => x.nome)).toEqual(['2026-09-10', '2026-10-02']);
+    expect(r.doMes.length + r.anteriores.length).toBe(todas.length);
+  });
+});

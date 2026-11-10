@@ -147,7 +147,7 @@ describe('ExtratoMesComponent', () => {
     fixture.detectChanges();
 
     expect(comp().variacao).toBe('cartao');
-    expect(comp().kpis.map(k => k.rotulo)).toEqual(['Fatura', 'Pagamentos e estornos', 'Parcelas que continuam', 'Sem categoria']);
+    expect(comp().kpis.map(k => k.rotulo)).toEqual(['Fatura', 'Pagamentos e estornos', 'Parcelas futuras', 'Sem categoria']);
     expect(Array.from(el().querySelectorAll('.extrato-aba')).map(texto).join('|')).not.toContain('Acertos');
     expect(Array.from(el().querySelectorAll('thead th')).map(texto).join('|')).not.toContain('Pessoa');
     expect(el().querySelector('.extrato-convite')).not.toBeNull();
@@ -537,7 +537,7 @@ describe('ExtratoMesComponent', () => {
       expect(el().querySelector('mf-fab')).not.toBeNull();
       // Como Contas a Pagar: o mês sai do cabeçalho e vai em largura total logo abaixo; o ⋮ fica no título.
       expect(el().querySelector('mf-page-header .campo-mes')).toBeNull();
-      expect(el().querySelector('.mes-movel p-calendar')).not.toBeNull();
+      expect(el().querySelector('mf-page-header .mf-ph-periodo p-calendar')).not.toBeNull();
       expect(el().querySelector('mf-page-header [aria-label="Mais ações"]')).not.toBeNull();
       // O ⋮ abre a folha de baixo com Importar e as ações (card #77).
       (el().querySelector('mf-page-header button[aria-label="Mais ações"]') as HTMLElement).click();

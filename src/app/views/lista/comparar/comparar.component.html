@@ -1,6 +1,6 @@
 <div class="mf-pagina">
   <mf-page-header class="block mt-2 mb-3" titulo="Comparar" [subtitulo]="lista?.nome" [breadcrumb]="breadcrumb" [home]="home"
-    [mostrarVoltar]="true" (voltar)="voltar()">
+    [mostrarVoltar]="true" [voltarRotulo]="lista?.nome" (voltar)="voltar()">
     @if (comparacao) {
       <ng-container ngProjectAs="[acoes]">
         <p-button acoes [label]="movel() ? '' : 'Exportar CSV'" icon="pi pi-download" severity="secondary" [outlined]="true"

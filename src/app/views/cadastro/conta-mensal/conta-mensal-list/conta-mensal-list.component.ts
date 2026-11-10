@@ -1,3 +1,4 @@
+import { registrarAcaoCriar } from 'src/app/core/services/criar-contexto.service';
 import { Component, ViewChild, inject } from '@angular/core';
 import { Observable, catchError, forkJoin, of, tap } from 'rxjs';
 import { MenuItem } from 'primeng/api';
@@ -45,6 +46,11 @@ export class ContaMensalListComponent extends CadastroListBase<ContaDto> {
   protected readonly rotulo = { singular: 'conta', plural: 'contas', feminino: true };
 
   private readonly contaService = inject(ContaService);
+  /** "+" do menu no celular (card #72). */
+  private readonly acaoCriar = registrarAcaoCriar({
+    chave: 'conta-fixa', titulo: () => 'Conta fixa', subtitulo: () => 'gera a conta a pagar de todo mês', icone: 'pi pi-credit-card', cor: 'laranja',
+    executar: () => this.openCreate()
+  });
   private readonly categoryService = inject(CategoryService);
   private readonly contaMensalService = inject(ContaMensalService);
 
@@ -58,7 +64,7 @@ export class ContaMensalListComponent extends CadastroListBase<ContaDto> {
 
   @ViewChild('tabela') tabela?: Table;
 
-  readonly breadcrumb: MenuItem[] = [{ label: 'Cadastros' }, { label: 'Contas' }];
+  readonly breadcrumb: MenuItem[] = [{ label: 'Cadastros' }, { label: 'Contas fixas' }];
   readonly home: MenuItem = { icon: 'pi pi-home', routerLink: '/home' };
   readonly opcoesOrdem: { label: string; value: OrdemContas }[] = [
     { label: 'Vencimento', value: 'vencimento' },

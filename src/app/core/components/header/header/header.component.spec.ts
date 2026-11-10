@@ -1,70 +1,151 @@
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
+import { Subject, of } from 'rxjs';
 
 import { HeaderComponent } from './header.component';
 import { AuthService } from '../../../services/auth.service';
+import { ListaService } from '../../../services/lista.service';
+import { VencidasService } from '../../../services/vencidas.service';
 
-/** Menu do topo em p-menubar, com ícones do PrimeIcons (FE-P2-07). */
+/** Navegação do app (card #72). */
 describe('HeaderComponent', () => {
   let fixture: ComponentFixture<HeaderComponent>;
   let header: HeaderComponent;
-  let router: jasmine.SpyObj<Router>;
+  let router: { navigate: jasmine.Spy; navigateByUrl: jasmine.Spy; events: Subject<unknown>; url: string };
   let auth: { token: string | null; logout: jasmine.Spy };
+  let vencidas: { quantidade: ReturnType<typeof signal<number>>; atualizar: jasmine.Spy };
+  const larguraOriginal = window.innerWidth;
+
+  const abrir = (largura: number) => {
+    spyOnProperty(window, 'innerWidth').and.returnValue(largura);
+    fixture = TestBed.createComponent(HeaderComponent);
+    header = fixture.componentInstance;
+    fixture.detectChanges();
+  };
+  const el = () => fixture.nativeElement as HTMLElement;
 
   beforeEach(() => {
-    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    router = { navigate: jasmine.createSpy('navigate'), navigateByUrl: jasmine.createSpy('navigateByUrl'), events: new Subject(), url: '/contas-a-pagar' };
     auth = { token: 'x', logout: jasmine.createSpy('logout') };
+    vencidas = { quantidade: signal(24), atualizar: jasmine.createSpy('atualizar') };
     TestBed.configureTestingModule({
       declarations: [HeaderComponent],
       providers: [
         { provide: Router, useValue: router },
-        { provide: AuthService, useValue: auth }
+        { provide: AuthService, useValue: auth },
+        { provide: VencidasService, useValue: vencidas },
+        { provide: ListaService, useValue: { listar: () => of([{ id: 1, nome: 'Mercado' }, { id: 9, nome: 'Viagem' }]) } }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     });
-    fixture = TestBed.createComponent(HeaderComponent);
-    header = fixture.componentInstance;
   });
 
-  it('todos os itens do menu usam um ícone do PrimeIcons', () => {
-    const itens = [...header.cadastrosItems, ...header.movimentacoesItems, ...header.planejamentoItems];
-
-    expect(itens.length).toBeGreaterThan(0);
-    itens.forEach(item => expect(item.icon).toMatch(/^pi pi-[a-z-]+$/));
+  afterEach(() => {
+    document.body.classList.remove('mf-com-barra-inferior');
+    expect(window.innerWidth).toBeDefined();
+    void larguraOriginal;
   });
 
-  it('não sobra emoji no menu renderizado', () => {
+  it('desktop: Contas a pagar e Extrato a 1 clique, com o badge de vencidas e o item ativo', () => {
+    abrir(1280);
+    const links = Array.from(el().querySelectorAll('.topo-nav .topo-link')).map(a => a.textContent?.replace(/\s+/g, ' ').trim());
+
+    expect(links).toEqual(['Início', 'Contas a pagar', 'Extratos', 'Planejamento', 'Cadastros']);
+    expect(el().querySelector('.topo-nav .topo-link.ativo')?.textContent).toContain('Contas a pagar');
+    expect(el().querySelector('.topo-nav p-badge')).not.toBeNull();
+    expect(el().querySelector('.barra-inferior')).toBeNull();
+    expect(vencidas.atualizar).toHaveBeenCalled();
+  });
+
+  it('o Extrato fica ativo na listagem e no detalhe da conta', () => {
+    abrir(1280);
+    router.events.next(new NavigationEnd(1, '/extrato-bancario?bancoId=2', '/extrato-bancario?bancoId=2'));
+    expect(header.ativo('/extrato-bancario/resumo')).toBeTrue();
+    expect(header.ativo('/contas-a-pagar')).toBeFalse();
+    expect(vencidas.atualizar).toHaveBeenCalledTimes(2);
+  });
+
+  it('Planejamento ▾ tem as duas telas e os recentes, sem o termo "lista" (card #63)', () => {
+    abrir(1280);
+    expect(header.menuPlanejamento.map(i => i.label)).toEqual(['Meus planejamentos', 'Arquivados', undefined, 'Recentes', 'Viagem', 'Mercado']);
+    expect(JSON.stringify([header.planejamento, header.cadastrosDoDia, header.configuracoes])).not.toMatch(/lista/i);
+  });
+
+  it('Cadastros separa o dia a dia das configurações e chama o cadastro de contas de Contas fixas', () => {
+    abrir(1280);
+    expect(header.cadastrosDoDia.map(i => i.label)).toEqual(['Contas fixas', 'Categorias']);
+    expect(header.configuracoes.map(i => i.label)).toEqual(['Bancos', 'Tipos de cartão', 'Tipos de movimentação']);
+    [...header.cadastrosDoDia, ...header.configuracoes].forEach(i => {
+      expect(i.icon).toMatch(/^pi pi-[a-z-]+$/);
+      expect(i.descricao).toBeTruthy();
+    });
+  });
+
+  it('celular: barra inferior com Início, Contas, +, Extrato e Mais; páginas ganham espaço embaixo', () => {
+    abrir(390);
+    const itens = Array.from(el().querySelectorAll('.barra-inferior button')).map(b => b.textContent?.replace(/\s+/g, ' ').trim());
+
+    expect(itens).toEqual(['Início', '24Contas', '', 'Extratos', 'Mais']);
+    expect(document.body.classList).toContain('mf-com-barra-inferior');
+    expect(el().querySelector('.topo-nav')).toBeNull();
+  });
+
+  it('celular (card #78): fora do Início não há barra no topo; no Início, título, busca e avatar com as duas iniciais', () => {
+    localStorage.setItem('usuarioNome', 'Yasmin Lino');
+    abrir(390);
+    expect(el().querySelector('.topo')).toBeNull();
+
+    router.events.next(new NavigationEnd(2, '/home', '/home'));
     fixture.detectChanges();
-
-    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).not.toMatch(/\p{Extended_Pictographic}/u);
+    // Protótipo "Logo no celular": no Início a marca fica no lugar do título.
+    expect(el().querySelector('.topo .marca')?.textContent).toContain('My Finance');
+    expect(header.inicial).toBe('YL');
+    localStorage.removeItem('usuarioNome');
   });
 
-  it('monta o menu do p-menubar: página inicial e os três grupos, com rota e ícone em cada item', () => {
-    expect(header.menu.map(m => m.label)).toEqual(['Página Inicial', 'Cadastros', 'Movimentações', 'Planejamento']);
-    expect(header.menu[0].routerLink).toBe('/home');
-
-    const cadastros = header.menu[1].items ?? [];
-    expect(cadastros.map(i => i.routerLink)).toEqual(header.cadastrosItems.map(i => i.path));
-    expect(cadastros.map(i => i.icon)).toEqual(header.cadastrosItems.map(i => i.icon));
-    header.menu.forEach(grupo => expect(grupo.icon).toMatch(/^pi pi-[a-z-]+$/));
+  it('celular: "Bancos, cartões e tipos" abre as três telas no próprio Mais', () => {
+    abrir(390);
+    expect(header.configuracoes.map(i => i.path)).toEqual(['/bancos', '/tipos-cartao', '/tipos-movimentacao']);
+    header.configuracoesAbertas = true;
+    header.ir('/tipos-cartao');
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/tipos-cartao');
+    expect(header.configuracoesAbertas).toBeFalse();
   });
 
-  it('o grupo Planejamento leva a Meus planejamentos, sem o termo "lista" (card #63)', () => {
-    const planejamento = header.menu[3].items ?? [];
-
-    expect(planejamento.map(i => [i.label, i.routerLink])).toEqual([['Meus planejamentos', '/planejamento']]);
-    expect(JSON.stringify(header.menu)).not.toMatch(/lista/i);
-  });
-
-  it('renderiza o menu num p-menubar', () => {
+  it('celular: a barra some com o teclado aberto e volta ao sair do campo', () => {
+    abrir(390);
+    const campo = document.createElement('input');
+    header.aoFocar({ target: campo } as unknown as FocusEvent);
     fixture.detectChanges();
+    expect(el().querySelector('.barra-inferior--escondida')).not.toBeNull();
 
-    expect((fixture.nativeElement as HTMLElement).querySelector('p-menubar')).not.toBeNull();
+    header.aoDesfocar();
+    fixture.detectChanges();
+    expect(el().querySelector('.barra-inferior--escondida')).toBeNull();
+  });
+
+  it('tablet: ≡ abre a gaveta com Sair no rodapé', () => {
+    abrir(820);
+    expect(el().querySelector('.topo-nav')).toBeNull();
+    expect(el().querySelector('[ariaLabel="Abrir menu"]') ?? el().querySelector('p-button')).not.toBeNull();
+    expect(el().querySelector('.gaveta-sair')).not.toBeNull();
+  });
+
+  it('Ctrl+K abre a busca; os atalhos do + abrem a tela com o formulário', () => {
+    abrir(1280);
+    header.atalho(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+    expect(header.buscaAberta).toBeTrue();
+
+    // Sem ação registrada (Home): Conta a pagar e Lançamento no topo; o grid tem os outros 5.
+    expect(header.destaquesCriar.map(d => d.titulo)).toEqual(['Conta a pagar', 'Lançamento no extrato']);
+    expect(header.outrosCriar.map(a => a.titulo)).toEqual(['Importar extrato', 'Item em lista', 'Compromisso', 'Nova lista', 'Categoria']);
+    header.abrirOutro(header.outrosCriar[0]);
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/extrato-bancario/resumo?importar=1');
   });
 
   it('Sair desloga e volta para o login', () => {
+    abrir(1280);
     header.logout();
 
     expect(auth.logout).toHaveBeenCalled();

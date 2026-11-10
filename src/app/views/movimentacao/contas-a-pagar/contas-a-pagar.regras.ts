@@ -193,3 +193,20 @@ export function contarPorSituacao(
 export { iconeDaCategoria } from 'src/app/shared/ui/aparencia';
 
 // A cor do ícone vem da natureza da categoria (mf-category-icon, card #27), não mais do nome.
+
+/** "2026-11" da data de vencimento. */
+function mesDe(conta: { data: unknown }): string {
+  const d = vencimentoDe(conta);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/**
+ * Card #78: separa as vencidas de hoje (todas as do selo do menu) em as do mês aberto (resumo do cabeçalho) e as de
+ * meses anteriores (aviso), mais antigas primeiro. Vencidas de meses depois do aberto não entram em nenhum dos dois.
+ */
+export function vencidasPorMes<T extends { data: unknown }>(vencidas: readonly T[], mes: string): { doMes: T[]; anteriores: T[] } {
+  return {
+    doMes: vencidas.filter(c => mesDe(c) === mes),
+    anteriores: vencidas.filter(c => mesDe(c) < mes).sort((a, b) => vencimentoDe(a).getTime() - vencimentoDe(b).getTime())
+  };
+}

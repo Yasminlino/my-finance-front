@@ -2,13 +2,13 @@
   <!-- Como Contas a Pagar: no celular, título com ‹ e ⋮ e o mês em largura total logo abaixo. -->
   <!-- Card #77: a mesma moldura da listagem; o título é a conta aberta, e ‹ volta para "Todas as contas". -->
   <mf-page-header [class]="movel() ? 'block mb-2' : 'block mt-2 mb-3'" [titulo]="tituloPagina"
-    [subtitulo]="movel() ? (contaAberta?.compartilhado ? 'compartilhado' : '') : subtituloPagina"
-    [breadcrumb]="breadcrumbAtual" [home]="home" [mostrarVoltar]="true" (voltar)="voltar()">
+    [subtitulo]="subtituloPagina" [breadcrumb]="breadcrumbAtual" [home]="home" [mostrarVoltar]="true" voltarRotulo="Extratos"
+    (voltar)="voltar()" [periodoCurto]="periodoCurto">
     @if (!movel()) {
-    <div acoes class="flex align-items-center gap-1">
+    <div periodo class="flex align-items-center gap-1">
       <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" pTooltip="Mês anterior"
         tooltipPosition="top" [disabled]="edicao" (onClick)="mudarMes(-1)" ariaLabel="Mês anterior" />
-      <p-calendar [(ngModel)]="dateFilter" view="month" dateFormat="MM yy" [readonlyInput]="true" [showIcon]="true"
+      <p-calendar styleClass="mf-mes" [(ngModel)]="dateFilter" view="month" dateFormat="MM yy" [readonlyInput]="true" [showIcon]="false"
         [disabled]="edicao" (onSelect)="carregarMes($event)" inputStyleClass="text-center campo-mes" />
       <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" pTooltip="Próximo mês"
         tooltipPosition="top" [disabled]="edicao" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
@@ -32,19 +32,23 @@
         (onClick)="abrirImportar()" appendTo="body" />
     }
     @if (movel()) {
-      <p-button acoes icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
-        (onClick)="acoesAbertas = true" ariaLabel="Mais ações" />
+      <span acoes class="flex align-items-center">
+        <p-button icon="pi pi-upload" [rounded]="true" [text]="true" (onClick)="abrirImportar()" [ariaLabel]="rotuloImportar" />
+        <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary" (onClick)="acoesAbertas = true" ariaLabel="Mais ações" />
+      </span>
+    }
+    @if (movel()) {
+      <div periodo class="flex align-items-center gap-2">
+        <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" (onClick)="mudarMes(-1)" ariaLabel="Mês anterior" />
+        <p-calendar class="flex-grow-1" styleClass="w-full mf-mes" [(ngModel)]="dateFilter" view="month" dateFormat="MM 'de' yy"
+        [readonlyInput]="true" [showIcon]="false" [touchUI]="true" (onSelect)="carregarMes($event)" />
+        <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
+      </div>
     }
   </mf-page-header>
   <p-menu #menuLinha [model]="itensMenuLinha" [popup]="true" appendTo="body" />
 
   @if (movel()) {
-    <div class="mes-movel flex align-items-center gap-2 mb-3">
-      <p-button icon="pi pi-chevron-left" [outlined]="true" severity="secondary" (onClick)="mudarMes(-1)" ariaLabel="Mês anterior" />
-      <p-calendar class="flex-grow-1" styleClass="w-full" [(ngModel)]="dateFilter" view="month" dateFormat="MM 'de' yy"
-        [readonlyInput]="true" [showIcon]="true" [touchUI]="true" (onSelect)="carregarMes($event)" />
-      <p-button icon="pi pi-chevron-right" [outlined]="true" severity="secondary" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
-    </div>
     <p-dropdown class="block mb-3" styleClass="w-full" [options]="opcoesContaComTodas" [ngModel]="filtro.bancoId" (ngModelChange)="escolherConta($event)"
       optionLabel="label" optionValue="value" appendTo="body" ariaLabel="Trocar de conta" />
   }
@@ -73,7 +77,10 @@
     <div class="col-12 flex flex-column gap-3">
       <!-- KPIs do topo: os mesmos números do card da listagem, conforme a conta (corrente, cartão só meu ou emprestado). -->
       <div class="grid extrato-kpis">
-        @for (k of kpis; track k.rotulo) {
+        @if (!resumo) {
+          @for (n of [1, 2, 3, 4]; track n) { <div class="col-6 xl:col-3"><p-skeleton height="6rem" borderRadius="12px" /></div> }
+        }
+        @for (k of resumo ? kpis : []; track k.rotulo) {
           <div class="col-6" [class.xl:col-3]="kpis.length === 4" [class.xl:col-4]="kpis.length === 3">
             @if (k.acao) {
               <button type="button" class="extrato-card" [class.extrato-card--ativo]="kpiAtivo(k)" (click)="clicarKpi(k)">

@@ -1,3 +1,4 @@
+import { registrarAcaoCriar } from 'src/app/core/services/criar-contexto.service';
 import { Component, DestroyRef, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Location, NgIf } from '@angular/common';
@@ -19,6 +20,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { BadgeModule } from 'primeng/badge';
 import { SidebarModule } from 'primeng/sidebar';
 import { DialogModule } from 'primeng/dialog';
+import { SkeletonModule } from 'primeng/skeleton';
 import { ResumoContaDto, ResumoContasDto } from 'src/app/core/models/resumo-categorias.model';
 import { AcertosComponent } from '../acertos/acertos.component';
 import { FaturaPorPessoaComponent } from '../components/fatura-por-pessoa/fatura-por-pessoa.component';
@@ -98,7 +100,7 @@ const TIPOS: { label: string; value: TipoFiltro }[] = [
   standalone: true,
   imports: [
     NgIf, FormsModule, ButtonModule, CalendarModule, DropdownModule, InputSwitchModule, SplitButtonModule, IconFieldModule, InputIconModule, InputTextModule, MenuModule,
-    InputNumberModule, OverlayPanelModule, MultiSelectModule, ProgressBarModule, SelectButtonModule, BadgeModule, SidebarModule, DialogModule, AcertosComponent, FaturaPorPessoaComponent, ClassificarSempreComponent, ModalRegrasClassificacaoComponent, TableModule, TooltipModule,
+    InputNumberModule, OverlayPanelModule, MultiSelectModule, ProgressBarModule, SelectButtonModule, BadgeModule, SidebarModule, DialogModule, SkeletonModule, AcertosComponent, FaturaPorPessoaComponent, ClassificarSempreComponent, ModalRegrasClassificacaoComponent, TableModule, TooltipModule,
     PageHeaderComponent, StatCardComponent, FilterBarComponent, EmptyStateComponent, ExtratoContasComponent,
     ModalImportarExtratoComponent, ModalLancamentoManualComponent, ModalImportacoesMensaisComponent,
     ModalConfiguracaoVinculoPessoaComponent, BarraEdicaoComponent, TotaisSelecaoComponent, CurrencyInputDirective,
@@ -280,6 +282,11 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     this.aplicarFoco(params.get('foco'));
     // "Regras de classificação" do ⋮ da listagem (card #77) abre aqui, onde as opções estão carregadas.
     if (params.get('regras')) this.abrirRegras();
+    // "Lançamento" do + do menu e da busca (card #72).
+    if (params.get('lancar')) {
+      this.lancar(this.filtro.bancoId);
+      this.router.navigate([], { relativeTo: this.route, queryParams: { lancar: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    }
     this.carregarMes(this.mesInicial(params.get('month')));
     this.carregarRegras();
   }
@@ -361,6 +368,20 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
 
   /** Números das contas no mês, os mesmos da listagem. */
   resumo: ResumoContasDto | null = null;
+
+  /** "+" do menu no celular (card #72): lançamento nesta conta, já preenchido; o grid traz "em outra conta". */
+  private readonly acaoCriar = registrarAcaoCriar({
+    chave: 'lancamento',
+    titulo: () => !this.contaAberta ? 'Lançamento no extrato' : this.contaAberta.ehCredito ? 'Lançamento neste cartão' : 'Lançamento nesta conta',
+    subtitulo: () => {
+      const mes = this.dateFilter.toLocaleDateString('pt-BR', { month: 'long' });
+      const c = this.contaAberta;
+      return !c ? this.nomeDoMes : c.ehCredito ? `${c.nome} · fatura de ${mes}` : `${c.nome} · ${mes}`;
+    },
+    icone: 'pi pi-plus', cor: 'azul', executar: () => this.lancar(this.filtro.bancoId),
+    emOutraConta: () => !!this.contaAberta,
+    locais: { lancamento: () => this.lancar(null), importar: () => this.abrirImportar() }
+  });
   menuDetalhe: MenuItem[] = [];
   menuSplit: MenuItem[] = [];
   breadcrumbAtual: MenuItem[] = [];
@@ -408,10 +429,22 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     return this.contaAberta?.nome ?? 'Extrato Bancário';
   }
 
+  /** Resumo do cabeçalho (card #78): "Cartão de crédito · fatura de novembro · fecha 01 · vence 10". */
   get subtituloPagina(): string {
     const c = this.contaAberta;
-    if (!c) return 'Entradas e saídas das contas e cartões no mês';
-    return c.compartilhado && c.pessoas.length ? `${c.tipoNome} · compartilhado com ${juntarNomes(c.pessoas)}` : c.tipoNome;
+    const mes = this.dateFilter.toLocaleDateString('pt-BR', { month: 'long' });
+    if (!c) return 'Todas as contas';
+    const partes = c.ehCredito
+      ? [c.tipoNome, `fatura de ${mes}`, ...(c.dataFechamento ? ['fecha ' + diaMes(c.dataFechamento).slice(0, 2)] : []),
+        ...(c.dataVencimento ? ['vence ' + diaMes(c.dataVencimento).slice(0, 2)] : [])]
+      : [c.tipoNome];
+    if (c.compartilhado && c.pessoas.length) partes.push(`com ${juntarNomes(c.pessoas)}`);
+    return partes.filter(Boolean).join(' · ');
+  }
+
+  /** Chip do cabeçalho compacto: "nov/26". */
+  get periodoCurto(): string {
+    return `${this.dateFilter.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}/${String(this.dateFilter.getFullYear()).slice(2)}`;
   }
 
   get rotuloImportar(): string {
@@ -438,7 +471,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
         return [
           { rotulo: 'Fatura', valor: m(c?.fatura), icone: 'pi pi-credit-card', tom: 'despesa', acao: 'saidas', dica: c?.dataVencimento ? 'vence ' + diaMes(c.dataVencimento) : undefined },
           { rotulo: 'Pagamentos e estornos', valor: m(c?.pagamentosEstornos), icone: 'pi pi-arrow-down-left', tom: 'receita', corDoValor: 'receita', acao: 'entradas' },
-          { rotulo: 'Parcelas que continuam', valor: m(c?.parcelasQueContinuam), icone: 'pi pi-calendar', tom: 'info', dica: 'nas próximas faturas' },
+          { rotulo: 'Parcelas futuras', valor: m(c?.parcelasQueContinuam), icone: 'pi pi-calendar', tom: 'info', dica: 'nas próximas faturas' },
           semCategoria(c?.semCategoria)
         ];
       case 'compartilhado':

@@ -51,6 +51,27 @@
 .tom-laranja { color: var(--orange-500); }
 .tom-cinza { color: var(--text-color-secondary); }
 
+/* Celular, padrão de Contas a Pagar (card #72): seleção que rola se faltar espaço, botão de filtros com o número
+   no canto e o carrossel de resumo com pontinhos. Extratos e Planejamentos usam as mesmas classes. */
+.filtro-rolavel { overflow-x: auto; scrollbar-width: none; }
+.filtro-rolavel::-webkit-scrollbar { display: none; }
+.botao-filtros { position: relative; }
+.botao-filtros .p-badge { position: absolute; top: -0.4rem; right: -0.4rem; }
+.mf-carrossel { display: flex; gap: 0.75rem; overflow-x: auto; padding-bottom: 0.25rem; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.mf-carrossel::-webkit-scrollbar { display: none; }
+.mf-slide { flex: 0 0 72%; padding: 0.75rem; border: 1px solid var(--surface-border); border-radius: var(--border-radius); background: var(--surface-card); scroll-snap-align: start; }
+.mf-pontos { display: flex; justify-content: center; gap: 0.3rem; margin-top: 0.4rem; }
+.mf-pontos span { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--surface-300); }
+.mf-pontos span.ativo { width: 1rem; border-radius: 0.2rem; background: var(--primary-color); }
+
+/* Seletor de mês em 3 partes (card #78): ‹ [📅 novembro 2026] ›. O calendário abre ao tocar no campo. */
+.p-calendar.mf-mes { position: relative; }
+.p-calendar.mf-mes::before {
+  content: "\e927"; font-family: "primeicons"; position: absolute; top: 50%; left: 0.85rem; z-index: 1;
+  color: var(--mf-primary); transform: translateY(-50%); pointer-events: none;
+}
+.p-calendar.mf-mes .p-inputtext { padding-left: 2.25rem; text-align: center; cursor: pointer; }
+
 /* Filtro de situação no celular: os quatro botões dividem a largura e o badge não encosta na borda.
    Abaixo de ~340px o contêiner (.filtro-rolavel) ainda rola na horizontal. */
 .filtro-situacao-compacto .p-selectbutton {
@@ -142,4 +163,12 @@
     white-space: normal;
     overflow-wrap: anywhere;
   }
+}
+
+/* Card #72: com a barra inferior do celular, as páginas ganham espaço no fim e os botões flutuantes sobem. */
+body.mf-com-barra-inferior { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); }
+/* Um "+" só (card #72): com a barra, o "+" do meio substitui os botões flutuantes das telas. */
+body.mf-com-barra-inferior mf-fab { display: none !important; }
+body.mf-com-barra-inferior:not(.mf-teclado-aberto) :is(.adicionar-barra, .planejamento-barra-adicionar, .planejamento-barra-lote, .barra-lote-movel) {
+  bottom: calc(4rem + env(safe-area-inset-bottom)) !important;
 }

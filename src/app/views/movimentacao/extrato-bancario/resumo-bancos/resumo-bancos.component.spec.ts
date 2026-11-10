@@ -15,7 +15,7 @@ import { LarguraTelaService } from 'src/app/core/services/largura-tela.service';
 import { PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
 import { TipoCartaoService } from 'src/app/core/services/tipo-cartao.service';
 import { ResumoBancosComponent } from './resumo-bancos.component';
-import { filtrarBancos, juntarNomes, numerosDoCard, ordenarBancos, semMovimento } from './resumo-bancos.regras';
+import { filtrarBancos, filtrarPorCampos, filtrosContasVazios, juntarNomes, numerosDoCard, ordenarBancos, quantosFiltros, semMovimento, situacaoDa } from './resumo-bancos.regras';
 
 const conta = (extra: Partial<ResumoContaDto>): ResumoContaDto => ({
   bancoId: 1, nome: 'Caixa', tipoNome: 'Conta corrente', ehCredito: false, ativo: true, compartilhado: false, conviteCompartilharDispensado: false,
@@ -37,7 +37,7 @@ describe('ResumoBancos', () => {
     expect(numerosDoCard(contas[0]).map(n => [n.rotulo, n.valor])).toEqual([['Entradas', 100], ['Saídas', 30], ['Resultado', 70]]);
     expect(numerosDoCard(contas[1]).map(n => [n.rotulo, n.valor])).toEqual([['Fatura', 110], ['Minhas compras', 30], ['De outras pessoas', 80]]);
     const soMeu = conta({ ehCredito: true, fatura: 50, pagamentosEstornos: 5, parcelasQueContinuam: 40 });
-    expect(numerosDoCard(soMeu).map(n => n.rotulo)).toEqual(['Fatura', 'Pagamentos', 'Parcelas que continuam']);
+    expect(numerosDoCard(soMeu).map(n => n.rotulo)).toEqual(['Fatura', 'Pagamentos', 'Parcelas futuras']);
   });
 
   it('filtra, busca, ordena e separa as contas sem movimento', () => {
@@ -46,6 +46,17 @@ describe('ResumoBancos', () => {
     expect(ordenarBancos(contas, 'valor')[0].nome).toBe('NuBank');
     expect(contas.filter(semMovimento).map(c => c.nome)).toEqual(['Bradesco']);
     expect(juntarNomes(['Carlos', 'Ágatha', 'Bia'])).toBe('Carlos, Ágatha e Bia');
+  });
+
+  it('filtros por campo: situação, compartilhamento, sem categoria e valor', () => {
+    expect(contas.map(situacaoDa)).toEqual(['importado', 'importado', 'falta', 'sem-lancamentos']);
+    const nomes = (f: object) => filtrarPorCampos(contas, { ...filtrosContasVazios(), ...f }).map(c => c.nome);
+    expect(nomes({ situacoes: ['falta'] })).toEqual(['Santander']);
+    expect(nomes({ compartilhamento: 'compartilhados' })).toEqual(['NuBank']);
+    expect(nomes({ compartilhamento: 'so-meus' })).toEqual([]);
+    expect(nomes({ soSemCategoria: true })).toEqual(['Caixa', 'NuBank']);
+    expect(nomes({ valorMin: 100 })).toEqual(['NuBank']);
+    expect(quantosFiltros({ ...filtrosContasVazios(), soSemCategoria: true, valorMax: 50 })).toBe(2);
   });
 
   describe('tela', () => {

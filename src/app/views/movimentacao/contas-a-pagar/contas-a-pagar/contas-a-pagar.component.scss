@@ -27,3 +27,8 @@
     background: var(--orange-500);
   }
 }
+
+/* Card #78: aviso discreto das vencidas de meses anteriores e a lista do "Ver". */
+.aviso-anteriores { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.75rem; border-radius: var(--mf-radius); background: var(--mf-tag-warning-bg); color: var(--mf-tag-warning-fg); font-size: 0.875rem; }
+.lista-anteriores { margin: 0; padding: 0; list-style: none; }
+.lista-anteriores li { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--surface-border); }

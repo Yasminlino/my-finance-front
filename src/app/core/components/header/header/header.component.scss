@@ -5,72 +5,112 @@
   z-index: 1000;
 }
 
-.topo {
-  background: var(--surface-card);
-  border-bottom: 1px solid var(--surface-border);
-}
+.topo { border-bottom: 1px solid var(--surface-border); background: var(--surface-card); }
+.topo-barra { display: flex; align-items: center; gap: 0.25rem; max-width: 1320px; margin: 0 auto; padding: 0.5rem 1rem; }
+.marca { display: flex; align-items: center; gap: 0.5rem; margin-right: 1rem; color: var(--text-color); font-size: 1.1rem; font-weight: 700; text-decoration: none; }
+.topo-nav { display: flex; align-items: stretch; gap: 0.25rem; }
+.topo-link { position: relative; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.6rem 0.75rem; border: 0; border-radius: var(--mf-radius); background: none; color: var(--text-color-secondary); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; }
+.topo-link:hover { background: var(--surface-hover); color: var(--text-color); }
+/* Item ativo: sublinhado azul. */
+.topo-link.ativo { color: var(--mf-primary); }
+.topo-link.ativo::after { content: ''; position: absolute; right: 0.75rem; bottom: -0.55rem; left: 0.75rem; height: 3px; border-radius: 3px 3px 0 0; background: var(--mf-primary); }
+.topo-link .pi-angle-down { font-size: 0.75rem; }
+.topo-espaco { flex: 1; }
+.topo-busca { display: inline-flex; align-items: center; gap: 0.5rem; min-width: 14rem; margin-right: 0.5rem; padding: 0.45rem 0.75rem; border: 1px solid var(--surface-border); border-radius: var(--mf-radius); background: var(--surface-ground); color: var(--text-color-secondary); font: inherit; cursor: pointer; }
+.topo-busca span { flex: 1; text-align: left; }
+kbd { padding: 0.05rem 0.35rem; border: 1px solid var(--surface-border); border-radius: 0.25rem; background: var(--surface-card); font-family: inherit; font-size: 0.7rem; }
+.topo-usuario { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.5rem; border: 0; border-radius: 2rem; background: none; color: var(--text-color); font: inherit; cursor: pointer; }
+.topo-usuario:hover { background: var(--surface-hover); }
+.topo-usuario-nome { max-width: 10rem; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.avatar { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--mf-primary); color: var(--primary-color-text); font-weight: 700; }
+:host ::ng-deep .topo-badge { margin-left: 0.15rem; }
 
-:host ::ng-deep .topo-menubar {
-  max-width: 1320px;
-  margin: 0 auto;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  padding: .5rem 1rem;
-}
+/* Painel de Cadastros (vai para o body). */
+::ng-deep .topo-cadastros .p-overlaypanel-content { padding: 1rem; }
+.cadastros-grupos { display: grid; grid-template-columns: repeat(2, minmax(15rem, 1fr)); gap: 1rem; }
+.cadastros-titulo, .gaveta-titulo { margin: 0.75rem 0 0.35rem; color: var(--text-color-secondary); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+.cadastros-titulo { margin-top: 0; }
+.cadastros-item { display: flex; align-items: flex-start; gap: 0.75rem; width: 100%; padding: 0.6rem; border: 0; border-radius: var(--mf-radius); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.cadastros-item:hover, .cadastros-item.ativo { background: var(--surface-hover); }
+.cadastros-item i { margin-top: 0.2rem; color: var(--mf-primary); }
+.cadastros-item span { display: flex; flex-direction: column; }
+.cadastros-item small { color: var(--text-color-secondary); }
 
-.marca {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  margin-right: 1rem;
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--text-color);
-  text-decoration: none;
-}
+/* Gaveta (tablet) e folhas (celular). */
+.gaveta-usuario { display: flex; align-items: center; gap: 0.75rem; }
+.gaveta-nav { display: flex; flex-direction: column; }
+.gaveta-item { display: flex; align-items: center; gap: 0.75rem; width: 100%; padding: 0.75rem; border: 0; border-radius: var(--mf-radius); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.gaveta-item:hover { background: var(--surface-hover); }
+/* Item ativo: faixa azul à esquerda, como no protótipo. */
+.gaveta-item.ativo { background: var(--highlight-bg); color: var(--mf-primary); font-weight: 600; box-shadow: inset 3px 0 0 var(--mf-primary); }
+.gaveta-item.ativo i { color: var(--mf-primary); }
+.gaveta-sub { padding-left: 2.25rem; }
+.gaveta-seta { flex: none; font-size: 0.8rem; }
+.gaveta-nav { flex: 1; }
+.topo-titulo { overflow: hidden; color: var(--text-color); font-size: 1.15rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.gaveta-item i { width: 1.25rem; color: var(--text-color-secondary); }
+.gaveta-item span { flex: 1; }
+.gaveta-sair { margin-top: auto; color: var(--mf-despesa); }
+.gaveta-sair i { color: var(--mf-despesa); }
+.folha-puxador { display: block; width: 2.5rem; height: 0.3rem; border-radius: 0.15rem; background: var(--surface-300); }
+.folha-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; margin-bottom: 0.5rem; }
+.folha-grade--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.folha-atalho { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; padding: 0.5rem 0.25rem; border: 0; background: none; color: inherit; font: inherit; font-size: 0.8rem; text-align: center; cursor: pointer; }
+.folha-icone { display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; border-radius: 0.75rem; }
+.folha-icone i { font-size: 1.25rem; }
+.folha-linha { display: flex; align-items: center; gap: 0.75rem; width: 100%; padding: 0.6rem 0.25rem; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
+.folha-linha .pi-angle-right, .folha-linha .pi-angle-down, .folha-linha .pi-angle-up { color: var(--text-color-secondary); }
+.folha-linha--sub { padding-left: 1.5rem; font-weight: 500; }
+.folha-caixa { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 0.5rem; background: var(--surface-ground); color: var(--text-color-secondary); }
+/* Painel Novo (protótipo do card #72): destaque "desta tela" e grade 3×2. */
+.novo-titulo { margin: 0.25rem 0 0.75rem; font-size: 1.1rem; font-weight: 700; }
+.novo-destaque { display: flex; align-items: center; gap: 0.75rem; width: 100%; margin-bottom: 0.5rem; padding: 0.75rem; border: 1px solid var(--surface-border); border-radius: var(--mf-radius); background: var(--highlight-bg); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.novo-destaque-icone { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; border-radius: 0.75rem; font-size: 1.15rem; }
+.novo-destaque-texto { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.novo-destaque-texto small { color: var(--text-color-secondary); }
+.novo-tag { flex: none; padding: 0.15rem 0.5rem; border-radius: 1rem; background: var(--surface-card); color: var(--mf-primary); font-size: 0.7rem; font-weight: 700; }
+.novo-grade { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+.novo-atalho { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; min-height: 6.5rem; padding: 0.75rem 0.25rem; border: 1px solid var(--surface-border); border-radius: var(--mf-radius); background: var(--surface-card); color: inherit; font: inherit; font-size: 0.8rem; text-align: center; cursor: pointer; }
+.barra-mais-criar--aberto { background: var(--text-color); }
+/* Topo do "Mais": puxador, marca e o × do p-sidebar; cartão do usuário logo abaixo. */
+::ng-deep .topo-folha--mais .p-sidebar-header { justify-content: space-between; align-items: flex-start; padding: 0.5rem 1rem 0; }
+.mais-topo { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
+.mais-topo .folha-puxador { align-self: center; margin-left: 2rem; }
+.mais-marca { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.05rem; }
+.mais-usuario { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; padding: 0.75rem; border-radius: var(--mf-radius); background: var(--surface-ground); }
+.mais-usuario-texto { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.mais-usuario-texto small { color: var(--text-color-secondary); }
+.avatar--claro { background: var(--highlight-bg); color: var(--mf-primary); }
+.folha-linha--inativa { cursor: default; opacity: 0.7; }
+.folha-em-breve { padding: 0.1rem 0.4rem; border-radius: 0.25rem; background: var(--surface-ground); color: var(--text-color-secondary); font-size: 0.7rem; font-weight: 600; }
+.folha-linha.gaveta-sair .folha-caixa { background: transparent; color: var(--mf-despesa); }
+/* Folhas e gaveta vão para o body (appendTo): o estilo da casca precisa ser global. */
+::ng-deep .topo-folha.p-sidebar { height: auto; max-height: 85dvh; border-radius: 1rem 1rem 0 0; }
+::ng-deep .topo-gaveta.p-sidebar { width: 18rem; }
+::ng-deep .topo-gaveta .p-sidebar-content { display: flex; flex-direction: column; }
+::ng-deep .topo-folha .p-sidebar-header { justify-content: center; padding: 0.5rem 1rem 0; }
 
-.usuario {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  color: var(--text-color);
-}
+/* Celular: barra fixa embaixo. */
+.barra-inferior { position: fixed; right: 0; bottom: 0; left: 0; z-index: 1001; display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; height: 4rem; padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--surface-border); background: var(--surface-card); }
+.barra-inferior--escondida { display: none; }
+.barra-inferior > button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; height: 100%; padding: 0; border: 0; background: none; color: var(--text-color-secondary); font: inherit; font-size: 0.7rem; line-height: 1; cursor: pointer; }
+.barra-icone { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; }
+.barra-icone i { font-size: 1.15rem; }
+.barra-badge { position: absolute; top: -0.4rem; left: 0.9rem; min-width: 1.1rem; height: 1.1rem; padding: 0 0.25rem; border-radius: 0.55rem; background: var(--mf-despesa); color: var(--primary-color-text); font-size: 0.6rem; font-weight: 700; line-height: 1.1rem; text-align: center; }
+.barra-centro { display: flex; align-items: center; justify-content: center; height: 100%; }
+.barra-inferior button.ativo { color: var(--mf-primary); font-weight: 700; }
+.barra-mais-criar { display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; margin-top: -1.25rem; border: 0; border-radius: 50%; background: var(--mf-primary); color: var(--primary-color-text); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); cursor: pointer; }
+.barra-mais-criar i { font-size: 1.25rem; }
 
-.usuario-nome {
-  line-height: 1.1;
-
-  small {
-    color: var(--text-color-secondary);
-  }
-}
-
-@media (max-width: 960px) {
-  .usuario-nome {
-    display: none;
-  }
-
-  /* No celular o ☰ vem antes da marca, no canto esquerdo (o PrimeNG o põe depois do "start"). */
-  :host ::ng-deep .topo-menubar .p-menubar-button {
-    order: -1;
-    margin: 0 .5rem 0 0;
-  }
-}
-
-/* Tela bem estreita: só os ícones, para o menu não alargar a página e cortar o conteúdo. */
-@media (max-width: 359.98px) {
+@media (max-width: 767.98px) {
+  .topo-barra { padding: 0.35rem 0.75rem; }
   .marca { margin-right: 0; }
-  .marca span, .usuario > .pi-user { display: none; }
-  :host ::ng-deep .usuario .p-button-label { display: none; }
 }
 
-/* Submenu com largura para o rótulo não quebrar ("Tipo Movimentação"). */
-:host ::ng-deep .topo-menubar .p-submenu-list {
-  min-width: 14rem;
+@media (max-width: 359.98px) {
+  .marca-nome { display: none; }
 }
 
 @media print {
-  :host {
-    display: none;
-  }
+  :host, .barra-inferior { display: none; }
 }

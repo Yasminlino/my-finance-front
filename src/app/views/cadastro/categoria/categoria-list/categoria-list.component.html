@@ -1,6 +1,7 @@
 <div class="mf-pagina">
-  <mf-page-header class="block mt-2 mb-3" titulo="Categorias" subtitulo="Agrupam as contas e definem se são despesa ou receita"
-    [breadcrumb]="breadcrumb" [home]="home" [mostrarVoltar]="true" (voltar)="navegacao.voltar()">
+  <mf-page-header class="block mt-2 mb-3" titulo="Categorias"
+    [subtitulo]="registros.length + (registros.length === 1 ? ' categoria' : ' categorias') + ' · agrupam as contas e definem se são despesa ou receita'"
+    [breadcrumb]="breadcrumb" [home]="home">
     @if (!movel()) {
       <p-button acoes label="Nova categoria" icon="pi pi-plus" (onClick)="openCreate()" />
     }

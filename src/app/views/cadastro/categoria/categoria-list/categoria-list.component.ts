@@ -1,3 +1,4 @@
+import { registrarAcaoCriar } from 'src/app/core/services/criar-contexto.service';
 import { Component, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { MenuItem } from 'primeng/api';
@@ -49,6 +50,11 @@ export class CategoriaListComponent extends CadastroListBase<CategoriaDto> {
   protected readonly rotulo = { singular: 'categoria', plural: 'categorias', feminino: true };
 
   private readonly categoryService = inject(CategoryService);
+  /** "+" do menu no celular (card #72). */
+  private readonly acaoCriar = registrarAcaoCriar({
+    chave: 'categoria', titulo: () => 'Categoria', subtitulo: () => 'para classificar contas e lançamentos', icone: 'pi pi-tag', cor: 'amarelo',
+    executar: () => this.openCreate()
+  });
   private readonly confirmacaoAtivo = inject(ConfirmacaoService);
   readonly movel = inject(LarguraTelaService).movel;
   /** ‹ voltar do cabeçalho: tela anterior ou a Página Inicial. */

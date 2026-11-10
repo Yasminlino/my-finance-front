@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CalendarModule } from 'primeng/calendar';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { MenuModule } from 'primeng/menu';
 import { SplitButtonModule } from 'primeng/splitbutton';
@@ -29,6 +30,7 @@ import { FabComponent } from 'src/app/shared/ui/fab/fab.component';
     ContasAPagarRoutingModule,
     CalendarModule,
     ConfirmDialogModule,
+    DialogModule,
     InputSwitchModule,
     MenuModule,
     SplitButtonModule,

@@ -59,18 +59,14 @@ describe('CategoriaListComponent', () => {
     fixture.detectChanges();
   });
 
-  it('o ‹ voltar do cabeçalho volta para a tela anterior', () => {
-    const navegacao = TestBed.inject(NavegacaoService);
-    spyOn(navegacao, 'voltar');
-
-    (el().querySelector('mf-page-header button[aria-label="Voltar"]') as HTMLElement).click();
-
-    expect(navegacao.voltar).toHaveBeenCalled();
+  it('card #78: tela principal, sem o ‹ voltar', () => {
+    expect(el().querySelector('mf-page-header button[aria-label^="Voltar"]')).toBeNull();
+    expect(TestBed.inject(NavegacaoService)).toBeTruthy();
   });
 
   it('cabeçalho com título, subtítulo e "Nova categoria"', () => {
     expect(el().querySelector('.mf-page-title')?.textContent).toContain('Categorias');
-    expect(el().textContent).toContain('Agrupam as contas e definem se são despesa ou receita');
+    expect(el().querySelector('.mf-page-subtitle')?.textContent).toMatch(/^\d+ categorias? · agrupam as contas/);
     expect(el().textContent).toContain('Nova categoria');
   });
 

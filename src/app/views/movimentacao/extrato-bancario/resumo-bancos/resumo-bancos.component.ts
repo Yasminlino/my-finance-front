@@ -1,3 +1,4 @@
+import { registrarAcaoCriar } from 'src/app/core/services/criar-contexto.service';
 import { NgStyle } from '@angular/common';
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -13,6 +14,13 @@ import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { SidebarModule } from 'primeng/sidebar';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { InputSwitchModule } from 'primeng/inputswitch';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { SkeletonModule } from 'primeng/skeleton';
+import { NavegacaoService } from 'src/app/core/services/navegacao.service';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
@@ -42,7 +50,10 @@ import { corDoBanco, dataCurta, siglaDoBanco } from '../components/modal-importa
 import { ModalImportacoesMensaisComponent } from '../components/modal-importacoes-mensais/modal-importacoes-mensais.component';
 import { AbrirExtrato, ModalImportarExtratoComponent } from '../components/modal-importar-extrato/modal-importar-extrato.component';
 import { ModalLancamentoManualComponent } from '../components/modal-lancamento-manual/modal-lancamento-manual.component';
-import { FiltroBancos, NumeroDoCard, OrdemBancos, filtrarBancos, juntarNomes, numerosDoCard, ordenarBancos, semMovimento } from './resumo-bancos.regras';
+import {
+  FiltroBancos, FiltrosContas, NumeroDoCard, OPCOES_COMPARTILHAMENTO, OPCOES_SITUACAO, OrdemBancos, filtrarBancos, filtrarPorCampos, filtrosContasVazios,
+  juntarNomes, numerosDoCard, ordenarBancos, quantosFiltros, semMovimento
+} from './resumo-bancos.regras';
 
 /**
  * Listagem das contas (cards #62 e #77): KPIs do mês e um card por conta com os mesmos números do topo do detalhe,
@@ -53,7 +64,7 @@ import { FiltroBancos, NumeroDoCard, OrdemBancos, filtrarBancos, juntarNomes, nu
   standalone: true,
   imports: [
     NgStyle, FormsModule, PrimeTemplate, BadgeModule, ButtonModule, CalendarModule, DropdownModule, IconFieldModule, InputIconModule, InputTextModule,
-    MenuModule, SelectButtonModule, SplitButtonModule, TagModule, TooltipModule, EmptyStateComponent, FabComponent, FilterBarComponent, PageHeaderComponent,
+    MenuModule, SelectButtonModule, SidebarModule, SkeletonModule, InputNumberModule, InputSwitchModule, MultiSelectModule, OverlayPanelModule, SplitButtonModule, TagModule, TooltipModule, EmptyStateComponent, FabComponent, FilterBarComponent, PageHeaderComponent,
     StatCardComponent, ModalImportarExtratoComponent, ModalLancamentoManualComponent, ModalImportacoesMensaisComponent, ModalConfiguracaoVinculoPessoaComponent
   ],
   templateUrl: './resumo-bancos.component.html',
@@ -70,6 +81,20 @@ export class ResumoBancosComponent implements OnInit {
   private readonly categoryService = inject(CategoryService);
   private readonly pessoaService = inject(PessoaMovimentacaoService);
   readonly movel = inject(LarguraTelaService).movel;
+  private readonly navegacao = inject(NavegacaoService);
+  /** "+" do menu no celular (card #72): importar o extrato do mês. */
+  private readonly acaoCriar = registrarAcaoCriar({
+    chave: 'importar', titulo: () => 'Importar extrato', subtitulo: () => this.nomeDoMes, icone: 'pi pi-upload', cor: 'azul',
+    executar: () => this.abrirImportar(), locais: { lancamento: () => (this.showLancamento = true) }
+  });
+  /** Celular, como em Contas a Pagar: a ordenação fica na folha de filtros. */
+  filtrosAbertos = false;
+  /** Filtros por campo, como em Contas a Pagar (card #72). */
+  filtrosCampos: FiltrosContas = filtrosContasVazios();
+  readonly opcoesSituacao = OPCOES_SITUACAO;
+  readonly opcoesCompartilhamento = OPCOES_COMPARTILHAMENTO;
+  /** Card visível no carrossel do celular, para os pontinhos. */
+  slideAtivo = 0;
   private readonly mes$ = new Subject<string>();
 
   readonly breadcrumb: MenuItem[] = [{ label: 'Movimentações' }, { label: 'Extratos' }];
@@ -107,6 +132,8 @@ export class ResumoBancosComponent implements OnInit {
   modo: 'cards' | 'lista' = 'cards';
   mostrarSemMovimento = false;
   resumo: ResumoContasDto | null = null;
+  /** A última carga falhou: a tela diz isso e oferece tentar de novo, em vez de mostrar zeros. */
+  erroAoCarregar = false;
 
   bancos: BancoDto[] = [];
   tiposCartao: TipoCartaoDto[] = [];
@@ -128,12 +155,15 @@ export class ResumoBancosComponent implements OnInit {
   ngOnInit(): void {
     ultimaBusca(this.mes$, mes => this.itensService.resumoContas(mes), e => {
       this.loading = false;
+      this.erroAoCarregar = true;
+      this.resumo = null;
       this.alertService.error(extrairMensagemErro(e, 'Erro ao carregar o resumo das contas.'));
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(r => {
         this.resumo = r;
         this.loading = false;
+        this.erroAoCarregar = false;
         const contas = r?.contas ?? [];
         const contagem = { todas: contas.length, contas: contas.filter(c => !c.ehCredito).length, cartoes: contas.filter(c => c.ehCredito).length };
         this.opcoesFiltro = this.opcoesFiltro.map(o => ({ ...o, contagem: contagem[o.value] }));
@@ -159,10 +189,12 @@ export class ResumoBancosComponent implements OnInit {
     const [ano, mes] = (this.route.snapshot.queryParamMap.get('month') ?? '').split('-').map(Number);
     if (ano && mes) this.dateFilter = new Date(ano, mes - 1, 1);
     this.carregarMes();
+    // "Importar extrato" do + do menu e da busca (card #72); o carregarMes já tira os outros parâmetros da URL.
+    if (this.route.snapshot.queryParamMap.get('importar')) this.abrirImportar();
   }
 
   private get contas(): ResumoContaDto[] {
-    return ordenarBancos(filtrarBancos(this.resumo?.contas ?? [], this.filtro, this.busca), this.ordem);
+    return ordenarBancos(filtrarPorCampos(filtrarBancos(this.resumo?.contas ?? [], this.filtro, this.busca), this.filtrosCampos), this.ordem);
   }
 
   /** Com movimento ou com algo a importar; as paradas ficam recolhidas. */
@@ -178,8 +210,25 @@ export class ResumoBancosComponent implements OnInit {
     return !this.loading && !!this.resumo && this.resumo.contas.every(semMovimento);
   }
 
+  /** Primeira carga do mês (ainda sem números): blocos de carregamento no lugar dos KPIs e cards. */
+  get carregandoPrimeiraVez(): boolean {
+    return this.loading && !this.resumo;
+  }
+
   get nomeDoMes(): string {
     return this.dateFilter.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  }
+
+  /** Resumo do cabeçalho (card #78): "novembro 2026 · 10 contas · 15 para classificar". */
+  get resumoCabecalho(): string {
+    if (!this.resumo) return '';
+    const n = this.resumo.contas.length;
+    return `${n} ${n === 1 ? 'conta' : 'contas'} · ${this.resumo.paraClassificar} para classificar`;
+  }
+
+  /** Chip do cabeçalho compacto: "nov/26". */
+  get periodoCurto(): string {
+    return `${this.dateFilter.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}/${String(this.dateFilter.getFullYear()).slice(2)}`;
   }
 
   get nomeMesCurto(): string {
@@ -188,6 +237,64 @@ export class ResumoBancosComponent implements OnInit {
 
   get existeCompartilhado(): boolean {
     return this.resumo?.faltaReceber != null;
+  }
+
+  /** Cor do ícone e do valor no slide do celular, como no carrossel de Contas a Pagar. */
+  corDoIcone(tom: string): string {
+    return tom === 'receita' ? 'text-green-600' : tom === 'despesa' ? 'text-orange-500' : tom === 'perigo' ? 'text-red-500' : 'text-color-secondary';
+  }
+
+  /** Os KPIs do topo, os mesmos no grid do desktop e no carrossel do celular. */
+  get kpis(): { rotulo: string; valor: string; icone: string; tom: 'receita' | 'despesa' | 'perigo' | 'neutro'; corDoValor: 'receita' | 'perigo' | null; dica: string; destaque: boolean }[] {
+    const r = this.resumo;
+    return [
+      { rotulo: 'Entradas', valor: r ? this.moeda(r.entradas) : '—', icone: 'pi pi-arrow-down-left', tom: 'receita', corDoValor: 'receita', dica: 'sem transferências', destaque: false },
+      { rotulo: 'Saídas', valor: r ? this.moeda(r.saidas) : '—', icone: 'pi pi-arrow-up-right', tom: 'despesa', corDoValor: null, dica: 'sem pagamento de fatura', destaque: false },
+      ...(this.existeCompartilhado ? [{ rotulo: 'Falta receber', valor: this.moeda(r!.faltaReceber!), icone: 'pi pi-wallet', tom: 'perigo' as const,
+        corDoValor: r!.faltaReceber ? 'perigo' as const : null, dica: 'de outras pessoas', destaque: false }] : []),
+      { rotulo: 'Para classificar', valor: r ? '' + r.paraClassificar : '—', icone: 'pi pi-tag', tom: 'neutro', corDoValor: null, dica: 'lançamentos sem categoria', destaque: !!r?.paraClassificar }
+    ];
+  }
+
+  get ordemMudou(): boolean {
+    return this.ordem !== 'nome';
+  }
+
+  /** O número no botão de filtros do celular: filtros por campo + ordem fora do padrão. */
+  get filtrosNoPainel(): number {
+    return quantosFiltros(this.filtrosCampos) + (this.ordemMudou ? 1 : 0);
+  }
+
+  get temFiltroDeValor(): boolean {
+    return this.filtrosCampos.valorMin != null || this.filtrosCampos.valorMax != null;
+  }
+
+  get rotuloValor(): string {
+    const { valorMin: de, valorMax: ate } = this.filtrosCampos;
+    if (de != null && ate != null) return `${this.moeda(de)} a ${this.moeda(ate)}`;
+    if (de != null) return `a partir de ${this.moeda(de)}`;
+    if (ate != null) return `até ${this.moeda(ate)}`;
+    return 'Valor';
+  }
+
+  get temFiltro(): boolean {
+    return !!this.busca.trim() || this.filtro !== 'todas' || quantosFiltros(this.filtrosCampos) > 0;
+  }
+
+  limparFiltros(): void {
+    this.busca = '';
+    this.filtro = 'todas';
+    this.filtrosCampos = filtrosContasVazios();
+  }
+
+  aoRolar(evento: Event): void {
+    const carrossel = evento.target as HTMLElement;
+    const slide = carrossel.firstElementChild as HTMLElement | null;
+    if (slide) this.slideAtivo = Math.round(carrossel.scrollLeft / (slide.offsetWidth || 1));
+  }
+
+  voltar(): void {
+    this.navegacao.voltar();
   }
 
   moeda(v: number): string {

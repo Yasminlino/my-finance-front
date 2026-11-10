@@ -1,37 +1,117 @@
 <div class="mf-pagina">
   <mf-page-header class="block mt-2 mb-3" [titulo]="arquivados ? 'Arquivados' : 'Meus planejamentos'"
-    [subtitulo]="arquivados ? undefined : 'Compras, orçamentos, tarefas e agenda, cada um com os campos que precisa'"
-    [breadcrumb]="breadcrumb" [home]="home" [mostrarVoltar]="true" (voltar)="voltar()">
+    [subtitulo]="resumoCabecalho" [breadcrumb]="breadcrumb" [home]="home"
+    [mostrarVoltar]="arquivados" voltarRotulo="Meus planejamentos" (voltar)="voltar()">
     @if (!arquivados && !movel()) {
       <p-button acoes label="Novo planejamento" icon="pi pi-plus" (onClick)="novo()" />
     }
+    <!-- Celular, como Contas a Pagar: ⋮ na linha do título. -->
+    @if (movel()) {
+      <p-button acoes icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary" (onClick)="menuTopo.toggle($event)" ariaLabel="Mais ações" />
+    }
   </mf-page-header>
+  <p-menu #menuTopo [model]="itensMenuTopo" [popup]="true" appendTo="body" />
 
   @if (arquivados) {
     <p-message severity="info" styleClass="w-full justify-content-start mb-3"
       text="Planejamentos arquivados ficam guardados e não aparecem nos filtros de Meus planejamentos. Desarquive para voltar a usar." />
   }
 
-  <div class="surface-card border-round shadow-1">
+  @if (movel()) {
+    <!-- Celular: mesma marcação dos filtros de Contas a Pagar, fora do card. -->
+    @if (!arquivados) {
+      <div class="filtro-rolavel filtro-situacao-compacto">
+        <p-selectButton [options]="opcoesFiltro" [(ngModel)]="filtro" optionLabel="label" optionValue="value"
+          [allowEmpty]="false" (onChange)="aplicarFiltros()">
+          <ng-template let-opcao pTemplate="item">
+            <span class="white-space-nowrap">{{ opcao.label }}</span>
+            <p-badge [value]="'' + opcao.contagem" severity="secondary" styleClass="ml-2" />
+          </ng-template>
+        </p-selectButton>
+      </div>
+    }
+    <div class="flex gap-2 my-2">
+      <p-iconField iconPosition="left" class="flex-grow-1">
+        <p-inputIcon styleClass="pi pi-search" />
+        <input pInputText type="text" class="w-full" placeholder="Buscar planejamento..." [(ngModel)]="busca"
+          (ngModelChange)="aplicarFiltros()" aria-label="Buscar planejamento" />
+      </p-iconField>
+      <span class="botao-filtros p-overlay-badge">
+        <p-button icon="pi pi-sliders-h" [outlined]="true" severity="secondary" (onClick)="filtrosAbertos = true" ariaLabel="Filtros" />
+        @if (filtrosNoPainel) { <span class="p-badge p-component p-badge-no-gutter">{{ filtrosNoPainel }}</span> }
+      </span>
+    </div>
+  }
+
+  <div [class]="movel() ? '' : 'surface-card border-round shadow-1'">
+    @if (!movel()) {
     <mf-filter-bar>
       @if (!arquivados) {
         <p-selectButton inicio [options]="opcoesFiltro" [(ngModel)]="filtro" optionLabel="label" optionValue="value"
-          [allowEmpty]="false" (onChange)="aplicarFiltros()" styleClass="filtro-campos" [class.w-full]="movel()">
+          [allowEmpty]="false" (onChange)="aplicarFiltros()" styleClass="filtro-campos">
           <ng-template let-opcao pTemplate="item">
             <span>{{ opcao.label }}</span>
             <p-badge [value]="'' + opcao.contagem" severity="secondary" styleClass="ml-2" />
           </ng-template>
         </p-selectButton>
       }
-
-      <p-iconField fim iconPosition="left" [class.flex-grow-1]="movel()" [class.min-w-0]="movel()">
+      <p-iconField fim iconPosition="left">
         <p-inputIcon styleClass="pi pi-search" />
-        <input pInputText type="text" placeholder="Buscar planejamento..." [(ngModel)]="busca" [class.w-full]="movel()"
+        <input pInputText type="text" placeholder="Buscar planejamento..." [(ngModel)]="busca"
           (ngModelChange)="aplicarFiltros()" aria-label="Buscar planejamento" />
       </p-iconField>
-      <p-dropdown fim [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value" appendTo="body"
-        (onChange)="aplicarFiltros()" styleClass="filtro-ordem" ariaLabel="Ordenar por" />
+        <div fim class="flex flex-wrap align-items-center gap-2">
+          <p-multiSelect [options]="opcoesModelo" optionLabel="label" optionValue="value" [(ngModel)]="filtrosCampos.modelos" placeholder="Tipo"
+            [showHeader]="false" selectedItemsLabel="{0} tipos" [maxSelectedLabels]="1" appendTo="body" (onChange)="aplicarFiltros()" />
+          <p-multiSelect [options]="opcoesAndamento" optionLabel="label" optionValue="value" [(ngModel)]="filtrosCampos.andamentos" placeholder="Andamento"
+            [showHeader]="false" selectedItemsLabel="{0} andamentos" [maxSelectedLabels]="1" appendTo="body" (onChange)="aplicarFiltros()" />
+          <p-button [label]="rotuloValor" icon="pi pi-dollar" severity="secondary" [outlined]="!temFiltroDeValor" size="small"
+            (onClick)="painelValorPl.toggle($event)" ariaLabel="Filtrar por valor" />
+          <p-overlayPanel #painelValorPl appendTo="body">
+            <div class="flex flex-column gap-2">
+              <span class="font-semibold">Valor total</span>
+              <div class="flex align-items-center gap-2">
+                <p-inputNumber [(ngModel)]="filtrosCampos.valorMin" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="De"
+                  inputStyleClass="w-8rem" ariaLabel="Valor a partir de" (ngModelChange)="aplicarFiltros()" />
+                <span class="mf-hint">até</span>
+                <p-inputNumber [(ngModel)]="filtrosCampos.valorMax" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="Até"
+                  inputStyleClass="w-8rem" ariaLabel="Valor até" (ngModelChange)="aplicarFiltros()" />
+              </div>
+            </div>
+          </p-overlayPanel>
+          <p-dropdown [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label" optionValue="value" appendTo="body"
+            (onChange)="aplicarFiltros()" styleClass="filtro-ordem" ariaLabel="Ordenar por" />
+          <p-button icon="pi pi-filter-slash" [text]="true" severity="secondary" pTooltip="Limpar filtros" tooltipPosition="top"
+            [disabled]="!temFiltroDeCampo" (onClick)="limparFiltrosDeCampo()" ariaLabel="Limpar filtros" />
+        </div>
     </mf-filter-bar>
+    }
+    @if (movel()) {
+      <p-sidebar [(visible)]="filtrosAbertos" position="bottom" styleClass="painel-filtros h-auto" appendTo="body">
+        <ng-template pTemplate="header"><span class="font-semibold">Filtros</span></ng-template>
+        <label class="block text-sm text-color-secondary mb-1" for="pl-ordem-movel">Ordenar por</label>
+        <p-dropdown inputId="pl-ordem-movel" styleClass="w-full" [options]="opcoesOrdem" [(ngModel)]="ordem" optionLabel="label"
+          optionValue="value" appendTo="body" (onChange)="aplicarFiltros()" />
+        <label class="block text-sm text-color-secondary mb-1 mt-3" for="pl-tipo-movel">Tipo</label>
+        <p-multiSelect inputId="pl-tipo-movel" [options]="opcoesModelo" optionLabel="label" optionValue="value" [(ngModel)]="filtrosCampos.modelos"
+          placeholder="Todos os tipos" display="chip" [showHeader]="false" appendTo="body" styleClass="w-full" (onChange)="aplicarFiltros()" />
+        <label class="block text-sm text-color-secondary mb-1 mt-3" for="pl-andamento-movel">Andamento</label>
+        <p-multiSelect inputId="pl-andamento-movel" [options]="opcoesAndamento" optionLabel="label" optionValue="value" [(ngModel)]="filtrosCampos.andamentos"
+          placeholder="Todos" display="chip" [showHeader]="false" appendTo="body" styleClass="w-full" (onChange)="aplicarFiltros()" />
+        <span class="block text-sm text-color-secondary mb-1 mt-3">Valor total</span>
+        <div class="flex align-items-center gap-2">
+          <p-inputNumber [(ngModel)]="filtrosCampos.valorMin" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="De"
+            class="flex-1" styleClass="w-full" inputStyleClass="w-full" ariaLabel="Valor a partir de" (ngModelChange)="aplicarFiltros()" />
+          <span class="text-color-secondary">até</span>
+          <p-inputNumber [(ngModel)]="filtrosCampos.valorMax" mode="currency" currency="BRL" locale="pt-BR" [min]="0" placeholder="Até"
+            class="flex-1" styleClass="w-full" inputStyleClass="w-full" ariaLabel="Valor até" (ngModelChange)="aplicarFiltros()" />
+        </div>
+        <div class="flex gap-2 mt-3">
+          <p-button label="Limpar" severity="secondary" [outlined]="true" styleClass="w-full" class="flex-1" [disabled]="!temFiltroDeCampo" (onClick)="limparFiltrosDeCampo()" />
+          <p-button label="Ver planejamentos" styleClass="w-full" class="flex-1" (onClick)="filtrosAbertos = false" />
+        </div>
+      </p-sidebar>
+    }
 
     <div class="planejamentos-grade p-3">
       @if (loading && !listas.length) {

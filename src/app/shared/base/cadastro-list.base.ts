@@ -1,4 +1,5 @@
 import { DestroyRef, Directive, OnInit, ViewChild, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, finalize, of, switchMap } from 'rxjs';
 import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
@@ -23,6 +24,12 @@ export abstract class CadastroListBase<T extends { id: number }> implements OnIn
   protected readonly exclusaoEmLote = inject(ExclusaoEmLoteService);
   private readonly confirmacao = inject(ConfirmacaoService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly rota = inject(ActivatedRoute, { optional: true });
+  private readonly roteador = inject(Router, { optional: true });
+  /** ?editar=id da busca do menu (card #72): abre o formulário na primeira carga. */
+  private editarDoLink = Number(this.rota?.snapshot.queryParamMap.get('editar')) || 0;
+  /** ?novo=1 do painel Novo do menu: abre o formulário de criar na primeira carga. */
+  private criarDoLink = !!this.rota?.snapshot.queryParamMap.get('novo');
 
   /** Fonte: tudo o que veio da API. */
   registros: T[] = [];
@@ -67,9 +74,25 @@ export abstract class CadastroListBase<T extends { id: number }> implements OnIn
         next: registros => {
           this.registros = registros;
           this.applyFilters();
+          this.abrirDoLink();
         },
         error: e => this.alertService.error(extrairMensagemErro(e, `Erro ao carregar ${this.rotulo.plural}.`))
       });
+  }
+
+  private abrirDoLink(): void {
+    if (this.criarDoLink) {
+      this.criarDoLink = false;
+      this.roteador?.navigate([], { relativeTo: this.rota, queryParams: { novo: null }, queryParamsHandling: 'merge', replaceUrl: true });
+      this.openCreate();
+      return;
+    }
+    if (!this.editarDoLink) return;
+    const registro = this.registros.find(r => r.id === this.editarDoLink);
+    this.editarDoLink = 0;
+    // Tira o parâmetro da URL: recarregar a página não reabre o formulário.
+    this.roteador?.navigate([], { relativeTo: this.rota, queryParams: { editar: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    if (registro) this.onEdit(registro);
   }
 
   applyFilters() {

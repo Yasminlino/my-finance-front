@@ -1,7 +1,7 @@
 <div class="mf-pagina" [class.planejamento--com-barra]="(movel() && lista && !somenteLeitura && !mostrandoAgenda) || selecionando"
   [class.planejamento--com-fab]="movel() && mostrandoAgenda && !somenteLeitura && !selecionando">
-  <mf-page-header class="block mt-2 mb-3" [titulo]="lista?.nome ?? 'Planejamento'" [breadcrumb]="breadcrumb" [home]="home"
-    [mostrarVoltar]="true" (voltar)="voltar()">
+  <mf-page-header class="block mt-2 mb-3" [titulo]="lista?.nome ?? 'Planejamento'" [subtitulo]="resumoCabecalho" [breadcrumb]="breadcrumb" [home]="home"
+    [mostrarVoltar]="true" voltarRotulo="Meus planejamentos" (voltar)="voltar()">
     <!-- Um elemento por @if: com dois, o Angular não projeta cada um no seu lugar (o [acoes] sumia). -->
     @if (lista) {
       <mf-category-icon icone [cor]="cor" [icone]="icone" class="planejamento-icone" />
