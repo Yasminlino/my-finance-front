@@ -8,6 +8,17 @@
       <mf-field-error [control]="form.controls.nomeBanco">Informe um nome válido.</mf-field-error>
     </div>
 
+    <div class="flex gap-3">
+      <div class="flex flex-column gap-2 flex-1">
+        <label for="banco-agencia">Agência</label>
+        <input pInputText id="banco-agencia" maxlength="10" formControlName="agencia" placeholder="Opcional" />
+      </div>
+      <div class="flex flex-column gap-2 flex-1">
+        <label for="banco-conta">Número da conta</label>
+        <input pInputText id="banco-conta" maxlength="20" formControlName="numeroConta" placeholder="Opcional" />
+      </div>
+    </div>
+
     <div class="flex flex-column gap-2">
       <label for="banco-tipo">Tipo Cartão <span class="text-red-500">*</span></label>
       <p-dropdown inputId="banco-tipo" formControlName="tipoCartaoId" [options]="tiposCartao" optionLabel="nomeTipoCartao"
@@ -29,6 +40,33 @@
         placeholder="Só para cartão de crédito" [class.ng-dirty]="erro('diaVencimento')" />
       <mf-field-error [control]="form.controls.diaVencimento">Informe um dia entre 1 e 31.</mf-field-error>
     </div>
+
+    @if (ehCredito) {
+      <div class="flex flex-column gap-2">
+        <label for="banco-fechamento">Dia do fechamento da fatura</label>
+        <input pInputText id="banco-fechamento" type="number" inputmode="numeric" min="1" max="31" formControlName="diaFechamento"
+          placeholder="Ex.: 3" [class.ng-dirty]="erro('diaFechamento')" />
+        <small class="mf-hint">Depois desse dia, a listagem avisa se a fatura do mês ainda não foi importada.</small>
+        <mf-field-error [control]="form.controls.diaFechamento">Informe um dia entre 1 e 31.</mf-field-error>
+      </div>
+
+      <div class="flex align-items-center gap-2">
+        <p-inputSwitch inputId="banco-compartilhado" formControlName="compartilhado" />
+        <label for="banco-compartilhado" class="m-0 cursor-pointer">Outras pessoas usam este cartão</label>
+      </div>
+      @if (form.value.compartilhado) {
+        <div class="flex flex-column gap-2">
+          <label for="banco-pessoas">Quem usa</label>
+          <p-multiSelect inputId="banco-pessoas" formControlName="pessoasIds" [options]="opcoesPessoas" optionLabel="label" optionValue="value"
+            placeholder="Escolha as pessoas" display="chip" appendTo="body" styleClass="w-full" [class.ng-dirty]="faltaPessoa" [class.ng-invalid]="faltaPessoa" />
+          @if (faltaPessoa) {
+            <small class="p-error">Escolha quem usa o cartão.</small>
+          } @else {
+            <small class="mf-hint">Aparecem as pessoas marcadas para entrar nos acertos.</small>
+          }
+        </div>
+      }
+    }
 
     <div class="flex flex-column gap-2">
       <label for="banco-status">Status</label>

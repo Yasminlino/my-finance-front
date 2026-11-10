@@ -19,6 +19,11 @@ export class BancoService {
     return this.api.post('/CreateBanco', dto);
   }
 
+  /** Switch "Outras pessoas usam este cartão" (card #77); campo ausente não muda. */
+  compartilhar(id: number, dados: { compartilhado?: boolean; pessoasIds?: number[]; conviteDispensado?: boolean }): Observable<unknown> {
+    return this.api.put(`/CompartilharBanco/${id}`, dados);
+  }
+
   atualizar(dto: BancoCreateUpdateDto): Observable<unknown> {
     return this.api.put('/UpdateBanco', dto);
   }

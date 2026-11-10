@@ -7,6 +7,8 @@ import { of } from 'rxjs';
 import { BancoFormComponent } from './banco-form.component';
 import { BancoService } from 'src/app/core/services/banco.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
+import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 
 /**
  * Saldo inicial com a máscara única (currencyInput): número no formulário, sem parse de texto (FE-P2-10).
@@ -16,9 +18,11 @@ describe('BancoFormComponent', () => {
   let fixture: ComponentFixture<BancoFormComponent>;
   let service: jasmine.SpyObj<BancoService>;
 
+  const tipos = [{ id: 1, nomeTipoCartao: 'Conta corrente', ehCredito: false }, { id: 2, nomeTipoCartao: 'Cartão de crédito', ehCredito: true }] as TipoCartaoDto[];
   const abrir = (registro: any = null) => {
     fixture = TestBed.createComponent(BancoFormComponent);
     fixture.componentRef.setInput('registro', registro);
+    fixture.componentRef.setInput('tiposCartao', tipos);
     fixture.detectChanges();
   };
   const saldo = () => (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[formControlName=saldoInicial]')!;
@@ -32,6 +36,10 @@ describe('BancoFormComponent', () => {
       providers: [
         provideNoopAnimations(),
         { provide: BancoService, useValue: service },
+        { provide: PessoaMovimentacaoService, useValue: { listar: () => of([
+          { id: 20, nomePessoa: 'CARLOS', entraNosAcertos: true }, { id: 21, nomePessoa: 'EU', ehTitular: true, entraNosAcertos: true },
+          { id: 22, nomePessoa: 'MERCADO', entraNosAcertos: false }
+        ]) } },
         { provide: AlertService, useValue: jasmine.createSpyObj('AlertService', ['success', 'error']) }
       ]
     });
@@ -42,6 +50,42 @@ describe('BancoFormComponent', () => {
     await fixture.whenStable();
 
     expect(saldo().value).toBe('1.234,56');
+  });
+
+  it('cartão: mostra fechamento e compartilhar; só pessoas dos acertos, sem o Eu', () => {
+    abrir({ id: 5, nomeBanco: 'NuBank', saldoInicial: 0, ativo: true, tipoCartaoId: 2, compartilhado: true, pessoasIds: [20] });
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(el.querySelector('#banco-fechamento')).not.toBeNull();
+    expect(fixture.componentInstance.opcoesPessoas.map(o => o.label)).toEqual(['CARLOS']);
+  });
+
+  it('conta corrente não mostra nada de compartilhar e salva sem pessoas', () => {
+    abrir({ id: 6, nomeBanco: 'Caixa', saldoInicial: 0, ativo: true, tipoCartaoId: 1, compartilhado: true, pessoasIds: [20] });
+    expect((fixture.nativeElement as HTMLElement).querySelector('#banco-compartilhado')).toBeNull();
+
+    fixture.componentInstance.save();
+
+    expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ compartilhado: false, pessoasIds: [], diaFechamento: null }));
+  });
+
+  it('compartilhado sem ninguém não salva; editar mantém o convite dispensado', () => {
+    abrir({ id: 5, nomeBanco: 'NuBank', saldoInicial: 0, ativo: true, tipoCartaoId: 2, conviteCompartilharDispensado: true });
+    fixture.componentInstance.form.patchValue({ compartilhado: true, pessoasIds: [] });
+    fixture.componentInstance.save();
+    expect(service.atualizar).not.toHaveBeenCalled();
+
+    fixture.componentInstance.form.patchValue({ pessoasIds: [20], diaFechamento: 3 });
+    fixture.componentInstance.save();
+    expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({
+      compartilhado: true, pessoasIds: [20], diaFechamento: 3, conviteCompartilharDispensado: true
+    }));
+  });
+
+  it('editar mantém agência e número da conta', () => {
+    abrir({ id: 6, nomeBanco: 'Caixa', saldoInicial: 0, ativo: true, tipoCartaoId: 1, agencia: '1234', numeroConta: '5678-9' });
+    fixture.componentInstance.save();
+    expect(service.atualizar).toHaveBeenCalledWith(jasmine.objectContaining({ agencia: '1234', numeroConta: '5678-9' }));
   });
 
   it('salva o saldo como número', () => {
