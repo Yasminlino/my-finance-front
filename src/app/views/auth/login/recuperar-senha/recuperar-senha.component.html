@@ -1,0 +1,37 @@
+<app-moldura-acesso>
+  @if (etapa === 'formulario') {
+    <h1 class="titulo">Recuperar senha</h1>
+    <p class="subtitulo">Informe o e-mail da sua conta. Vamos mandar um link para você criar uma senha nova.</p>
+
+    <p-message *ngIf="erroApi" severity="error" styleClass="w-full mb-3" [text]="erroApi" />
+
+    <form (ngSubmit)="enviar()" novalidate class="flex flex-column gap-3">
+      <div class="flex flex-column gap-2">
+        <label for="email" class="rotulo">E-mail</label>
+        <p-iconField iconPosition="left">
+          <p-inputIcon styleClass="pi pi-envelope" />
+          <input pInputText id="email" type="email" [formControl]="email" autocomplete="email" autocapitalize="none"
+            placeholder="voce@email.com" class="w-full" [class.ng-invalid]="!!erroEmail" [class.ng-dirty]="!!erroEmail" />
+        </p-iconField>
+        <small class="p-error" *ngIf="erroEmail">{{ erroEmail }}</small>
+      </div>
+      <p-button type="submit" [label]="enviando ? 'Enviando...' : 'Enviar link'" [loading]="enviando" styleClass="w-full botao" />
+      <p-button label="Voltar para o login" icon="pi pi-arrow-left" [text]="true" styleClass="w-full botao" routerLink="/login" />
+    </form>
+  } @else {
+    <h1 class="titulo">Confira seu e-mail</h1>
+    <p class="subtitulo">
+      Se existir uma conta com <strong>{{ email.value }}</strong>, enviamos um link para criar uma senha nova.
+      Ele vale por 30 minutos.
+    </p>
+
+    <p-message *ngIf="erroApi" severity="error" styleClass="w-full mb-3" [text]="erroApi" />
+    <p-message *ngIf="reenviado && !erroApi" severity="success" styleClass="w-full mb-3" text="Enviamos de novo. Confira também o spam." />
+
+    <div class="flex flex-column gap-3">
+      <p-button [label]="contagem.liberado() ? 'Reenviar e-mail' : 'Reenviar em ' + contagem.segundos() + 's'" icon="pi pi-refresh"
+        [outlined]="true" [disabled]="!contagem.liberado() || enviando" [loading]="enviando" styleClass="w-full botao" (onClick)="enviar()" />
+      <p-button label="Voltar para o login" icon="pi pi-arrow-left" [text]="true" styleClass="w-full botao" routerLink="/login" />
+    </div>
+  }
+</app-moldura-acesso>

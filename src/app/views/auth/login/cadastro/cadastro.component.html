@@ -1,0 +1,70 @@
+<app-moldura-acesso>
+  @if (etapa === 'formulario') {
+    <h1 class="titulo">Criar conta</h1>
+    <p class="subtitulo">Comece a organizar suas finanças.</p>
+
+    <p-message *ngIf="erroApi" severity="error" styleClass="w-full mb-3" [text]="erroApi" />
+
+    <form (ngSubmit)="enviar()" [formGroup]="form" novalidate class="flex flex-column gap-3">
+      <div class="flex flex-column gap-2">
+        <label for="nome" class="rotulo">Nome</label>
+        <p-iconField iconPosition="left">
+          <p-inputIcon styleClass="pi pi-user" />
+          <input pInputText id="nome" type="text" formControlName="nome" autocomplete="name" placeholder="Como quer ser chamado"
+            class="w-full" [class.ng-invalid]="!!erro('nome')" [class.ng-dirty]="!!erro('nome')" />
+        </p-iconField>
+        <small class="p-error" *ngIf="erro('nome')">{{ erro('nome') }}</small>
+      </div>
+
+      <div class="flex flex-column gap-2">
+        <label for="email" class="rotulo">E-mail</label>
+        <p-iconField iconPosition="left">
+          <p-inputIcon styleClass="pi pi-envelope" />
+          <input pInputText id="email" type="email" formControlName="email" autocomplete="email" autocapitalize="none"
+            placeholder="voce@email.com" class="w-full" [class.ng-invalid]="!!erro('email')" [class.ng-dirty]="!!erro('email')" />
+        </p-iconField>
+        <small class="p-error" *ngIf="erro('email')">{{ erro('email') }}</small>
+      </div>
+
+      <div class="flex flex-column gap-2">
+        <label for="senha" class="rotulo">Senha</label>
+        <p-iconField iconPosition="left" class="campo-senha">
+          <p-inputIcon styleClass="pi pi-lock" />
+          <p-password inputId="senha" formControlName="senha" [toggleMask]="true" [feedback]="false" autocomplete="new-password"
+            placeholder="Crie uma senha" styleClass="w-full" inputStyleClass="w-full"
+            [class.ng-invalid]="!!erro('senha')" [class.ng-dirty]="!!erro('senha')" />
+        </p-iconField>
+        <app-requisitos-senha [senha]="form.controls.senha.value" />
+      </div>
+
+      <div class="flex flex-column gap-2">
+        <label for="confirmar" class="rotulo">Confirmar senha</label>
+        <p-iconField iconPosition="left" class="campo-senha">
+          <p-inputIcon styleClass="pi pi-lock" />
+          <p-password inputId="confirmar" formControlName="confirmar" [toggleMask]="true" [feedback]="false" autocomplete="new-password"
+            placeholder="Repita a senha" styleClass="w-full" inputStyleClass="w-full"
+            [class.ng-invalid]="!!erro('confirmar')" [class.ng-dirty]="!!erro('confirmar')" />
+        </p-iconField>
+        <small class="p-error" *ngIf="erro('confirmar')">{{ erro('confirmar') }}</small>
+      </div>
+
+      <p-button type="submit" [label]="enviando ? 'Criando...' : 'Criar conta'" [loading]="enviando" styleClass="w-full botao" />
+    </form>
+
+    <p class="text-center mt-4 mb-0">Já tem conta? <a routerLink="/login" class="link">Entrar</a></p>
+  } @else {
+    <h1 class="titulo">Verifique seu e-mail</h1>
+    <p class="subtitulo">
+      Enviamos um link para <strong>{{ emailEnviado }}</strong>. Abra para ativar sua conta. O link vale por 24 horas.
+    </p>
+
+    <p-message *ngIf="erroApi" severity="error" styleClass="w-full mb-3" [text]="erroApi" />
+    <p-message *ngIf="reenviado && !erroApi" severity="success" styleClass="w-full mb-3" text="Enviamos de novo. Confira também o spam." />
+
+    <div class="flex flex-column gap-3">
+      <p-button [label]="contagem.liberado() ? 'Reenviar e-mail' : 'Reenviar em ' + contagem.segundos() + 's'" icon="pi pi-refresh"
+        [outlined]="true" [disabled]="!contagem.liberado()" styleClass="w-full botao" (onClick)="reenviar()" />
+      <p-button label="Voltar para o login" icon="pi pi-arrow-left" [text]="true" styleClass="w-full botao" routerLink="/login" />
+    </div>
+  }
+</app-moldura-acesso>

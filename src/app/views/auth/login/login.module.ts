@@ -12,7 +12,7 @@ import { MessageModule } from 'primeng/message';
 
 import { LoginRoutingModule } from './login-routing.module';
 import { LoginComponent } from './login-form/login.component';
-import { RegistroUsuarioComponent } from '../shared/components/registro-usuario/registro-usuario.component';
+import { MolduraAcessoComponent } from '../shared/components/moldura-acesso/moldura-acesso.component';
 
 @NgModule({
   declarations: [
@@ -22,7 +22,7 @@ import { RegistroUsuarioComponent } from '../shared/components/registro-usuario/
     CommonModule,
     ReactiveFormsModule,
     LoginRoutingModule,
-    RegistroUsuarioComponent,
+    MolduraAcessoComponent,
     InputTextModule,
     IconFieldModule,
     InputIconModule,

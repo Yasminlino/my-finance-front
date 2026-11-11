@@ -1,27 +1,65 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
+import { AcessoService } from 'src/app/core/services/acesso.service';
+import { mensagemDoErro, emailValido } from '../../shared/acesso.regras';
+import { ContagemReenvio } from '../../shared/contagem-reenvio';
+import { MolduraAcessoComponent } from '../../shared/components/moldura-acesso/moldura-acesso.component';
 
 /**
- * "Esqueci minha senha" na Parte 1 do card #70: avisa que está chegando. O fluxo de verdade
- * (e-mail com link e redefinição) vem na Parte 2.
+ * "Esqueci a senha" (card #50): pede o e-mail e mostra uma mensagem neutra (a API não diz se ele tem
+ * conta). O link vale 30 minutos; reenvio liberado a cada 60s.
  */
 @Component({
   selector: 'app-recuperar-senha',
   standalone: true,
-  imports: [RouterLink, ButtonModule],
-  template: `
-    <div class="flex align-items-center justify-content-center min-h-screen p-3 surface-ground">
-      <div class="surface-card shadow-1 border-round p-4 w-full text-center" style="max-width: 25rem">
-        <i class="pi pi-envelope text-4xl text-primary mb-3"></i>
-        <h1 class="text-2xl font-bold m-0 mb-2">Recuperar senha</h1>
-        <p class="text-color-secondary mt-0 mb-4">
-          Em breve você vai poder receber um link por e-mail para criar uma senha nova.
-          Por enquanto, fale com o suporte.
-        </p>
-        <p-button label="Voltar para o login" icon="pi pi-arrow-left" [outlined]="true" styleClass="w-full" routerLink="/login" />
-      </div>
-    </div>
-  `
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, ButtonModule, IconFieldModule, InputIconModule, InputTextModule,
+    MessageModule, MolduraAcessoComponent],
+  templateUrl: './recuperar-senha.component.html'
 })
-export class RecuperarSenhaComponent {}
+export class RecuperarSenhaComponent implements OnDestroy {
+  etapa: 'formulario' | 'enviado' = 'formulario';
+  enviando = false;
+  tentouEnviar = false;
+  erroApi = '';
+  reenviado = false;
+  readonly email = new FormControl('', { nonNullable: true, validators: [Validators.required, emailValido] });
+  readonly contagem = new ContagemReenvio();
+
+  constructor(private acesso: AcessoService) {
+    this.email.valueChanges.subscribe(() => (this.erroApi = ''));
+  }
+
+  ngOnDestroy() {
+    this.contagem.parar();
+  }
+
+  get erroEmail(): string {
+    if (!(this.email.touched || this.tentouEnviar) || this.email.valid) return '';
+    return this.email.hasError('required') ? 'Informe seu e-mail.' : 'Informe um e-mail válido.';
+  }
+
+  enviar() {
+    this.tentouEnviar = true;
+    if (this.email.invalid) return;
+
+    this.enviando = true;
+    this.acesso.esqueciSenha(this.email.value.trim())
+      .pipe(finalize(() => (this.enviando = false)))
+      .subscribe({
+        next: () => {
+          if (this.etapa === 'enviado') this.reenviado = true;
+          this.etapa = 'enviado';
+          this.contagem.iniciar();
+        },
+        error: (err: unknown) => (this.erroApi = mensagemDoErro(err)),
+      });
+  }
+}

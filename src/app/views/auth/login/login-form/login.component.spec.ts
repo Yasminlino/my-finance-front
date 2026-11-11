@@ -6,21 +6,24 @@ import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angul
 import { Subject, of, throwError } from 'rxjs';
 
 import { LoginComponent, destinoSeguro } from './login.component';
+import { AcessoService } from 'src/app/core/services/acesso.service';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { LoginModule } from '../login.module';
 
 /**
  * Login (card #70): erros por campo e recusa neutra na própria tela (sem alert), aviso de sessão
  * expirada, volta para a página de onde a pessoa veio e "Lembrar de mim" de verdade.
+ * Card #50: e-mail não confirmado (403) com "Reenviar link" e avisos de quem volta de outra tela.
  */
 describe('LoginComponent', () => {
   let auth: jasmine.SpyObj<AuthService>;
+  let acesso: jasmine.SpyObj<AcessoService>;
   let router: jasmine.SpyObj<Router>;
   let ultimoUsuario: string | null;
 
   const criar = (query: Record<string, string> = {}) => {
     const route = { snapshot: { queryParamMap: convertToParamMap(query) } } as unknown as ActivatedRoute;
-    const component = new LoginComponent(new FormBuilder(), auth, router, route);
+    const component = new LoginComponent(new FormBuilder(), auth, router, route, acesso);
     component.ngOnInit();
     return component;
   };
@@ -33,6 +36,7 @@ describe('LoginComponent', () => {
     auth = jasmine.createSpyObj<AuthService>('AuthService', ['autenticar', 'tokenValido']);
     Object.defineProperty(auth, 'ultimoUsuario', { get: () => ultimoUsuario });
     auth.tokenValido.and.returnValue(false);
+    acesso = jasmine.createSpyObj<AcessoService>('AcessoService', ['reenviarConfirmacao']);
     router = jasmine.createSpyObj<Router>('Router', ['navigateByUrl']);
     spyOn(window, 'alert');
   });
@@ -112,6 +116,51 @@ describe('LoginComponent', () => {
 
       expect(component.erroLogin).toBe('');
     });
+
+    it('excesso de tentativas mostra a mensagem da API', () => {
+      auth.autenticar.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 429, error: { message: 'Muitas tentativas. Aguarde um minuto e tente de novo.' }
+      })));
+      const component = criar();
+      preencher(component);
+
+      component.submit();
+
+      expect(component.erroLogin).toBe('Muitas tentativas. Aguarde um minuto e tente de novo.');
+    });
+  });
+
+  describe('e-mail não confirmado (card #50)', () => {
+    const naoConfirmado = () => {
+      auth.autenticar.and.returnValue(throwError(() => new HttpErrorResponse({ status: 403, error: { message: 'Confirme seu e-mail para entrar.' } })));
+      const component = criar();
+      component.form.setValue({ username: ' ana@exemplo.com ', password: 'senha', remember: false });
+      component.submit();
+      return component;
+    };
+
+    it('403 mostra o aviso de confirmar, sem erro de recusa', () => {
+      const component = naoConfirmado();
+
+      expect(component.naoConfirmado).toBeTrue();
+      expect(component.erroLogin).toBe('');
+    });
+
+    it('"Reenviar link" manda para o e-mail digitado', () => {
+      acesso.reenviarConfirmacao.and.returnValue(of(void 0));
+      const component = naoConfirmado();
+
+      component.reenviarConfirmacao();
+
+      expect(acesso.reenviarConfirmacao).toHaveBeenCalledWith('ana@exemplo.com');
+      expect(component.reenviado).toBeTrue();
+    });
+
+    it('mostra os avisos de quem volta de outra tela', () => {
+      expect(criar({ motivo: 'confirmado' }).aviso).toBe('E-mail confirmado. Entre para começar.');
+      expect(criar({ motivo: 'senha-alterada' }).aviso).toBe('Senha alterada. Entre com a nova senha.');
+      expect(criar({ motivo: 'expirada' }).aviso).toBe('');
+    });
   });
 
   describe('sessão expirada e volta', () => {
@@ -175,6 +224,7 @@ describe('LoginComponent', () => {
           provideNoopAnimations(),
           provideRouter([]),
           { provide: AuthService, useValue: auth },
+          { provide: AcessoService, useValue: acesso },
           { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(query) } } }
         ]
       });
@@ -197,6 +247,13 @@ describe('LoginComponent', () => {
       const link = el(montar()).querySelector<HTMLAnchorElement>('a[href*="recuperar-senha"]');
 
       expect(link?.textContent).toContain('Esqueci a senha');
+    });
+
+    it('"Criar uma conta" leva ao cadastro e a moldura mostra a marca', () => {
+      const fixture = montar();
+
+      expect(el(fixture).querySelector('p-button[routerLink="/login/cadastro"]')?.textContent).toContain('Criar uma conta');
+      expect(el(fixture).querySelector('app-moldura-acesso .marca-logo img')).not.toBeNull();
     });
 
     it('o foco começa no usuário', () => {

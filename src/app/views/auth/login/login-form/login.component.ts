@@ -3,10 +3,17 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
+import { AcessoService } from 'src/app/core/services/acesso.service';
 import { AuthService } from 'src/app/core/services/auth.service';
+import { mensagemDoErro } from '../../shared/acesso.regras';
 
 const MENSAGEM_RECUSA = 'Usuário/e-mail ou senha incorretos.';
-const MENSAGEM_CONEXAO = 'Não foi possível conectar. Tente novamente em instantes.';
+
+/** Avisos de quem volta ao login vindo de outra tela (card #50), pelo ?motivo=. */
+const AVISOS: Record<string, string> = {
+  confirmado: 'E-mail confirmado. Entre para começar.',
+  'senha-alterada': 'Senha alterada. Entre com a nova senha.',
+};
 
 /**
  * Para onde ir depois de entrar: só caminho interno do app. Fora disso (outro site, "//",
@@ -21,23 +28,28 @@ export function destinoSeguro(url: string | null | undefined): string {
  * Login (card #70): erros por campo e recusa neutra na tela, aviso de sessão expirada,
  * volta para a página de onde a pessoa veio (returnUrl) e "Lembrar de mim" de verdade
  * (o AuthService decide onde a sessão fica; o usuário lembrado vem preenchido).
+ * Card #50: senha certa com e-mail não confirmado (403) oferece reenviar o link; avisos de e-mail
+ * confirmado e senha alterada. A moldura (painel da marca) e os estilos vêm de app-moldura-acesso.
  */
 @Component({
   selector: 'app-login',
-  templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
+  templateUrl: './login.component.html'
 })
 export class LoginComponent implements OnInit, AfterViewInit {
   loading = false;
-  showModalCreate = false;
   /** Tentou enviar: os erros aparecem mesmo nos campos não tocados. */
   enviado = false;
   erroLogin = '';
   capsLock = false;
   sessaoExpirada = false;
+  /** Aviso de quem voltou de outra tela de acesso (e-mail confirmado, senha alterada). */
+  aviso = '';
+  /** Senha certa, e-mail ainda não confirmado (403). */
+  naoConfirmado = false;
+  reenviando = false;
+  reenviado = false;
   /** Usuário lembrado: o foco começa na senha. */
   focarSenha = false;
-  readonly ano = new Date().getFullYear();
   private destino = '/home';
 
   readonly form = this.fb.nonNullable.group({
@@ -51,6 +63,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
     private auth: AuthService,
     private router: Router,
     private route: ActivatedRoute,
+    private acesso: AcessoService,
     private elemento?: ElementRef<HTMLElement>
   ) {}
 
@@ -58,6 +71,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
     const query = this.route.snapshot.queryParamMap;
     this.destino = destinoSeguro(query.get('returnUrl'));
     this.sessaoExpirada = query.get('motivo') === 'expirada';
+    this.aviso = AVISOS[query.get('motivo') ?? ''] ?? '';
 
     if (this.auth.tokenValido()) {
       this.router.navigateByUrl(this.destino, { replaceUrl: true });
@@ -70,7 +84,10 @@ export class LoginComponent implements OnInit, AfterViewInit {
       this.focarSenha = true;
     }
 
-    this.form.valueChanges.subscribe(() => (this.erroLogin = ''));
+    this.form.valueChanges.subscribe(() => {
+      this.erroLogin = '';
+      this.naoConfirmado = false;
+    });
   }
 
   ngAfterViewInit() {
@@ -89,12 +106,15 @@ export class LoginComponent implements OnInit, AfterViewInit {
     this.capsLock = evento.getModifierState?.('CapsLock') ?? false;
   }
 
-  openRegister() {
-    this.showModalCreate = true;
-  }
-
-  closeRegister() {
-    this.showModalCreate = false;
+  /** Reenvia o link de confirmação para o e-mail digitado (a API responde igual, tenha ou não conta). */
+  reenviarConfirmacao() {
+    this.reenviando = true;
+    this.acesso.reenviarConfirmacao(this.form.controls.username.value.trim())
+      .pipe(finalize(() => (this.reenviando = false)))
+      .subscribe({
+        next: () => (this.reenviado = true),
+        error: (err: unknown) => (this.erroLogin = mensagemDoErro(err)),
+      });
   }
 
   submit() {
@@ -104,6 +124,8 @@ export class LoginComponent implements OnInit, AfterViewInit {
     const { username, password, remember } = this.form.getRawValue();
     this.loading = true;
     this.erroLogin = '';
+    this.naoConfirmado = false;
+    this.reenviado = false;
     this.form.disable({ emitEvent: false });
 
     this.auth.autenticar(username.trim(), password, remember)
@@ -120,9 +142,14 @@ export class LoginComponent implements OnInit, AfterViewInit {
           }
         },
         error: (err: unknown) => {
-          // 401 é recusa (conta inexistente ou senha errada, a API não diz qual); o resto, falha de conexão.
-          const recusa = err instanceof HttpErrorResponse && err.status === 401;
-          this.erroLogin = recusa ? MENSAGEM_RECUSA : MENSAGEM_CONEXAO;
+          // 401 é recusa (conta inexistente ou senha errada, a API não diz qual); 403, e-mail não confirmado;
+          // outros 4xx trazem a mensagem da API (429: muitas tentativas); o resto, falha de conexão.
+          const status = err instanceof HttpErrorResponse ? err.status : 0;
+          if (status === 403) {
+            this.naoConfirmado = true;
+          } else {
+            this.erroLogin = status === 401 ? MENSAGEM_RECUSA : mensagemDoErro(err);
+          }
         }
       });
   }

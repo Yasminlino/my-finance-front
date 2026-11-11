@@ -1,0 +1,40 @@
+<app-moldura-acesso>
+  @switch (etapa) {
+    @case ('confirmando') {
+      <div class="flex flex-column align-items-center gap-3 py-5 text-center">
+        <p-progressSpinner styleClass="w-3rem h-3rem" strokeWidth="4" />
+        <p class="subtitulo m-0">Confirmando seu e-mail...</p>
+      </div>
+    }
+    @case ('erro') {
+      <h1 class="titulo">Não deu para confirmar agora</h1>
+      <p-message severity="error" styleClass="w-full my-3" [text]="erroApi" />
+      <p-button label="Tentar de novo" icon="pi pi-refresh" styleClass="w-full botao" (onClick)="confirmar()" />
+    }
+    @case ('reenviado') {
+      <h1 class="titulo">Verifique seu e-mail</h1>
+      <p class="subtitulo">Se houver uma conta esperando confirmação com <strong>{{ email.value }}</strong>, enviamos um link novo.</p>
+      <p-button label="Voltar para o login" icon="pi pi-arrow-left" [outlined]="true" styleClass="w-full botao" routerLink="/login" />
+    }
+    @default {
+      <h1 class="titulo">Link expirado</h1>
+      <p class="subtitulo">Este link expirou ou já foi usado. Informe seu e-mail para receber um novo.</p>
+
+      <p-message *ngIf="erroApi" severity="error" styleClass="w-full mb-3" [text]="erroApi" />
+
+      <form (ngSubmit)="reenviar()" novalidate class="flex flex-column gap-3">
+        <div class="flex flex-column gap-2">
+          <label for="email" class="rotulo">E-mail</label>
+          <p-iconField iconPosition="left">
+            <p-inputIcon styleClass="pi pi-envelope" />
+            <input pInputText id="email" type="email" [formControl]="email" autocomplete="email" autocapitalize="none"
+              placeholder="voce@email.com" class="w-full" [class.ng-invalid]="!!erroEmail" [class.ng-dirty]="!!erroEmail" />
+          </p-iconField>
+          <small class="p-error" *ngIf="erroEmail">{{ erroEmail }}</small>
+        </div>
+        <p-button type="submit" label="Enviar novo link" [loading]="enviando" styleClass="w-full botao" />
+        <p-button label="Voltar para o login" icon="pi pi-arrow-left" [text]="true" styleClass="w-full botao" routerLink="/login" />
+      </form>
+    }
+  }
+</app-moldura-acesso>

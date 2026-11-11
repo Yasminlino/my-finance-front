@@ -1,0 +1,34 @@
+<div class="mf-acesso">
+  <!-- Painel da marca: desktop ao lado do formulário; no tablet e no celular, faixa no topo -->
+  <aside class="marca">
+    <!-- Celular e tablet: logo com o slogan (versão clara) e a frase numa faixa com cantos arredondados embaixo -->
+    <div class="marca-celular">
+      <span class="marca-logo"><img src="assets/Logo_Kanfy_slogan_clara.webp" alt="Kanfy"></span>
+      <p class="marca-celular-frase">Contas, extratos e planejamento do mês num só lugar.</p>
+    </div>
+
+    <div class="marca-topo">
+      <span class="marca-logo"><img src="assets/Logo_Kanfy_slogan_clara.webp" alt="Kanfy"></span>
+    </div>
+
+    <ul class="marca-beneficios">
+      <li><i class="pi pi-calendar-clock"></i><span><strong>Contas a pagar</strong> sem esquecer nenhum vencimento</span></li>
+      <li><i class="pi pi-wallet"></i><span><strong>Extrato e acertos</strong> para saber quem deve o quê</span></li>
+      <li><i class="pi pi-chart-line"></i><span><strong>Planejamento</strong> do mês e das compras</span></li>
+    </ul>
+
+    <div class="marca-exemplo" aria-hidden="true">
+      <div class="exemplo-rotulo">Saldo do mês</div>
+      <div class="exemplo-valor">R$ 2.340,00</div>
+      <div class="exemplo-linha"><span>Aluguel · vence dia 10</span><span>R$ 1.200,00</span></div>
+      <div class="exemplo-linha"><span>Internet · vence dia 15</span><span>R$ 99,90</span></div>
+    </div>
+  </aside>
+
+  <main class="formulario">
+    <div class="formulario-conteudo">
+      <ng-content />
+      <footer class="rodape">© {{ ano }} Kanfy</footer>
+    </div>
+  </main>
+</div>

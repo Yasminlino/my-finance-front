@@ -1,0 +1,41 @@
+<app-moldura-acesso>
+  @if (linkInvalido) {
+    <h1 class="titulo">Link expirado</h1>
+    <p class="subtitulo">Este link expirou ou já foi usado. Peça outro para criar sua senha nova.</p>
+    <div class="flex flex-column gap-3">
+      <p-button label="Pedir outro link" icon="pi pi-envelope" styleClass="w-full botao" routerLink="/login/recuperar-senha" />
+      <p-button label="Voltar para o login" icon="pi pi-arrow-left" [text]="true" styleClass="w-full botao" routerLink="/login" />
+    </div>
+  } @else {
+    <h1 class="titulo">Criar senha nova</h1>
+    <p class="subtitulo">Escolha uma senha que você ainda não usou aqui.</p>
+
+    <p-message *ngIf="erroApi" severity="error" styleClass="w-full mb-3" [text]="erroApi" />
+
+    <form (ngSubmit)="enviar()" [formGroup]="form" novalidate class="flex flex-column gap-3">
+      <div class="flex flex-column gap-2">
+        <label for="senha" class="rotulo">Senha nova</label>
+        <p-iconField iconPosition="left" class="campo-senha">
+          <p-inputIcon styleClass="pi pi-lock" />
+          <p-password inputId="senha" formControlName="senha" [toggleMask]="true" [feedback]="false" autocomplete="new-password"
+            placeholder="Crie uma senha" styleClass="w-full" inputStyleClass="w-full"
+            [class.ng-invalid]="!!erro('senha')" [class.ng-dirty]="!!erro('senha')" />
+        </p-iconField>
+        <app-requisitos-senha [senha]="form.controls.senha.value" />
+      </div>
+
+      <div class="flex flex-column gap-2">
+        <label for="confirmar" class="rotulo">Confirmar senha</label>
+        <p-iconField iconPosition="left" class="campo-senha">
+          <p-inputIcon styleClass="pi pi-lock" />
+          <p-password inputId="confirmar" formControlName="confirmar" [toggleMask]="true" [feedback]="false" autocomplete="new-password"
+            placeholder="Repita a senha" styleClass="w-full" inputStyleClass="w-full"
+            [class.ng-invalid]="!!erro('confirmar')" [class.ng-dirty]="!!erro('confirmar')" />
+        </p-iconField>
+        <small class="p-error" *ngIf="erro('confirmar')">{{ erro('confirmar') }}</small>
+      </div>
+
+      <p-button type="submit" [label]="enviando ? 'Salvando...' : 'Salvar senha nova'" [loading]="enviando" styleClass="w-full botao" />
+    </form>
+  }
+</app-moldura-acesso>
