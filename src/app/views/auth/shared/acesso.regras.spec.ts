@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { FormControl, FormGroup } from '@angular/forms';
 
-import { ehLinkInvalido, emailValido, mensagemDoErro, requisitosSenha, senhaForte, senhasIguais } from './acesso.regras';
+import { ehLinkInvalido, emailValido, mensagemDoErro, requisitosSenha, senhaForte, senhasIguais, usuarioValido } from './acesso.regras';
 import { ContagemReenvio } from './contagem-reenvio';
 
 /** Card #50: regras das telas de acesso (as da senha são as mesmas da API). */
@@ -18,6 +18,15 @@ describe('acesso.regras', () => {
   it('e-mail com espaço nas pontas (preenchimento automático) ainda é válido', () => {
     expect(emailValido(new FormControl(' ana@exemplo.com '))).toBeNull();
     expect(emailValido(new FormControl('ana@'))).toEqual({ email: true });
+  });
+
+  it('nome de usuário: 3 a 30, começa por letra, sem acento nem "@" (card #84)', () => {
+    for (const valido of ['ana', 'Ana.Lima', 'ana_2-b', ' ana ', 'a12345678901234567890123456789']) {
+      expect(usuarioValido(new FormControl(valido))).withContext(valido).toBeNull();
+    }
+    for (const invalido of ['', 'ab', '1ana', 'ana@lima', 'ana lima', 'anã', 'a123456789012345678901234567890']) {
+      expect(usuarioValido(new FormControl(invalido))).withContext(invalido).toEqual({ usuarioInvalido: true });
+    }
   });
 
   it('confirmação precisa ser igual à senha', () => {

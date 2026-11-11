@@ -17,6 +17,21 @@
       </div>
 
       <div class="flex flex-column gap-2">
+        <label for="usuario" class="rotulo">Nome de usuário</label>
+        <p-iconField iconPosition="left">
+          <p-inputIcon styleClass="pi pi-at" />
+          <input pInputText id="usuario" type="text" formControlName="usuario" autocomplete="username" autocapitalize="none"
+            spellcheck="false" maxlength="30" placeholder="ex.: ana.lima" class="w-full"
+            [class.ng-invalid]="!!erro('usuario')" [class.ng-dirty]="!!erro('usuario')" />
+        </p-iconField>
+        @if (erro('usuario')) {
+          <small class="p-error">{{ erro('usuario') }}</small>
+        } @else {
+          <small class="text-color-secondary">Você pode entrar com ele ou com o e-mail.</small>
+        }
+      </div>
+
+      <div class="flex flex-column gap-2">
         <label for="email" class="rotulo">E-mail</label>
         <p-iconField iconPosition="left">
           <p-inputIcon styleClass="pi pi-envelope" />

@@ -10,8 +10,8 @@ import { ApiService } from './api.service';
 export class AcessoService {
   constructor(private api: ApiService) {}
 
-  cadastrar(nome: string, email: string, senha: string): Observable<void> {
-    return this.api.post<void>('/cadastro', { nome, email, senha });
+  cadastrar(nome: string, usuario: string, email: string, senha: string): Observable<void> {
+    return this.api.post<void>('/cadastro', { nome, usuario, email, senha });
   }
 
   confirmarEmail(token: string): Observable<void> {

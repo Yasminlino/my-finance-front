@@ -29,6 +29,15 @@ export const senhaForte: ValidatorFn = (controle: AbstractControl): ValidationEr
 export const emailValido: ValidatorFn = (controle: AbstractControl): ValidationErrors | null =>
   Validators.email(new FormControl(String(controle.value ?? '').trim()));
 
+/**
+ * Nome de usuário (card #84), igual à API: de 3 a 30 caracteres, começando por letra; só letras sem acento,
+ * números, ".", "_" e "-". Maiúsculas valem (a API grava em minúsculas).
+ */
+export const MENSAGEM_USUARIO_INVALIDO = 'Use de 3 a 30 caracteres, começando por letra: letras sem acento, números, ponto, _ ou -.';
+
+export const usuarioValido: ValidatorFn = (controle: AbstractControl): ValidationErrors | null =>
+  /^[a-z][a-z0-9._-]{2,29}$/i.test(String(controle.value ?? '').trim()) ? null : { usuarioInvalido: true };
+
 /** No grupo: "confirmar" igual a "senha". */
 export const senhasIguais: ValidatorFn = (grupo: AbstractControl): ValidationErrors | null => {
   const senha = grupo.get('senha')?.value;

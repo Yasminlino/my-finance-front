@@ -27,7 +27,7 @@ describe('CadastroComponent', () => {
   afterEach(() => tela().ngOnDestroy());
 
   const preencher = (senha = 'Senha123', confirmar = senha) =>
-    tela().form.setValue({ nome: ' Ana ', email: ' ana@exemplo.com ', senha, confirmar });
+    tela().form.setValue({ nome: ' Ana ', usuario: ' Ana.Lima ', email: ' ana@exemplo.com ', senha, confirmar });
 
   it('campos vazios não enviam e mostram o erro de cada um', () => {
     tela().enviar();
@@ -35,6 +35,7 @@ describe('CadastroComponent', () => {
 
     expect(acesso.cadastrar).not.toHaveBeenCalled();
     expect(texto()).toContain('Informe seu nome.');
+    expect(texto()).toContain('Escolha um nome de usuário.');
     expect(texto()).toContain('Informe seu e-mail.');
     expect(texto()).toContain('Repita a senha.');
   });
@@ -46,6 +47,34 @@ describe('CadastroComponent', () => {
     expect(acesso.cadastrar).not.toHaveBeenCalled();
     expect(tela().erro('senha')).toContain('8 caracteres');
     expect(tela().erro('confirmar')).toBe('As senhas não são iguais.');
+  });
+
+  it('nome de usuário fora das regras não envia (card #84)', () => {
+    for (const invalido of ['ab', '1ana', 'ana@lima', 'ana lima', 'anã']) {
+      preencher();
+      tela().form.controls.usuario.setValue(invalido);
+      tela().enviar();
+
+      expect(tela().erro('usuario')).withContext(invalido).toContain('de 3 a 30 caracteres');
+    }
+    expect(acesso.cadastrar).not.toHaveBeenCalled();
+  });
+
+  it('nome de usuário já em uso aparece embaixo do campo e some ao mudar', () => {
+    acesso.cadastrar.and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 409, error: { message: 'Este nome de usuário já está em uso. Escolha outro.' }
+    })));
+    preencher();
+
+    tela().enviar();
+    fixture.detectChanges();
+
+    expect(tela().erro('usuario')).toBe('Este nome de usuário já está em uso. Escolha outro.');
+    expect(tela().erroApi).toBe('');
+    expect(tela().etapa).toBe('formulario');
+
+    tela().form.controls.usuario.setValue('ana.lima2');
+    expect(tela().erro('usuario')).toBe('');
   });
 
   it('os requisitos da senha marcam enquanto digita', () => {
@@ -62,7 +91,7 @@ describe('CadastroComponent', () => {
     tela().enviar();
     fixture.detectChanges();
 
-    expect(acesso.cadastrar).toHaveBeenCalledWith('Ana', 'ana@exemplo.com', 'Senha123');
+    expect(acesso.cadastrar).toHaveBeenCalledWith('Ana', 'Ana.Lima', 'ana@exemplo.com', 'Senha123');
     expect(tela().etapa).toBe('enviado');
     expect(texto()).toContain('Verifique seu e-mail');
     expect(texto()).toContain('ana@exemplo.com');
