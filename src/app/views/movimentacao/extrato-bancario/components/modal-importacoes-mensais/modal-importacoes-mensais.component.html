@@ -1,17 +1,12 @@
-<p-dialog [visible]="true" [modal]="true" [draggable]="false" [resizable]="false" [closable]="!movel()" [focusOnShow]="false"
-  [style]="movel() ? { width: '100vw', height: '100dvh', maxHeight: '100dvh', borderRadius: '0' } : { width: '76rem', maxWidth: '96vw' }"
-  [contentStyle]="{ padding: '0' }" (visibleChange)="!$event && fechar()">
-  <ng-template pTemplate="header">
-    <div class="imp-topo">
-      @if (movel()) {
-        <p-button icon="pi pi-arrow-left" [text]="true" severity="secondary" ariaLabel="Voltar" (onClick)="fechar()" />
-        <span class="imp-titulo">Importações</span>
-        <p-button icon="pi pi-upload" [text]="true" ariaLabel="Importar extrato" (onClick)="importar.emit(null)" />
-      } @else {
-        <span class="imp-titulo"><i class="pi pi-history imp-titulo-icone"></i>Importações realizadas</span>
-        <p-button label="Importar extrato" icon="pi pi-upload" (onClick)="importar.emit(null)" />
-      }
-    </div>
+<!-- Card #80: mf-modal — p-dialog no desktop, tela cheia no celular -->
+<mf-modal [titulo]="movel() ? 'Importações' : 'Importações realizadas'" icone="pi pi-history" tipo="tela" tamanhoDesktop="xl"
+  [semMargem]="true" (fechar)="fechar()">
+  <ng-template mfModalMais>
+    @if (movel()) {
+      <p-button icon="pi pi-upload" [text]="true" [rounded]="true" ariaLabel="Importar extrato" (onClick)="importar.emit(null)" />
+    } @else {
+      <p-button label="Importar extrato" icon="pi pi-upload" (onClick)="importar.emit(null)" />
+    }
   </ng-template>
 
   @if (movel()) {
@@ -122,8 +117,8 @@
                 @if (i.status === 'Desfeita') {
                   <small class="mf-hint">desfeita em {{ dataCurta(i.desfeitoEm) }}@if (i.motivoDesfazer) {<br />({{ i.motivoDesfazer }})}</small>
                 } @else {
-                  <div class="imp-entrada">+{{ moeda(i.entradas) }}</div>
-                  <div class="imp-saida">−{{ moeda(i.saidas) }}</div>
+                  <div class="imp-entrada">+ {{ moeda(i.entradas) }}</div>
+                  <div class="imp-saida">- {{ moeda(i.saidas) }}</div>
                 }
               </td>
               <td class="text-right white-space-nowrap">
@@ -188,7 +183,7 @@
       </div>
     }
   </div>
-</p-dialog>
+</mf-modal>
 
 <p-menu #menu [model]="itensMenu" [popup]="true" appendTo="body" />
 
@@ -206,8 +201,8 @@
       <span class="mf-hint">Lançamentos</span>
       <strong>{{ d.lancamentos }}@if (d.duplicados) { <small>({{ d.duplicados }} duplicados ignorados)</small> }</strong>
     </div>
-    <div class="imp-det-linha"><span class="mf-hint">Entradas</span><strong class="imp-entrada">+{{ moeda(d.entradas) }}</strong></div>
-    <div class="imp-det-linha"><span class="mf-hint">Saídas</span><strong class="imp-saida">−{{ moeda(d.saidas) }}</strong></div>
+    <div class="imp-det-linha"><span class="mf-hint">Entradas</span><strong class="imp-entrada">+ {{ moeda(d.entradas) }}</strong></div>
+    <div class="imp-det-linha"><span class="mf-hint">Saídas</span><strong class="imp-saida">- {{ moeda(d.saidas) }}</strong></div>
     <button type="button" class="imp-det-acao" (click)="ver(d)"><i class="pi pi-list"></i>Ver lançamentos</button>
     <button type="button" class="imp-det-acao perigo" (click)="abrirDesfazer(d)"><i class="pi pi-undo"></i>Desfazer importação</button>
   }

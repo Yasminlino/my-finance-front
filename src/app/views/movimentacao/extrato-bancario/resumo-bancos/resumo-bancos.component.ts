@@ -46,6 +46,7 @@ import { PageHeaderComponent } from 'src/app/shared/ui/page-header/page-header.c
 import { StatCardComponent } from 'src/app/shared/ui/stat-card/stat-card.component';
 import { ultimaBusca } from 'src/app/shared/utils/ultima-busca';
 import { ModalConfiguracaoVinculoPessoaComponent } from '../components/modal-configuracao-vinculo-pessoa/modal-configuracao-vinculo-pessoa.component';
+import { moedaComSinal, usaPessoas } from '../extrato.regras';
 import { corDoBanco, dataCurta, siglaDoBanco } from '../components/modal-importacoes-mensais/importacoes.regras';
 import { ModalImportacoesMensaisComponent } from '../components/modal-importacoes-mensais/modal-importacoes-mensais.component';
 import { AbrirExtrato, ModalImportarExtratoComponent } from '../components/modal-importar-extrato/modal-importar-extrato.component';
@@ -106,22 +107,31 @@ export class ResumoBancosComponent implements OnInit {
     { label: 'Nome (A–Z)', value: 'nome' }, { label: 'Maior valor', value: 'valor' },
     { label: 'Mais lançamentos', value: 'lancamentos' }, { label: 'Mais sem categoria', value: 'sem-categoria' }
   ];
-  /** ⋮ geral: só ações de todas as contas e configurações (card #77). */
-  readonly itensMenu: MenuItem[] = [
+  /** ⋮ geral: só ações de todas as contas e configurações (card #77). Recalculado quando as contas chegam (card #79). */
+  itensMenu: MenuItem[] = this.montarMenu();
+  /** O p-splitButton abre submenus em cascata: lá os grupos viram itens soltos, separados por linha. */
+  itensSplit: MenuItem[] = this.paraSplit(this.itensMenu);
+
+  private montarMenu(): MenuItem[] {
+    return [
     { label: 'Todas as contas', items: [
       { label: 'Lançamento manual', icon: 'pi pi-plus', command: () => (this.showLancamento = true) },
       { label: 'Importações realizadas', icon: 'pi pi-download', command: () => (this.showImportacoes = true) },
       { label: 'Relatório do mês', icon: 'pi pi-chart-line', command: () => this.abrirRelatorio() }
     ] },
     { label: 'Configurações', items: [
-      { label: 'Pessoas que usam meus cartões', icon: 'pi pi-users', command: () => (this.showConfigPessoas = true) },
-      { label: 'Regras de classificação', icon: 'pi pi-bolt', command: () => this.abrirRegras() }
+      // Card #79: só para quem empresta cartão (algum cartão compartilhado).
+      ...(usaPessoas(this.bancos ?? []) ? [{ label: 'Pessoas que usam meus cartões', icon: 'pi pi-users', command: () => (this.showConfigPessoas = true) }] : []),
+      { label: 'Nomes e regras', icon: 'pi pi-bolt', command: () => this.abrirRegras() }
     ] },
     { separator: true },
     { label: 'Atualizar', icon: 'pi pi-refresh', command: () => this.carregarMes() }
-  ];
-  /** O p-splitButton abre submenus em cascata: lá os grupos viram itens soltos, separados por linha. */
-  readonly itensSplit: MenuItem[] = this.itensMenu.flatMap((g, i) => (g.items ? [...(i ? [{ separator: true }] : []), ...g.items] : [g]));
+    ];
+  }
+
+  private paraSplit(menu: MenuItem[]): MenuItem[] {
+    return menu.flatMap((g, i) => (g.items ? [...(i ? [{ separator: true }] : []), ...g.items] : [g]));
+  }
 
   dateFilter = new Date();
   selectedMonth = '';
@@ -179,6 +189,8 @@ export class ResumoBancosComponent implements OnInit {
       .subscribe({
         next: ({ bancos, tipos, categorias, pessoas }) => {
           this.bancos = bancos ?? [];
+          this.itensMenu = this.montarMenu();
+          this.itensSplit = this.paraSplit(this.itensMenu);
           this.tiposCartao = tipos ?? [];
           this.categorias = categorias ?? [];
           this.pessoas = pessoas ?? [];
@@ -302,7 +314,7 @@ export class ResumoBancosComponent implements OnInit {
   }
 
   comSinal(v: number): string {
-    return `${v > 0 ? '+ ' : ''}${formatCurrencyBR(v)}`;
+    return moedaComSinal(v);
   }
 
   numero(n: NumeroDoCard): string {
@@ -315,7 +327,7 @@ export class ResumoBancosComponent implements OnInit {
   }
 
   subtitulo(c: ResumoContaDto): string {
-    if (!c.ehCredito) return [c.agencia && `Ag. ${c.agencia}`, c.numeroConta && `CC ${c.numeroConta}`].filter(Boolean).join(' · ') || c.tipoNome;
+    if (!c.ehCredito) return [c.agencia && `Ag. ${c.agencia}`, c.numeroConta && `CC ${c.numeroConta}`].filter(Boolean).join(' · ');   // o tipo já está na etiqueta ao lado (card #81)
     const mes = this.dateFilter.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
     if (!c.dataVencimento) return `Fatura ${mes}`;
     const [ano, m, d] = c.dataVencimento.split('-').map(Number);
@@ -327,7 +339,7 @@ export class ResumoBancosComponent implements OnInit {
   situacao(c: ResumoContaDto): string {
     const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
     if (c.importadoEm) return `Importado ${dataCurta(c.importadoEm)} · ${plural(c.quantidade, 'lançamento', 'lançamentos')}`;
-    if (c.quantidade) return `Lançamento manual · ${plural(c.quantidade, 'item', 'itens')}`;
+    if (c.quantidade) return plural(c.quantidade, 'lançamento manual', 'lançamentos manuais');
     return 'Sem lançamentos no mês';
   }
 

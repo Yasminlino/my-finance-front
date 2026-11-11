@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular
 import { FormsModule } from '@angular/forms';
 import { PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
+import { ModalComponent, ModalMaisDirective, ModalRodapeDirective } from 'src/app/shared/ui/modal/modal.component';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ExtratoItemDto, ExtratoItemParteDto } from 'src/app/core/models/extrato.model';
@@ -23,20 +23,28 @@ const centavos = (v: number) => Math.round(v * 100) / 100;
 @Component({
   selector: 'app-dividir-lancamento',
   standalone: true,
-  imports: [FormsModule, PrimeTemplate, ButtonModule, DialogModule, DropdownModule, InputNumberModule],
+  imports: [FormsModule, PrimeTemplate, ButtonModule, DropdownModule, InputNumberModule, ModalComponent, ModalMaisDirective, ModalRodapeDirective],
   template: `
-    <p-dialog header="Dividir lançamento" [visible]="true" [modal]="true" [draggable]="false" [dismissableMask]="!salvando"
-      [style]="{ width: '44rem' }" [breakpoints]="{ '768px': '96vw' }" (visibleChange)="!$event && fechado.emit(false)">
+    <!-- Card #80: mf-modal — p-dialog no desktop, folha de baixo no celular; no máximo 2 botões no rodapé -->
+    <mf-modal titulo="Dividir lançamento" tipo="folha" tamanhoDesktop="md" [ocupado]="salvando" (fechar)="fechado.emit(false)">
+      @if (jaDividido) {
+        <ng-template mfModalMais>
+          <p-button label="Desfazer divisão" icon="pi pi-undo" severity="danger" [text]="true" size="small" [disabled]="salvando" (onClick)="desfazer()" />
+        </ng-template>
+      }
       <p class="mt-0"><strong>{{ titulo }}</strong> · {{ moeda(item.valor) }}</p>
 
       @for (l of linhas; track l; let i = $index) {
-        <div class="parte">
+        <div class="parte" [class.parte--sem-pessoa]="!pessoas.length">
           <p-inputNumber class="parte-valor" styleClass="w-full" inputStyleClass="w-full" mode="currency" currency="BRL" locale="pt-BR" [min]="0"
             placeholder="Valor" [(ngModel)]="l.valor" [ariaLabel]="'Valor da parte ' + (i + 1)" />
           <p-dropdown class="parte-campo" styleClass="w-full" [options]="categorias" optionLabel="label" optionValue="value" [(ngModel)]="l.categoriaId"
             [filter]="true" [showClear]="true" placeholder="Categoria" appendTo="body" [ariaLabel]="'Categoria da parte ' + (i + 1)" />
-          <p-dropdown class="parte-campo" styleClass="w-full" [options]="pessoas" optionLabel="label" optionValue="value" [(ngModel)]="l.pessoaMovimentacaoId"
-            [filter]="true" [showClear]="true" placeholder="Minha" appendTo="body" [ariaLabel]="'Pessoa da parte ' + (i + 1)" />
+          <!-- Card #79: pessoa só para quem empresta cartão (lista vazia = não usa pessoas) -->
+          @if (pessoas.length) {
+            <p-dropdown class="parte-campo" styleClass="w-full" [options]="pessoas" optionLabel="label" optionValue="value" [(ngModel)]="l.pessoaMovimentacaoId"
+              [filter]="true" [showClear]="true" placeholder="Minha" appendTo="body" [ariaLabel]="'Pessoa da parte ' + (i + 1)" />
+          }
           <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger" [disabled]="linhas.length <= 2"
             [ariaLabel]="'Remover parte ' + (i + 1)" (onClick)="remover(i)" />
           @if (falta > 0 && !l.valor) {
@@ -54,17 +62,15 @@ const centavos = (v: number) => Math.round(v * 100) / 100;
         </span>
       </div>
 
-      <ng-template pTemplate="footer">
-        @if (jaDividido) {
-          <p-button label="Desfazer divisão" severity="danger" [text]="true" [disabled]="salvando" styleClass="mr-auto" (onClick)="desfazer()" />
-        }
+      <ng-template mfModalRodape>
         <p-button label="Cancelar" severity="secondary" [outlined]="true" [disabled]="salvando" (onClick)="fechado.emit(false)" />
         <p-button label="Salvar" icon="pi pi-check" [loading]="salvando" [disabled]="!podeSalvar" (onClick)="salvar()" />
       </ng-template>
-    </p-dialog>
+    </mf-modal>
   `,
   styles: [`
     .parte { display: grid; grid-template-columns: 9rem minmax(0, 1fr) minmax(0, 1fr) auto; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+    .parte--sem-pessoa { grid-template-columns: 9rem minmax(0, 1fr) auto; }
     .parte-completar { grid-column: 1 / -1; justify-self: start; padding: 0; border: 0; background: none; font: inherit; font-size: 0.8rem; color: var(--primary-color); cursor: pointer; }
     .dividir-falta { font-weight: 600; color: var(--mf-despesa); }
     .dividir-falta--ok { color: var(--mf-receita); }

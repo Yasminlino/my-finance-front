@@ -10,7 +10,12 @@ import { EmptyStateComponent } from 'src/app/shared/ui/empty-state/empty-state.c
 export function textoVariacao(variacao: number | null | undefined): string {
   if (variacao == null) return '';
   if (variacao === 0) return 'na média';
-  return `${Math.abs(variacao)}% ${variacao > 0 ? 'acima' : 'abaixo'} da média`;
+  return `${percentual(Math.abs(variacao))}% ${variacao > 0 ? 'acima' : 'abaixo'} da média`;
+}
+
+/** Card #81: percentual em pt-BR ("96,5", não "96.5"). */
+export function percentual(v: number | null | undefined): string {
+  return (v ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
 }
 
 /** Aba "Resumo" do Extrato (card #76, fase 5): onde o dinheiro foi no mês, comparado com os meses anteriores. */
@@ -42,7 +47,7 @@ export function textoVariacao(variacao: number | null | undefined): string {
               </div>
               <div class="resumo-barra"><span [style.width.%]="c.percentual"></span></div>
               <div class="flex justify-content-between gap-2">
-                <small class="mf-hint">{{ c.percentual }}% do mês</small>
+                <small class="mf-hint">{{ pct(c.percentual) }}% do mês</small>
                 <small [class.resumo-acima]="(c.variacao ?? 0) > 0" [class.resumo-abaixo]="(c.variacao ?? 0) < 0">{{ variacao(c.variacao) }}</small>
               </div>
             </div>
@@ -80,6 +85,10 @@ export function textoVariacao(variacao: number | null | undefined): string {
 export class ResumoCategoriasComponent implements OnChanges {
   /** "AAAA-MM". */
   @Input({ required: true }) mes!: string;
+  /** Conta aberta no Extrato; vazio = todas as contas (card #81). */
+  @Input() bancoId: number | null = null;
+
+  readonly pct = percentual;
 
   private readonly servico = inject(ExtratoBancarioItemService);
   private readonly alertService = inject(AlertService);
@@ -91,9 +100,10 @@ export class ResumoCategoriasComponent implements OnChanges {
     this.loading = true;
     this.resumo = null;
     const pedido = this.mes;
-    this.servico.resumoCategorias(pedido).subscribe({
+    const conta = this.bancoId;
+    this.servico.resumoCategorias(pedido, this.bancoId).subscribe({
       next: r => {
-        if (pedido !== this.mes) return;
+        if (pedido !== this.mes || conta !== this.bancoId) return;
         this.loading = false;
         this.resumo = r;
       },

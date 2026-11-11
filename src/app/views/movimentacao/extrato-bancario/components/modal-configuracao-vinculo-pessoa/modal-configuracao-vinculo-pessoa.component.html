@@ -1,18 +1,37 @@
-<p-dialog header="Vínculos cadastrados" [visible]="true" [modal]="true" [dismissableMask]="true" [draggable]="false"
-  styleClass="mf-dialog-lg" (visibleChange)="close(false)">
-  <app-data-grid #grid [dataSource]="pessoaMovimentacao" [columns]="gridColumns" [exibeCampos]="exibirCampos"
-    (new)="addRow()" [loading]="loading" [bloquearLinha]="bloquear" (saveInline)="onSaveInline($event)" (delete)="deleteRow($event)">
-  </app-data-grid>
+<!-- Card #80: mf-modal — p-dialog no desktop, folha de baixo no celular -->
+<mf-modal titulo="Pessoas que usam meus cartões" tipo="folha" tamanhoDesktop="sm" (fechar)="close()">
+  <p class="mt-0 mf-hint">
+    Quem faz compras nos seus cartões. Escolha a pessoa no lançamento e o valor entra nos Acertos.
+    O nome que vem no extrato (o mercado, a loja) não fica aqui: ele é classificado em "Nomes e regras".
+  </p>
 
-  <ng-template pTemplate="footer">
-    <!-- Card #76, fase 2: apagar os nomes que a importação antiga cadastrou como pessoa -->
-    <p-button label="Limpar estabelecimentos" icon="pi pi-eraser" severity="secondary" [text]="true" styleClass="mr-auto"
-      (onClick)="showLimpar = true" />
-    <p-button label="Fechar" severity="secondary" [outlined]="true" (onClick)="close(false)" />
-    <p-button label="Concluir" icon="pi pi-check" (onClick)="onSaveAll()" />
+  <ul class="list-none p-0 m-0 flex flex-column gap-1" aria-label="Pessoas">
+    @if (titular) {
+      <li class="flex align-items-center gap-2 py-2 border-bottom-1 surface-border">
+        <i class="pi pi-user text-color-secondary"></i>
+        <span class="flex-1 font-medium">{{ rotuloTitular }}</span>
+        <small class="mf-hint">você</small>
+      </li>
+    }
+    @for (p of pessoas; track p.id) {
+      <li class="flex align-items-center gap-2 py-2 border-bottom-1 surface-border">
+        <i class="pi pi-users text-color-secondary"></i>
+        <span class="flex-1">{{ p.nomePessoa }}</span>
+        <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger" [loading]="excluindoId === p.id"
+          (onClick)="excluir(p)" [ariaLabel]="'Excluir ' + p.nomePessoa" />
+      </li>
+    } @empty {
+      @if (!loading) {
+        <li class="py-3 mf-hint">Nenhuma pessoa ainda.</li>
+      }
+    }
+  </ul>
+
+  <div class="mt-3">
+    <app-nova-pessoa inputId="pessoas-nova" (criada)="aoCriar($event)" />
+  </div>
+
+  <ng-template mfModalRodape>
+    <p-button label="Fechar" severity="secondary" [outlined]="true" (onClick)="close()" />
   </ng-template>
-</p-dialog>
-
-@if (showLimpar) {
-  <app-limpar-estabelecimentos (fechado)="aoFecharLimpeza($event)" />
-}
+</mf-modal>

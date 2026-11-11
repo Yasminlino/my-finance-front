@@ -29,13 +29,16 @@ describe('ExtratoMesComponent', () => {
 
   const dados = (): ExtratoItemDto[] => [
     { id: 1, dataMovimentacao: '2026-10-05', valor: 100, tipoLancamento: 'Saída', bancoId: 1, descricao: 'Mercado Extra',
-      categoriaId: 5, categoriaNome: 'Casa', nomePessoaTransacao: 'Carlos', ehParcelado: true, parcelaAtual: 2, quantidadeParcelas: 4 },
+      categoriaId: 5, categoriaNome: 'Casa', pessoaMovimentacaoId: 7, pessoaMovimentacao: { id: 7, nomePessoa: 'Carlos', categoriaId: null, tipoMovimentacaoId: null },
+      ehParcelado: true, parcelaAtual: 2, quantidadeParcelas: 4 },
     { id: 2, dataMovimentacao: '2026-10-05', valor: 1000, tipoLancamento: 'Entrada', bancoId: 2, descricao: 'Salário' },
     { id: 3, dataMovimentacao: '2026-10-01', valor: 30, tipoLancamento: 'Saída', bancoId: 1, descricao: 'Padaria' }
   ];
 
   // Card #77: os números do topo vêm do resumo por conta (o mesmo da listagem).
   let nubankCompartilhado = false;
+  /** Card #79: algum cartão compartilhado = usa pessoas. */
+  let bancosCompartilhados = true;
   let conviteDispensado = false;
   const contaResumo = (extra: Partial<ResumoContaDto>): ResumoContaDto => ({
     bancoId: 2, nome: 'Caixa', tipoNome: 'Conta corrente', ehCredito: false, ativo: true, compartilhado: false, conviteCompartilharDispensado: false,
@@ -69,6 +72,7 @@ describe('ExtratoMesComponent', () => {
     regras.sugestoes.and.returnValue(of([]));
     movel.set(false);
     queryParams = {};
+    bancosCompartilhados = true;
     itens = jasmine.createSpyObj<ExtratoBancarioItemService>('ExtratoBancarioItemService', ['listarDoMes', 'atualizar', 'excluir', 'acertos', 'resumoContas']);
     itens.resumoContas.and.callFake(() => of(resumoContas()));
     itens.acertos.and.returnValue(of({
@@ -95,10 +99,10 @@ describe('ExtratoMesComponent', () => {
         provideRouter([]), provideNoopAnimations(), ConfirmationService, MessageService,
         { provide: ActivatedRoute, useValue: { snapshot: { get queryParamMap() { return convertToParamMap(queryParams); } } } },
         { provide: ExtratoBancarioItemService, useValue: itens },
-        { provide: BancoService, useValue: comLista('BancoService', 'listar', [
-          { id: 1, nomeBanco: 'Nubank', tipoCartaoId: 2, ativo: true, saldoInicial: 0 },
+        { provide: BancoService, useValue: { listar: () => of([
+          { id: 1, nomeBanco: 'Nubank', tipoCartaoId: 2, ativo: true, saldoInicial: 0, compartilhado: bancosCompartilhados },
           { id: 2, nomeBanco: 'Caixa', tipoCartaoId: 1, ativo: true, saldoInicial: 0 }
-        ]) },
+        ]) } },
         { provide: TipoCartaoService, useValue: comLista('TipoCartaoService', 'listar', [
           { id: 1, nomeTipoCartao: 'Conta corrente', ehCredito: false, ehSistema: true },
           { id: 2, nomeTipoCartao: 'Cartão de crédito', ehCredito: true, ehSistema: true }
@@ -125,8 +129,34 @@ describe('ExtratoMesComponent', () => {
     expect(el().querySelector('p-splitbutton')?.textContent).toContain('Importar extrato');
     expect(comp().opcoesContaComTodas.map(o => o.label)).toEqual(['Todas as contas', 'Nubank', 'Caixa']);
     expect(comp().menuSplit.filter(i => !i.separator).map(i => i.label)).toEqual([
-      'Lançamento manual', 'Importações realizadas', 'Relatório do mês', 'Pessoas que usam meus cartões', 'Regras de classificação', 'Atualizar']);
+      'Lançamento manual', 'Importações realizadas', 'Relatório do mês', 'Pessoas que usam meus cartões', 'Nomes e regras', 'Atualizar']);
     expect(el().querySelector('mf-page-header [aria-label="Mais ações"]')).toBeNull();
+  });
+
+  it('card #81: o Modo edição só aparece na aba Lançamentos', () => {
+    abrir();
+    expect(el().querySelector('#extrato-edicao')).not.toBeNull();
+
+    comp().aba = 1;   // Acertos (o Resumo segue a mesma regra)
+    fixture.detectChanges();
+    expect(el().querySelector('#extrato-edicao')).toBeNull();
+
+    comp().aba = 0;
+    fixture.detectChanges();
+    expect(el().querySelector('#extrato-edicao')).not.toBeNull();
+  });
+
+  it('card #79: sem cartão compartilhado, nada de pessoas (menu, aba Acertos, coluna Pessoa)', () => {
+    bancosCompartilhados = false;
+    abrir();
+    fixture.detectChanges();
+
+    expect(comp().usaPessoas).toBeFalse();
+    expect(comp().mostraPessoa).toBeFalse();
+    expect(comp().menuSplit.map(i => i.label)).not.toContain('Pessoas que usam meus cartões');
+    const abas = Array.from(el().querySelectorAll('.extrato-aba')).map(texto);
+    expect(abas.some(a => a.includes('Acertos'))).toBeFalse();
+    expect(Array.from(el().querySelectorAll('th')).map(texto)).not.toContain(' Pessoa ');
   });
 
   it('abas Lançamentos | Acertos com pessoas, com o selo do que falta receber', () => {
@@ -360,12 +390,12 @@ describe('ExtratoMesComponent', () => {
 
     it('categoria nova ao salvar vira a pergunta "Sempre classificar…?" (sem repetir regra que já existe)', () => {
       ligar();
-      comp().rascunho[1].categoriaId = 9;   // Mercado Extra (Carlos): proposta nova
+      comp().rascunho[1].categoriaId = 9;   // Mercado Extra (a pessoa Carlos não entra no texto, card #79): proposta nova
       comp().rascunho[3].categoriaId = 5;   // Padaria: já tem regra
       comp().aoEditar();
       comp().salvarEdicao();
 
-      expect(comp().propostas).toEqual([{ texto: 'CARLOS', categoriaId: 9, tipoMovimentacaoId: null }]);
+      expect(comp().propostas).toEqual([{ texto: 'MERCADO EXTRA', categoriaId: 9, tipoMovimentacaoId: null }]);
       expect(document.querySelector('app-classificar-sempre')).toBeDefined();
 
       comp().aoConcluirRegras([1]);
@@ -492,11 +522,13 @@ describe('ExtratoMesComponent', () => {
       expect(comp().selecao).toEqual([]);
     });
 
-    it('pessoa digitada com nome cadastrado liga pelo id', () => {
+    it('pessoa escolhida pelo id liga sem mexer no nome do extrato (card #79)', () => {
       comp().pessoasCadastradas = [{ id: 9, nomePessoa: 'Giovanne', categoriaId: null, tipoMovimentacaoId: null }];
       ligar();
-      comp().editarPessoa(dados()[2], 'giovanne');
-      expect(comp().rascunho[3]).toEqual(jasmine.objectContaining({ pessoaMovimentacaoId: 9, nomePessoaTransacao: 'Giovanne' }));
+      const nomeDoExtrato = dados()[2].nomePessoaTransacao ?? null;
+      comp().editarPessoa(dados()[2], 9);
+      expect(comp().rascunho[3]).toEqual(jasmine.objectContaining({ pessoaMovimentacaoId: 9 }));
+      expect(comp().rascunho[3].nomePessoaTransacao ?? null).toBe(nomeDoExtrato);
       expect(comp().alteracoes).toBe(1);
     });
   });

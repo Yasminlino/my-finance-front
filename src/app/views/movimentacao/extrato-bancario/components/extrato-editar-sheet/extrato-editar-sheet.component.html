@@ -21,18 +21,28 @@
         <label for="sheet-descricao" class="mf-label">Descrição</label>
         <input pInputText id="sheet-descricao" name="descricao" maxlength="500" class="w-full" [(ngModel)]="r.descricao" />
       </div>
-      <div class="flex flex-column gap-1">
-        <label for="sheet-pessoa" class="mf-label">Pessoa</label>
-        <input pInputText id="sheet-pessoa" name="pessoa" class="w-full" list="sheet-pessoas" autocomplete="off" placeholder="Sem pessoa"
-          [ngModel]="r.nomePessoaTransacao ?? ''" (ngModelChange)="editarPessoa($event)" />
-        <datalist id="sheet-pessoas">
-          @for (nome of nomesPessoas; track nome) { <option [value]="nome"></option> }
-        </datalist>
-      </div>
+      @if (item?.nomePessoaTransacao) {
+        <!-- Card #79: o nome que veio no extrato não se edita -->
+        <div class="flex flex-column gap-1">
+          <span class="mf-label">No extrato</span>
+          <span class="sheet-nome-extrato">{{ item?.nomePessoaTransacao }}</span>
+        </div>
+      }
+      @if (mostraPessoa) {
+        <div class="flex flex-column gap-1">
+          <label for="sheet-pessoa" class="mf-label">Pessoa</label>
+          <p-dropdown inputId="sheet-pessoa" name="pessoa" [options]="opcoesPessoa" optionLabel="label" optionValue="value"
+            [ngModel]="r.pessoaMovimentacaoId ?? null" (ngModelChange)="editarPessoa($event)" [showClear]="true" placeholder="Sem pessoa"
+            appendTo="body" styleClass="w-full" />
+        </div>
+      }
       <div class="flex flex-column gap-1">
         <label for="sheet-categoria" class="mf-label">Categoria</label>
         <p-dropdown inputId="sheet-categoria" name="categoria" [options]="opcoesCategoria" optionLabel="label" optionValue="value"
           [(ngModel)]="r.categoriaId" [filter]="true" [showClear]="true" placeholder="Sem categoria" appendTo="body" styleClass="w-full" [disabled]="dividido" />
+        @if (item?.classificadoPorSemelhanca && r.categoriaId === item?.categoriaId) {
+          <small class="mf-hint">Veio da regra de um nome parecido. Confira em Nomes e regras.</small>
+        }
         @if (sugestao && !r.categoriaId) {
           <button type="button" class="sheet-sugestao" (click)="usarSugestao()"><i class="pi pi-sparkles"></i> Sugestão: {{ sugestao.nome }}</button>
         }

@@ -1,0 +1,181 @@
+<div class="nomes" [class.nomes--movel]="movel">
+  @if (juntando) {
+    <!-- Card #80: "Juntar parecidos" abre aqui dentro, no lugar da lista (sem modal sobre modal) -->
+    <app-juntar-parecidos [grupos]="grupos" [categorias]="categorias" [tipos]="tipos" [movel]="movel" (concluiu)="aoJuntar($event)" />
+  } @else {
+  <p class="mt-0 mf-hint">
+    Quando este nome vier no extrato, a categoria e o tipo já entram preenchidos. Nomes parecidos (com LTDA, sem espaço…)
+    recebem a mesma classificação.
+  </p>
+
+  <!-- Abas, busca e filtro de categoria -->
+  <div class="nomes-filtros">
+    <p-selectButton [options]="opcoesAba" [(ngModel)]="filtro.aba" optionLabel="label" optionValue="value" [allowEmpty]="false"
+      styleClass="nomes-abas" />
+    <span class="p-input-icon-left nomes-busca">
+      <i class="pi pi-search"></i>
+      <input pInputText class="p-inputtext-sm w-full" placeholder="Buscar nome..." aria-label="Buscar nome" [(ngModel)]="filtro.busca" />
+    </span>
+    @if (!movel) {
+      <p-dropdown [options]="categorias" optionLabel="label" optionValue="value" [(ngModel)]="filtro.categoriaId" [showClear]="true"
+        [filter]="true" placeholder="Todas as categorias" appendTo="body" styleClass="p-inputtext-sm nomes-filtro-categoria"
+        ariaLabel="Filtrar por categoria" />
+    }
+  </div>
+
+  <!-- Nomes parecidos com classificação diferente -->
+  @if (grupos.length) {
+    <div class="nomes-aviso" role="status">
+      <i class="pi pi-clone"></i>
+      <span class="flex-1">
+        <strong>{{ grupos.length }} {{ grupos.length === 1 ? 'grupo' : 'grupos' }} de nomes parecidos</strong>
+        @if (gruposDivergentes) { · {{ gruposDivergentes }} com classificação diferente }
+      </span>
+      <p-button label="Revisar e juntar" icon="pi pi-arrow-right" iconPos="right" size="small" [outlined]="true" (onClick)="juntando = true" />
+    </div>
+  }
+
+  <!-- Lote -->
+  @if (selecionados.length && !movel) {
+    <div class="nomes-lote">
+      <strong>{{ selecionados.length }} {{ selecionados.length === 1 ? 'nome escolhido' : 'nomes escolhidos' }}</strong>
+      <p-dropdown [options]="categorias" optionLabel="label" optionValue="value" [(ngModel)]="lote.categoriaId" [showClear]="true"
+        [filter]="true" placeholder="Categoria" appendTo="body" styleClass="p-inputtext-sm" ariaLabel="Categoria para os escolhidos" />
+      <p-dropdown [options]="tipos" optionLabel="label" optionValue="value" [(ngModel)]="lote.tipoMovimentacaoId" [showClear]="true"
+        [filter]="true" placeholder="Tipo" appendTo="body" styleClass="p-inputtext-sm" ariaLabel="Tipo para os escolhidos" />
+      <p-button label="Aplicar" icon="pi pi-check" size="small" (onClick)="aplicarLote()"
+        [disabled]="lote.categoriaId == null && lote.tipoMovimentacaoId == null" />
+      <p-button label="Cancelar" size="small" severity="secondary" [text]="true" (onClick)="selecionados = []" />
+    </div>
+  }
+
+  @if (!movel) {
+    <p-table [value]="visiveis" dataKey="texto" [(selection)]="selecionados" [paginator]="visiveis.length > 15" [rows]="15"
+      [loading]="loading" styleClass="p-datatable-sm nomes-tabela" [tableStyle]="{ 'table-layout': 'fixed', width: '100%' }">
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 3rem"><p-tableHeaderCheckbox /></th>
+          <th>Nome no extrato</th>
+          <th style="width: 15rem">Categoria</th>
+          <th style="width: 14rem">Tipo de movimentação</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-n>
+        <tr [class.nomes-linha--mudou]="mudou(n)">
+          <td><p-tableCheckbox [value]="n" [ariaLabel]="'Escolher ' + n.texto" /></td>
+          <td>
+            <div class="nomes-texto">{{ n.texto }}</div>
+            <small class="mf-hint">{{ contexto(n) }}</small>
+            @if (n.cobertura === 'outra') { <small class="mf-hint"> · por uma regra</small> }
+          </td>
+          <td>
+            <p-dropdown [options]="categorias" optionLabel="label" optionValue="value" [ngModel]="agora(n).categoriaId"
+              (ngModelChange)="escolherCategoria(n, $event)" [filter]="true" [showClear]="true" placeholder="Escolher" appendTo="body"
+              styleClass="w-full p-inputtext-sm" [ariaLabel]="'Categoria de ' + n.texto" />
+            @if (mostraSugestao(n)) {
+              <button type="button" class="nomes-sugestao" (click)="aceitarSugestao(n)" [attr.aria-label]="'Aceitar a sugestão ' + nomeCategoria(n.sugestaoCategoriaId)">
+                <span>{{ nomeCategoria(n.sugestaoCategoriaId) }}</span><i class="pi pi-check"></i>
+              </button>
+            } @else if (n.cobertura === 'semelhanca' && !mudou(n)) {
+              <button type="button" class="nomes-sugestao" (click)="confirmarSemelhanca(n)" [attr.aria-label]="'Confirmar ' + nomeCategoria(n.categoriaId)">
+                <span>Confirmar</span><i class="pi pi-check"></i>
+              </button>
+            }
+          </td>
+          <td>
+            <p-dropdown [options]="tipos" optionLabel="label" optionValue="value" [ngModel]="agora(n).tipoMovimentacaoId"
+              (ngModelChange)="escolherTipo(n, $event)" [filter]="true" [showClear]="true" placeholder="Sem tipo" appendTo="body"
+              styleClass="w-full p-inputtext-sm" [ariaLabel]="'Tipo de ' + n.texto" />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="4">
+          @if (filtro.aba === 'classificar' && !filtro.busca) {
+            <mf-empty-state icone="pi pi-check-circle" titulo="Tudo classificado" texto="Todo nome que veio no extrato já tem categoria." />
+          } @else {
+            <p class="mf-hint m-0">Nenhum nome aqui.</p>
+          }
+        </td></tr>
+      </ng-template>
+    </p-table>
+  } @else {
+    <!-- Celular: um cartão por nome -->
+    <div class="nomes-cartoes">
+      @for (n of visiveis; track n.texto) {
+        <div class="nomes-cartao" [class.nomes-cartao--mudou]="mudou(n)">
+          <button type="button" class="nomes-cartao-corpo" (click)="abrir(n)" [attr.aria-label]="'Classificar ' + n.texto">
+            <span class="nomes-texto">{{ n.texto }}</span>
+            <small class="mf-hint">{{ contexto(n) }}</small>
+            @if (agora(n).categoriaId) {
+              <span class="nomes-tag">{{ nomeCategoria(agora(n).categoriaId) }}@if (agora(n).tipoMovimentacaoId) { · {{ nomeTipo(agora(n).tipoMovimentacaoId) }}}</span>
+            } @else if (!mostraSugestao(n)) {
+              <span class="nomes-mais">+ categoria</span>
+            }
+          </button>
+          @if (mostraSugestao(n)) {
+            <button type="button" class="nomes-sugestao" (click)="aceitarSugestao(n)" [attr.aria-label]="'Aceitar a sugestão ' + nomeCategoria(n.sugestaoCategoriaId)">
+              <span>{{ nomeCategoria(n.sugestaoCategoriaId) }}</span><i class="pi pi-check"></i>
+            </button>
+          }
+        </div>
+      } @empty {
+        @if (!loading) {
+          @if (filtro.aba === 'classificar' && !filtro.busca) {
+            <mf-empty-state icone="pi pi-check-circle" titulo="Tudo classificado" texto="Todo nome que veio no extrato já tem categoria." />
+          } @else {
+            <p class="mf-hint">Nenhum nome aqui.</p>
+          }
+        }
+      }
+    </div>
+  }
+
+  <!-- Rodapé das alterações (desktop) / barra fixa (celular): só com algo mexido -->
+  @if (temAlteracoes) {
+    <div class="nomes-salvar" [class.nomes-salvar--movel]="movel" role="region" aria-label="Alterações não salvas">
+      <span class="nomes-salvar-qtd">{{ pendentes.length }} {{ pendentes.length === 1 ? 'alteração não salva' : 'alterações não salvas' }}</span>
+      <span class="flex align-items-center gap-2">
+        <p-checkbox [binary]="true" inputId="nomes-aplicar" [(ngModel)]="aplicarAosImportados" />
+        <label for="nomes-aplicar">{{ movel ? 'Aplicar aos já importados' : 'Aplicar também aos lançamentos já importados' }}</label>
+      </span>
+      <span class="nomes-salvar-botoes">
+        <p-button label="Descartar" severity="secondary" [text]="true" [disabled]="salvando" (onClick)="descartar()" />
+        <p-button label="Salvar" icon="pi pi-check" [loading]="salvando" (onClick)="salvar()" />
+      </span>
+    </div>
+  }
+  }
+</div>
+
+<!-- Celular: classificar um nome no painel de baixo -->
+@if (movel) {
+  <p-sidebar [visible]="!!emEdicao" (visibleChange)="!$event && (emEdicao = null)" position="bottom" appendTo="body" [blockScroll]="true"
+    styleClass="nomes-sheet" [style]="{ height: 'auto', maxHeight: '92dvh' }">
+    <ng-template pTemplate="header">
+      <span class="font-semibold flex-grow-1">{{ emEdicao?.texto }}</span>
+    </ng-template>
+    @if (emEdicao; as n) {
+      <div class="flex flex-column gap-3">
+        <small class="mf-hint">{{ contexto(n) }}</small>
+        <div class="flex flex-column gap-1">
+          <label for="nomes-sheet-categoria" class="mf-label">Categoria</label>
+          <p-dropdown inputId="nomes-sheet-categoria" [options]="categorias" optionLabel="label" optionValue="value" [ngModel]="edicao.categoriaId"
+            (ngModelChange)="editarCategoriaNoPainel($event)" [filter]="true" [showClear]="true" placeholder="Escolher" appendTo="body" styleClass="w-full" />
+          @if (sugestaoVisivelNoPainel(n)) {
+            <button type="button" class="nomes-sugestao align-self-start" (click)="editarCategoriaNoPainel(n.sugestaoCategoriaId)">
+              <span>Sugestão: {{ nomeCategoria(n.sugestaoCategoriaId) }}</span><i class="pi pi-check"></i>
+            </button>
+          }
+        </div>
+        <div class="flex flex-column gap-1">
+          <label for="nomes-sheet-tipo" class="mf-label">Tipo de movimentação</label>
+          <p-dropdown inputId="nomes-sheet-tipo" [options]="tipos" optionLabel="label" optionValue="value" [(ngModel)]="edicao.tipoMovimentacaoId"
+            [filter]="true" [showClear]="true" placeholder="Sem tipo" appendTo="body" styleClass="w-full" />
+        </div>
+        <p-button label="Pronto" icon="pi pi-check" styleClass="w-full" (onClick)="confirmarPainel()" />
+      </div>
+    }
+  </p-sidebar>
+}
+

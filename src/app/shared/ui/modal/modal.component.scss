@@ -1,0 +1,32 @@
+/* Card #80 — mf-modal. Cores só do tema / tokens (checar:estilos). */
+
+.mf-modal__topo { display: flex; align-items: center; gap: 0.5rem; width: 100%; min-width: 0; }
+.mf-modal__icone { color: var(--primary-color); }
+.mf-modal__titulos { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.mf-modal__titulo { font-weight: 600; font-size: 1.1rem; color: var(--text-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mf-modal__subtitulo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.mf-modal__rodape { display: flex; justify-content: flex-end; gap: 0.5rem; width: 100%; }
+/* Celular: os botões na largura toda, o principal à direita (ou embaixo quando não cabem lado a lado). */
+.mf-modal__rodape--movel { flex-wrap: wrap; padding-bottom: env(safe-area-inset-bottom); }
+::ng-deep .mf-modal__rodape--movel > * { flex: 1 1 8rem; }
+::ng-deep .mf-modal__rodape--movel .p-button { width: 100%; min-height: 2.75rem; }
+
+.mf-modal__alca {
+  position: absolute; top: 0.4rem; left: 50%; width: 2.5rem; height: 0.25rem; margin-left: -1.25rem;
+  border-radius: 999px; background: var(--surface-border);
+}
+
+::ng-deep .mf-modal--desktop .p-dialog-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--surface-border); }
+::ng-deep .mf-modal--desktop .p-dialog-content { padding: 1rem 1.25rem; }
+
+::ng-deep .mf-modal--tela { border-radius: 0; }
+::ng-deep .mf-modal--tela .p-dialog-header { padding: 0.5rem; border-bottom: 1px solid var(--surface-border); }
+::ng-deep .mf-modal--tela .p-dialog-content { padding: 0.75rem 1rem; flex: 1; }
+::ng-deep .mf-modal--tela .p-dialog-footer { padding: 0.75rem 1rem; border-top: 1px solid var(--surface-border); }
+
+::ng-deep .mf-modal--folha.p-sidebar-bottom { height: auto; max-height: 90dvh; border-radius: var(--mf-radius) var(--mf-radius) 0 0; }
+::ng-deep .mf-modal--folha .p-sidebar-header { position: relative; padding: 1.1rem 1rem 0.5rem; }
+::ng-deep .mf-modal--folha .p-sidebar-content { padding: 0.5rem 1rem 1rem; overflow-y: auto; }
+::ng-deep .mf-modal--folha .p-sidebar-footer { padding: 0.75rem 1rem; border-top: 1px solid var(--surface-border); }
+::ng-deep .mf-modal--sem-margem .p-dialog-content { padding: 0; }

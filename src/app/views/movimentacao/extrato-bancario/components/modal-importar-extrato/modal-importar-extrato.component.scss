@@ -1,6 +1,3 @@
-.ia-cabecalho { display: flex; flex: 1; flex-direction: column; gap: 0.35rem; min-width: 0; }
-.ia-titulo { font-size: 1.25rem; font-weight: 700; }
-.ia-titulo i { margin-right: 0.5rem; color: var(--mf-primary); }
 .ia-progresso { overflow: hidden; height: 0.3rem; border-radius: 0.15rem; background: var(--surface-border); }
 .ia-progresso span { display: block; height: 100%; background: var(--mf-primary); transition: width 0.2s; }
 
@@ -41,8 +38,6 @@
 
 @media (max-width: 767.98px) {
   /* Tela cheia no celular, com o botão principal sempre visível no rodapé. */
-  ::ng-deep .p-dialog.imp-assistente { width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; }
-  ::ng-deep .p-dialog.imp-assistente .p-dialog-content { flex: 1; }
   .ia-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ia-busca { flex: 1; min-width: 0; }
   ::ng-deep .ia-segmento { display: flex; width: 100%; }

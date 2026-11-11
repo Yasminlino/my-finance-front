@@ -5,12 +5,14 @@ import { FormsModule } from '@angular/forms';
 import { MenuItem, PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DialogModule } from 'primeng/dialog';
+import { ModalComponent, ModalRodapeDirective } from 'src/app/shared/ui/modal/modal.component';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { SidebarModule } from 'primeng/sidebar';
+import { NomesExtratoComponent } from './nomes-extrato/nomes-extrato.component';
 import { Subject, catchError, debounceTime, firstValueFrom, of, switchMap } from 'rxjs';
 import {
   CampoRegra, ExemploRegraDto, OperadorRegra, PreviaRegraResultadoDto, RegraClassificacaoDto, SugestaoRegraDto
@@ -51,8 +53,8 @@ const VAZIA: Omit<FormRegra, 'id'> = {
   selector: 'app-modal-regras-classificacao',
   standalone: true,
   imports: [
-    FormsModule, NgTemplateOutlet, PrimeTemplate, ButtonModule, CheckboxModule, DialogModule, DropdownModule, InputSwitchModule,
-    InputTextModule, MenuModule, SidebarModule, EmptyStateComponent
+    FormsModule, NgTemplateOutlet, PrimeTemplate, ButtonModule, CheckboxModule, DropdownModule, InputSwitchModule, ModalComponent, ModalRodapeDirective,
+    InputTextModule, MenuModule, SelectButtonModule, SidebarModule, EmptyStateComponent, NomesExtratoComponent
   ],
   templateUrl: './modal-regras-classificacao.component.html',
   styleUrls: ['./modal-regras-classificacao.component.scss']
@@ -73,6 +75,31 @@ export class ModalRegrasClassificacaoComponent implements OnInit {
   @Output() regrasMudaram = new EventEmitter<RegraClassificacaoDto[]>();
 
   @ViewChild('menu') menu?: Menu;
+  @ViewChild('nomes') nomes?: NomesExtratoComponent;
+
+  /** Card #79: "Nomes e regras" — a aba dos nomes do extrato e a das regras. */
+  readonly opcoesAba: { label: string; value: 'nomes' | 'regras' }[] = [
+    { label: 'Nomes do extrato', value: 'nomes' }, { label: 'Regras', value: 'regras' }
+  ];
+  aba: 'nomes' | 'regras' = 'nomes';
+
+  @ViewChild(ModalComponent) modal?: ModalComponent;
+
+  /** Nomes classificados e não salvos: o mf-modal pergunta antes de fechar (card #80). */
+  get temAlteracoes(): boolean {
+    return this.aba === 'nomes' && !!this.nomes?.temAlteracoes;
+  }
+
+  /** "Fechar" do rodapé: passa pelo mf-modal, que pergunta se houver algo não salvo. */
+  fechar(): Promise<void> {
+    return this.modal ? this.modal.pedirParaFechar() : Promise.resolve(this.fechado.emit());
+  }
+
+  /** Nomes classificados: a lista de regras muda e a tela de trás recarrega os lançamentos. */
+  aoSalvarNomes(_lancamentos: number): void {
+    this.carregar();
+    this.alterou.emit([]);
+  }
 
   private readonly servico = inject(RegraClassificacaoService);
   private readonly confirmacao = inject(ConfirmacaoService);
@@ -91,7 +118,6 @@ export class ModalRegrasClassificacaoComponent implements OnInit {
   carregandoPrevia = false;
   aplicarAgora = true;
   busca = '';
-  buscaAberta = false;
   loading = false;
   salvando = false;
   itensMenu: MenuItem[] = [];
@@ -334,7 +360,7 @@ export class ModalRegrasClassificacaoComponent implements OnInit {
 
   valor(ex: ExemploRegraDto): string {
     const saida = ex.tipoLancamento !== 'Entrada';
-    return (saida ? '−' : '+') + formatCurrencyBR(Math.abs(ex.valor));
+    return (saida ? '- ' : '+ ') + formatCurrencyBR(Math.abs(ex.valor));   // card #81: mesmo sinal do resto do app
   }
 
   dataCurta(iso: string): string {

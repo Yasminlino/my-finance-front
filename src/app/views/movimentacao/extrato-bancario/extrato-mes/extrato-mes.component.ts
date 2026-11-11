@@ -71,12 +71,14 @@ import { LerNotaComponent } from '../components/ler-nota/ler-nota.component';
 import { VerNotaComponent } from '../components/ver-nota/ver-nota.component';
 import { FabComponent } from 'src/app/shared/ui/fab/fab.component';
 import { ModalConfiguracaoVinculoPessoaComponent } from '../components/modal-configuracao-vinculo-pessoa/modal-configuracao-vinculo-pessoa.component';
+import { NovaPessoaComponent } from 'src/app/shared/components/nova-pessoa/nova-pessoa.component';
+import { ModalComponent, ModalRodapeDirective } from 'src/app/shared/ui/modal/modal.component';
 import { ModalImportacoesMensaisComponent } from '../components/modal-importacoes-mensais/modal-importacoes-mensais.component';
 import { AbrirExtrato, ModalImportarExtratoComponent } from '../components/modal-importar-extrato/modal-importar-extrato.component';
 import { ModalLancamentoManualComponent } from '../components/modal-lancamento-manual/modal-lancamento-manual.component';
 import {
   CampoEditavel, CardsExtrato, ContaDoMes, FaturaPorPessoa, FiltroExtrato, GrupoDoDia, Pendencia, TipoFiltro, agruparPorDia, alteracoesDoRascunho,
-  ROTULO_TITULAR, aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehDoTitular, ehEntrada, faturaPorPessoa, filtrarExtrato, nomeDaPessoa, nomesParaSugestao, rascunhoDe, semPessoa, vencimentoNoMes,
+  ROTULO_TITULAR, aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehDoTitular, ehEntrada, faturaPorPessoa, filtrarExtrato, nomeDaPessoa, opcoesDePessoa, rascunhoDe, semPessoa, usaPessoas, vencimentoNoMes, moedaComSinal,
   dividido, tituloCurtoDoDia, OPCOES_ORDEM_EXTRATO, OrdemExtrato, grupoUnico, ordenarExtrato
 } from '../extrato.regras';
 
@@ -103,7 +105,7 @@ const TIPOS: { label: string; value: TipoFiltro }[] = [
     InputNumberModule, OverlayPanelModule, MultiSelectModule, ProgressBarModule, SelectButtonModule, BadgeModule, SidebarModule, DialogModule, SkeletonModule, AcertosComponent, FaturaPorPessoaComponent, ClassificarSempreComponent, ModalRegrasClassificacaoComponent, TableModule, TooltipModule,
     PageHeaderComponent, StatCardComponent, FilterBarComponent, EmptyStateComponent, ExtratoContasComponent,
     ModalImportarExtratoComponent, ModalLancamentoManualComponent, ModalImportacoesMensaisComponent,
-    ModalConfiguracaoVinculoPessoaComponent, BarraEdicaoComponent, TotaisSelecaoComponent, CurrencyInputDirective,
+    ModalConfiguracaoVinculoPessoaComponent, NovaPessoaComponent, ModalComponent, ModalRodapeDirective, BarraEdicaoComponent, TotaisSelecaoComponent, CurrencyInputDirective,
     ExtratoEditarSheetComponent, FabComponent, DividirLancamentoComponent, ResumoCategoriasComponent, LerNotaComponent, VerNotaComponent
   ],
   templateUrl: './extrato-mes.component.html',
@@ -137,7 +139,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     { field: 'dataMovimentacao', header: 'Data' },
     { field: 'descricao', header: 'Descrição' },
     { field: 'categoriaNome', header: 'Categoria' },
-    { field: 'nomePessoaTransacao', header: 'Pessoa' },
+    { field: 'nomePessoaTransacao', header: 'Nome no extrato' },
     { field: 'tipoLancamento', header: 'Tipo' },
     { field: 'valor', header: 'Valor' }
   ];
@@ -218,8 +220,6 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   excluindo = false;
   tiposMovimentacao: TipoMovimentacaoDto[] = [];
   opcoesTipoMov: { label: string; value: number }[] = [];
-  /** Sugestões do campo Pessoa: os nomes das pessoas cadastradas. */
-  nomesPessoas: string[] = [];
   private originais = new Map<number, ExtratoItemDto>();
 
   showImportar = false;
@@ -258,7 +258,6 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
           this.opcoesTipoMov = [...this.tiposMovimentacao]
             .sort((a, b) => a.nomeTipoMovimentacao.localeCompare(b.nomeTipoMovimentacao, 'pt-BR'))
             .map(t => ({ label: t.nomeTipoMovimentacao, value: t.id }));
-          this.nomesPessoas = nomesParaSugestao(pessoas ?? []);
           this.bancos = bancos ?? [];
           this.opcoesConta = this.bancos.map(b => ({ label: b.nomeBanco, value: b.id }));
           this.atualizarDetalhe();
@@ -266,9 +265,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
           this.categorias = categorias ?? [];
           this.categoriasAtivas = this.categorias.filter(c => c.ativo !== false);
           this.pessoasCadastradas = pessoas ?? [];
-          this.opcoesPessoaRegra = this.pessoasCadastradas
-            .map(p => ({ label: p.ehTitular ? 'Eu' : p.nomePessoa, value: p.id }))
-            .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+          this.opcoesPessoaRegra = opcoesDePessoa(this.pessoasCadastradas);
           this.recalcular();
         },
         error: () => this.alertService.info('Falha ao carregar bancos, tipos de conta, categorias, pessoas e tipos de movimentação.')
@@ -420,9 +417,14 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     return c.compartilhado ? 'compartilhado' : 'cartao';
   }
 
+  /** Card #79: quem não empresta cartão (nenhum cartão compartilhado) não vê nada de pessoas. */
+  get usaPessoas(): boolean {
+    return usaPessoas(this.bancos);
+  }
+
   /** Cartão só meu não mostra nada de pessoas. */
   get mostraPessoa(): boolean {
-    return this.variacao !== 'cartao';
+    return this.usaPessoas && this.variacao !== 'cartao';
   }
 
   get tituloPagina(): string {
@@ -464,7 +466,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
         return [
           { rotulo: 'Entradas', valor: m(c?.entradas), icone: 'pi pi-arrow-down-left', tom: 'receita', corDoValor: 'receita', acao: 'entradas' },
           { rotulo: 'Saídas', valor: m(c?.saidas), icone: 'pi pi-arrow-up-right', tom: 'despesa', acao: 'saidas' },
-          { rotulo: 'Resultado', valor: m(c?.resultado), icone: 'pi pi-chart-line', tom: 'info', corDoValor: (c?.resultado ?? 0) < 0 ? 'perigo' : 'receita' },
+          { rotulo: 'Resultado', valor: moedaComSinal(c?.resultado ?? 0), icone: 'pi pi-chart-line', tom: 'info', corDoValor: (c?.resultado ?? 0) < 0 ? 'perigo' : 'receita' },
           semCategoria(c?.semCategoria)
         ];
       case 'cartao':
@@ -528,8 +530,9 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
         { label: 'Relatório do mês', icon: 'pi pi-chart-line', command: () => this.abrirRelatorio() }
       ] },
       { label: 'Configurações', items: [
-        { label: 'Pessoas que usam meus cartões', icon: 'pi pi-users', command: () => (this.showConfigPessoas = true) },
-        { label: 'Regras de classificação', icon: 'pi pi-bolt', command: () => this.abrirRegras() }
+        // Card #79: só para quem empresta cartão.
+        ...(this.usaPessoas ? [{ label: 'Pessoas que usam meus cartões', icon: 'pi pi-users', command: () => (this.showConfigPessoas = true) }] : []),
+        { label: 'Nomes e regras', icon: 'pi pi-bolt', command: () => this.abrirRegras() }
       ] }
     ];
     const doBanco: MenuItem[] = c ? [
@@ -594,12 +597,17 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     const c = this.contaAberta;
     if (!c) return;
     this.acoesAbertas = false;
-    this.opcoesQuemUsa = this.pessoasCadastradas
-      .filter(p => p.entraNosAcertos && !p.ehTitular)
-      .map(p => ({ label: p.nomePessoa, value: p.id }))
-      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+    this.opcoesQuemUsa = opcoesDePessoa(this.pessoasCadastradas.filter(p => !p.ehTitular));
     this.quemUsa = this.bancos.find(b => b.id === c.bancoId)?.pessoasIds ?? [];
     this.showQuemUsa = true;
+  }
+
+  /** Card #79: pessoa cadastrada ali mesmo no "Quem usa este cartão" já entra escolhida. */
+  aoCriarQuemUsa(pessoa: PessoaMovimentacaoDto): void {
+    if (!this.pessoasCadastradas.some(p => p.id === pessoa.id)) this.pessoasCadastradas = [...this.pessoasCadastradas, pessoa];
+    this.opcoesPessoaRegra = opcoesDePessoa(this.pessoasCadastradas);
+    this.opcoesQuemUsa = opcoesDePessoa(this.pessoasCadastradas.filter(p => !p.ehTitular));
+    if (!this.quemUsa.includes(pessoa.id)) this.quemUsa = [...this.quemUsa, pessoa.id];
   }
 
   confirmarQuemUsa(): void {
@@ -851,8 +859,8 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
     this.alteracoes = alteracoesDoRascunho(this.itens, this.rascunho).length;
   }
 
-  editarPessoa(item: ExtratoItemDto, nome: string): void {
-    this.rascunho[item.id] = aplicarPessoa(this.rascunho[item.id], nome, this.pessoasCadastradas);
+  editarPessoa(item: ExtratoItemDto, pessoaId: number | null): void {
+    this.rascunho[item.id] = aplicarPessoa(this.rascunho[item.id], pessoaId, this.pessoasCadastradas);
     this.aoEditar();
   }
 
@@ -949,6 +957,11 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
   readonly opcoesPendencia: { label: string; value: Pendencia }[] = [
     { label: 'Sem pessoa', value: 'sem-pessoa' }, { label: 'Sem categoria', value: 'sem-categoria' }
   ];
+
+  /** Card #81: "Sem pessoa" só faz sentido para quem usa pessoas. */
+  get pendencias(): { label: string; value: Pendencia }[] {
+    return this.mostraPessoa ? this.opcoesPendencia : this.opcoesPendencia.filter(o => o.value !== 'sem-pessoa');
+  }
 
   /** Celular: entrada em verde; saída com uma cor fixa por categoria (mesma categoria, mesma cor). */
   corDoIcone(item: ExtratoItemDto, parte: 'bg' | 'fg'): string {
@@ -1198,7 +1211,7 @@ export class ExtratoMesComponent implements OnInit, GridSelecionavel {
 
   saldoDoDia(data: string): string {
     const saldo = this.grupos[data]?.saldo ?? 0;
-    return (saldo > 0 ? '+ ' : '') + formatCurrencyBR(saldo);
+    return moedaComSinal(saldo);
   }
 }
 

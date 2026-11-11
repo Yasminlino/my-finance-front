@@ -5,6 +5,7 @@ import { PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
+import { ModalComponent, ModalMaisDirective, ModalRodapeDirective } from 'src/app/shared/ui/modal/modal.component';
 import { DropdownModule } from 'primeng/dropdown';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
@@ -45,7 +46,7 @@ export interface AbrirExtrato {
   standalone: true,
   imports: [
     CommonModule, FormsModule, PrimeTemplate, ButtonModule, CheckboxModule, DialogModule, DropdownModule, IconFieldModule, InputIconModule,
-    InputTextModule, MessageModule, SelectButtonModule, StepsModule, TableModule, TagModule
+    InputTextModule, MessageModule, SelectButtonModule, StepsModule, TableModule, TagModule, ModalComponent, ModalRodapeDirective
   ],
   templateUrl: './modal-importar-extrato.component.html',
   styleUrl: './modal-importar-extrato.component.scss'
@@ -126,11 +127,12 @@ export class ModalImportarExtratoComponent implements OnInit {
     return resumoDoQueEntrou(this.previa?.linhas ?? [], this.marcadas, this.categoriaDe);
   }
 
-  get mensagemArquivo(): string | null {
-    if (!this.tentouContinuar) return null;
-    if (!this.arquivo) return 'Escolha o arquivo do extrato.';
-    if (!this.bancoId) return 'Escolha o banco.';
-    return null;
+  get faltaArquivo(): boolean {
+    return this.tentouContinuar && !this.arquivo;
+  }
+
+  get faltaBanco(): boolean {
+    return this.tentouContinuar && !this.bancoId;
   }
 
   moeda(v: number): string {
@@ -180,7 +182,7 @@ export class ModalImportarExtratoComponent implements OnInit {
 
   continuar(): void {
     this.tentouContinuar = true;
-    if (this.mensagemArquivo || !this.previa?.bancoId || this.carregando) return;
+    if (this.faltaArquivo || this.faltaBanco || !this.previa?.bancoId || this.carregando) return;
     this.filtro = 'todos';
     this.busca = '';
     this.passo = 1;

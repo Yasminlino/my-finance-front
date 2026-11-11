@@ -27,7 +27,10 @@ export class ExtratoEditarSheetComponent implements OnChanges {
   @Input() item: ExtratoItemDto | null = null;
   @Input() opcoesCategoria: { label: string; value: number }[] = [];
   @Input() opcoesTipoMov: { label: string; value: number }[] = [];
-  @Input() nomesPessoas: string[] = [];
+  /** Pessoas cadastradas ("Eu" primeiro); o nome do extrato não é pessoa (card #79). */
+  @Input() opcoesPessoa: { label: string; value: number }[] = [];
+  /** Sem cartão compartilhado (ou num cartão só meu), o campo Pessoa não aparece. */
+  @Input() mostraPessoa = true;
   @Input() pessoas: PessoaMovimentacaoDto[] = [];
   @Input() salvando = false;
   @Input() excluindo = false;
@@ -73,8 +76,8 @@ export class ExtratoEditarSheetComponent implements OnChanges {
     if (this.rascunho && this.sugestao) this.rascunho = { ...this.rascunho, categoriaId: this.sugestao.categoriaId };
   }
 
-  editarPessoa(nome: string): void {
-    if (this.rascunho) this.rascunho = aplicarPessoa(this.rascunho, nome, this.pessoas);
+  editarPessoa(pessoaId: number | null): void {
+    if (this.rascunho) this.rascunho = aplicarPessoa(this.rascunho, pessoaId, this.pessoas);
   }
 
   aoMudarVisivel(visivel: boolean): void {

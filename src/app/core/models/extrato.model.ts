@@ -38,10 +38,13 @@ export interface ExtratoItemDto {
   observacao?: string | null;
   identificador?: string | null;
 
+  /** Quem usou o cartão ("Carlos"), cadastrada à mão; a API liga só pelo id (card #79). */
   pessoaMovimentacaoId?: number | null;
+  /** O nome que veio no extrato ("CIRCUITO"): classifica pelas regras e não é pessoa (card #79). */
   nomePessoaTransacao?: string | null;
-  /** No create, a pessoa escolhida no autocomplete: a API usa id, nome, categoria e tipo dela. */
   pessoaMovimentacao?: PessoaMovimentacaoDto | null;
+  /** A categoria veio de uma regra com nome parecido (card #79). Só leitura. */
+  classificadoPorSemelhanca?: boolean;
 
   bancoId?: number | null;
   bancoNome?: string | null;
@@ -61,7 +64,7 @@ export interface ExtratoItemDto {
 
   usuarioId?: number;
   chaveDescricao?: string | null;
-  /** Pede à API para gravar a ligação com a pessoa (ou criá-la pelo nome); o padrão da pessoa não muda (card #45, parte 2). */
+  /** Pede à API para gravar a pessoa de pessoaMovimentacaoId (sem id = sem pessoa). */
   alteraVinculoPessoa?: boolean;
   /** Pagamento (Entrada) que abate uma compra (Saída) da mesma pessoa; null = saldo geral (card #45, parte 3). */
   abateItemId?: number | null;

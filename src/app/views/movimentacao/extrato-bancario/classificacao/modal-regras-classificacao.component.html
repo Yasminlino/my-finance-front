@@ -1,35 +1,22 @@
-<p-dialog [visible]="true" [modal]="true" [draggable]="false" [resizable]="false" [closable]="false" [dismissableMask]="!salvando && !movel"
-  [styleClass]="movel ? 'regras-dialog regras-dialog--movel' : 'regras-dialog'"
-  [style]="movel ? { width: '100vw', height: '100dvh', maxHeight: '100dvh', margin: '0' } : { width: '60rem', maxWidth: '96vw' }"
-  (visibleChange)="!$event && fechado.emit()">
+<!-- Card #80: mf-modal — p-dialog no desktop, tela cheia no celular (← fecha; voltar do aparelho também) -->
+<mf-modal titulo="Nomes e regras" tipo="tela" tamanhoDesktop="lg" icone="pi pi-bolt" [ocupado]="salvando"
+  [temAlteracoes]="temAlteracoes" (fechar)="fechado.emit()">
 
-  <ng-template pTemplate="header">
-    @if (movel) {
-      <div class="regras-topo regras-topo--movel">
-        <p-button icon="pi pi-arrow-left" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Voltar" (onClick)="fechado.emit()" />
-        @if (buscaAberta) {
-          <input pInputText class="flex-grow-1" placeholder="Buscar regra..." aria-label="Buscar regra" [(ngModel)]="busca" />
-        } @else {
-          <span class="regras-titulo flex-grow-1">Regras de classificação</span>
-        }
-        <p-button [icon]="buscaAberta ? 'pi pi-times' : 'pi pi-search'" [rounded]="true" [text]="true" severity="secondary"
-          [ariaLabel]="buscaAberta ? 'Fechar busca' : 'Buscar regra'" (onClick)="buscaAberta = !buscaAberta; busca = ''" />
-      </div>
-    } @else {
-      <div class="regras-topo">
-        <i class="pi pi-bolt regras-raio"></i>
-        <span class="regras-titulo">Regras de classificação</span>
-        <span class="mf-hint">· {{ regras.length }} {{ regras.length === 1 ? 'regra' : 'regras' }}</span>
-        <span class="flex-grow-1"></span>
-        <span class="p-input-icon-left regras-busca">
-          <i class="pi pi-search"></i>
-          <input pInputText class="p-inputtext-sm w-full" placeholder="Buscar regra..." aria-label="Buscar regra" [(ngModel)]="busca" />
-        </span>
-        <p-button icon="pi pi-times" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Fechar" (onClick)="fechado.emit()" />
-      </div>
-    }
-  </ng-template>
+  <!-- Card #79: "Nomes do extrato" (classificar o nome que vem no extrato) | "Regras" -->
+  <p-selectButton [options]="opcoesAba" [(ngModel)]="aba" optionLabel="label" optionValue="value" [allowEmpty]="false"
+    styleClass="regras-abas mb-3" />
 
+  @if (aba === 'nomes') {
+    <app-nomes-extrato #nomes [categorias]="categorias" [tipos]="tipos" [movel]="movel" (salvou)="aoSalvarNomes($event)" />
+  } @else {
+  <!-- Busca e contagem das regras (antes no cabeçalho) -->
+  <div class="regras-busca-linha mb-3">
+    <span class="p-input-icon-left flex-1">
+      <i class="pi pi-search"></i>
+      <input pInputText class="p-inputtext-sm w-full" placeholder="Buscar regra..." aria-label="Buscar regra" [(ngModel)]="busca" />
+    </span>
+    <span class="mf-hint white-space-nowrap">{{ regras.length }} {{ regras.length === 1 ? 'regra' : 'regras' }}</span>
+  </div>
   @if (!movel) {
     <p class="mt-0 mf-hint">A regra é aplicada na importação e no lançamento manual. Se mais de uma regra servir, vale a de cima.</p>
   }
@@ -136,13 +123,14 @@
   @if (movel && !form) {
     <p-button styleClass="regras-fab" icon="pi pi-plus" [rounded]="true" ariaLabel="Nova regra" (onClick)="novaRegra()" />
   }
+  }
 
   @if (!movel) {
-    <ng-template pTemplate="footer">
-      <p-button label="Fechar" severity="secondary" [outlined]="true" (onClick)="fechado.emit()" />
+    <ng-template mfModalRodape>
+      <p-button label="Fechar" severity="secondary" [outlined]="true" (onClick)="fechar()" />
     </ng-template>
   }
-</p-dialog>
+</mf-modal>
 
 <!-- Celular: a regra abre num painel de baixo -->
 @if (movel) {
@@ -184,10 +172,12 @@
         <p-dropdown name="categoria" [options]="categorias" optionLabel="label" optionValue="value" [(ngModel)]="f.categoriaId"
           [filter]="true" [showClear]="true" placeholder="Categoria" (onChange)="aoMudarForm()" appendTo="body"
           styleClass="regra-categoria" class="regra-col-cheia" [class.regra-categoria--escolhida]="!!f.categoriaId" ariaLabel="Categoria" />
-        @if (!movel) { <span class="mf-hint">pessoa</span> }
-        <p-dropdown name="pessoa" [options]="pessoas" optionLabel="label" optionValue="value" [(ngModel)]="f.pessoaMovimentacaoId"
-          [filter]="true" [showClear]="true" [placeholder]="movel ? 'Pessoa: não mudar' : 'não mudar'" appendTo="body"
-          styleClass="regra-pessoa" ariaLabel="Pessoa" />
+        @if (pessoas.length) {
+          @if (!movel) { <span class="mf-hint">pessoa</span> }
+          <p-dropdown name="pessoa" [options]="pessoas" optionLabel="label" optionValue="value" [(ngModel)]="f.pessoaMovimentacaoId"
+            [filter]="true" [showClear]="true" [placeholder]="movel ? 'Pessoa: não mudar' : 'não mudar'" appendTo="body"
+            styleClass="regra-pessoa" ariaLabel="Pessoa" />
+        }
         @if (movel) {
           <p-dropdown name="conta" [options]="contas" optionLabel="label" optionValue="value" [(ngModel)]="f.bancoId" [showClear]="true"
             placeholder="Conta: todas" (onChange)="aoMudarForm()" appendTo="body" styleClass="regra-conta-dd" ariaLabel="Conta" />

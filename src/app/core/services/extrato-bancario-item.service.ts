@@ -49,8 +49,11 @@ export class ExtratoBancarioItemService {
   }
 
   /** Resumo do mês por categoria (card #76, fase 5). */
-  resumoCategorias(mes: string): Observable<ResumoCategoriasDto> {
-    return this.api.get<ResumoCategoriasDto>('/GetResumoCategorias', undefined, { params: { month: mes } });
+  resumoCategorias(mes: string, bancoId?: number | null): Observable<ResumoCategoriasDto> {
+    // Card #81: com uma conta aberta no Extrato, só os lançamentos dela.
+    const params: Record<string, string | number> = { month: mes };
+    if (bancoId) params['bancoId'] = bancoId;
+    return this.api.get<ResumoCategoriasDto>('/GetResumoCategorias', undefined, { params });
   }
 
   /** Números por conta no mês, os mesmos na listagem e no detalhe (card #77). */

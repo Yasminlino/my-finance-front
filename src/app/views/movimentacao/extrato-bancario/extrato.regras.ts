@@ -2,6 +2,7 @@ import { BancoDto } from 'src/app/core/models/banco.model';
 import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 import { normalizarNome } from 'src/app/shared/utils/nomes-parecidos';
+import { formatCurrencyBR } from 'src/app/core/utils/mask';
 
 /**
  * Regras da tela de Extrato no layout novo (card #45, parte 1), sem Angular: a tela, os cards do celular e os specs
@@ -14,8 +15,17 @@ export function ehEntrada(item: Pick<ExtratoItemDto, 'tipoLancamento'>): boolean
 }
 
 /** Nem vínculo com pessoa cadastrada nem nome digitado. */
-export function semPessoa(item: Pick<ExtratoItemDto, 'pessoaMovimentacaoId' | 'nomePessoaTransacao'>): boolean {
-  return !item.pessoaMovimentacaoId && !item.nomePessoaTransacao?.trim();
+export function semPessoa(item: Pick<ExtratoItemDto, 'pessoaMovimentacaoId'>): boolean {
+  // Card #79: o nome do extrato ("CIRCUITO") não é pessoa; pessoa é só a cadastrada.
+  return !item.pessoaMovimentacaoId;
+}
+
+/**
+ * Card #79: a parte de pessoas (lista, coluna, Acertos, pessoa nas regras e no Dividir) só aparece para quem empresta
+ * cartão — algum cartão marcado "Outras pessoas usam este cartão".
+ */
+export function usaPessoas(bancos: readonly Pick<BancoDto, 'compartilhado'>[]): boolean {
+  return bancos.some(b => b.compartilhado === true);
 }
 
 const centavos = (valor: number) => Math.round(valor * 100) / 100;
@@ -126,14 +136,15 @@ type PessoaResumo = { id: number; nomePessoa: string; ehTitular?: boolean };
 
 /** O lançamento é do "Eu": pelo vínculo que veio da API ou pelo nome gravado. */
 export function ehDoTitular(item: ExtratoItemDto): boolean {
+  if (!item.pessoaMovimentacaoId && !item.pessoaMovimentacao) return false;
   return item.pessoaMovimentacao?.ehTitular === true
-    || normalizarNome(item.pessoaMovimentacao?.nomePessoa ?? item.nomePessoaTransacao) === normalizarNome(NOME_TITULAR);
+    || normalizarNome(item.pessoaMovimentacao?.nomePessoa) === normalizarNome(NOME_TITULAR);
 }
 
-/** Nome mostrado no chip: o da pessoa cadastrada ou o digitado; a titular aparece como "Eu". */
+/** Nome mostrado no chip: o da pessoa cadastrada (nunca o nome do extrato); a titular aparece como "Eu". */
 export function nomeDaPessoa(item: ExtratoItemDto): string {
   if (ehDoTitular(item)) return ROTULO_TITULAR;
-  return (item.pessoaMovimentacao?.nomePessoa ?? item.nomePessoaTransacao ?? '').trim();
+  return item.pessoaMovimentacaoId || item.pessoaMovimentacao ? (item.pessoaMovimentacao?.nomePessoa ?? '').trim() : '';
 }
 
 /** Sugestões do campo Pessoa: "Eu" primeiro, depois as outras em ordem alfabética. */
@@ -156,6 +167,7 @@ export function filtrarExtrato(itens: readonly ExtratoItemDto[], filtro: FiltroE
     .filter(i => filtro.importacaoId == null || i.extratoBancarioId === filtro.importacaoId)
     .filter(i => filtro.tipo === 'todos' || (filtro.tipo === 'entradas') === ehEntrada(i))
     .filter(i => !busca || normalizarNome(i.descricao).includes(busca) || normalizarNome(nomeDaPessoa(i)).includes(busca)
+      || normalizarNome(i.nomePessoaTransacao).includes(busca)
       || !!i.itensNota?.some(n => normalizarNome(n).includes(busca)))
     .filter(i => !pessoas.length || pessoas.includes(normalizarNome(nomeDaPessoa(i)))
       || !!i.partes?.some(p => pessoas.includes(normalizarNome(p.pessoaNome))))
@@ -169,7 +181,8 @@ export function filtrarExtrato(itens: readonly ExtratoItemDto[], filtro: FiltroE
 }
 
 /** O nome usado em "Ordenar por: Nome": a pessoa/estabelecimento ou, sem ele, a descrição. */
-const nomeParaOrdem = (i: ExtratoItemDto) => nomeDaPessoa(i) || (i.descricao ?? '').trim();
+/** "Nome" ordena pelo nome que veio no extrato (o estabelecimento), senão pela descrição. */
+const nomeParaOrdem = (i: ExtratoItemDto) => (i.nomePessoaTransacao ?? '').trim() || (i.descricao ?? '').trim();
 
 /** "Ordenar por". Devolve uma cópia; no empate fica a data mais recente (a ordem em que vieram). */
 export function ordenarExtrato(itens: readonly ExtratoItemDto[], ordem: OrdemExtrato): ExtratoItemDto[] {
@@ -276,34 +289,43 @@ export function campoAlterado(original: ExtratoItemDto | undefined, editado: Ext
 }
 
 /**
- * Pessoa digitada no Modo edição: com nome de pessoa cadastrada ("Eu" casa com a titular), liga o lançamento a ela;
- * com nome novo, a API cria a pessoa sem padrão. Vazio tira a pessoa.
+ * Pessoa escolhida no lançamento (card #79): só pelo id, de uma pessoa cadastrada; null tira a pessoa. O nome do extrato
+ * ("CIRCUITO") e a categoria não mudam.
  */
-export function aplicarPessoa(item: ExtratoItemDto, nome: string, pessoas: readonly PessoaResumo[]): ExtratoItemDto {
-  // Parte 2: com alteraVinculoPessoa a API grava a ligação (ou cria a pessoa pelo nome), sem mexer no padrão dela.
-  const limpo = nome.trim();
-  if (!limpo) return { ...item, nomePessoaTransacao: null, pessoaMovimentacaoId: null, alteraVinculoPessoa: true };
-  const pessoa = pessoas.find(p => normalizarNome(p.nomePessoa) === normalizarNome(limpo));
-  return { ...item, nomePessoaTransacao: pessoa?.nomePessoa ?? limpo, pessoaMovimentacaoId: pessoa?.id ?? null, alteraVinculoPessoa: true };
+export function aplicarPessoa(item: ExtratoItemDto, pessoaId: number | null, pessoas: readonly PessoaResumo[]): ExtratoItemDto {
+  const pessoa = pessoaId == null ? undefined : pessoas.find(p => p.id === pessoaId);
+  return {
+    ...item,
+    pessoaMovimentacaoId: pessoa?.id ?? null,
+    pessoaMovimentacao: pessoa ? { id: pessoa.id, nomePessoa: pessoa.nomePessoa, ehTitular: pessoa.ehTitular, categoriaId: null, tipoMovimentacaoId: null } : null,
+    alteraVinculoPessoa: true
+  };
+}
+
+/** Opções do campo Pessoa: "Eu" primeiro, depois as outras em ordem alfabética. */
+export function opcoesDePessoa(pessoas: readonly PessoaResumo[]): { label: string; value: number }[] {
+  const outras = pessoas.filter(p => !p.ehTitular)
+    .map(p => ({ label: p.nomePessoa, value: p.id }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+  const eu = pessoas.find(p => p.ehTitular);
+  return eu ? [{ label: ROTULO_TITULAR, value: eu.id }, ...outras] : outras;
 }
 
 export type FaturaPorPessoa = {
   total: number;
-  /** Eu, sem pessoa e quem não entra nos acertos (mercado, Pix…). */
+  /** Eu e sem pessoa. */
   minhas: number;
   outras: number;
   porPessoa: { pessoaId: number; nome: string; valor: number }[];
 };
 
 /**
- * Card "Fatura dividida por pessoa" (card #45, parte 3): as saídas da fatura separadas entre as minhas e as das pessoas
- * que entram nos acertos, com quanto é de cada uma (maior primeiro). Entradas (estorno, pagamento) não contam.
+ * Card "Fatura dividida por pessoa" (card #45, parte 3): as saídas da fatura separadas entre as minhas e as das outras
+ * pessoas (toda pessoa cadastrada menos o "Eu", card #79), com quanto é de cada uma (maior primeiro). Entradas
+ * (estorno, pagamento) não contam.
  */
-export function faturaPorPessoa(
-  itens: readonly ExtratoItemDto[],
-  pessoas: readonly { id: number; nomePessoa: string; ehTitular?: boolean; entraNosAcertos?: boolean }[]
-): FaturaPorPessoa {
-  const dosAcertos = new Map(pessoas.filter(p => p.entraNosAcertos && !p.ehTitular).map(p => [p.id, p.nomePessoa]));
+export function faturaPorPessoa(itens: readonly ExtratoItemDto[], pessoas: readonly PessoaResumo[]): FaturaPorPessoa {
+  const dosAcertos = new Map(pessoas.filter(p => !p.ehTitular).map(p => [p.id, p.nomePessoa]));
   const saidas = itens.filter(i => !ehEntrada(i));
   const porPessoa = new Map<number, number>();
   let minhas = 0;
@@ -319,4 +341,10 @@ export function faturaPorPessoa(
     .sort((a, b) => b.valor - a.valor);
   const outras = centavos(lista.reduce((s, p) => s + p.valor, 0));
   return { total: centavos(minhas + outras), minhas: centavos(minhas), outras, porPessoa: lista };
+}
+
+/** Valor com sinal, espaçado igual nos dois lados (card #81): "+ R$ 150,00", "- R$ 75,76", "R$ 0,00". */
+export function moedaComSinal(v: number): string {
+  if (!v) return formatCurrencyBR(0);
+  return `${v > 0 ? '+' : '-'} ${formatCurrencyBR(Math.abs(v))}`;
 }

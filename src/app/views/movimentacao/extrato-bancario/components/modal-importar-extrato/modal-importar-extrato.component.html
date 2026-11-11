@@ -1,14 +1,9 @@
-<p-dialog [visible]="true" [modal]="true" [closable]="!importando" [draggable]="false" [resizable]="false"
-  styleClass="mf-dialog-lg imp-assistente" (visibleChange)="fechar()">
-  <ng-template pTemplate="header">
-    <div class="ia-cabecalho">
-      <span class="ia-titulo"><i class="pi pi-file-import"></i> Importar extrato</span>
-      @if (movel()) {
-        <small class="mf-hint">Passo {{ passo + 1 }} de 3 · {{ passos[passo].label }}</small>
-        <div class="ia-progresso"><span [style.width.%]="(passo + 1) / 3 * 100"></span></div>
-      }
-    </div>
-  </ng-template>
+<!-- Card #80: mf-modal — p-dialog no desktop, tela cheia no celular -->
+<mf-modal titulo="Importar extrato" icone="pi pi-file-import" tipo="tela" tamanhoDesktop="xl" [ocupado]="importando"
+  [subtitulo]="movel() ? 'Passo ' + (passo + 1) + ' de 3 · ' + passos[passo].label : ''" (fechar)="fechar()">
+  @if (movel()) {
+    <div class="ia-progresso mb-3"><span [style.width.%]="(passo + 1) / 3 * 100"></span></div>
+  }
 
   @if (!movel()) {
     <p-steps [model]="passos" [activeIndex]="passo" [readonly]="true" styleClass="mb-4" />
@@ -38,6 +33,10 @@
         }
       </label>
 
+      <!-- Card #81: cada aviso embaixo do campo que falta -->
+      @if (faltaArquivo) {
+        <small class="p-error">Escolha o arquivo do extrato.</small>
+      }
       @if (erro) {
         <p-message severity="error" [text]="erro" styleClass="w-full justify-content-start" />
       }
@@ -62,6 +61,9 @@
             </div>
           </ng-template>
         </p-dropdown>
+        @if (faltaBanco) {
+          <small class="p-error">Escolha o banco.</small>
+        }
         @if (previa?.bancoDetectado && previa?.bancoId === bancoId) {
           <small class="ia-detectado"><i class="pi pi-check-circle"></i> Detectado pelo arquivo, confira</small>
         } @else if (arquivo && previa && !previa.bancoId) {
@@ -81,9 +83,6 @@
       }
       @if (previa?.aviso) {
         <p-message severity="warn" [text]="previa!.aviso" styleClass="w-full justify-content-start" />
-      }
-      @if (mensagemArquivo) {
-        <small class="p-error">{{ mensagemArquivo }}</small>
       }
     </div>
   }
@@ -125,7 +124,7 @@
                   [filter]="true" appendTo="body" styleClass="w-full" [disabled]="!marcadas.has(l.chave)" ariaLabel="Categoria" />
               }
             </td>
-            <td class="text-right white-space-nowrap" [class.ia-entrada]="l.tipoLancamento === 'Entrada'">{{ l.tipoLancamento === 'Entrada' ? '' : '− ' }}{{ moeda(l.valor) }}</td>
+            <td class="text-right white-space-nowrap" [class.ia-entrada]="l.tipoLancamento === 'Entrada'">{{ l.tipoLancamento === 'Entrada' ? '' : '- ' }}{{ moeda(l.valor) }}</td>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage"><tr><td colspan="5" class="mf-hint">Nenhum lançamento neste filtro.</td></tr></ng-template>
@@ -188,7 +187,7 @@
     }
   }
 
-  <ng-template pTemplate="footer">
+  <ng-template mfModalRodape>
     <div class="ia-rodape">
       @if (passo === 0) {
         <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="fechar()" />
@@ -203,4 +202,4 @@
       }
     </div>
   </ng-template>
-</p-dialog>
+</mf-modal>

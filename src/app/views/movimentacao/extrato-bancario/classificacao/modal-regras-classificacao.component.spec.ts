@@ -8,6 +8,7 @@ import { PreviaRegraResultadoDto, RegraClassificacaoDto } from 'src/app/core/mod
 import { RegraClassificacaoService } from 'src/app/core/services/regra-classificacao.service';
 import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { NomesExtratoService } from 'src/app/core/services/nomes-extrato.service';
 
 /** Tela "Regras de classificação" (card #76, fase 1, layout novo de 05/11). */
 describe('ModalRegrasClassificacaoComponent', () => {
@@ -54,11 +55,13 @@ describe('ModalRegrasClassificacaoComponent', () => {
       providers: [
         provideNoopAnimations(), ConfirmationService,
         { provide: RegraClassificacaoService, useValue: servico },
+        { provide: NomesExtratoService, useValue: { listar: () => of([]), grupos: () => of([]) } },
         { provide: AlertService, useValue: jasmine.createSpyObj('AlertService', ['success', 'error']) }
       ]
     });
     confirmacao = TestBed.inject(ConfirmacaoService);
     fixture = TestBed.createComponent(ModalRegrasClassificacaoComponent);
+    fixture.componentInstance.aba = 'regras';
     fixture.componentRef.setInput('categorias', [{ label: 'Alimentação', value: 8 }, { label: 'Transporte', value: 9 }]);
     fixture.componentRef.setInput('tipos', [{ label: 'Débito', value: 4 }]);
     fixture.componentRef.setInput('pessoas', [{ label: 'Carlos', value: 10 }]);
@@ -67,6 +70,24 @@ describe('ModalRegrasClassificacaoComponent', () => {
   });
 
   afterEach(() => fixture.destroy());
+
+  it('card #79: "Nomes e regras" abre na aba Nomes do extrato; fechar com nomes mexidos pergunta antes', async () => {
+    fixture.destroy();
+    fixture = TestBed.createComponent(ModalRegrasClassificacaoComponent);
+    fixture.detectChanges();
+    expect(comp().aba).toBe('nomes');
+    expect(document.querySelector('app-nomes-extrato')).not.toBeNull();
+    expect(texto()).toContain('Nomes e regras');
+
+    const fechou: number[] = [];
+    comp().fechado.subscribe(() => fechou.push(1));
+    spyOn(confirmacao, 'confirmar').and.resolveTo(false);
+    spyOnProperty(comp().nomes!, 'temAlteracoes').and.returnValue(true);
+    fixture.detectChanges();
+    await comp().fechar();
+    expect(confirmacao.confirmar).toHaveBeenCalled();
+    expect(fechou).toEqual([]);
+  });
 
   it('lista as regras na ordem, como frase, com uso e contagem no topo', () => {
     expect(document.querySelectorAll('.regra-linha').length).toBe(3);
@@ -163,6 +184,7 @@ describe('ModalRegrasClassificacaoComponent', () => {
   it('abre já com a regra inicial ("Editar" do "Criar regra?")', () => {
     fixture.destroy();
     fixture = TestBed.createComponent(ModalRegrasClassificacaoComponent);
+    fixture.componentInstance.aba = 'regras';
     fixture.componentRef.setInput('inicial', { texto: 'UBER', categoriaId: 9 });
     fixture.detectChanges();
     expect(comp().form).toEqual(jasmine.objectContaining({ id: null, texto: 'UBER', categoriaId: 9, campo: 'descricao_ou_pessoa' }));

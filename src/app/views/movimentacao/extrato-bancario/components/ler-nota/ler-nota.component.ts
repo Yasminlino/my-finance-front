@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnDestroy, Output, inject } from '@angu
 import { FormsModule } from '@angular/forms';
 import { PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
+import { ModalComponent, ModalRodapeDirective } from 'src/app/shared/ui/modal/modal.component';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { NotaFiscalDto } from 'src/app/core/models/extrato.model';
@@ -21,10 +21,10 @@ const centavos = (v: number) => Math.round(v * 100) / 100;
 @Component({
   selector: 'app-ler-nota',
   standalone: true,
-  imports: [FormsModule, PrimeTemplate, ButtonModule, DialogModule, DropdownModule, InputTextModule],
+  imports: [FormsModule, PrimeTemplate, ButtonModule, DropdownModule, InputTextModule, ModalComponent, ModalRodapeDirective],
   template: `
-    <p-dialog header="Lançar nota" [visible]="true" [modal]="true" [draggable]="false" [style]="{ width: '40rem' }"
-      [breakpoints]="{ '768px': '96vw' }" (visibleChange)="!$event && cancelar()">
+    <!-- Card #80: mf-modal — p-dialog no desktop, tela cheia no celular -->
+    <mf-modal titulo="Lançar nota" icone="pi pi-receipt" tipo="tela" tamanhoDesktop="md" [ocupado]="salvando" (fechar)="cancelar()">
       @if (nota; as n) {
         <p class="mt-0"><strong>{{ n.estabelecimento }}</strong> · {{ moeda(n.total) }}</p>
         @if (diferenca !== 0) {
@@ -54,13 +54,13 @@ const centavos = (v: number) => Math.round(v * 100) / 100;
           <p-button label="Ler" [loading]="buscando" [disabled]="!link.trim()" (onClick)="ler(link)" />
         </div>
       }
-      <ng-template pTemplate="footer">
+      <ng-template mfModalRodape>
         <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="cancelar()" />
         @if (nota) {
           <p-button label="Salvar nota" icon="pi pi-check" [loading]="salvando" (onClick)="salvar()" />
         }
       </ng-template>
-    </p-dialog>
+    </mf-modal>
   `,
   styles: [`
     .nota-aviso { display: flex; gap: 0.5rem; padding: 0.75rem; margin-bottom: 0.75rem; border-radius: var(--mf-radius); background: var(--mf-tag-warning-bg); color: var(--mf-tag-warning-fg); font-size: 0.875rem; }

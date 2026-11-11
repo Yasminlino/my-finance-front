@@ -70,10 +70,12 @@ describe('ExtratoEditarSheetComponent', () => {
     expect(comp().rascunho?.categoriaId).toBeFalsy();
   });
 
-  it('pessoa cadastrada liga pelo id; fechar avisa a tela; sem item, fechada', () => {
+  it('pessoa escolhida pelo id não muda o nome do extrato (card #79); fechar avisa a tela; sem item, fechada', () => {
     abrir();
-    comp().editarPessoa('giovanne');
-    expect(comp().rascunho).toEqual(jasmine.objectContaining({ pessoaMovimentacaoId: 9, nomePessoaTransacao: 'Giovanne' }));
+    const nomeDoExtrato = comp().rascunho?.nomePessoaTransacao;
+    comp().editarPessoa(9);
+    expect(comp().rascunho).toEqual(jasmine.objectContaining({ pessoaMovimentacaoId: 9, alteraVinculoPessoa: true }));
+    expect(comp().rascunho?.nomePessoaTransacao).toBe(nomeDoExtrato);
     let fechou = 0;
     comp().fechar.subscribe(() => fechou++);
     comp().aoMudarVisivel(false);

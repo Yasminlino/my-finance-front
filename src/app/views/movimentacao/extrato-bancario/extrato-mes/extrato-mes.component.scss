@@ -208,6 +208,8 @@
 
 /* Card #76: lançamento que uma regra acabou de classificar. */
 .extrato-recem { color: var(--mf-tag-success-fg); }
+/* Card #79: categoria que veio de uma regra com nome parecido. */
+.extrato-semelhanca { color: var(--mf-tag-warning-fg); cursor: help; }
 
 /* Celular, como no layout novo: dias em maiúsculas e lançamentos em cards. */
 .extrato-movel__dia { border-top: 0; background: transparent; }

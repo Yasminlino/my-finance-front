@@ -37,8 +37,7 @@ describe('BancoFormComponent', () => {
         provideNoopAnimations(),
         { provide: BancoService, useValue: service },
         { provide: PessoaMovimentacaoService, useValue: { listar: () => of([
-          { id: 20, nomePessoa: 'CARLOS', entraNosAcertos: true }, { id: 21, nomePessoa: 'EU', ehTitular: true, entraNosAcertos: true },
-          { id: 22, nomePessoa: 'MERCADO', entraNosAcertos: false }
+          { id: 20, nomePessoa: 'CARLOS' }, { id: 21, nomePessoa: 'EU', ehTitular: true }
         ]) } },
         { provide: AlertService, useValue: jasmine.createSpyObj('AlertService', ['success', 'error']) }
       ]
@@ -52,7 +51,7 @@ describe('BancoFormComponent', () => {
     expect(saldo().value).toBe('1.234,56');
   });
 
-  it('cartão: mostra fechamento e compartilhar; só pessoas dos acertos, sem o Eu', () => {
+  it('cartão: mostra fechamento e compartilhar; as pessoas cadastradas, sem o Eu', () => {
     abrir({ id: 5, nomeBanco: 'NuBank', saldoInicial: 0, ativo: true, tipoCartaoId: 2, compartilhado: true, pessoasIds: [20] });
     const el = fixture.nativeElement as HTMLElement;
 

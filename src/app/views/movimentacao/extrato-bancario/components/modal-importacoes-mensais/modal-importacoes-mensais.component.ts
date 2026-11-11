@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MenuItem, PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { ModalComponent, ModalMaisDirective, ModalRodapeDirective } from 'src/app/shared/ui/modal/modal.component';
 import { DropdownModule } from 'primeng/dropdown';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
@@ -31,7 +32,7 @@ const MESES_COBERTURA = 12;
   standalone: true,
   imports: [
     NgStyle, FormsModule, PrimeTemplate, ButtonModule, DialogModule, DropdownModule, IconFieldModule, InputIconModule, InputTextModule,
-    MenuModule, SelectButtonModule, SidebarModule, TableModule, TooltipModule
+    MenuModule, SelectButtonModule, SidebarModule, TableModule, TooltipModule, ModalComponent, ModalMaisDirective
   ],
   templateUrl: './modal-importacoes-mensais.component.html',
   styleUrl: './modal-importacoes-mensais.component.scss'

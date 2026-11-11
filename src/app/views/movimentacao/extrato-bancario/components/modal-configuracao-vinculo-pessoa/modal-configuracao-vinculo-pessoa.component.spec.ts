@@ -1,112 +1,68 @@
-import { ConfirmationService } from 'primeng/api';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { Dialog } from 'primeng/dialog';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
-
-import { ModalConfiguracaoVinculoPessoaComponent } from './modal-configuracao-vinculo-pessoa.component';
+import { PessoaMovimentacaoDto } from 'src/app/core/models/pessoa-movimentacao.model';
+import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { PessoaMovimentacaoService } from 'src/app/core/services/pessoa-movimentacao.service';
-import { CategoryService } from 'src/app/core/services/category.service';
-import { TipoMovimentacaoService } from 'src/app/core/services/tipo-movimentacao.service';
-import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
+import { ModalConfiguracaoVinculoPessoaComponent } from './modal-configuracao-vinculo-pessoa.component';
 
-/** Vínculos de pessoa num p-dialog (FE-P2-07). */
-describe('ModalConfiguracaoVinculoPessoaComponent', () => {
+/** Card #79: "Pessoas que usam meus cartões" — lista simples, cadastro à mão, o "Eu" travado no topo. */
+describe('ModalConfiguracaoVinculoPessoaComponent (Pessoas que usam meus cartões)', () => {
   let fixture: ComponentFixture<ModalConfiguracaoVinculoPessoaComponent>;
   let pessoas: jasmine.SpyObj<PessoaMovimentacaoService>;
+  let confirmacao: jasmine.SpyObj<ConfirmacaoService>;
+  const p = (id: number, nomePessoa: string, ehTitular = false): PessoaMovimentacaoDto =>
+    ({ id, nomePessoa, ehTitular, categoriaId: null, tipoMovimentacaoId: null });
 
   beforeEach(() => {
-    pessoas = jasmine.createSpyObj<PessoaMovimentacaoService>('PessoaMovimentacaoService', ['listar', 'criar', 'atualizar', 'excluir', 'estabelecimentos', 'removerEstabelecimentos']);
-    pessoas.estabelecimentos.and.returnValue(of([]));
-    pessoas.listar.and.returnValue(of([]));
-    pessoas.criar.and.returnValue(of({ id: 1, nomePessoa: '', categoriaId: null, tipoMovimentacaoId: null }));
-    pessoas.atualizar.and.returnValue(of({ id: 7, nomePessoa: '', categoriaId: null, tipoMovimentacaoId: null }));
-    const categorias = jasmine.createSpyObj<CategoryService>('CategoryService', ['listarAtivas']);
-    categorias.listarAtivas.and.returnValue(of([]));
-    const tipos = jasmine.createSpyObj<TipoMovimentacaoService>('TipoMovimentacaoService', ['listar']);
-    tipos.listar.and.returnValue(of([]));
+    pessoas = jasmine.createSpyObj<PessoaMovimentacaoService>('PessoaMovimentacaoService', ['listar', 'criar', 'excluir']);
+    pessoas.listar.and.returnValue(of([p(3, 'CARLOS'), p(1, 'EU', true), p(2, 'ÁGATHA')]));
+    pessoas.excluir.and.returnValue(of({}));
+    confirmacao = jasmine.createSpyObj<ConfirmacaoService>('ConfirmacaoService', ['confirmar']);
     TestBed.configureTestingModule({
-      imports: [ModalConfiguracaoVinculoPessoaComponent],
+      imports: [ModalConfiguracaoVinculoPessoaComponent, NoopAnimationsModule],
       providers: [
-        // O ConfirmacaoService (data-grid, exclusões) usa o do root; no app vem do AppModule.
-        ConfirmationService,
-        provideNoopAnimations(),
         { provide: PessoaMovimentacaoService, useValue: pessoas },
-        { provide: CategoryService, useValue: categorias },
-        { provide: TipoMovimentacaoService, useValue: tipos },
-        { provide: ExtratoBancarioItemService, useValue: jasmine.createSpyObj('ExtratoBancarioItemService', ['atualizar']) },
-        { provide: AlertService, useValue: jasmine.createSpyObj('AlertService', ['success', 'error']) }
+        { provide: ConfirmacaoService, useValue: confirmacao },
+        { provide: AlertService, useValue: jasmine.createSpyObj<AlertService>('AlertService', ['error', 'success']) }
       ]
     });
     fixture = TestBed.createComponent(ModalConfiguracaoVinculoPessoaComponent);
-    fixture.componentInstance.monthFilter = '2026-10';
     fixture.detectChanges();
   });
 
-  it('abre num p-dialog e o X fecha sem recarregar', () => {
-    const fechado = jasmine.createSpy('closed');
-    fixture.componentInstance.closed.subscribe(fechado);
-    const dialogo = fixture.debugElement.query(By.directive(Dialog));
-
-    expect(dialogo.componentInstance.header).toBe('Vínculos cadastrados');
-    dialogo.componentInstance.close(new Event('click'));
-    expect(fechado).toHaveBeenCalledOnceWith(false);
+  it('mostra o "Eu" à parte e as outras em ordem, sem categoria nem "entra nos acertos"', () => {
+    const comp = fixture.componentInstance;
+    expect(comp.titular?.id).toBe(1);
+    expect(comp.pessoas.map(x => x.nomePessoa)).toEqual(['ÁGATHA', 'CARLOS']);
+    const texto = (fixture.nativeElement as HTMLElement).ownerDocument.body.textContent ?? '';
+    expect(texto).not.toContain('Entra nos acertos');
+    expect(texto).not.toContain('Limpar estabelecimentos');
   });
 
-  it('salvar grava os ids escolhidos nos selects; id negativo cria, positivo atualiza', () => {
-    fixture.componentInstance.onSaveInline([
-      { row: { id: 7, nomePessoa: 'Ana', categoriaId: 3, tipoMovimentacaoId: 2 }, changes: { categoriaId: 3 } },
-      { row: { id: -1, nomePessoa: ' João ', categoriaId: null, tipoMovimentacaoId: 5 }, changes: { nomePessoa: ' João ', tipoMovimentacaoId: 5 } }
-    ]);
+  it('excluir pede confirmação e avisa a tela de trás ao fechar', async () => {
+    confirmacao.confirmar.and.resolveTo(true);
+    const fechou: boolean[] = [];
+    fixture.componentInstance.closed.subscribe(v => fechou.push(v));
 
-    expect(pessoas.atualizar).toHaveBeenCalledOnceWith(
-      { id: 7, nomePessoa: 'Ana', categoriaId: 3, tipoMovimentacaoId: 2, entraNosAcertos: false, mesAtualizacao: '2026-10' });
-    expect(pessoas.criar).toHaveBeenCalledOnceWith(
-      { nomePessoa: 'João', categoriaId: null, tipoMovimentacaoId: 5, entraNosAcertos: false, mesAtualizacao: '2026-10' });
+    await fixture.componentInstance.excluir(p(3, 'CARLOS'));
+    fixture.componentInstance.close();
+
+    expect(pessoas.excluir).toHaveBeenCalledWith(3);
+    expect(fixture.componentInstance.pessoas.map(x => x.id)).toEqual([2]);
+    expect(fechou).toEqual([true]);
   });
 
-  it('"Entra nos acertos" é uma coluna Sim/Não que vai na gravação (parte 2)', () => {
-    const coluna = fixture.componentInstance.gridColumns.find(c => c.field === 'entraNosAcertos');
-    expect(coluna?.header).toBe('ENTRA NOS ACERTOS');
-    expect(coluna?.options).toEqual([{ label: 'Sim', value: true }, { label: 'Não', value: false }]);
+  it('sem confirmar, não exclui; sem mudar nada, fecha com false', async () => {
+    confirmacao.confirmar.and.resolveTo(false);
+    const fechou: boolean[] = [];
+    fixture.componentInstance.closed.subscribe(v => fechou.push(v));
 
-    fixture.componentInstance.onSaveInline([
-      { row: { id: 7, nomePessoa: 'ANA', categoriaId: null, tipoMovimentacaoId: null, entraNosAcertos: false }, changes: { entraNosAcertos: true } }
-    ]);
-    expect(pessoas.atualizar).toHaveBeenCalledOnceWith(jasmine.objectContaining({ id: 7, entraNosAcertos: true }));
-  });
+    await fixture.componentInstance.excluir(p(3, 'CARLOS'));
+    fixture.componentInstance.close();
 
-  it('o "Eu" vem primeiro, com esse nome, e travado (sem editar nem excluir)', () => {
-    pessoas.listar.and.returnValue(of([
-      { id: 7, nomePessoa: 'CARLOS', categoriaId: null, tipoMovimentacaoId: null, entraNosAcertos: true },
-      { id: 1, nomePessoa: 'EU', categoriaId: null, tipoMovimentacaoId: null, ehTitular: true }
-    ]));
-    fixture.componentInstance.ngOnInit();
-
-    const [eu, carlos] = fixture.componentInstance.pessoaMovimentacao;
-    expect(eu).toEqual(jasmine.objectContaining({ id: 1, nomePessoa: 'Eu', somenteLeitura: true }));
-    expect(carlos.id).toBe(7);
-    expect(fixture.componentInstance.bloquear(eu)).toBeTrue();
-    expect(fixture.componentInstance.bloquear(carlos)).toBeFalse();
-  });
-
-  it('"Limpar estabelecimentos" abre a lista; se apagou, recarrega e avisa a tela ao fechar', () => {
-    const fechado = jasmine.createSpy('closed');
-    fixture.componentInstance.closed.subscribe(fechado);
-    const botao = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('Limpar estabelecimentos')) as HTMLButtonElement;
-    botao.click();
-    fixture.detectChanges();
-    expect(document.querySelector('app-limpar-estabelecimentos')).not.toBeNull();
-
-    pessoas.listar.calls.reset();
-    fixture.componentInstance.aoFecharLimpeza(3);
-    fixture.detectChanges();
-    expect(document.querySelector('app-limpar-estabelecimentos')).toBeNull();
-    expect(pessoas.listar).toHaveBeenCalled();
-
-    fixture.componentInstance.close(false);
-    expect(fechado).toHaveBeenCalledWith(true);
+    expect(pessoas.excluir).not.toHaveBeenCalled();
+    expect(fechou).toEqual([false]);
   });
 });

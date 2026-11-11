@@ -27,7 +27,7 @@ describe('ResumoCategoriasComponent', () => {
   });
 
   it('mostra total, categorias, comparação e o que ficou à parte', () => {
-    expect(servico.resumoCategorias).toHaveBeenCalledWith('2026-10');
+    expect(servico.resumoCategorias).toHaveBeenCalledWith('2026-10', null);
     expect(texto()).toContain('Alimentação');
     expect(texto()).toContain('25% abaixo da média');
     expect(texto()).toContain('25% acima da média');
@@ -38,12 +38,13 @@ describe('ResumoCategoriasComponent', () => {
   it('recarrega ao trocar de mês', () => {
     fixture.componentRef.setInput('mes', '2026-11');
     fixture.detectChanges();
-    expect(servico.resumoCategorias).toHaveBeenCalledWith('2026-11');
+    expect(servico.resumoCategorias).toHaveBeenCalledWith('2026-11', null);
   });
 
   it('texto da variação', () => {
     expect(textoVariacao(null)).toBe('');
     expect(textoVariacao(0)).toBe('na média');
     expect(textoVariacao(-10)).toBe('10% abaixo da média');
+    expect(textoVariacao(12.5)).toBe('12,5% acima da média');   // card #81: vírgula, não ponto
   });
 });

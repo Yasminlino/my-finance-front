@@ -172,3 +172,9 @@ body.mf-com-barra-inferior mf-fab { display: none !important; }
 body.mf-com-barra-inferior:not(.mf-teclado-aberto) :is(.adicionar-barra, .planejamento-barra-adicionar, .planejamento-barra-lote, .barra-lote-movel) {
   bottom: calc(4rem + env(safe-area-inset-bottom)) !important;
 }
+
+/* Card #80: confirmação padronizada no celular (corte 767px): a ação em cima, Cancelar embaixo, na largura toda. */
+@media (max-width: 767.98px) {
+  .mf-confirmacao .p-dialog-footer { display: flex; flex-direction: column-reverse; gap: 0.5rem; }
+  .mf-confirmacao .p-dialog-footer .p-button { width: 100%; min-height: 2.75rem; margin: 0; }
+}

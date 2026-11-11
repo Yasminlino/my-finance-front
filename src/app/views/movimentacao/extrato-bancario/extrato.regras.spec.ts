@@ -3,7 +3,7 @@ import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
 import { TipoCartaoDto } from 'src/app/core/models/tipo-cartao.model';
 import {
   FiltroExtrato, agruparPorDia, alteracoesDoRascunho, aplicarPessoa, campoAlterado, cardsDoExtrato, contasDoMes, ehEntrada,
-  ehDoTitular, expandirPartes, faturaPorPessoa, filtrarExtrato, grupoUnico, nomeDaPessoa, nomesParaSugestao, ordenarExtrato, rascunhoDe, semPessoa, tituloCurtoDoDia
+  ehDoTitular, expandirPartes, faturaPorPessoa, filtrarExtrato, grupoUnico, moedaComSinal, nomeDaPessoa, nomesParaSugestao, opcoesDePessoa, ordenarExtrato, rascunhoDe, semPessoa, tituloCurtoDoDia, usaPessoas
 } from './extrato.regras';
 
 describe('título do dia no celular', () => {
@@ -38,7 +38,7 @@ describe('lançamento dividido (card #76, fase 3)', () => {
   });
 
   it('fatura por pessoa: só a parte da pessoa é dela', () => {
-    const f = faturaPorPessoa([dividida()], [{ id: 7, nomePessoa: 'CARLOS', entraNosAcertos: true }]);
+    const f = faturaPorPessoa([dividida()], [{ id: 7, nomePessoa: 'CARLOS' }]);
     expect(f.outras).toBe(100);
     expect(f.minhas).toBe(200);
     expect(f.total).toBe(300);
@@ -80,6 +80,10 @@ const item = (id: number, data: string, valor: number, extra: Partial<ExtratoIte
   id, dataMovimentacao: data, valor, tipoLancamento: 'Saída', bancoId: 1, descricao: `Compra ${id}`, ...extra
 });
 
+/** Pessoa cadastrada no lançamento (card #79: pessoa é só a cadastrada, nunca o nome do extrato). */
+const comPessoa = (id: number, nomePessoa: string): Partial<ExtratoItemDto> =>
+  ({ pessoaMovimentacaoId: id, pessoaMovimentacao: { id, nomePessoa, categoriaId: null, tipoMovimentacaoId: null } });
+
 /** Regras da tela de Extrato no layout novo (card #45, parte 1). */
 describe('extrato.regras', () => {
   it('entrada aceita "Entrada" e "ENTRADA"; o resto é saída', () => {
@@ -89,10 +93,9 @@ describe('extrato.regras', () => {
     expect(ehEntrada({ tipoLancamento: 'SAIDA' })).toBeFalse();
   });
 
-  it('sem pessoa: nem vínculo nem nome', () => {
+  it('sem pessoa: sem pessoa cadastrada, mesmo com nome do extrato (card #79)', () => {
     expect(semPessoa(item(1, '2026-10-01', 10))).toBeTrue();
-    expect(semPessoa(item(1, '2026-10-01', 10, { nomePessoaTransacao: '  ' }))).toBeTrue();
-    expect(semPessoa(item(1, '2026-10-01', 10, { nomePessoaTransacao: 'Carlos' }))).toBeFalse();
+    expect(semPessoa(item(1, '2026-10-01', 10, { nomePessoaTransacao: 'CIRCUITO' }))).toBeTrue();
     expect(semPessoa(item(1, '2026-10-01', 10, { pessoaMovimentacaoId: 3 }))).toBeFalse();
   });
 
@@ -115,10 +118,10 @@ describe('extrato.regras', () => {
 
   describe('filtrarExtrato', () => {
     const itens = [
-      item(1, '2026-10-01', 100, { nomePessoaTransacao: 'Carlos', categoriaId: 5, descricao: 'Mercado Extra' }),
-      item(2, '2026-10-05', 50, { tipoLancamento: 'Entrada', nomePessoaTransacao: 'Carlos' }),
-      item(3, '2026-10-05', 30, { bancoId: 2, categoriaId: 6, descricao: 'Padaria São José' }),
-      item(4, '2026-10-03', 20, { nomePessoaTransacao: 'Ágatha', descricao: 'DEBITO IOF' })
+      item(1, '2026-10-01', 100, { ...comPessoa(7, 'Carlos'), categoriaId: 5, descricao: 'Mercado Extra' }),
+      item(2, '2026-10-05', 50, { tipoLancamento: 'Entrada', ...comPessoa(7, 'Carlos') }),
+      item(3, '2026-10-05', 30, { bancoId: 2, categoriaId: 6, descricao: 'Compra', nomePessoaTransacao: 'Padaria São José' }),
+      item(4, '2026-10-03', 20, { ...comPessoa(8, 'Ágatha'), descricao: 'DEBITO IOF' })
     ];
     const filtro: FiltroExtrato = { bancoId: null, tipo: 'todos', busca: '', pessoas: [], categorias: [], pendencia: null };
     const ids = (lista: ExtratoItemDto[]) => lista.map(i => i.id);
@@ -150,7 +153,7 @@ describe('extrato.regras', () => {
 
   it('cards: total de saídas e entradas, e quantos faltam classificar', () => {
     expect(cardsDoExtrato([
-      item(1, '2026-10-01', 100, { nomePessoaTransacao: 'Carlos', categoriaId: 5 }),
+      item(1, '2026-10-01', 100, { ...comPessoa(7, 'Carlos'), categoriaId: 5 }),
       item(2, '2026-10-02', 50.5, { tipoLancamento: 'Entrada' }),
       item(3, '2026-10-03', 30)
     ])).toEqual({ saidas: 130, entradas: 50.5, semPessoa: 1, semCategoria: 2 });
@@ -199,33 +202,42 @@ describe('extrato.regras', () => {
       expect(campoAlterado(undefined, editado, 'valor')).toBeFalse();
     });
 
-    it('pessoa digitada: cadastrada liga pelo id (sem diferenciar acento e maiúscula); nova fica só o nome; vazio tira', () => {
-      const pessoas = [{ id: 7, nomePessoa: 'Giovanne' }, { id: 8, nomePessoa: 'Ágata' }];
-      expect(aplicarPessoa(item(1, '2026-10-05', 10), ' agata ', pessoas)).toEqual(jasmine.objectContaining({ pessoaMovimentacaoId: 8, nomePessoaTransacao: 'Ágata' }));
-      expect(aplicarPessoa(item(1, '2026-10-05', 10, { pessoaMovimentacaoId: 7 }), 'Mercado X', pessoas))
-        .toEqual(jasmine.objectContaining({ pessoaMovimentacaoId: null, nomePessoaTransacao: 'Mercado X' }));
-      expect(aplicarPessoa(item(1, '2026-10-05', 10, { pessoaMovimentacaoId: 7, nomePessoaTransacao: 'Giovanne' }), '  ', pessoas))
-        .toEqual(jasmine.objectContaining({ pessoaMovimentacaoId: null, nomePessoaTransacao: null }));
+    it('pessoa escolhida pelo id (card #79): liga a cadastrada sem mexer no nome do extrato; null tira', () => {
+      const pessoas = [{ id: 7, nomePessoa: 'GIOVANNE' }, { id: 8, nomePessoa: 'ÁGATA' }];
+      const circuito = item(1, '2026-10-05', 10, { nomePessoaTransacao: 'CIRCUITO', categoriaId: 3 });
+      expect(aplicarPessoa(circuito, 8, pessoas)).toEqual(jasmine.objectContaining({
+        pessoaMovimentacaoId: 8, nomePessoaTransacao: 'CIRCUITO', categoriaId: 3, alteraVinculoPessoa: true
+      }));
+      expect(aplicarPessoa(circuito, 8, pessoas).pessoaMovimentacao?.nomePessoa).toBe('ÁGATA');
+      expect(aplicarPessoa({ ...circuito, pessoaMovimentacaoId: 7 }, null, pessoas))
+        .toEqual(jasmine.objectContaining({ pessoaMovimentacaoId: null, pessoaMovimentacao: null, nomePessoaTransacao: 'CIRCUITO' }));
+      expect(aplicarPessoa(circuito, 99, pessoas).pessoaMovimentacaoId).toBeNull();
     });
 
-    it('trocar a pessoa pede à API para gravar a ligação (parte 2); "Eu" casa com a titular', () => {
-      const pessoas = [{ id: 1, nomePessoa: 'EU', ehTitular: true }, { id: 7, nomePessoa: 'GIOVANNE' }];
-      expect(aplicarPessoa(item(1, '2026-10-05', 10), 'giovanne', pessoas).alteraVinculoPessoa).toBeTrue();
-      expect(aplicarPessoa(item(1, '2026-10-05', 10), 'Eu', pessoas))
-        .toEqual(jasmine.objectContaining({ pessoaMovimentacaoId: 1, nomePessoaTransacao: 'EU', alteraVinculoPessoa: true }));
+    it('opções de pessoa: "Eu" primeiro e as outras em ordem', () => {
+      expect(opcoesDePessoa([{ id: 7, nomePessoa: 'CARLOS' }, { id: 1, nomePessoa: 'EU', ehTitular: true }, { id: 8, nomePessoa: 'ÁGATA' }]))
+        .toEqual([{ label: 'Eu', value: 1 }, { label: 'ÁGATA', value: 8 }, { label: 'CARLOS', value: 7 }]);
+    });
+
+    it('usa pessoas só com algum cartão compartilhado (card #79)', () => {
+      expect(usaPessoas([{ compartilhado: false }, {}])).toBeFalse();
+      expect(usaPessoas([{ compartilhado: false }, { compartilhado: true }])).toBeTrue();
+      expect(usaPessoas([])).toBeFalse();
     });
   });
 
   describe('pessoa "Eu" (parte 2)', () => {
-    it('mostra "Eu" para a titular e reconhece pelo vínculo ou pelo nome', () => {
-      const daTitular = item(1, '2026-10-05', 10, { pessoaMovimentacaoId: 1, nomePessoaTransacao: 'EU' });
-      const comObjeto = item(2, '2026-10-05', 10, { pessoaMovimentacao: { id: 1, nomePessoa: 'EU', ehTitular: true, categoriaId: null, tipoMovimentacaoId: null } });
-      const outra = item(3, '2026-10-05', 10, { pessoaMovimentacaoId: 7, nomePessoaTransacao: 'EUGÊNIA' });
-      expect(ehDoTitular(daTitular)).toBeTrue();
+    it('mostra "Eu" para a titular; o nome do extrato nunca é pessoa (card #79)', () => {
+      const comObjeto = item(2, '2026-10-05', 10, { pessoaMovimentacaoId: 1, pessoaMovimentacao: { id: 1, nomePessoa: 'EU', ehTitular: true, categoriaId: null, tipoMovimentacaoId: null } });
+      const outra = item(3, '2026-10-05', 10, { pessoaMovimentacaoId: 7, nomePessoaTransacao: 'CIRCUITO', pessoaMovimentacao: { id: 7, nomePessoa: 'EUGÊNIA', categoriaId: null, tipoMovimentacaoId: null } });
+      const soNomeDoExtrato = item(4, '2026-10-05', 10, { nomePessoaTransacao: 'EU' });
       expect(ehDoTitular(comObjeto)).toBeTrue();
       expect(ehDoTitular(outra)).toBeFalse();
-      expect(nomeDaPessoa(daTitular)).toBe('Eu');
+      expect(ehDoTitular(soNomeDoExtrato)).toBeFalse();
+      expect(nomeDaPessoa(comObjeto)).toBe('Eu');
       expect(nomeDaPessoa(outra)).toBe('EUGÊNIA');
+      expect(nomeDaPessoa(soNomeDoExtrato)).toBe('');
+      expect(semPessoa(soNomeDoExtrato)).toBeTrue();
     });
 
     it('nas sugestões e na ordem, a titular vem primeiro como "Eu"', () => {
@@ -237,14 +249,13 @@ describe('extrato.regras', () => {
 
 /** Card "Fatura dividida por pessoa" (card #45, parte 3, item 6). */
 describe('faturaPorPessoa', () => {
-  it('minhas compras × de outras pessoas (só quem entra nos acertos), por pessoa, sem as entradas', () => {
+  it('minhas compras × de outras pessoas (toda pessoa menos o "Eu"), por pessoa, sem as entradas', () => {
     const pessoas = [
-      { id: 1, nomePessoa: 'EU', ehTitular: true }, { id: 7, nomePessoa: 'CARLOS', entraNosAcertos: true },
-      { id: 8, nomePessoa: 'ÁGATHA', entraNosAcertos: true }, { id: 9, nomePessoa: 'MERCADO X', entraNosAcertos: false }
+      { id: 1, nomePessoa: 'EU', ehTitular: true }, { id: 7, nomePessoa: 'CARLOS' }, { id: 8, nomePessoa: 'ÁGATHA' }
     ];
     const itens = [
       item(1, '2026-10-01', 100, { pessoaMovimentacaoId: 7 }), item(2, '2026-10-02', 50, { pessoaMovimentacaoId: 7 }),
-      item(3, '2026-10-03', 30, { pessoaMovimentacaoId: 8 }), item(4, '2026-10-04', 200, { pessoaMovimentacaoId: 9 }),
+      item(3, '2026-10-03', 30, { pessoaMovimentacaoId: 8 }), item(4, '2026-10-04', 200, { nomePessoaTransacao: 'MERCADO X' }),
       item(5, '2026-10-05', 12, { pessoaMovimentacaoId: 1 }), item(6, '2026-10-06', 8),
       item(7, '2026-10-07', 400, { tipoLancamento: 'Entrada', pessoaMovimentacaoId: 7 })
     ];
@@ -255,5 +266,15 @@ describe('faturaPorPessoa', () => {
       total: 400, minhas: 220, outras: 180,
       porPessoa: [{ pessoaId: 7, nome: 'CARLOS', valor: 150 }, { pessoaId: 8, nome: 'ÁGATHA', valor: 30 }]
     });
+  });
+});
+
+/** Card #81: sinal espaçado igual nos dois lados. */
+describe('moedaComSinal', () => {
+  it('"+ R$" e "- R$", zero sem sinal', () => {
+    const t = (v: number) => moedaComSinal(v).replace(/\s/g, ' ');
+    expect(t(150)).toBe('+ R$ 150,00');
+    expect(t(-75.76)).toBe('- R$ 75,76');
+    expect(t(0)).toBe('R$ 0,00');
   });
 });

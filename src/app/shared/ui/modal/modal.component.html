@@ -1,0 +1,54 @@
+<ng-template #cabecalho>
+  <div class="mf-modal__topo" [class.mf-modal__topo--tela]="movel() && tipo === 'tela'">
+    @if (movel() && tipo === 'tela') {
+      <p-button icon="pi pi-arrow-left" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Voltar"
+        [disabled]="ocupado" (onClick)="pedirParaFechar()" />
+    } @else if (icone) {
+      <i [class]="icone + ' mf-modal__icone'"></i>
+    }
+    <div class="mf-modal__titulos">
+      <span class="mf-modal__titulo">{{ titulo }}</span>
+      @if (subtitulo) { <small class="mf-hint mf-modal__subtitulo">{{ subtitulo }}</small> }
+    </div>
+    @if (mais) { <ng-container [ngTemplateOutlet]="mais.template" /> }
+    @if (!(movel() && tipo === 'tela')) {
+      <p-button icon="pi pi-times" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Fechar"
+        [disabled]="ocupado" (onClick)="pedirParaFechar()" />
+    }
+  </div>
+</ng-template>
+
+<ng-template #conteudo><ng-content /></ng-template>
+
+@if (movel() && tipo === 'folha') {
+  <!-- Celular, folha: abre embaixo, altura automática até 90dvh -->
+  <p-sidebar [visible]="true" position="bottom" [showCloseIcon]="false" [blockScroll]="true"
+    [dismissible]="!ocupado" [closeOnEscape]="!ocupado" styleClass="mf-modal mf-modal--folha"
+    (visibleChange)="aoMudarVisivel($event)">
+    <ng-template pTemplate="header">
+      <div class="mf-modal__alca" aria-hidden="true"></div>
+      <ng-container [ngTemplateOutlet]="cabecalho" />
+    </ng-template>
+    <div class="mf-modal__corpo"><ng-container [ngTemplateOutlet]="conteudo" /></div>
+    @if (rodape) {
+      <ng-template pTemplate="footer">
+        <div class="mf-modal__rodape mf-modal__rodape--movel"><ng-container [ngTemplateOutlet]="rodape.template" /></div>
+      </ng-template>
+    }
+  </p-sidebar>
+} @else {
+  <!-- Desktop: p-dialog centralizado. Celular, tela: o mesmo p-dialog ocupando a tela toda -->
+  <p-dialog [visible]="true" [modal]="true" [draggable]="false" [resizable]="false" [closable]="false"
+    [dismissableMask]="!ocupado && !movel()" [closeOnEscape]="!ocupado" [blockScroll]="true"
+    [styleClass]="(movel() ? 'mf-modal mf-modal--tela' : 'mf-modal mf-modal--desktop') + (semMargem ? ' mf-modal--sem-margem' : '')"
+    [style]="movel() ? { width: '100vw', height: '100dvh', maxHeight: '100dvh', margin: '0' } : { width: largura, maxWidth: '96vw' }"
+    (visibleChange)="aoMudarVisivel($event)">
+    <ng-template pTemplate="header"><ng-container [ngTemplateOutlet]="cabecalho" /></ng-template>
+    <ng-container [ngTemplateOutlet]="conteudo" />
+    @if (rodape) {
+      <ng-template pTemplate="footer">
+        <div class="mf-modal__rodape" [class.mf-modal__rodape--movel]="movel()"><ng-container [ngTemplateOutlet]="rodape.template" /></div>
+      </ng-template>
+    }
+  </p-dialog>
+}

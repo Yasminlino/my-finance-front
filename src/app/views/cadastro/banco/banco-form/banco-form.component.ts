@@ -17,11 +17,13 @@ import { PessoaMovimentacaoService } from 'src/app/core/services/pessoa-moviment
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { OPCOES_ATIVO } from 'src/app/shared/utils/opcoes-status';
+import { NovaPessoaComponent } from 'src/app/shared/components/nova-pessoa/nova-pessoa.component';
+import { PessoaMovimentacaoDto } from 'src/app/core/models/pessoa-movimentacao.model';
 
 @Component({
   selector: 'app-banco-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CurrencyInputDirective, FormPanelComponent, FieldErrorComponent, DropdownModule, InputSwitchModule, MultiSelectModule, InputTextModule, ButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, CurrencyInputDirective, FormPanelComponent, FieldErrorComponent, DropdownModule, InputSwitchModule, MultiSelectModule, InputTextModule, ButtonModule, NovaPessoaComponent],
   templateUrl: './banco-form.component.html'
 })
 export class BancoFormComponent implements OnInit {
@@ -31,7 +33,7 @@ export class BancoFormComponent implements OnInit {
   @Output() closed = new EventEmitter<boolean>();
 
   saving = false;
-  /** Quem pode usar o cartão: pessoas que entram nos acertos, sem o "Eu" (card #77). */
+  /** Quem pode usar o cartão: as pessoas cadastradas, sem o "Eu" (cards #77 e #79). */
   opcoesPessoas: { label: string; value: number }[] = [];
   tentouSalvar = false;
   readonly opcoesStatus = OPCOES_ATIVO;
@@ -66,11 +68,21 @@ export class BancoFormComponent implements OnInit {
     return this.tentouSalvar && this.ehCredito && !!this.form.value.compartilhado && !this.form.value.pessoasIds?.length;
   }
 
+  /** Card #79: pessoa cadastrada ali mesmo já entra em "Quem usa". */
+  aoCriarPessoa(pessoa: PessoaMovimentacaoDto): void {
+    if (!this.opcoesPessoas.some(o => o.value === pessoa.id)) {
+      this.opcoesPessoas = [...this.opcoesPessoas, { label: pessoa.nomePessoa, value: pessoa.id }]
+        .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+    }
+    const atuais = this.form.value.pessoasIds ?? [];
+    if (!atuais.includes(pessoa.id)) this.form.patchValue({ pessoasIds: [...atuais, pessoa.id] });
+  }
+
   ngOnInit(): void {
     this.pessoaService.listar().subscribe({
       next: pessoas => {
         this.opcoesPessoas = pessoas
-          .filter(p => p.entraNosAcertos && !p.ehTitular)
+          .filter(p => !p.ehTitular)
           .map(p => ({ label: p.nomePessoa, value: p.id }))
           .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
       },

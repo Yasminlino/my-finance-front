@@ -62,8 +62,9 @@
           @if (faltaPessoa) {
             <small class="p-error">Escolha quem usa o cartão.</small>
           } @else {
-            <small class="mf-hint">Aparecem as pessoas marcadas para entrar nos acertos.</small>
+            <small class="mf-hint">As compras dessas pessoas entram nos Acertos.</small>
           }
+          <app-nova-pessoa inputId="banco-nova-pessoa" (criada)="aoCriarPessoa($event)" />
         </div>
       }
     }

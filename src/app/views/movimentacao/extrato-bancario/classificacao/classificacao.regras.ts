@@ -54,7 +54,8 @@ export function propostasDeRegra(
 export const OPCOES_CAMPO: { label: string; value: CampoRegra }[] = [
   { label: 'a descrição ou a pessoa', value: 'descricao_ou_pessoa' },
   { label: 'a descrição', value: 'descricao' },
-  { label: 'a pessoa', value: 'pessoa' }
+  { label: 'a pessoa', value: 'pessoa' },
+  { label: 'o nome do extrato', value: 'nome_extrato' }
 ];
 
 export const OPCOES_OPERADOR: { label: string; value: OperadorRegra }[] = [
@@ -65,14 +66,15 @@ export const OPCOES_OPERADOR: { label: string; value: OperadorRegra }[] = [
 
 /** Começo da frase na lista: "Descrição contém", "Pessoa é", "Descrição ou pessoa começa com". */
 export function inicioDaFrase(r: Pick<RegraClassificacaoDto, 'campo' | 'operador'>): { campo: string; operador: string } {
-  const campo = r.campo === 'descricao' ? 'Descrição' : r.campo === 'pessoa' ? 'Pessoa' : 'Descrição ou pessoa';
+  const campo = r.campo === 'descricao' ? 'Descrição' : r.campo === 'pessoa' ? 'Pessoa'
+    : r.campo === 'nome_extrato' ? 'Nome do extrato' : 'Descrição ou pessoa';
   const operador = r.operador === 'comeca_com' ? 'começa com' : r.operador === 'igual' ? 'é' : 'contém';
   return { campo, operador };
 }
 
 /** Começo curto (cards do celular): "começa com", "pessoa", "descrição é"; vazio no padrão (descrição ou pessoa, contém). */
 export function inicioCurto(r: Pick<RegraClassificacaoDto, 'campo' | 'operador'>): string {
-  const campo = r.campo === 'descricao' ? 'descrição' : r.campo === 'pessoa' ? 'pessoa' : '';
+  const campo = r.campo === 'descricao' ? 'descrição' : r.campo === 'pessoa' ? 'pessoa' : r.campo === 'nome_extrato' ? 'nome' : '';
   const operador = r.operador === 'comeca_com' ? 'começa com' : r.operador === 'igual' ? 'é' : (campo ? 'contém' : '');
   return [campo, operador].filter(Boolean).join(' ');
 }

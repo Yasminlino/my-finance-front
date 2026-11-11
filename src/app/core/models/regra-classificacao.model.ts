@@ -1,5 +1,5 @@
 /** Onde a regra procura o texto. */
-export type CampoRegra = 'descricao_ou_pessoa' | 'descricao' | 'pessoa';
+export type CampoRegra = 'descricao_ou_pessoa' | 'descricao' | 'pessoa' | 'nome_extrato';
 /** Como a regra compara o texto. */
 export type OperadorRegra = 'contem' | 'comeca_com' | 'igual';
 

@@ -1,7 +1,10 @@
 import { CategoriaDto } from './categoria.model';
 import { TipoMovimentacaoDto } from './tipo-movimentacao.model';
 
-/** PessoaMovimentacaoDTO da API (JSON em camelCase). */
+/**
+ * PessoaMovimentacaoDTO da API (JSON em camelCase): quem usou o cartão, cadastrada à mão. Toda pessoa menos o "Eu" entra
+ * nos Acertos (card #79).
+ */
 export type PessoaMovimentacaoDto = {
   id: number;
   nomePessoa: string;
@@ -9,8 +12,6 @@ export type PessoaMovimentacaoDto = {
   tipoMovimentacaoId: number | null;
   /** A pessoa "Eu" (dono do cartão): uma por usuário, sem renomear nem excluir. Só a API define (card #45). */
   ehTitular?: boolean;
-  /** Só as pessoas marcadas entram nos Acertos. */
-  entraNosAcertos?: boolean;
   /** "YYYY-MM": leva a alteração aos itens de extrato daquele mês. */
   mesAtualizacao?: string | null;
   categoria?: CategoriaDto | null;
@@ -18,6 +19,3 @@ export type PessoaMovimentacaoDto = {
 };
 
 export type PessoaMovimentacaoCreateDto = Omit<PessoaMovimentacaoDto, 'id'>;
-
-/** Pessoa que parece estabelecimento (card #76, fase 2): candidata à limpeza, com quantos lançamentos tem. */
-export type PessoaEstabelecimentoDto = { id: number; nomePessoa: string; lancamentos: number };

@@ -1,0 +1,39 @@
+<!-- Card #80: 2º nível dentro de "Nomes e regras" (sem modal sobre modal); ← volta para a lista de nomes -->
+<section class="juntar" [class.juntar--movel]="movel" aria-labelledby="juntar-titulo">
+  <div class="juntar-topo">
+    <p-button icon="pi pi-arrow-left" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Voltar para os nomes"
+      [disabled]="salvando" (onClick)="fechar()" />
+    <span id="juntar-titulo" class="juntar-titulo">Juntar nomes parecidos</span>
+    @if (grupo) { <span class="juntar-passo mf-hint">{{ indice + 1 }} de {{ grupos.length }}</span> }
+  </div>
+
+  @if (grupo; as g) {
+    <p class="mt-2 mb-3">
+      Estes nomes parecem o mesmo lugar.
+      {{ g.divergem ? 'Eles estão com classificações diferentes: escolha a que vale.' : 'Escolha o nome que fica; os outros passam a ser reconhecidos por ele.' }}
+    </p>
+
+    <div class="juntar-opcoes" role="radiogroup" aria-label="Classificação que vale">
+      @for (r of g.regras; track r.id) {
+        <label class="juntar-opcao" [class.juntar-opcao--escolhida]="manterId === r.id" [for]="'juntar-' + r.id">
+          <p-radioButton [inputId]="'juntar-' + r.id" name="manter" [value]="r.id" [(ngModel)]="manterId" />
+          <span class="flex flex-column gap-1 min-w-0">
+            <code class="juntar-texto">{{ r.texto }}</code>
+            <span class="juntar-classe">{{ descricao(r) }}</span>
+            <small class="mf-hint">{{ lancamentos(r) }}</small>
+          </span>
+        </label>
+      }
+    </div>
+
+    <div class="flex align-items-center gap-2 mt-3">
+      <p-checkbox [binary]="true" inputId="juntar-aplicar" [(ngModel)]="aplicarAosImportados" />
+      <label for="juntar-aplicar">Atualizar também os lançamentos já importados</label>
+    </div>
+
+    <div class="juntar-botoes">
+      <p-button label="Pular" severity="secondary" [outlined]="true" [disabled]="salvando" (onClick)="pular()" />
+      <p-button label="Juntar" icon="pi pi-check" [loading]="salvando" [disabled]="manterId == null" (onClick)="juntar()" />
+    </div>
+  }
+</section>

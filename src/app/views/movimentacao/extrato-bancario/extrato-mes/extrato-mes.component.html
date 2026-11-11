@@ -14,9 +14,9 @@
         tooltipPosition="top" [disabled]="edicao" (onClick)="mudarMes(1)" ariaLabel="Próximo mês" />
     </div>
     }
-    @if (!movel()) {
+    @if (!movel() && aba === 0) {
       <!-- Como em Contas a Pagar: Modo edição na caixa (âmbar quando ligado) e o botão principal com as outras ações na seta.
-           No celular a edição é pela folha de baixo (item 4). -->
+           No celular a edição é pela folha de baixo (item 4). Só na aba Lançamentos (card #81). -->
       <div acoes class="modo-edicao flex align-items-center gap-2" [class.ativo]="edicao">
         <p-inputSwitch inputId="extrato-edicao" [ngModel]="edicao" (onChange)="alternarEdicao($event.checked)"
           [disabled]="loading || salvando || (!itens.length && !edicao)" />
@@ -128,12 +128,15 @@
 
           <p-iconField fim iconPosition="left">
             <p-inputIcon styleClass="pi pi-search" />
-            <input pInputText type="text" placeholder="Buscar descrição, pessoa ou item..." [(ngModel)]="filtro.busca"
+            <input pInputText type="text" [placeholder]="mostraPessoa ? 'Buscar descrição, pessoa ou item...' : 'Buscar descrição ou item...'" [(ngModel)]="filtro.busca"
               (ngModelChange)="aoMudarFiltro()" aria-label="Buscar no extrato" />
           </p-iconField>
-          <p-multiSelect fim [options]="opcoesPessoa" [(ngModel)]="filtro.pessoas" placeholder="Pessoas" [filter]="true"
-            selectedItemsLabel="{0} pessoas" [maxSelectedLabels]="1" appendTo="body" (onChange)="aoMudarFiltro()"
-            styleClass="extrato-filtro" />
+          <!-- Card #81: sem cartão compartilhado não há pessoas para filtrar -->
+          @if (mostraPessoa) {
+            <p-multiSelect fim [options]="opcoesPessoa" [(ngModel)]="filtro.pessoas" placeholder="Pessoas" [filter]="true"
+              selectedItemsLabel="{0} pessoas" [maxSelectedLabels]="1" appendTo="body" (onChange)="aoMudarFiltro()"
+              styleClass="extrato-filtro" />
+          }
           <p-multiSelect fim [options]="opcoesCategoria" [(ngModel)]="filtro.categorias" placeholder="Categorias"
             [filter]="true" selectedItemsLabel="{0} categorias" [maxSelectedLabels]="1" appendTo="body"
             (onChange)="aoMudarFiltro()" styleClass="extrato-filtro" />
@@ -256,7 +259,9 @@
                 <th style="width: 10.5rem">Data</th>
                 <th>Descrição</th>
                 <th style="width: 12rem">Categoria</th>
-                <th style="width: 12rem">Pessoa</th>
+                @if (mostraPessoa) {
+                  <th style="width: 12rem">Pessoa</th>
+                }
                 <th style="width: 12rem">Tipo de movimentação</th>
                 <th style="width: 8.5rem">Parcela</th>
                 <th style="width: 9rem" class="text-right">Valor</th>
@@ -275,7 +280,7 @@
           </ng-template>
           <ng-template pTemplate="groupheader" let-item>
             <tr class="extrato-dia">
-              <td [attr.colspan]="edicao ? 7 : mostraPessoa ? 3 : 2" class="font-semibold">{{ grupos[item.dataMovimentacao]?.titulo }}</td>
+              <td [attr.colspan]="edicao ? (mostraPessoa ? 7 : 6) : mostraPessoa ? 3 : 2" class="font-semibold">{{ grupos[item.dataMovimentacao]?.titulo }}</td>
               <td class="text-right text-sm mf-hint">{{ saldoDoDia(item.dataMovimentacao) }}</td>
               @if (!edicao) {
                 <td></td>
@@ -294,6 +299,10 @@
                 <td>
                   <input pInputText class="w-full p-inputtext-sm" maxlength="500" [(ngModel)]="r.descricao" (ngModelChange)="aoEditar()"
                     [class.campo-alterado]="alterado(item, 'descricao')" aria-label="Descrição" placeholder="Descrição" />
+                  @if (item.nomePessoaTransacao) {
+                    <!-- Card #79: o nome que veio no extrato não se edita; classifica pelas regras -->
+                    <small class="block mt-1 mf-hint">No extrato: {{ item.nomePessoaTransacao }}</small>
+                  }
                 </td>
                 <td>
                   <p-dropdown [options]="opcoesCategoria" optionLabel="label" optionValue="value" [(ngModel)]="r.categoriaId"
@@ -307,11 +316,14 @@
                     </button>
                   }
                 </td>
+                @if (mostraPessoa) {
                 <td>
-                  <input pInputText class="w-full p-inputtext-sm" list="extrato-pessoas" [ngModel]="r.nomePessoaTransacao ?? ''"
-                    (ngModelChange)="editarPessoa(item, $event)" [class.campo-alterado]="alterado(item, 'nomePessoaTransacao')"
-                    placeholder="Sem pessoa" aria-label="Pessoa" autocomplete="off" />
+                  <!-- Card #79: quem usou o cartão, das pessoas cadastradas; não mexe no nome do extrato -->
+                  <p-dropdown [options]="opcoesPessoaRegra" optionLabel="label" optionValue="value" [ngModel]="r.pessoaMovimentacaoId ?? null"
+                    (ngModelChange)="editarPessoa(item, $event)" [filter]="true" [showClear]="true" placeholder="Sem pessoa" appendTo="body"
+                    styleClass="w-full p-inputtext-sm" [class.campo-alterado]="alterado(item, 'pessoaMovimentacaoId')" ariaLabel="Pessoa" />
                 </td>
+                }
                 <td>
                   <p-dropdown [options]="opcoesTipoMov" optionLabel="label" optionValue="value" [(ngModel)]="r.tipoMovimentacaoId"
                     (ngModelChange)="aoEditar()" [filter]="true" [showClear]="true" placeholder="Sem tipo" appendTo="body"
@@ -339,7 +351,7 @@
             <tr class="extrato-linha">
               <td>
                 <div class="font-medium">@if (item.temNota) {<i class="pi pi-receipt mr-1" aria-label="Tem nota"></i>}{{ item.descricao || '(sem descrição)' }}</div>
-                <small class="mf-hint">{{ categoria(item) || 'Sem categoria' }}@if (acabouDeClassificar(item)) {<span class="extrato-recem"> · acabou de ser classificado</span>}</small>
+                <small class="mf-hint">{{ categoria(item) || 'Sem categoria' }}@if (item.classificadoPorSemelhanca) {<span class="extrato-semelhanca" pTooltip="A categoria veio da regra de um nome parecido. Confira em Nomes e regras." tooltipPosition="top"> · por semelhança</span>}@if (acabouDeClassificar(item)) {<span class="extrato-recem"> · acabou de ser classificado</span>}</small>
               </td>
               @if (mostraPessoa) {
               <td>
@@ -379,9 +391,6 @@
           </ng-template>
         </p-table>
         }
-        <datalist id="extrato-pessoas">
-          @for (nome of nomesPessoas; track nome) { <option [value]="nome"></option> }
-        </datalist>
       </div>
     </div>
   </div>
@@ -393,12 +402,14 @@
   @if (movel()) {
     <p-sidebar [(visible)]="filtrosAbertos" position="bottom" header="Filtros" styleClass="painel-filtros h-auto">
       <label class="block text-sm text-color-secondary mb-1" for="filtro-pendencia-movel">Mostrar só</label>
-      <p-dropdown inputId="filtro-pendencia-movel" [options]="opcoesPendencia" optionLabel="label" optionValue="value" [(ngModel)]="filtro.pendencia"
+      <p-dropdown inputId="filtro-pendencia-movel" [options]="pendencias" optionLabel="label" optionValue="value" [(ngModel)]="filtro.pendencia"
         [showClear]="true" placeholder="Todos" appendTo="body" styleClass="w-full mb-3" (onChange)="aoMudarFiltro()" />
-      <label class="block text-sm text-color-secondary mb-1" for="filtro-pessoas-movel">Pessoas</label>
-      <p-multiSelect inputId="filtro-pessoas-movel" [options]="opcoesPessoa" [(ngModel)]="filtro.pessoas" placeholder="Todas"
-        [filter]="true" selectedItemsLabel="{0} pessoas" [maxSelectedLabels]="1" appendTo="body" styleClass="w-full"
-        (onChange)="aoMudarFiltro()" />
+      @if (mostraPessoa) {
+        <label class="block text-sm text-color-secondary mb-1" for="filtro-pessoas-movel">Pessoas</label>
+        <p-multiSelect inputId="filtro-pessoas-movel" [options]="opcoesPessoa" [(ngModel)]="filtro.pessoas" placeholder="Todas"
+          [filter]="true" selectedItemsLabel="{0} pessoas" [maxSelectedLabels]="1" appendTo="body" styleClass="w-full"
+          (onChange)="aoMudarFiltro()" />
+      }
       <label class="block text-sm text-color-secondary mb-1 mt-3" for="filtro-categorias-movel">Categorias</label>
       <p-multiSelect inputId="filtro-categorias-movel" [options]="opcoesCategoria" [(ngModel)]="filtro.categorias" placeholder="Todas"
         [filter]="true" selectedItemsLabel="{0} categorias" [maxSelectedLabels]="1" appendTo="body" styleClass="w-full"
@@ -423,7 +434,7 @@
 
     <mf-fab rotulo="Novo lançamento" (clique)="showLancamento = true" />
     <app-extrato-editar-sheet [item]="noSheet" [opcoesCategoria]="opcoesCategoria" [opcoesTipoMov]="opcoesTipoMov"
-      [nomesPessoas]="nomesPessoas" [pessoas]="pessoasCadastradas" [salvando]="salvandoSheet" [excluindo]="excluindoSheet"
+      [opcoesPessoa]="opcoesPessoaRegra" [mostraPessoa]="mostraPessoa" [pessoas]="pessoasCadastradas" [salvando]="salvandoSheet" [excluindo]="excluindoSheet"
       [sugestao]="noSheet ? sugestao(noSheet) : null"
       (salvar)="salvarDoSheet($event)" (excluir)="excluirDoSheet($event)" (fechar)="fecharSheet()" (dividir)="abrirDivisao($event)" (nota)="abrirNota($event)" />
   }
@@ -436,15 +447,15 @@
   }
 
   @if (emDivisao) {
-    <app-dividir-lancamento [item]="emDivisao" [categorias]="opcoesCategoria" [pessoas]="opcoesPessoaRegra" (fechado)="aoFecharDivisao($event)" />
+    <app-dividir-lancamento [item]="emDivisao" [categorias]="opcoesCategoria" [pessoas]="usaPessoas ? opcoesPessoaRegra : []" (fechado)="aoFecharDivisao($event)" />
   }
 
   @if (aba === 2) {
-    <div role="tabpanel"><app-resumo-categorias [mes]="selectedMonth" /></div>
+    <div role="tabpanel"><app-resumo-categorias [mes]="selectedMonth" [bancoId]="contaAberta?.bancoId ?? null" /></div>
   }
 
   @if (showRegras) {
-    <app-modal-regras-classificacao [categorias]="opcoesCategoria" [tipos]="opcoesTipoMov" [pessoas]="opcoesPessoaRegra"
+    <app-modal-regras-classificacao [categorias]="opcoesCategoria" [tipos]="opcoesTipoMov" [pessoas]="usaPessoas ? opcoesPessoaRegra : []"
       [contas]="opcoesConta" [movel]="movel()" [inicial]="regraInicial"
       (fechado)="showRegras = false" (alterou)="aoClassificar($event)" (regrasMudaram)="regras = $event" />
   }
@@ -482,18 +493,21 @@
   }
 
   @if (showQuemUsa) {
-    <p-dialog header="Quem usa este cartão" [visible]="true" [modal]="true" [draggable]="false" styleClass="mf-dialog-sm" (visibleChange)="showQuemUsa = false">
+    <!-- Card #80: mf-modal — p-dialog no desktop, folha de baixo no celular -->
+    <mf-modal titulo="Quem usa este cartão" tipo="folha" tamanhoDesktop="sm" (fechar)="showQuemUsa = false">
       <p class="mt-0 mf-hint">Escolha quem faz compras neste cartão. As compras dessas pessoas aparecem separadas e entram nos Acertos.</p>
       <p-multiSelect [options]="opcoesQuemUsa" [(ngModel)]="quemUsa" optionLabel="label" optionValue="value" display="chip"
         placeholder="Escolha as pessoas" appendTo="body" styleClass="w-full" ariaLabel="Quem usa este cartão" />
       @if (!opcoesQuemUsa.length) {
-        <small class="block mt-2 mf-hint">Nenhuma pessoa está marcada para entrar nos acertos. Marque em "Pessoas que usam meus cartões".</small>
+        <small class="block mt-2 mf-hint">Você ainda não cadastrou ninguém. Adicione quem usa o cartão:</small>
       }
-      <ng-template pTemplate="footer">
+      <!-- Card #79: sem cartão compartilhado o item "Pessoas" do ⋮ não aparece; a primeira pessoa nasce aqui -->
+      <div class="mt-2"><app-nova-pessoa inputId="quem-usa-nova" (criada)="aoCriarQuemUsa($event)" /></div>
+      <ng-template mfModalRodape>
         <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="showQuemUsa = false" />
         <p-button label="Ativar" icon="pi pi-check" [disabled]="!quemUsa.length" (onClick)="confirmarQuemUsa()" />
       </ng-template>
-    </p-dialog>
+    </mf-modal>
   }
 
   <app-modal-importar-extrato *ngIf="showImportar" [bancos]="bancos" [tiposCartao]="tiposCartao" [bancoInicial]="bancoParaImportar"

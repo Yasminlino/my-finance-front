@@ -1,0 +1,17 @@
+/* Card #79/#80 — "Juntar nomes parecidos", 2º nível dentro de "Nomes e regras". Cores só do tema / tokens (checar:estilos). */
+.juntar { display: flex; flex-direction: column; }
+.juntar-topo { display: flex; align-items: center; gap: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--surface-border); }
+.juntar-titulo { flex: 1; font-weight: 600; }
+.juntar-passo { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.juntar-opcoes { display: flex; flex-direction: column; gap: 0.5rem; }
+.juntar-opcao {
+  display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem; border: 1px solid var(--surface-border);
+  border-radius: var(--mf-radius); background: var(--surface-card); cursor: pointer;
+}
+.juntar-opcao--escolhida { border-color: var(--primary-color); background: var(--highlight-bg); }
+.juntar-texto { font-weight: 600; overflow-wrap: anywhere; }
+.juntar-classe { font-size: 0.9rem; }
+
+.juntar-botoes { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+.juntar--movel .juntar-botoes { flex-direction: column-reverse; }
+::ng-deep .juntar--movel .juntar-botoes p-button .p-button { width: 100%; min-height: 2.75rem; }

@@ -1,0 +1,69 @@
+/* Card #79 — aba "Nomes do extrato". Cores só do tema / tokens (checar:estilos). */
+
+.nomes { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.nomes-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.nomes-busca { flex: 1 1 12rem; min-width: 10rem; }
+::ng-deep .nomes-filtro-categoria { width: 13rem; }
+::ng-deep .nomes-abas .p-button { padding: 0.45rem 0.75rem; font-size: 0.875rem; }
+
+.nomes-aviso, .nomes-lote {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; padding: 0.6rem 0.75rem;
+  border-radius: var(--mf-radius); font-size: 0.9rem;
+}
+.nomes-aviso { background: var(--mf-tag-warning-bg); color: var(--mf-tag-warning-fg); }
+.nomes-lote { border: 1px solid var(--primary-color); background: var(--surface-card); }
+
+.nomes-texto { font-weight: 600; overflow-wrap: anywhere; }
+::ng-deep .nomes-tabela td { vertical-align: top; }
+.nomes-linha--mudou td { background: var(--highlight-bg); }
+
+/* Sugestão: tracejado com ✓ para aceitar sem abrir nada */
+.nomes-sugestao {
+  display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.35rem; padding: 0.15rem 0.5rem;
+  border: 1px dashed var(--mf-tag-warning-fg); border-radius: var(--mf-radius); background: var(--mf-tag-warning-bg);
+  color: var(--mf-tag-warning-fg); font: inherit; font-size: 0.8rem; cursor: pointer;
+}
+.nomes-sugestao:hover, .nomes-sugestao:focus-visible { border-style: solid; }
+
+/* Rodapé das alterações */
+.nomes-salvar {
+  position: sticky; bottom: 0; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem;
+  padding: 0.75rem; border: 1px solid var(--surface-border); border-radius: var(--mf-radius); background: var(--surface-card);
+  box-shadow: var(--mf-shadow-card);
+}
+.nomes-salvar-qtd { font-weight: 600; }
+.nomes-salvar-botoes { display: flex; gap: 0.5rem; margin-left: auto; }
+
+/* ---------- celular ---------- */
+.nomes--movel .nomes-filtros { flex-direction: column; align-items: stretch; }
+.nomes--movel .nomes-busca { flex: none; width: 100%; }
+/* As abas rolam para o lado dentro da largura da tela (não empurram a página). */
+.nomes--movel p-selectbutton { display: block; max-width: 100%; overflow-x: auto; }
+::ng-deep .nomes--movel .nomes-abas { display: inline-flex; flex-wrap: nowrap; }
+::ng-deep .nomes--movel .nomes-abas .p-button { flex: 0 0 auto; white-space: nowrap; }
+
+.nomes-cartoes { display: flex; flex-direction: column; gap: 0.5rem; }
+.nomes-cartao {
+  display: flex; flex-direction: column; gap: 0.25rem; padding: 0.75rem; border: 1px solid var(--surface-border);
+  border-radius: var(--mf-radius); background: var(--surface-card);
+}
+.nomes-cartao--mudou { border-color: var(--primary-color); }
+.nomes-cartao-corpo {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; width: 100%; padding: 0; border: 0;
+  background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.nomes-tag {
+  padding: 0.1rem 0.5rem; border-radius: var(--mf-radius); background: var(--mf-tag-success-bg); color: var(--mf-tag-success-fg);
+  font-size: 0.8rem; font-weight: 600;
+}
+.nomes-mais { color: var(--primary-color); font-size: 0.875rem; font-weight: 600; }
+.nomes-cartao .nomes-sugestao { align-self: flex-start; min-height: 2rem; }
+
+.nomes-salvar--movel {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 1102; border-radius: 0; padding: 0.75rem 1rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+.nomes-salvar--movel .nomes-salvar-botoes { width: 100%; margin-left: 0; }
+::ng-deep .nomes-salvar--movel .nomes-salvar-botoes p-button:last-child { flex: 1; }
+::ng-deep .nomes-salvar--movel .nomes-salvar-botoes p-button:last-child .p-button { width: 100%; }

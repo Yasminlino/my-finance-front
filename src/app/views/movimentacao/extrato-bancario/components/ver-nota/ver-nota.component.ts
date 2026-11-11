@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
+import { ModalComponent, ModalRodapeDirective } from 'src/app/shared/ui/modal/modal.component';
 import { NotaFiscalDto } from 'src/app/core/models/extrato.model';
 import { ConfirmacaoService } from 'src/app/core/services/confirmacao.service';
 import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
@@ -13,10 +13,10 @@ import { AlertService } from 'src/app/shared/components/alert.service';
 @Component({
   selector: 'app-ver-nota',
   standalone: true,
-  imports: [PrimeTemplate, ButtonModule, DialogModule],
+  imports: [PrimeTemplate, ButtonModule, ModalComponent, ModalRodapeDirective],
   template: `
-    <p-dialog header="Nota fiscal" [visible]="true" [modal]="true" [draggable]="false" [focusOnShow]="false" [style]="{ width: '36rem' }"
-      [breakpoints]="{ '768px': '96vw' }" (visibleChange)="!$event && fechado.emit(false)">
+    <!-- Card #80: mf-modal — p-dialog no desktop, tela cheia no celular -->
+    <mf-modal titulo="Nota fiscal" icone="pi pi-receipt" tipo="tela" tamanhoDesktop="sm" (fechar)="fechado.emit(false)">
       @if (nota; as n) {
         <div class="ver-topo">
           <div class="font-semibold">{{ n.estabelecimento }}</div>
@@ -40,13 +40,13 @@ import { AlertService } from 'src/app/shared/components/alert.service';
       } @else {
         <p class="mf-hint">Carregando…</p>
       }
-      <ng-template pTemplate="footer">
-        <div class="flex justify-content-between align-items-center">
+      <ng-template mfModalRodape>
+        <div class="flex justify-content-between align-items-center w-full gap-2">
           <p-button label="Remover" icon="pi pi-trash" severity="danger" [text]="true" size="small" [disabled]="!nota" (onClick)="remover()" />
           <p-button label="Fechar" severity="secondary" [outlined]="true" (onClick)="fechado.emit(false)" />
         </div>
       </ng-template>
-    </p-dialog>
+    </mf-modal>
   `,
   styles: [`
     .ver-topo { padding-bottom: 0.75rem; }
