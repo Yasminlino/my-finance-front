@@ -14,7 +14,7 @@ describe('HeaderComponent', () => {
   let fixture: ComponentFixture<HeaderComponent>;
   let header: HeaderComponent;
   let router: { navigate: jasmine.Spy; navigateByUrl: jasmine.Spy; events: Subject<unknown>; url: string };
-  let auth: { token: string | null; logout: jasmine.Spy };
+  let auth: { token: string | null; nomeUsuario?: string | null; logout: jasmine.Spy };
   let vencidas: { quantidade: ReturnType<typeof signal<number>>; atualizar: jasmine.Spy };
   let avisos: { novos: ReturnType<typeof signal<number>>; atualizar: jasmine.Spy };
   const larguraOriginal = window.innerWidth;
@@ -116,7 +116,7 @@ describe('HeaderComponent', () => {
   });
 
   it('celular (card #78): fora do Início não há barra no topo; no Início, título, busca e avatar com as duas iniciais', () => {
-    localStorage.setItem('usuarioNome', 'Yasmin Lino');
+    auth.nomeUsuario = 'Yasmin Lino';
     abrir(390);
     expect(el().querySelector('.topo')).toBeNull();
 
@@ -125,7 +125,6 @@ describe('HeaderComponent', () => {
     // Protótipo "Logo no celular": no Início a marca fica no lugar do título.
     expect(el().querySelector('.topo .marca')?.textContent).toContain('Kanfy');
     expect(header.inicial).toBe('YL');
-    localStorage.removeItem('usuarioNome');
   });
 
   it('celular: "Bancos, cartões e tipos" abre as três telas no próprio Mais', () => {

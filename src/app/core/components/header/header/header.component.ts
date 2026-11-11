@@ -40,7 +40,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private readonly listaService = inject(ListaService);
   private readonly destroyRef = inject(DestroyRef);
 
-  usuario = localStorage.getItem('usuarioNome') ?? 'Admin';
+  usuario = this.auth.nomeUsuario ?? 'Admin';
   readonly vencidas = this.vencidasService.quantidade;
   private readonly notificacoes = inject(NotificacoesService);
   /** Card #73: avisos novos no sino. */

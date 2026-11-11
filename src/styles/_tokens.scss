@@ -7,6 +7,13 @@
  */
 
 :root {
+  /* Marca: gradiente do painel do login (card #70), do azul-marinho ao verde do logo */
+  --mf-marca-escuro: #0b1f4b;
+  --mf-marca-claro: #0f8a5f;
+  --mf-marca-vidro-bg: rgba(255, 255, 255, 0.12);    /* cartão de exemplo sobre o gradiente */
+  --mf-marca-vidro-borda: rgba(255, 255, 255, 0.25);
+  --mf-marca-divisor: rgba(255, 255, 255, 0.2);
+
   /* Semânticas */
   --mf-primary: var(--primary-color);
   --mf-receita: var(--green-600);

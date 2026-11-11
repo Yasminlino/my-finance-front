@@ -3,6 +3,7 @@ import { Component, DestroyRef, EventEmitter, Input, OnInit, Output, inject } fr
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { CategoryService } from 'src/app/core/services/category.service';
+import { AuthService } from 'src/app/core/services/auth.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { extrairMensagemErro } from 'src/app/core/utils/http-error';
 import { CategoriaDto } from 'src/app/core/models/categoria.model';
@@ -62,7 +63,7 @@ export class CategoriaFormComponent implements OnInit {
   ];
   readonly icones = ICONES_CATEGORIA;
 
-  readonly perfilEmpresa = localStorage.getItem('usuarioRole') === 'Empresa';
+  readonly perfilEmpresa = inject(AuthService).perfil === 'Empresa';
 
   readonly form = this.fb.group({
     nome: this.fb.nonNullable.control('', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]),

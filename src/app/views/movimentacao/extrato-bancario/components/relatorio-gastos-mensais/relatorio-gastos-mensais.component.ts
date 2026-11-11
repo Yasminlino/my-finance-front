@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ApexChartOptions } from 'src/app/core/components/charts/apex-chart/apex-chart.component';
 import { createGastosBarLikeImageChart } from 'src/app/core/components/charts/gastos-bar-like-image.chart';
 import { ExtratoBancarioItemService } from 'src/app/core/services/extrato-bancario-item.service';
+import { AuthService } from 'src/app/core/services/auth.service';
 import { NaturezaOperacao } from 'src/app/shared/enums/natureza-operacao.enum';
 import { ExtratoItemDto } from 'src/app/core/models/extrato.model';
 import { Meses } from 'src/app/views/movimentacao/extrato-bancario/components/models/meses';
@@ -29,6 +30,7 @@ function toNumber(v: unknown): number {
 })
 export class RelatorioGastosMensaisComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly auth = inject(AuthService);
   private readonly mes$ = new Subject<string>();
   extratoItemsSaida: ExtratoItemDto[] = [];
   extratoItemsEntrada: ExtratoItemDto[] = [];
@@ -89,7 +91,7 @@ export class RelatorioGastosMensaisComponent implements OnInit {
     const mes = this.getMonthFilter() ?? '';
     this.filtros.controls.mes.setValue(mes, { emitEvent: false });
 
-    this.perfilEmpresa = localStorage.getItem('usuarioRole') == "Empresa"
+    this.perfilEmpresa = this.auth.perfil === 'Empresa';
 
     if (!mes) {
       console.error('Month filter is required in the URL query parameters');

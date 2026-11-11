@@ -1,0 +1,252 @@
+// Login (card #70): painel da marca + formulário no desktop; só o formulário no tablet;
+// faixa da marca no topo do celular. Cores só por token (npm run checar:estilos).
+
+.login {
+  display: flex;
+  min-height: 100vh;
+  background: var(--surface-0);
+}
+
+// ---------- Painel da marca ----------
+
+.marca {
+  flex: 1 1 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2.5rem;
+  padding: 3rem 4rem;
+  color: var(--surface-0);
+  background: linear-gradient(150deg, var(--mf-marca-escuro) 0%, var(--mf-marca-escuro) 35%, var(--mf-marca-claro) 100%);
+}
+
+// Só aparece no celular (ver o media query no fim).
+.marca-celular {
+  display: none;
+}
+
+.marca-topo {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+// Logo com o slogan na versão clara (Logo_Kanfy_slogan_clara.webp, 640px; o PNG original fica em assets), direto sobre o gradiente.
+.marca-logo {
+  display: inline-flex;
+  align-self: flex-start;
+
+  img {
+    display: block;
+    width: 28rem;
+    max-width: 100%;
+  }
+}
+
+.marca-slogan {
+  margin: 0;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.marca-beneficios {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 1.05rem;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+  }
+
+  i {
+    font-size: 1.25rem;
+  }
+}
+
+.marca-exemplo {
+  max-width: 22rem;
+  padding: 1.25rem;
+  border: 1px solid var(--mf-marca-vidro-borda);
+  border-radius: 1rem;
+  background: var(--mf-marca-vidro-bg);
+  backdrop-filter: blur(6px);
+}
+
+.exemplo-rotulo {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.exemplo-valor {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.exemplo-linha {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.5rem;
+  font-size: 0.9rem;
+  border-top: 1px solid var(--mf-marca-divisor);
+
+  & + & {
+    margin-top: 0.5rem;
+  }
+}
+
+// ---------- Formulário ----------
+
+.formulario {
+  flex: 1 1 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+
+.formulario-conteudo {
+  width: 100%;
+  max-width: 25rem;
+}
+
+.logo {
+  display: block;
+  width: 11rem;
+  margin-bottom: 2rem;
+}
+
+.titulo {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.subtitulo {
+  margin: 0.25rem 0 1.5rem;
+  color: var(--text-color-secondary);
+}
+
+.rotulo {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.link {
+  color: var(--mf-primary);
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}
+
+.caps-lock {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--mf-alerta);
+}
+
+.rodape {
+  margin-top: 2rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-color-secondary);
+}
+
+// O olho fica dentro do campo e o campo ocupa a largura toda. O cadeado (p-iconField) fica à
+// esquerda: o input do p-password está dentro do wrapper dele, fora do alcance do padding do iconField.
+:host ::ng-deep {
+  .p-password {
+    width: 100%;
+  }
+
+  .campo-senha {
+    .p-password-input {
+      padding-left: 2.5rem;
+    }
+
+    // O wrapper do p-password vem depois do ícone no DOM e o cobria.
+    .p-input-icon {
+      z-index: 1;
+    }
+  }
+}
+
+// ---------- Tablet e celular: faixa da marca (com o logo) no topo e campos de 48px ----------
+// O tablet também usa a faixa: o formulário não tem logo próprio.
+
+@media (max-width: 991px) {
+  .login {
+    flex-direction: column;
+  }
+
+  .marca {
+    display: block;
+    flex: 0 0 auto;
+    padding: 2rem 1.25rem 1.75rem;
+    border-radius: 0 0 1.5rem 1.5rem;
+  }
+
+  .marca-topo,
+  .marca-beneficios,
+  .marca-exemplo {
+    display: none;
+  }
+
+  // Mesma largura e centro do formulário, para alinhar com ele no tablet.
+  .marca-celular {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 25rem;
+    margin: 0 auto;
+  }
+
+  .marca-logo {
+    img {
+      width: 13rem;
+    }
+  }
+
+  .marca-celular-frase {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    opacity: 0.9;
+  }
+
+  .formulario {
+    align-items: flex-start;
+    padding: 1.5rem 1.25rem 2rem;
+  }
+
+  // Logo com o slogan também no celular (pedido dela, 11/11), menor que no desktop.
+  .logo {
+    width: 10rem;
+    margin-bottom: 1.25rem;
+  }
+
+  :host ::ng-deep {
+    // Em px: a fonte base do tema é menor que 16px e 3rem não chegava aos 48px do card.
+    .p-inputtext {
+      min-height: 48px;
+    }
+
+    .botao.p-button {
+      min-height: 48px;
+    }
+  }
+}

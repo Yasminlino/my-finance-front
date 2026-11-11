@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 
 import { CategoriaFormComponent } from './categoria-form.component';
 import { CategoryService } from 'src/app/core/services/category.service';
+import { AuthService } from 'src/app/core/services/auth.service';
 import { AlertService } from 'src/app/shared/components/alert.service';
 import { CategoriaDto } from 'src/app/core/models/categoria.model';
 
@@ -34,6 +35,7 @@ describe('CategoriaFormComponent', () => {
       providers: [
         provideNoopAnimations(),
         { provide: CategoryService, useValue: service },
+        { provide: AuthService, useValue: { get perfil() { return localStorage.getItem('usuarioRole'); } } },
         { provide: AlertService, useValue: jasmine.createSpyObj('AlertService', ['success', 'error']) }
       ]
     });

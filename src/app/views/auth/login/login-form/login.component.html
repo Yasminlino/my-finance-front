@@ -1,42 +1,84 @@
-<div class="flex align-items-center justify-content-center min-h-screen p-3">
-  <div class="surface-card shadow-2 border-round p-4 w-full" style="max-width: 28rem">
-    <div class="text-center mb-4">
-      <img src="assets/MyFinance.png" alt="MyFinance" width="200">
+<div class="login">
+  <!-- Painel da marca: desktop ao lado do formulário; no celular, faixa curta no topo -->
+  <aside class="marca">
+    <!-- Celular e tablet: logo com o slogan (versão clara) e a frase numa faixa com cantos arredondados embaixo -->
+
+    <div class="marca-celular">
+      <span class="marca-logo"><img src="assets/Logo_Kanfy_slogan_clara.webp" alt="Kanfy"></span>
+      <p class="marca-celular-frase">Contas, extratos e planejamento do mês num só lugar.</p>
     </div>
 
-    <form (ngSubmit)="submit()" [formGroup]="form" autocomplete="on" novalidate class="flex flex-column gap-3">
-      <div class="flex flex-column gap-2">
-        <label for="username">E-mail ou usuário</label>
-        <input pInputText id="username" type="text" [class.ng-invalid]="!!errors.username"
-          [class.ng-dirty]="!!errors.username" placeholder="voce@email.com" formControlName="username" autofocus />
-        <small class="p-error" *ngIf="errors.username">{{ errors.username }}</small>
-      </div>
+    <div class="marca-topo">
+      <span class="marca-logo"><img src="assets/Logo_Kanfy_slogan_clara.webp" alt="Kanfy"></span>
+    </div>
 
-      <div class="flex flex-column gap-2">
-        <label for="password">Senha</label>
-        <p-inputGroup>
-          <input pInputText id="password" [type]="showPwd ? 'text' : 'password'" [class.ng-invalid]="!!errors.password"
-            [class.ng-dirty]="!!errors.password" placeholder="Sua senha" formControlName="password"
-            autocomplete="current-password" />
-          <button type="button" pButton [icon]="showPwd ? 'pi pi-eye-slash' : 'pi pi-eye'" severity="secondary"
-            [outlined]="true" (click)="togglePwd()" [attr.aria-label]="showPwd ? 'Ocultar senha' : 'Mostrar senha'"
-            title="Mostrar/ocultar senha"></button>
-        </p-inputGroup>
-        <small class="p-error" *ngIf="errors.password">{{ errors.password }}</small>
-      </div>
+    <ul class="marca-beneficios">
+      <li><i class="pi pi-calendar-clock"></i><span><strong>Contas a pagar</strong> sem esquecer nenhum vencimento</span></li>
+      <li><i class="pi pi-wallet"></i><span><strong>Extrato e acertos</strong> para saber quem deve o quê</span></li>
+      <li><i class="pi pi-chart-line"></i><span><strong>Planejamento</strong> do mês e das compras</span></li>
+    </ul>
 
-      <div class="flex align-items-center gap-2">
-        <p-checkbox inputId="remember" formControlName="remember" [binary]="true" />
-        <label for="remember">Lembrar de mim</label>
-      </div>
+    <div class="marca-exemplo" aria-hidden="true">
+      <div class="exemplo-rotulo">Saldo do mês</div>
+      <div class="exemplo-valor">R$ 2.340,00</div>
+      <div class="exemplo-linha"><span>Aluguel · vence dia 10</span><span>R$ 1.200,00</span></div>
+      <div class="exemplo-linha"><span>Internet · vence dia 15</span><span>R$ 99,90</span></div>
+    </div>
+  </aside>
 
-      <p-button type="submit" label="Entrar" [loading]="loading" styleClass="w-full" />
-    </form>
+  <main class="formulario">
+    <div class="formulario-conteudo">
+    
+      <h1 class="titulo">Entrar</h1>
+      <p class="subtitulo">Que bom te ver de novo.</p>
 
-    <p-divider align="center"><span class="text-color-secondary">ou</span></p-divider>
+      <p-message *ngIf="sessaoExpirada && !erroLogin" severity="info" styleClass="w-full mb-3"
+        text="Sua sessão expirou. Entre de novo para continuar." />
+      <p-message *ngIf="erroLogin" severity="error" styleClass="w-full mb-3" [text]="erroLogin" />
 
-    <p-button label="Registrar-se" [outlined]="true" styleClass="w-full" (onClick)="openRegister()" />
-  </div>
+      <form (ngSubmit)="submit()" [formGroup]="form" autocomplete="on" novalidate class="flex flex-column gap-3">
+        <div class="flex flex-column gap-2">
+          <label for="username" class="rotulo">E-mail ou usuário</label>
+          <p-iconField iconPosition="left">
+            <p-inputIcon styleClass="pi pi-user" />
+            <input pInputText id="username" type="text" formControlName="username" autocomplete="username"
+              autocapitalize="none" placeholder="seu usuário ou voce@email.com" class="w-full"
+              [class.ng-invalid]="!!erro('username')" [class.ng-dirty]="!!erro('username')" />
+          </p-iconField>
+          <small class="p-error" *ngIf="erro('username')">{{ erro('username') }}</small>
+        </div>
+
+        <div class="flex flex-column gap-2">
+          <label for="password" class="rotulo">Senha</label>
+          <p-iconField iconPosition="left" class="campo-senha">
+            <p-inputIcon styleClass="pi pi-lock" />
+            <p-password inputId="password" formControlName="password" [toggleMask]="true" [feedback]="false"
+              placeholder="Sua senha" autocomplete="current-password" styleClass="w-full" inputStyleClass="w-full"
+              [class.ng-invalid]="!!erro('password')" [class.ng-dirty]="!!erro('password')"
+              (keyup)="verificarCapsLock($event)" (keydown)="verificarCapsLock($event)" (focusout)="capsLock = false" />
+          </p-iconField>
+          <small class="p-error" *ngIf="erro('password')">{{ erro('password') }}</small>
+          <small class="caps-lock" *ngIf="capsLock"><i class="pi pi-exclamation-triangle"></i> Caps Lock está ativado</small>
+        </div>
+
+        <div class="flex align-items-center justify-content-between gap-2 flex-wrap">
+          <div class="flex align-items-center gap-2">
+            <p-checkbox inputId="remember" formControlName="remember" [binary]="true" />
+            <label for="remember">Lembrar de mim</label>
+          </div>
+          <a routerLink="/login/recuperar-senha" class="link">Esqueci a senha</a>
+        </div>
+
+        <p-button type="submit" [label]="loading ? 'Entrando...' : 'Entrar'" [loading]="loading" styleClass="w-full botao" />
+      </form>
+
+      <p-divider align="center"><span class="text-color-secondary">ou</span></p-divider>
+
+      <p-button label="Criar uma conta" [outlined]="true" styleClass="w-full botao" (onClick)="openRegister()" />
+
+      <footer class="rodape">© {{ ano }} Kanfy</footer>
+    </div>
+  </main>
 
   <app-registro-usuario *ngIf="showModalCreate" (closeModal)="closeRegister()"></app-registro-usuario>
 </div>

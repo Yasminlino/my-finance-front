@@ -10,13 +10,15 @@ import { AuthService } from '../services/auth.service';
 describe('authInterceptor', () => {
   let http: HttpClient;
   let controller: HttpTestingController;
-  const auth = jasmine.createSpyObj<AuthService>('AuthService', ['logout']);
-  const router = jasmine.createSpyObj<Router>('Router', ['navigate']);
+  let auth: jasmine.SpyObj<AuthService>;
+  let token: string | null;
+  const router = jasmine.createSpyObj<Router>('Router', ['navigate'], { url: '/contas-a-pagar' });
 
   beforeEach(() => {
-    auth.logout.calls.reset();
+    token = null;
+    auth = jasmine.createSpyObj<AuthService>('AuthService', ['logout']);
+    Object.defineProperty(auth, 'token', { get: () => token });
     router.navigate.calls.reset();
-    localStorage.removeItem('authToken');
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([authInterceptor])),
@@ -29,13 +31,10 @@ describe('authInterceptor', () => {
     controller = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => {
-    controller.verify();
-    localStorage.removeItem('authToken');
-  });
+  afterEach(() => controller.verify());
 
   it('manda o token quando existe', () => {
-    localStorage.setItem('authToken', 'abc');
+    token = 'abc';
     http.get('/x').subscribe();
 
     expect(controller.expectOne('/x').request.headers.get('Authorization')).toBe('Bearer abc');
@@ -47,14 +46,27 @@ describe('authInterceptor', () => {
     expect(controller.expectOne('/x').request.headers.has('Authorization')).toBeFalse();
   });
 
-  it('401: sai da sessão, vai para o login e repassa o erro', () => {
+  it('401: sai da sessão, vai para o login avisando que expirou e repassa o erro', () => {
     let status = 0;
     http.get('/x').subscribe({ error: e => (status = e.status) });
 
     controller.expectOne('/x').flush(null, { status: 401, statusText: 'Unauthorized' });
 
     expect(auth.logout).toHaveBeenCalled();
-    expect(router.navigate).toHaveBeenCalledWith(['/login']);
+    expect(router.navigate).toHaveBeenCalledWith(['/login'], {
+      queryParams: { returnUrl: '/contas-a-pagar', motivo: 'expirada' }
+    });
+    expect(status).toBe(401);
+  });
+
+  it('401 do /Autenticar é senha errada, não sessão vencida: só repassa o erro', () => {
+    let status = 0;
+    http.post('https://api.exemplo/Autenticar', {}).subscribe({ error: e => (status = e.status) });
+
+    controller.expectOne('https://api.exemplo/Autenticar').flush({ message: 'x' }, { status: 401, statusText: 'Unauthorized' });
+
+    expect(auth.logout).not.toHaveBeenCalled();
+    expect(router.navigate).not.toHaveBeenCalled();
     expect(status).toBe(401);
   });
 

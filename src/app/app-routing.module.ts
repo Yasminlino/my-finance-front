@@ -1,5 +1,5 @@
 import { inject, NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { CanActivateFn, RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { LayoutComponent } from './layout/layout/layout.component';
 import { ROTAS_ANTIGAS } from './rotas-antigas';
@@ -15,7 +15,7 @@ const routes: Routes = [
   {
     path: '',
     component: LayoutComponent,
-    canActivate: [() => inject(AuthGuard).canActivate()],
+    canActivate: [((route, state) => inject(AuthGuard).canActivate(route, state)) as CanActivateFn],
     children: [
       // Endereços antigos primeiro: redirecionam para as rotas em português (FE-P2-12).
       ...ROTAS_ANTIGAS,
