@@ -41,6 +41,11 @@
           <i class="pi pi-search"></i><span>Buscar…</span><kbd>Ctrl K</kbd>
         </button>
       }
+      <!-- Card #73: sino com os avisos novos. -->
+      <button type="button" class="topo-sino" [attr.aria-label]="rotuloSino()" (click)="abrirAvisos($event)">
+        <i class="pi pi-bell"></i>
+        @if (avisosNovos()) { <span class="topo-sino-badge">{{ avisosNovos() > 9 ? '9+' : avisosNovos() }}</span> }
+      </button>
       <button type="button" class="topo-usuario" (click)="menuUsuarioEl.toggle($event)" [attr.aria-label]="'Conta de ' + usuario">
         <span class="avatar">{{ inicial }}</span>
         @if (desktop()) { <span class="topo-usuario-nome">{{ usuario }}</span><i class="pi pi-angle-down"></i> }
@@ -52,6 +57,21 @@
 
 <p-menu #menuPlanejamentoEl [model]="menuPlanejamento" [popup]="true" appendTo="body" styleClass="topo-menu" />
 <p-menu #menuUsuarioEl [model]="menuUsuario" [popup]="true" appendTo="body" styleClass="topo-menu" />
+
+<!-- Card #73: avisos no desktop/tablet (no celular, tela cheia). -->
+<p-overlayPanel #painelAvisos appendTo="body" styleClass="topo-avisos">
+  <app-painel-avisos (fechar)="painelAvisos.hide()" />
+</p-overlayPanel>
+@if (avisosAbertos) {
+  <mf-modal titulo="Notificações" tipo="tela" tamanhoDesktop="sm" [semMargem]="true" (fechar)="avisosAbertos = false">
+    <ng-template mfModalMais>
+      <button type="button" class="p-link topo-ler-tudo" [disabled]="!avisosNovos()" (click)="painelMovel.marcarTudo()">Ler tudo</button>
+      <p-button icon="pi pi-cog" [text]="true" [rounded]="true" severity="secondary" ariaLabel="Preferências de notificação"
+        (onClick)="painelMovel.irPreferencias()" />
+    </ng-template>
+    <app-painel-avisos #painelMovel [acoesNoPainel]="false" [telaCheia]="true" (fechar)="avisosAbertos = false" />
+  </mf-modal>
+}
 
 <!-- Cadastros: painel com o que é do dia a dia e as configurações, cada um com uma linha de descrição. -->
 <p-overlayPanel #painelCadastros appendTo="body" styleClass="topo-cadastros">
@@ -150,12 +170,17 @@
         <span class="mais-marca"><img src="assets/MyFinance.png" alt="" width="28"><strong>{{ brand }}</strong></span>
       </div>
     </ng-template>
-    <!-- Meu perfil e Preferências ainda não têm tela: o cartão fica no lugar do protótipo, sem levar a lugar nenhum. -->
-    <div class="mais-usuario">
+    <!-- Card #73: o cartão leva às Preferências; Notificações abre o sino em tela cheia. -->
+    <button type="button" class="mais-usuario" (click)="ir('/preferencias')">
       <span class="avatar avatar--claro">{{ inicial }}</span>
-      <span class="mais-usuario-texto"><strong>{{ usuario }}</strong><small>Meu perfil · Preferências</small></span>
-      <small class="folha-em-breve">em breve</small>
-    </div>
+      <span class="mais-usuario-texto"><strong>{{ usuario }}</strong><small>Preferências</small></span>
+      <i class="pi pi-angle-right"></i>
+    </button>
+    <button type="button" class="folha-linha" (click)="maisAberto = false; avisosAbertos = true">
+      <span class="folha-caixa"><i class="pi pi-bell"></i></span><span class="flex-1">Notificações</span>
+      @if (avisosNovos()) { <span class="folha-badge">{{ avisosNovos() }}</span> }
+      <i class="pi pi-angle-right"></i>
+    </button>
     <div class="gaveta-titulo">Planejamento</div>
     <div class="folha-grade folha-grade--4">
       @for (item of planejamentoMais; track item.path) {

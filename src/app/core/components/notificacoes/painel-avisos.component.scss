@@ -1,0 +1,110 @@
+/* Card #73 — painel do sino, no layout do mockup A. Só tokens (var(--mf-*) e tema). */
+
+.painel { display: flex; flex-direction: column; min-width: 0; }
+
+/* Celular: fundo cinza da tela, cards brancos por cima. */
+.painel--tela { min-height: 100%; padding: 0.75rem 1rem 1.5rem; background: var(--surface-ground); }
+
+.painel__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+}
+
+.chips { display: flex; gap: 0.5rem; }
+
+.chip {
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 2rem;
+  background: var(--surface-card);
+  color: var(--text-color);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &--ativo { border-color: var(--mf-primary); background: var(--mf-primary); color: var(--primary-color-text); }
+}
+
+.painel__acoes { display: flex; align-items: center; gap: 0.25rem; }
+
+.painel__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--mf-primary);
+  white-space: nowrap;
+  &:disabled { color: var(--text-color-secondary); opacity: 0.6; cursor: default; }
+}
+
+.painel__corpo { padding: 0.25rem 0; overflow-y: auto; max-height: min(30rem, 70vh); }
+
+.painel__grupo {
+  margin: 0.75rem 0 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gray-400);
+}
+
+.painel__lista { display: flex; flex-direction: column; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+
+.painel__vazio {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  color: var(--mf-texto-vazio);
+  &--erro { color: var(--mf-alerta); }
+}
+
+/* Card do aviso: faixa azul à esquerda (mockup A). */
+.aviso {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--surface-border);
+  border-left: 3px solid var(--mf-info);
+  border-radius: var(--mf-radius);
+  background: var(--surface-card);
+
+  &--clicavel { cursor: pointer; }
+  &--clicavel:hover, &--clicavel:focus-visible { background: var(--surface-hover); outline: none; }
+}
+
+.aviso__icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--mf-radius);
+}
+
+.aviso__texto { flex: 1; min-width: 0; }
+
+.aviso__cabeca { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.aviso__titulo { min-width: 0; color: var(--text-color); font-size: 0.95rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.aviso__valor { font-weight: 500; color: var(--text-color-secondary); }
+.aviso__quando { flex-shrink: 0; color: var(--text-color-secondary); }
+.aviso__linha { display: block; margin-top: 0.15rem; color: var(--text-color-secondary); font-size: 0.8rem; }
+
+.aviso__botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  :host ::ng-deep & .p-button.p-button-sm { padding: 0.3rem 0.65rem; font-size: 0.8rem; }
+}
+
+@media (max-width: 767.98px) {
+  .painel__corpo { max-height: none; }
+}

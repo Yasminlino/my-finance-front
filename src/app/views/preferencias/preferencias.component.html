@@ -1,0 +1,73 @@
+<div class="mf-pagina preferencias">
+  @if (movel()) {
+    <!-- Celular: barra "← Notificações", como o topo do modal em tela cheia (mockup B). -->
+    <div class="barra-topo">
+      <p-button icon="pi pi-arrow-left" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Voltar para Início" (onClick)="voltar()" />
+      <h1 class="barra-topo__titulo">Notificações</h1>
+    </div>
+  } @else {
+    <mf-page-header class="block mt-2 mb-3" titulo="Notificações" [breadcrumb]="breadcrumb" [home]="home" voltarPara="/home" voltarRotulo="Início" />
+  }
+
+  @if (carregando) {
+    @for (i of [1, 2, 3]; track i) { <p-skeleton height="8rem" styleClass="mb-3" /> }
+  } @else if (erro || !pref) {
+    <p class="erro"><i class="pi pi-exclamation-circle"></i>Não foi possível carregar as preferências.
+      <button type="button" class="p-link" (click)="carregar()">Tentar de novo</button></p>
+  } @else {
+    <!-- No app -->
+    <section class="secao" aria-labelledby="t-app">
+      <h2 id="t-app" class="secao__titulo">No app
+        <small class="secao__status" aria-live="polite">@if (salvando) { Salvando… } @else if (salvoAgora) { Salvo }</small>
+      </h2>
+      <ul class="secao__linhas">
+        @for (l of linhas; track l.chave) {
+          <li class="linha" [class.linha--desligada]="!ativo(l.chave)">
+            <button type="button" class="linha__texto" [disabled]="!ativo(l.chave)" (click)="abrirOpcoes(l, menu, $event)"
+              [attr.aria-label]="l.titulo + ': ' + l.resumo(pref) + '. Trocar'">
+              <span class="linha__titulo">{{ l.titulo }}</span>
+              <small class="linha__resumo">{{ l.resumo(pref) }}</small>
+            </button>
+            <p-inputSwitch [ngModel]="ativo(l.chave)" (onChange)="alternar(l.chave, $event.checked)" [ariaLabel]="l.titulo" />
+          </li>
+        }
+      </ul>
+    </section>
+
+    <!-- E-mail diário: Fase 2 -->
+    <section class="secao secao--breve" aria-labelledby="t-email">
+      <h2 id="t-email" class="secao__titulo">E-mail diário <span class="breve">em breve</span></h2>
+      <ul class="secao__linhas">
+        <li class="linha">
+          <span class="linha__texto"><span class="linha__titulo">Resumo por e-mail</span><small class="linha__resumo">vencimentos e agenda</small></span>
+          <p-inputSwitch [ngModel]="false" [disabled]="true" ariaLabel="Resumo por e-mail (em breve)" />
+        </li>
+        <li class="linha"><span class="linha__titulo">Horário</span><span class="linha__valor">—</span></li>
+        <li class="linha"><span class="linha__titulo">Dias</span><span class="linha__valor">—</span></li>
+      </ul>
+    </section>
+
+    <!-- Push: Fase 3 -->
+    <section class="secao secao--breve" aria-labelledby="t-celular">
+      <h2 id="t-celular" class="secao__titulo">No celular</h2>
+      <ul class="secao__linhas">
+        <li class="linha">
+          <span class="linha__texto"><span class="linha__titulo">Notificações push</span><small class="linha__resumo">em breve (fase 3)</small></span>
+          <p-inputSwitch [ngModel]="false" [disabled]="true" ariaLabel="Notificações push (em breve)" />
+        </li>
+      </ul>
+    </section>
+
+    <!-- Pausar tudo -->
+    <section class="secao" aria-label="Pausar tudo">
+      <ul class="secao__linhas">
+        <li class="linha">
+          <span class="linha__texto"><span class="linha__titulo">Pausar tudo</span><small class="linha__resumo">férias, viagens…</small></span>
+          <button type="button" class="linha__link" (click)="abrirPausa(menu, $event)">{{ resumoPausa }}<i class="pi pi-angle-right"></i></button>
+        </li>
+      </ul>
+    </section>
+  }
+</div>
+
+<p-menu #menu [model]="menuItens" [popup]="true" appendTo="body" />

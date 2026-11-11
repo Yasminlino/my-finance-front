@@ -22,6 +22,16 @@ kbd { padding: 0.05rem 0.35rem; border: 1px solid var(--surface-border); border-
 .topo-usuario { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.5rem; border: 0; border-radius: 2rem; background: none; color: var(--text-color); font: inherit; cursor: pointer; }
 .topo-usuario:hover { background: var(--surface-hover); }
 .topo-usuario-nome { max-width: 10rem; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+/* Card #73: sino do topo. */
+.topo-sino { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border: 0; border-radius: 50%; background: none; color: var(--text-color-secondary); cursor: pointer; }
+.topo-sino:hover { background: var(--surface-hover); color: var(--text-color); }
+.topo-sino i { font-size: 1.15rem; }
+.topo-sino-badge { position: absolute; top: 0.2rem; right: 0.15rem; min-width: 1.1rem; height: 1.1rem; padding: 0 0.25rem; border-radius: 0.55rem; background: var(--mf-despesa); color: var(--primary-color-text); font-size: 0.65rem; font-weight: 700; line-height: 1.1rem; text-align: center; }
+::ng-deep .topo-avisos { width: 24rem; max-width: calc(100vw - 2rem); }
+::ng-deep .topo-avisos .p-overlaypanel-content { padding: 1rem; }
+.topo-ler-tudo { margin-right: 0.25rem; color: var(--mf-primary); font-weight: 600; white-space: nowrap; }
+.topo-ler-tudo:disabled { color: var(--text-color-secondary); opacity: 0.6; }
+.folha-badge { min-width: 1.4rem; padding: 0 0.4rem; border-radius: 0.7rem; background: var(--mf-despesa); color: var(--primary-color-text); font-size: 0.75rem; font-weight: 700; line-height: 1.4rem; text-align: center; }
 .avatar { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--mf-primary); color: var(--primary-color-text); font-weight: 700; }
 :host ::ng-deep .topo-badge { margin-left: 0.15rem; }
 
@@ -77,7 +87,7 @@ kbd { padding: 0.05rem 0.35rem; border: 1px solid var(--surface-border); border-
 .mais-topo { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
 .mais-topo .folha-puxador { align-self: center; margin-left: 2rem; }
 .mais-marca { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.05rem; }
-.mais-usuario { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; padding: 0.75rem; border-radius: var(--mf-radius); background: var(--surface-ground); }
+.mais-usuario { width: 100%; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; padding: 0.75rem; border-radius: var(--mf-radius); background: var(--surface-ground); }
 .mais-usuario-texto { display: flex; flex: 1; flex-direction: column; min-width: 0; }
 .mais-usuario-texto small { color: var(--text-color-secondary); }
 .avatar--claro { background: var(--highlight-bg); color: var(--mf-primary); }

@@ -1,4 +1,5 @@
-import { Component, DestroyRef, HostListener, Input, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, Input, OnDestroy, OnInit, ViewChild, computed, effect, inject, signal } from '@angular/core';
+import { OverlayPanel } from 'primeng/overlaypanel';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { MenuItem } from 'primeng/api';
@@ -6,6 +7,7 @@ import { filter } from 'rxjs';
 import { ListaService } from '../../../services/lista.service';
 import { AuthService } from '../../../services/auth.service';
 import { VencidasService } from '../../../services/vencidas.service';
+import { NotificacoesService } from '../../../services/notificacoes.service';
 import { ChaveCriar, CriarContextoService } from '../../../services/criar-contexto.service';
 
 /** Um atalho do grid "Outros" do painel Novo. */
@@ -40,6 +42,13 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   usuario = localStorage.getItem('usuarioNome') ?? 'Admin';
   readonly vencidas = this.vencidasService.quantidade;
+  private readonly notificacoes = inject(NotificacoesService);
+  /** Card #73: avisos novos no sino. */
+  readonly avisosNovos = this.notificacoes.novos;
+  readonly rotuloSino = computed(() => this.avisosNovos() ? `Notificações: ${this.avisosNovos()} novas` : 'Notificações');
+  @ViewChild('painelAvisos') painelAvisos?: OverlayPanel;
+  /** Celular: o sino abre em tela cheia. */
+  avisosAbertos = false;
 
   private readonly largura = signal(window.innerWidth);
   readonly desktop = computed(() => this.largura() >= LARGURA_DESKTOP);
@@ -122,6 +131,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   /** Planejamento ▾: as duas telas e os 3 mais recentes. */
   menuPlanejamento: MenuItem[] = this.montarMenuPlanejamento([]);
   readonly menuUsuario: MenuItem[] = [
+    { label: 'Preferências', icon: 'pi pi-cog', command: () => this.ir('/preferencias') },
+    { separator: true },
     { label: 'Sair', icon: 'pi pi-sign-out', command: () => this.logout() }
   ];
 
@@ -168,10 +179,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
       .subscribe(e => {
         this.url.set(e.urlAfterRedirects);
         this.fecharPaineis();
-        if (this.auth.token) this.vencidasService.atualizar();
+        if (this.auth.token) {
+          this.vencidasService.atualizar();
+          this.notificacoes.atualizar();
+        }
       });
     if (this.auth.token) {
       this.vencidasService.atualizar();
+      this.notificacoes.atualizar();
       this.listaService.listar().subscribe({
         next: listas => (this.menuPlanejamento = this.montarMenuPlanejamento(
           [...(listas ?? [])].sort((a, b) => b.id - a.id).slice(0, 3).map(l => ({ id: l.id, nome: l.nome })))),
@@ -223,6 +238,16 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.router.navigateByUrl(caminho);
   }
 
+  /** Sino: painel no desktop/tablet; tela cheia no celular. */
+  abrirAvisos(evento: Event): void {
+    if (this.celular()) {
+      this.fecharPaineis();
+      this.avisosAbertos = true;
+    } else {
+      this.painelAvisos?.toggle(evento);
+    }
+  }
+
   abrirBusca(): void {
     this.fecharPaineis();
     this.buscaAberta = true;
@@ -263,6 +288,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   private fecharPaineis(): void {
     this.gavetaAberta = this.criarAberto = this.maisAberto = this.configuracoesAbertas = false;
+    // No spec com NO_ERRORS_SCHEMA a referência não é o OverlayPanel de verdade.
+    if (typeof this.painelAvisos?.hide === 'function') this.painelAvisos.hide();
   }
 
   private montarMenuPlanejamento(recentes: { id: number; nome: string }[]): MenuItem[] {

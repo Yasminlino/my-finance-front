@@ -1,0 +1,104 @@
+/* Card #73 — Preferências › Notificações (mockup B). Só tokens (var(--mf-*) e tema). */
+
+.preferencias { max-width: 40rem; }
+
+/* Celular: barra do topo como a do modal em tela cheia (mockup B). */
+.barra-topo {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: -1rem -1rem 1rem;
+  padding: 0.5rem;
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--surface-border);
+}
+.barra-topo__titulo { margin: 0; font-size: 1.15rem; font-weight: 700; }
+
+.secao {
+  margin-bottom: 1rem;
+  background: var(--surface-card);
+  border: 1px solid var(--mf-borda);
+  border-radius: var(--mf-radius);
+  box-shadow: var(--mf-shadow-card);
+  overflow: hidden;
+
+  &--breve .linha { opacity: 0.55; }
+}
+
+.secao__titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 1rem;
+  padding: 0.75rem 0 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gray-400);
+}
+
+.secao__status { margin-left: auto; font-size: 0.75rem; font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+.breve {
+  padding: 0.05rem 0.4rem;
+  border-radius: 0.25rem;
+  background: var(--surface-ground);
+  font-size: 0.65rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Linhas de separação recuadas dos lados (protótipo): o recuo fica na lista, não na linha. */
+.secao__linhas { margin: 0; padding: 0 1rem; list-style: none; }
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 3.25rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--surface-border);
+  &--desligada .linha__texto { opacity: 0.55; }
+}
+
+.linha__texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+button.linha__texto:not(:disabled) { cursor: pointer; }
+
+.linha__titulo { flex: 1; color: var(--text-color); font-weight: 600; }
+.linha__resumo { color: var(--text-color-secondary); font-size: 0.8rem; }
+.linha__valor { color: var(--text-color-secondary); }
+
+.linha__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--mf-primary);
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Seção sem título (Pausar tudo): a primeira linha não tem separação em cima. */
+.secao__linhas:first-child .linha:first-child { border-top: 0; }
+
+.erro { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; color: var(--mf-alerta); }

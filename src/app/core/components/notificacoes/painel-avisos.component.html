@@ -1,0 +1,68 @@
+<div class="painel" [class.painel--tela]="telaCheia">
+  <div class="painel__topo">
+    <div class="chips" role="tablist" aria-label="Quais avisos">
+      <button type="button" role="tab" class="chip" [class.chip--ativo]="filtro === 'novas'" [attr.aria-selected]="filtro === 'novas'"
+        (click)="filtro = 'novas'">Novas @if (notificacoes.novos()) { {{ notificacoes.novos() }} }</button>
+      <button type="button" role="tab" class="chip" [class.chip--ativo]="filtro === 'todas'" [attr.aria-selected]="filtro === 'todas'"
+        (click)="filtro = 'todas'">Todas</button>
+    </div>
+    @if (acoesNoPainel) {
+      <div class="painel__acoes">
+        <button type="button" class="p-link painel__link" [disabled]="!notificacoes.novos()" (click)="marcarTudo()">Ler tudo</button>
+        <p-button icon="pi pi-cog" [text]="true" [rounded]="true" severity="secondary" size="small" ariaLabel="Preferências de notificação"
+          (onClick)="irPreferencias()" />
+      </div>
+    }
+  </div>
+
+  <div class="painel__corpo">
+    @if (pausadoAte) {
+      <p class="painel__vazio"><i class="pi pi-pause-circle"></i>Notificações pausadas até {{ pausadoAte }}.
+        <button type="button" class="p-link painel__link" (click)="irPreferencias()">Mudar</button></p>
+    } @else if (!notificacoes.carregou()) {
+      @for (i of [1, 2, 3]; track i) { <p-skeleton height="4rem" styleClass="mb-2" /> }
+    } @else if (notificacoes.erro() && !notificacoes.avisos().length) {
+      <p class="painel__vazio painel__vazio--erro"><i class="pi pi-exclamation-circle"></i>Não foi possível carregar.
+        <button type="button" class="p-link painel__link" (click)="notificacoes.atualizar()">Tentar de novo</button></p>
+    } @else if (!grupos.length) {
+      <p class="painel__vazio"><i class="pi pi-check-circle"></i>
+        @if (filtro === 'novas' && notificacoes.avisos().length) { Nada novo por aqui. }
+        @else { Nada por aqui. Você está em dia. }
+      </p>
+    } @else {
+      @for (g of grupos; track g.rotulo) {
+        <h3 class="painel__grupo">{{ g.rotulo }}</h3>
+        <ul class="painel__lista">
+          @for (a of g.avisos; track a.id) {
+            <li>
+              <div class="aviso" [class.aviso--novo]="a.novo" [class.aviso--clicavel]="cardClicavel(a)"
+                [attr.role]="cardClicavel(a) ? 'button' : null" [attr.tabindex]="cardClicavel(a) ? 0 : null"
+                (click)="cardClicavel(a) && abrir(a)" (keydown.enter)="cardClicavel(a) && abrir(a)">
+                <span class="aviso__icone" [style.background]="'var(--mf-cor-' + aparencia(a).cor + '-bg)'"
+                  [style.color]="'var(--mf-cor-' + aparencia(a).cor + '-fg)'"><i [class]="aparencia(a).icone"></i></span>
+                <div class="aviso__texto">
+                  <div class="aviso__cabeca">
+                    <span class="aviso__titulo">{{ a.titulo }}@if (valorNoTitulo(a)) {<span class="aviso__valor"> · {{ valorNoTitulo(a) }}</span>}</span>
+                    @if (quando(a)) { <small class="aviso__quando">{{ quando(a) }}</small> }
+                  </div>
+                  @if (linha(a)) { <small class="aviso__linha">{{ linha(a) }}</small> }
+                  @if (podePagar(a)) {
+                    <div class="aviso__botoes">
+                      <p-button label="Marcar como paga" icon="pi pi-check" size="small" [outlined]="true" severity="secondary"
+                        [loading]="pagandoId === a.id" [disabled]="!!pagandoId && pagandoId !== a.id" (onClick)="pagar(a)" />
+                      <p-button label="Abrir" size="small" [outlined]="true" severity="secondary" (onClick)="abrir(a)" />
+                    </div>
+                  } @else if (a.tipo === 'vencidas') {
+                    <div class="aviso__botoes">
+                      <p-button label="Ver recentes" size="small" [outlined]="true" severity="secondary" (onClick)="abrir(a)" />
+                    </div>
+                  }
+                </div>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
+</div>

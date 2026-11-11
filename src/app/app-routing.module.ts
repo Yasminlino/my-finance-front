@@ -64,6 +64,12 @@ const routes: Routes = [
         loadChildren: () =>
           import('./views/lista/lista.module').then(m => m.ListaModule),
       },
+      {
+        // Card #73: preferências da conta (notificações); cada mudança é salva na hora.
+        path: 'preferencias',
+        loadComponent: () =>
+          import('./views/preferencias/preferencias.component').then(m => m.PreferenciasComponent),
+      },
       // Só em desenvolvimento (a base de UI em /ui): em produção o arquivo vira uma lista vazia.
       ...ROTAS_DESENVOLVIMENTO,
       { path: '', redirectTo: 'home', pathMatch: 'full' },

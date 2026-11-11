@@ -7,6 +7,8 @@ import { MenuModule } from 'primeng/menu';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { SidebarModule } from 'primeng/sidebar';
 import { BuscaComponent } from 'src/app/core/components/busca/busca.component';
+import { PainelAvisosComponent } from 'src/app/core/components/notificacoes/painel-avisos.component';
+import { ModalComponent, ModalMaisDirective } from 'src/app/shared/ui/modal/modal.component';
 import { SharedModule as PrimeSharedModule } from 'primeng/api';
 
 import { HeaderComponent } from 'src/app/core/components/header/header/header.component';
@@ -24,6 +26,9 @@ import { HeaderComponent } from 'src/app/core/components/header/header/header.co
     OverlayPanelModule,
     SidebarModule,
     BuscaComponent,
+    PainelAvisosComponent,
+    ModalComponent,
+    ModalMaisDirective,
     PrimeSharedModule
   ],
   exports: [

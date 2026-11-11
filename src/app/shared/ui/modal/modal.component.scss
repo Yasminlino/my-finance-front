@@ -21,6 +21,10 @@
 ::ng-deep .mf-modal--desktop .p-dialog-content { padding: 1rem 1.25rem; }
 
 ::ng-deep .mf-modal--tela { border-radius: 0; }
+/* O tema arredonda cabeçalho, conteúdo e rodapé do p-dialog por conta própria: na tela cheia, tudo reto. */
+::ng-deep .mf-modal--tela .p-dialog-header,
+::ng-deep .mf-modal--tela .p-dialog-content,
+::ng-deep .mf-modal--tela .p-dialog-footer { border-radius: 0; }
 ::ng-deep .mf-modal--tela .p-dialog-header { padding: 0.5rem; border-bottom: 1px solid var(--surface-border); }
 ::ng-deep .mf-modal--tela .p-dialog-content { padding: 0.75rem 1rem; flex: 1; }
 ::ng-deep .mf-modal--tela .p-dialog-footer { padding: 0.75rem 1rem; border-top: 1px solid var(--surface-border); }

@@ -7,6 +7,7 @@ import { HeaderComponent } from './header.component';
 import { AuthService } from '../../../services/auth.service';
 import { ListaService } from '../../../services/lista.service';
 import { VencidasService } from '../../../services/vencidas.service';
+import { NotificacoesService } from '../../../services/notificacoes.service';
 
 /** Navegação do app (card #72). */
 describe('HeaderComponent', () => {
@@ -15,6 +16,7 @@ describe('HeaderComponent', () => {
   let router: { navigate: jasmine.Spy; navigateByUrl: jasmine.Spy; events: Subject<unknown>; url: string };
   let auth: { token: string | null; logout: jasmine.Spy };
   let vencidas: { quantidade: ReturnType<typeof signal<number>>; atualizar: jasmine.Spy };
+  let avisos: { novos: ReturnType<typeof signal<number>>; atualizar: jasmine.Spy };
   const larguraOriginal = window.innerWidth;
 
   const abrir = (largura: number) => {
@@ -29,12 +31,14 @@ describe('HeaderComponent', () => {
     router = { navigate: jasmine.createSpy('navigate'), navigateByUrl: jasmine.createSpy('navigateByUrl'), events: new Subject(), url: '/contas-a-pagar' };
     auth = { token: 'x', logout: jasmine.createSpy('logout') };
     vencidas = { quantidade: signal(24), atualizar: jasmine.createSpy('atualizar') };
+    avisos = { novos: signal(3), atualizar: jasmine.createSpy('atualizar') };
     TestBed.configureTestingModule({
       declarations: [HeaderComponent],
       providers: [
         { provide: Router, useValue: router },
         { provide: AuthService, useValue: auth },
         { provide: VencidasService, useValue: vencidas },
+        { provide: NotificacoesService, useValue: avisos },
         { provide: ListaService, useValue: { listar: () => of([{ id: 1, nome: 'Mercado' }, { id: 9, nome: 'Viagem' }]) } }
       ],
       schemas: [NO_ERRORS_SCHEMA]
@@ -56,6 +60,26 @@ describe('HeaderComponent', () => {
     expect(el().querySelector('.topo-nav p-badge')).not.toBeNull();
     expect(el().querySelector('.barra-inferior')).toBeNull();
     expect(vencidas.atualizar).toHaveBeenCalled();
+  });
+
+  it('card #73: sino com os novos; atualiza ao abrir e a cada troca de tela; Preferências no menu do avatar', () => {
+    abrir(1280);
+    expect(el().querySelector('.topo-sino')?.getAttribute('aria-label')).toBe('Notificações: 3 novas');
+    expect(el().querySelector('.topo-sino-badge')?.textContent?.trim()).toBe('3');
+    expect(avisos.atualizar).toHaveBeenCalledTimes(1);
+    router.events.next(new NavigationEnd(1, '/home', '/home'));
+    expect(avisos.atualizar).toHaveBeenCalledTimes(2);
+    expect(header.menuUsuario.map(i => i.label)).toEqual(['Preferências', undefined, 'Sair']);
+    avisos.novos.set(0);
+    fixture.detectChanges();
+    expect(el().querySelector('.topo-sino-badge')).toBeNull();
+  });
+
+  it('card #73: no celular, o sino abre em tela cheia', () => {
+    router.url = '/home';
+    abrir(375);
+    (el().querySelector('.topo-sino') as HTMLButtonElement).click();
+    expect(header.avisosAbertos).toBeTrue();
   });
 
   it('o Extrato fica ativo na listagem e no detalhe da conta', () => {
