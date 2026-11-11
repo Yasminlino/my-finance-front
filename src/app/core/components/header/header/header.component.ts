@@ -32,7 +32,7 @@ const LARGURA_CELULAR = 768;
   styleUrls: ['./header.component.scss'],
 })
 export class HeaderComponent implements OnInit, OnDestroy {
-  @Input() brand = 'My Finance';
+  @Input() brand = 'Kanfy';
 
   private readonly router = inject(Router);
   readonly auth = inject(AuthService);

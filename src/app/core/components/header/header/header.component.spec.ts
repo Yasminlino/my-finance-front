@@ -123,7 +123,7 @@ describe('HeaderComponent', () => {
     router.events.next(new NavigationEnd(2, '/home', '/home'));
     fixture.detectChanges();
     // Protótipo "Logo no celular": no Início a marca fica no lugar do título.
-    expect(el().querySelector('.topo .marca')?.textContent).toContain('My Finance');
+    expect(el().querySelector('.topo .marca')?.textContent).toContain('Kanfy');
     expect(header.inicial).toBe('YL');
     localStorage.removeItem('usuarioNome');
   });
