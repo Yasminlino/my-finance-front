@@ -1,119 +1,125 @@
-<div class="mf-pagina">
+<div class="mf-pagina home">
 
-  <div class="grid">
-    <!-- TOTAIS -->
-    <div class="col-12 md:col-6 lg:col-4">
-      <div class="surface-card border-round shadow-1 h-full p-3 text-center">
-        <div class="text-color-secondary">Total Vencido</div>
-        <div class="text-3xl text-red-500 font-bold">{{ money(totalVencido) }}</div>
+  <mf-page-header class="block mt-2 mb-3" [titulo]="saudacao" [subtitulo]="hojePorExtenso" [breadcrumb]="breadcrumb" [home]="home">
+    @if (movel()) {
+      <p-button acoes icon="pi pi-plus" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Criar"
+        (onClick)="menuAtalhos.toggle($event)" />
+    } @else {
+      <div acoes class="flex align-items-center gap-2">
+        <p-button label="Conta a pagar" icon="pi pi-plus" [outlined]="true" (onClick)="irPara('/contas-a-pagar', { novo: 1 })" />
+        <p-button label="Lançamento" icon="pi pi-plus" [outlined]="true" (onClick)="irPara('/extrato-bancario', { lancar: 1 })" />
+        <p-button label="Planejamento" icon="pi pi-list-check" [outlined]="true" (onClick)="irPara('/planejamento')" />
       </div>
-    </div>
-    <div class="col-12 md:col-6 lg:col-4">
-      <div class="surface-card border-round shadow-1 h-full p-3 text-center">
-        <div class="text-color-secondary">Total a pagar hoje</div>
-        <div class="text-3xl text-orange-500 font-bold">{{ money(totalHoje) }}</div>
+    }
+  </mf-page-header>
+  <p-menu #menuAtalhos [model]="atalhos" [popup]="true" appendTo="body" />
+
+  <!-- Vencidas: só aparece quando há. -->
+  @if (vencidas.length) {
+    <section class="bloco bloco--vencidas mb-3" aria-label="Contas vencidas">
+      <div class="flex align-items-center gap-2">
+        <i class="pi pi-exclamation-triangle"></i>
+        <span class="flex-1 font-semibold">
+          {{ vencidas.length }} {{ vencidas.length === 1 ? 'conta vencida' : 'contas vencidas' }} · {{ money(totalVencido) }}
+        </span>
+        <button type="button" class="p-link recolher-vencidas" [attr.aria-expanded]="!vencidasRecolhidas"
+          [attr.aria-label]="vencidasRecolhidas ? 'Mostrar contas vencidas' : 'Minimizar contas vencidas'" (click)="alternarVencidas()">
+          <i class="pi" [class.pi-chevron-down]="vencidasRecolhidas" [class.pi-chevron-up]="!vencidasRecolhidas"></i>
+        </button>
       </div>
-    </div>
-    <div class="col-12 md:col-6 lg:col-4">
-      <div class="surface-card border-round shadow-1 h-full p-3 text-center">
-        <div class="text-color-secondary">Total a pagar próximos 2 dias</div>
-        <div class="text-3xl text-cyan-600 font-bold">{{ money(totalProximas) }}</div>
-      </div>
-    </div>
+      @if (!vencidasRecolhidas) {
+        <ul class="lista mt-2">
+          @for (c of vencidas; track $index) {
+            <li class="linha">
+              <span class="linha__data">{{ diaMes(c.data) }}</span>
+              <span class="linha__nome">{{ c.nome }}</span>
+              <span class="linha__valor mf-valor">{{ money(c.valor) }}</span>
+              <p-button label="Ver" [link]="true" size="small" (onClick)="verContas(c.data)" />
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
+  @if (diaLivre) {
+    <p class="dia-livre"><i class="pi pi-check-circle mr-2"></i>Tudo em dia: nada vence hoje nem amanhã e a agenda está livre.</p>
+  }
+
+  <div class="grade">
+    <!-- Contas de hoje e amanhã, com Pagar -->
+    <section class="bloco" aria-labelledby="t-contas">
+      <header class="bloco__topo">
+        <h2 id="t-contas">Contas de hoje e amanhã</h2>
+        <p-button label="Contas a Pagar" [link]="true" size="small" (onClick)="verContas()" />
+      </header>
+      @if (contas.carregando && !contas.dados) {
+        @for (i of [1, 2, 3]; track i) { <p-skeleton height="1.5rem" styleClass="mb-2" /> }
+      } @else if (contas.erro) {
+        <ng-container *ngTemplateOutlet="erroBloco; context: { $implicit: 'contas' }" />
+      } @else if (!contas.dados?.hoje?.length && !contas.dados?.amanha?.length) {
+        <p class="vazio">Nada vence hoje nem amanhã.</p>
+      } @else {
+        @if (contas.dados!.hoje.length) {
+          <h3 class="subtitulo">Hoje</h3>
+          <ul class="lista">
+            @for (c of contas.dados!.hoje; track c.id) {
+              <ng-container *ngTemplateOutlet="linhaConta; context: { $implicit: c }" />
+            }
+          </ul>
+        }
+        @if (contas.dados!.amanha.length) {
+          <h3 class="subtitulo">Amanhã</h3>
+          <ul class="lista">
+            @for (c of contas.dados!.amanha; track c.id) {
+              <ng-container *ngTemplateOutlet="linhaConta; context: { $implicit: c }" />
+            }
+          </ul>
+        }
+        <div class="total">Total <strong class="mf-valor">{{ money(contas.dados!.total) }}</strong></div>
+      }
+    </section>
+
+    <!-- Hoje na agenda -->
+    <section class="bloco" aria-labelledby="t-agenda">
+      <header class="bloco__topo">
+        <h2 id="t-agenda">Hoje na agenda</h2>
+        <p-button label="Planejamento" [link]="true" size="small" (onClick)="irPara('/planejamento')" />
+      </header>
+      @if (agenda.carregando && !agenda.dados) {
+        @for (i of [1, 2]; track i) { <p-skeleton height="1.5rem" styleClass="mb-2" /> }
+      } @else if (agenda.erro) {
+        <ng-container *ngTemplateOutlet="erroBloco; context: { $implicit: 'agenda' }" />
+      } @else if (!agenda.dados?.length) {
+        <p class="vazio">Nada marcado para hoje.</p>
+      } @else {
+        <ul class="lista">
+          @for (o of agenda.dados; track o.itemId + o.dataOriginal) {
+            <li class="linha" [class.feito]="o.feito">
+              <p-checkbox [binary]="true" [ngModel]="o.feito" (onChange)="marcarAgenda(o)"
+                [ariaLabel]="(o.feito ? 'Desmarcar ' : 'Marcar ') + o.descricao" />
+              <span class="linha__data">{{ hora(o.hora) }}</span>
+              <span class="linha__nome">{{ o.descricao }}
+                @if (o.listaNome) { <small class="text-color-secondary">· {{ o.listaNome }}</small> }
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
   </div>
-
-  <div class="grid">
-    <!-- CONTAS VENCIDAS -->
-    <div class="col-12 md:col-6 lg:col-4">
-      <div class="surface-card border-round shadow-1" [class.h-full]="!vencidasRecolhidas">
-        <div class="flex justify-content-between align-items-center gap-2 px-3 py-2 surface-border"
-          [class.border-bottom-1]="!vencidasRecolhidas">
-          <h3 class="text-lg font-semibold text-red-500 m-0">Contas vencidas</h3>
-          <div class="flex align-items-center gap-2">
-            <small *ngIf="vencidasRecolhidas && contasVencidas.length" class="text-color-secondary white-space-nowrap">
-              {{ contasVencidas.length }} {{ contasVencidas.length === 1 ? 'conta' : 'contas' }} · {{ money(totalVencido) }}
-            </small>
-            <button type="button" class="p-link recolher-vencidas border-circle w-2rem h-2rem flex align-items-center justify-content-center"
-              [attr.aria-expanded]="!vencidasRecolhidas"
-              [attr.aria-label]="vencidasRecolhidas ? 'Mostrar contas vencidas' : 'Minimizar contas vencidas'"
-              [pTooltip]="vencidasRecolhidas ? 'Mostrar' : 'Minimizar'" tooltipPosition="top" (click)="alternarVencidas()">
-              <i class="pi" [class.pi-chevron-down]="vencidasRecolhidas" [class.pi-chevron-up]="!vencidasRecolhidas"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="p-3" *ngIf="!vencidasRecolhidas">
-          <div class="flex justify-content-between align-items-start gap-2 mb-2" *ngFor="let conta of contasVencidas">
-            <div class="flex-1">
-              <div class="font-semibold">{{ conta.tipoConta }} • {{ conta.descricao }}</div>
-              <small class="text-color-secondary">
-                {{ conta.categoria }} • Vence em {{ conta.dataVencimento | date:'dd/MM/yyyy' }}
-              </small>
-            </div>
-
-            <div class="font-bold text-right white-space-nowrap">{{ money(conta.valor) }}</div>
-            <p-button icon="pi pi-money-bill" severity="secondary" [text]="true" [rounded]="true" size="small"
-              pTooltip="Ver em Contas a Pagar" (onClick)="redirecionaContas(conta.dataVencimento)" />
-          </div>
-
-          <div *ngIf="contasVencidas.length == 0" class="text-color-secondary text-center">
-            <i class="pi pi-check-circle mr-1"></i>Nenhuma conta vencida
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- VENCENDO HOJE -->
-    <div class="col-12 md:col-6 lg:col-4">
-      <div class="surface-card border-round shadow-1 h-full">
-        <div class="flex justify-content-between align-items-center px-3 py-2 border-bottom-1 surface-border">
-          <h3 class="text-lg font-semibold text-orange-500 m-0">Vencendo hoje</h3>
-          <p-button icon="pi pi-money-bill" severity="secondary" [text]="true" [rounded]="true" size="small"
-            pTooltip="Ver em Contas a Pagar" (onClick)="redirecionaContas()" />
-        </div>
-
-        <div class="p-3">
-          <div class="flex justify-content-between gap-2 mb-2" *ngFor="let conta of contasHoje">
-            <div>
-              <div class="font-semibold">{{ conta.tipoConta }} • {{ conta.descricao }}</div>
-              <small class="text-color-secondary">{{ conta.categoria }}</small>
-            </div>
-
-            <div class="text-red-500 font-bold white-space-nowrap">{{ money(conta.valor) }}</div>
-          </div>
-
-          <div *ngIf="contasHoje.length == 0" class="text-color-secondary text-center">
-            <i class="pi pi-check-circle mr-1"></i>Nenhuma conta hoje
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PRÓXIMOS VENCIMENTOS -->
-    <div class="col-12 md:col-6 lg:col-4">
-      <div class="surface-card border-round shadow-1 h-full">
-        <div class="flex justify-content-between align-items-center px-3 py-2 border-bottom-1 surface-border">
-          <h3 class="text-lg font-semibold text-cyan-600 m-0">Próximos vencimentos</h3>
-        </div>
-
-        <div class="p-3">
-          <div class="flex justify-content-between gap-2 mb-2" *ngFor="let conta of proximasContas">
-            <div>
-              <div class="font-semibold">{{ conta.tipoConta }} • {{ conta.descricao }}</div>
-              <small class="text-color-secondary">
-                {{ conta.categoria }} • Vence em {{ conta.dataVencimento | date:'dd/MM/yyyy' }}
-              </small>
-            </div>
-
-            <div class="font-bold white-space-nowrap">{{ money(conta.valor) }}</div>
-          </div>
-
-          <div *ngIf="proximasContas.length == 0" class="text-color-secondary text-center">
-            <i class="pi pi-check-circle mr-1"></i>Nenhuma conta para os próximos 2 dias
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
 </div>
+
+<ng-template #linhaConta let-c>
+  <li class="linha">
+    <span class="linha__nome">{{ c.nome }}</span>
+    <span class="linha__valor mf-valor">{{ money(c.valor) }}</span>
+    <p-button label="Pagar" size="small" [outlined]="true" [loading]="pagandoId === c.id" [disabled]="!!pagandoId && pagandoId !== c.id"
+      (onClick)="pagar(c)" [ariaLabel]="'Pagar ' + c.nome" />
+  </li>
+</ng-template>
+
+<ng-template #erroBloco let-qual>
+  <p class="erro"><i class="pi pi-exclamation-circle mr-1"></i>Não foi possível carregar.
+    <a class="p-link" (click)="qual === 'contas' ? carregarContas() : carregarAgenda()">Tentar de novo</a></p>
+</ng-template>

@@ -1,0 +1,100 @@
+/* Card #71 — Home: só o que é do dia. Só tokens (var(--mf-*) e tema), nada de cor fixa. */
+
+.bloco {
+  background: var(--surface-card);
+  border: 1px solid var(--mf-borda);
+  border-radius: var(--mf-radius);
+  box-shadow: var(--mf-shadow-card);
+  padding: 1rem;
+  min-width: 0;
+}
+
+.bloco__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+
+  h2 { margin: 0; font-size: 1rem; font-weight: 600; }
+}
+
+.bloco--vencidas {
+  background: var(--mf-tag-danger-bg);
+  color: var(--mf-tag-danger-fg);
+  border-color: transparent;
+  box-shadow: none;
+  padding: 0.6rem 1rem;
+
+  .recolher-vencidas {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+  }
+  .linha { border-color: var(--mf-borda); }
+}
+
+/* Dois blocos lado a lado no desktop; um embaixo do outro no celular. */
+.grade {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.lista { margin: 0; padding: 0; list-style: none; }
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--surface-border);
+
+  &:last-child { border-bottom: 0; }
+  &.feito .linha__nome { text-decoration: line-through; color: var(--text-color-secondary); }
+}
+
+.linha__data { flex-shrink: 0; min-width: 3.25rem; font-size: 0.875rem; color: var(--text-color-secondary); }
+.linha__nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.linha__valor { font-weight: 600; white-space: nowrap; }
+
+.subtitulo {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-color-secondary);
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--surface-border);
+  color: var(--text-color-secondary);
+  strong { color: var(--text-color); }
+}
+
+.dia-livre {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--mf-radius);
+  background: var(--mf-tag-success-bg);
+  color: var(--mf-tag-success-fg);
+}
+
+.vazio { margin: 0; color: var(--mf-texto-vazio); }
+.erro { margin: 0; color: var(--mf-alerta); font-size: 0.875rem; }
+
+@media (max-width: 767.98px) {
+  .grade { grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
+  .bloco { padding: 0.75rem; }
+  .linha { gap: 0.5rem; }
+}

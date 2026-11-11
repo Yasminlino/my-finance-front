@@ -120,6 +120,9 @@ export type ComparacaoListasDto = {
 
 /** Uma ocorrência na agenda (GET /listas/{id}/itens?de=&ate=): data e hora já com a mudança de "só esta". */
 export type OcorrenciaDto = {
+  /** Só na agenda de todas as listas (/GetAgendaPeriodo, card #71). */
+  listaId?: number | null;
+  listaNome?: string | null;
   itemId: number;
   /** yyyy-mm-dd: identifica a ocorrência nas alterações. */
   dataOriginal: string;

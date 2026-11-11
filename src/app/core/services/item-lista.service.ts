@@ -49,6 +49,11 @@ export class ItemListaService {
         return this.api.get<OcorrenciaDto[]>(this.itens(listaId), undefined, { params: { de, ate } }).pipe(map(r => r ?? []));
     }
 
+    /** Card #71: agenda de todas as listas com campo Data entre `de` e `ate`, com o nome da lista. */
+    agendaPeriodo(de: string, ate: string): Observable<OcorrenciaDto[]> {
+        return this.api.get<OcorrenciaDto[]>('/GetAgendaPeriodo', undefined, { params: { de, ate } }).pipe(map(r => r ?? []));
+    }
+
     /** "Só esta" numa ocorrência de item que repete. */
     alterarOcorrencia(listaId: number, itemId: number, dataOriginal: string, dto: AlterarOcorrenciaDto): Observable<unknown> {
         return this.api.put(`${this.itens(listaId)}/${itemId}/ocorrencias/${dataOriginal}`, dto);
