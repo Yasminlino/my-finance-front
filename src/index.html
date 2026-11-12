@@ -14,6 +14,14 @@
   <link rel="apple-touch-icon" sizes="180x180" href="assets/logo_Kanfy_icone_180.png">
   <meta name="apple-mobile-web-app-title" content="Kanfy">
   <meta name="apple-mobile-web-app-capable" content="yes">
+
+  <script>
+    // Card #40: o app deixou de usar "#" nas rotas. Endereços antigos (e-mails, favoritos, atalhos,
+    // redirecionamento do GitHub Pages) chegam como "/#/contas-a-pagar" e viram "/contas-a-pagar".
+    if (location.hash.indexOf('#/') === 0) {
+      history.replaceState(null, '', location.hash.slice(1));
+    }
+  </script>
 </head>
 
 <body>

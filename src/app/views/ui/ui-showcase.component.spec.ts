@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 
 import { UiShowcaseComponent } from './ui-showcase.component';
 
-/** Página /#/ui (só em desenvolvimento): a base de UI inteira numa tela, para conferência visual (card #27). */
+/** Página /ui (só em desenvolvimento): a base de UI inteira numa tela, para conferência visual (card #27). */
 describe('UiShowcaseComponent', () => {
   let fixture: ComponentFixture<UiShowcaseComponent>;
   const el = () => fixture.nativeElement as HTMLElement;

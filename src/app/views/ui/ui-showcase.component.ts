@@ -18,7 +18,7 @@ import { StatCardComponent } from 'src/app/shared/ui/stat-card/stat-card.compone
 import { NaturezaOperacaoLabel } from 'src/app/shared/enums/natureza-operacao.enum';
 
 /**
- * Página /#/ui (card #27): a base de UI inteira numa tela, para conferir no desktop e no celular.
+ * Página /ui (card #27): a base de UI inteira numa tela, para conferir no desktop e no celular.
  * A rota só existe fora do build de produção (app-routing.module.ts).
  */
 @Component({

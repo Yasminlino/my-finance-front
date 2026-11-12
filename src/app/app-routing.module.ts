@@ -80,10 +80,10 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  // useHash de propósito (FE-P3-04): o GitHub Pages não tem fallback de SPA. Sem o "#", recarregar
-  // ou abrir um link direto (/contas-a-pagar) dá 404. Tirar exige um 404.html no deploy:gh e quebra
-  // os favoritos com "#/".
-  imports: [RouterModule.forRoot(routes, { useHash: true })],
+  // Sem "#" desde o card #40: o Firebase Hosting devolve o app em qualquer caminho (rewrite no
+  // firebase.json), então recarregar e abrir link direto funcionam. Endereços antigos com "#/"
+  // (e-mails, favoritos, atalhos) são convertidos por um script no index.html antes do app abrir.
+  imports: [RouterModule.forRoot(routes)],
   exports: [RouterModule]
 })
 export class AppRoutingModule { }

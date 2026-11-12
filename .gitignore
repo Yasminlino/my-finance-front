@@ -44,3 +44,7 @@ Thumbs.db
 # Saídas locais de build/teste (FE-P3-04)
 *.log
 /null
+
+# Firebase (card #40)
+.firebase/
+firebase-debug.log
